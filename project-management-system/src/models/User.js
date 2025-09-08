@@ -54,6 +54,12 @@ const userSchema = new Schema(
     resetPasswordToken: {
       type: String,
     },
+    group: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Group",
+      },
+    ],
   },
   {
     timestamps: true,
