@@ -1,5 +1,8 @@
 const express = require("express");
 const app = express();
+const appRoute = require("./routes/appRoute");
+
+app.use("/api", appRoute);
 
 // Global error handler
 app.use((err, req, res, next) => {
