@@ -3,9 +3,11 @@ const authService = require("../services/AuthService");
 class AuthController {
   async login(req, res) {
     try {
+      console.log("Request body:", req.body);
       const { username, password } = req.body;
-      const token = await authService.login(username, password);
-      res.status(200).json({ token });
+      console.log("Login attempt for user:", username, password);
+      const { user, token } = await authService.login(username, password);
+      res.status(200).json({ user, token });
     } catch (error) {
       res.status(401).json({ message: error.message });
     }
