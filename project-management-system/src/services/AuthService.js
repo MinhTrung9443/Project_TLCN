@@ -2,8 +2,8 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
-const otpGenerator = require("../utils/otpGenerator");
-const sendOTP = require("../utils/sendOTP");
+const generateOTP = require("../utils/otpGenerator").default;
+const sendOTP = require("../utils/sendOTP").default;
 
 class AuthService {
   async login(username, password) {
@@ -28,26 +28,26 @@ class AuthService {
     return { user, token };
   }
   async forgotPassword(email) {
-    const user = await User.find({ email });
+    const user = await User.findOne({ email });
     if (!user) {
       throw new Error("Email not found");
     }
 
-    const token = otpGenerator();
+    const token = generateOTP();
     user.resetPasswordToken = token;
     user.resetPasswordExpires = Date.now() + 300000; // 5 minutes
     await user.save();
-    try {
-      await sendOTP({
-        email: email,
-        subject: "Your OTP code",
-        template: "OTP",
-        firstName: user.firstName,
-        otp: token,
-      });
-    } catch (error) {
-      throw new Error("Error sending OTP");
-    }
+    // try {
+    await sendOTP({
+      email: email,
+      subject: "Your OTP code",
+      template: "OTP",
+      firstName: user.firstName,
+      otp: token,
+    });
+    // } catch (error) {
+    //   throw new Error("Error sending OTP");
+    // }
   }
 
   async resetPassword(token, newPassword) {
