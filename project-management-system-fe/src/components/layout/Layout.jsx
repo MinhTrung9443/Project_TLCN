@@ -1,14 +1,22 @@
 import React from "react";
 import Header from "./Header.jsx";
 import Footer from "./Footer.jsx";
+import bgImage from '../../assets/bg.png';
 
 const Layout = ({ children }) => {
   return (
-    <div className="layout-wrapper">
-      <Header />
-      <main className="main-content">{children}</main>
+   <> 
+      <Header /> 
+
+      <div className="hero-image-container">
+        <img src={bgImage} alt="Project management illustration" className="hero-image" />
+      </div>
+
+      <main className="main-content">
+        {children}
+      </main>
       <Footer />
-    </div>
+    </>
   );
 };
 
