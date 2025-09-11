@@ -54,6 +54,9 @@ const userSchema = new Schema(
     resetPasswordToken: {
       type: String,
     },
+    resetPasswordExpires: {
+      type: Date,
+    },
     group: [
       {
         type: Schema.Types.ObjectId,

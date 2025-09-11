@@ -1,5 +1,8 @@
 .App {
   text-align: center;
+  min-height: 100vh; /* Đảm bảo app chiếm toàn bộ chiều cao màn hình */
+  display: flex;
+  flex-direction: column;
 }
 
 .App-logo {
@@ -35,4 +38,14 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.main-content {
+  flex: 1; /* Cho phép main-content co giãn */
+  margin-top: 60px; /* Khoảng cách từ header */
+  margin-bottom: 60px; /* Khoảng cách từ footer */
+  padding: 20px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
