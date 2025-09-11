@@ -6,11 +6,11 @@ const generateOTP = require("../utils/otpGenerator").default;
 const sendOTP = require("../utils/sendOTP").default;
 
 class AuthService {
-  async login(username, password) {
-    const user = await User.findOne({ username });
+  async login(email, password) {
+    const user = await User.findOne({ email });
     console.log(user);
     if (!user) {
-      throw new Error("Invalid username or password");
+      throw new Error("Invalid email or password");
     }
 
     if (user.status !== "active") {
@@ -19,7 +19,7 @@ class AuthService {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      throw new Error("Invalid username or password");
+      throw new Error("Invalid email or password");
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
