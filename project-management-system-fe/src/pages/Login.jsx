@@ -4,7 +4,7 @@ import authService from "../services/AuthService.js";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 
-import "./Login.css";
+import "../styles/Login.css";
 
 // Không cần import logobg nữa vì nó được gọi trong CSS
 import logo from "../assets/logo.png";
@@ -18,6 +18,11 @@ const LoginPage = () => {
       email: event.target.email.value,
       password: event.target.password.value,
     };
+
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
 
     authService
       .login(formData)

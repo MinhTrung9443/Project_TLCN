@@ -58,13 +58,19 @@ class AuthService {
     if (!user) {
       throw new Error("Invalid or expired token");
     }
+    console.log(newPassword);
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
-    return true;
+    try {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+      return user;
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      throw error;
+    }
   }
 }
 

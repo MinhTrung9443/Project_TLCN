@@ -12,6 +12,27 @@ const authService = {
       throw error;
     }
   },
+  forgotPassword: async (formData) => {
+    try {
+      const response = await apiClient.post("/forgot-password", {
+        email: formData.email,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  resetPassword: async (formData) => {
+    try {
+      const response = await apiClient.post("/reset-password", {
+        token: formData.token,
+        newPassword: formData.newPassword,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default authService;
