@@ -1,22 +1,76 @@
 // src/components/layout/Header.jsx
 
-import React from "react";
-import { Link } from "react-router-dom";
-import "../../styles/layout/Header.css"; // File CSS của Header
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext"; 
+import "../../styles/layout/Header.css";
 
 const Header = () => {
+  const { isAuthenticated, user, logout } = useAuth();
+  console.log("Header rendering with auth state:", { isAuthenticated, user });
+  const navigate = useNavigate();
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const handleLogout = () => {
+    logout();
+    setDropdownOpen(false);
+    navigate("/login");
+  };
+
+  const getAvatarInitial = () => {
+    if (user) {
+      return user.fullname.charAt(0).toUpperCase();
+    }
+    return "U";
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
+
   return (
     <header className="header">
       <div className="header-content">
         <h1>
-          <Link className="header-title-link">
+          <Link to="/" className="header-title-link">
             Project Management System
           </Link>
         </h1>
         <nav>
-          <Link to="/login" className="login-button">
-            LOGIN
-          </Link>
+          {isAuthenticated ? (
+            <div className="profile-menu" ref={dropdownRef}>
+              <div className="avatar" onClick={() => setDropdownOpen(!dropdownOpen)}>
+                {getAvatarInitial()}
+              </div>
+
+              {dropdownOpen && user && (
+                <div className="dropdown-content">
+                  <div className="dropdown-user-info">
+                    <strong>{user.fullname}</strong>
+                    <span>{user.email}</span>
+                  </div>
+                  <Link to="/my-profile" onClick={() => setDropdownOpen(false)}>
+                    My Profile
+                  </Link>
+                  <button onClick={handleLogout}>Log Out</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/login" className="login-button">
+              LOGIN
+            </Link>
+          )}
         </nav>
       </div>
     </header>

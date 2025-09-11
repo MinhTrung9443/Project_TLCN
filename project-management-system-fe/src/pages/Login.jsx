@@ -1,16 +1,16 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import authService from "../services/AuthService.js";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 
 import "./Login.css";
 
-// Không cần import logobg nữa vì nó được gọi trong CSS
 import logo from "../assets/logo.png";
 
 const LoginPage = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = (event) => {
     event.preventDefault();
@@ -22,8 +22,9 @@ const LoginPage = () => {
     authService
       .login(formData)
       .then((response) => {
-        login(response.user, response.token);
-        toast.success("Login successful");
+      login(response.data.user, response.data.token); 
+      toast.success("Login successful");
+      navigate("/dashboard");
       })
       .catch((error) => {
         console.error("Login failed:", error);
@@ -33,12 +34,8 @@ const LoginPage = () => {
 
   return (
     <div className="login-page-container">
-      {/* CỘT BÊN TRÁI (HÌNH ẢNH) - ĐÃ SỬA */}
       <div className="login-image-panel">
-        {/* Phần này sẽ hiển thị ảnh nền được định nghĩa trong Login.css */}
       </div>
-
-      {/* CỘT BÊN PHẢI (FORM) */}
       <div className="login-form-panel">
         <div className="form-content">
           <img src={logo} alt="Logo" className="logo" />

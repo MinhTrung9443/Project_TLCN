@@ -5,25 +5,22 @@
   overflow: hidden;
 }
 
-/* --- CỘT BÊN TRÁI (Hình ảnh nền) --- */
 .login-image-panel {
-  flex-basis: 50%; /* Thay đổi thành 50% */
-  /* Sử dụng ảnh nền từ thư mục assets */
+  flex-basis: 50%;
   background-image: url('../assets/login-bg.png'); 
   background-size: cover;
   background-position: center;
 }
 
 
-/* --- CỘT BÊN PHẢI (Form đăng nhập) --- */
 .login-form-panel {
-  flex-basis: 50%; /* Thay đổi thành 50% */
+  flex-basis: 50%;
   background-color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px;
-  box-sizing: border-box; /* Đảm bảo padding không làm thay đổi kích thước */
+  box-sizing: border-box; 
 }
 
 .form-content {

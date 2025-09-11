@@ -1,12 +1,18 @@
-import React, { createContext, useState, useContext } from 'react';
+// src/contexts/AuthContext.js
+
+import React, { createContext, useState, useContext, useMemo, useCallback } from 'react';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
         try {
+            // ĐỌC với key là 'user'
             const storedUser = localStorage.getItem('user');
-            return storedUser ? JSON.parse(storedUser) : null;
+            if (storedUser && storedUser !== 'undefined') {
+                return JSON.parse(storedUser);
+            }
+            return null;
         } catch (error) {
             console.error("Lỗi khi đọc user từ localStorage:", error);
             localStorage.removeItem('user');
@@ -14,30 +20,36 @@ export const AuthProvider = ({ children }) => {
         }
     });
 
-    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [token, setToken] = useState(() => {
+        // ĐỌC với key là 'token'
+        const storedToken = localStorage.getItem('token');
+        return storedToken && storedToken !== 'undefined' ? storedToken : null;
+    });
 
-    const login = (userData, userToken) => {
+    const login = useCallback((userData, userToken) => {
+        // LƯU với key là 'token'
         localStorage.setItem('token', userToken);
+        // LƯU với key là 'user'
         localStorage.setItem('user', JSON.stringify(userData));
         setToken(userToken);
         setUser(userData);
-    };
+    }, []);
 
-    const logout = () => {
+    const logout = useCallback(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setToken(null);
         setUser(null);
-        window.location.href = '/login';
-    };
+        window.location.href = '/login'; 
+    }, []);
 
-    const value = {
+    const value = useMemo(() => ({
         user,
         token,
         isAuthenticated: !!token,
         login,
         logout,
-    };
+    }), [user, token, login, logout]);
 
     return (
         <AuthContext.Provider value={value}>
@@ -47,5 +59,9 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 };

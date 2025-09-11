@@ -1,20 +1,24 @@
 // src/components/layout/Layout.jsx
 
 import React from "react";
-import { Outlet } from 'react-router-dom'; // 1. Import Outlet từ react-router-dom
+import { Outlet } from 'react-router-dom'; 
 import Header from "./Header.jsx";
 import Footer from "./Footer.jsx";
+import Sidebar from "./Sidebar.jsx"; // 1. Import Sidebar
+import '../../styles/layout/Layout.css'; // Import file CSS cho Layout
 
-// 2. Bỏ prop { children } đi
 const Layout = () => {
   return (
-    <>
+    <div className="app-container">
       <Header />
-      <main>
-        <Outlet /> {/* 3. Thay thế {children} bằng <Outlet /> */}
-      </main>
+      <div className="layout-body"> {/* 2. Bọc Sidebar và Outlet trong một div */}
+        <Sidebar />
+        <main className="main-content">
+          <Outlet />  
+        </main>
+      </div>
       <Footer />
-    </>
+    </div>
   );
 };
 
