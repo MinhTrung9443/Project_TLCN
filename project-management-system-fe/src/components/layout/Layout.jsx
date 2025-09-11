@@ -1,14 +1,20 @@
+// src/components/layout/Layout.jsx
+
 import React from "react";
+import { Outlet } from 'react-router-dom'; // 1. Import Outlet từ react-router-dom
 import Header from "./Header.jsx";
 import Footer from "./Footer.jsx";
 
-const Layout = ({ children }) => {
+// 2. Bỏ prop { children } đi
+const Layout = () => {
   return (
-    <div className="layout-wrapper">
+    <>
       <Header />
-      <main className="main-content">{children}</main>
+      <main>
+        <Outlet /> {/* 3. Thay thế {children} bằng <Outlet /> */}
+      </main>
       <Footer />
-    </div>
+    </>
   );
 };
 

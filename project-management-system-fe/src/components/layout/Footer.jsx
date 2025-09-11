@@ -2,7 +2,7 @@ import "../../styles/layout/Footer.css";
 
 const Footer = () => {
   return (
-    <footer className="footer">
+    <footer className="Footer">
       <div className="footer-content">
         <p>
           &copy; {new Date().getFullYear()} Project Management System. All
