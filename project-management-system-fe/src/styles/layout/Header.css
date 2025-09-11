@@ -21,3 +21,76 @@
   margin: 0;
   font-size: 1.5rem;
 }
+.profile-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ff8c00; /* Màu cam hoặc màu thương hiệu của bạn */
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  user-select: none; /* Ngăn người dùng bôi đen chữ cái */
+  transition: transform 0.2s ease-in-out;
+}
+
+.avatar:hover {
+  transform: scale(1.1);
+}
+
+.dropdown-content {
+  position: absolute;
+  right: 0;
+  top: 50px; /* Vị trí so với avatar */
+  background-color: white;
+  min-width: 200px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 100;
+  border-radius: 8px;
+  overflow: hidden; /* Để bo góc hoạt động cho các item bên trong */
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.dropdown-user-info {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+}
+
+.dropdown-user-info strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.dropdown-user-info span {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.dropdown-content a,
+.dropdown-content button {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.dropdown-content a:hover,
+.dropdown-content button:hover {
+  background-color: #f1f1f1;
+}

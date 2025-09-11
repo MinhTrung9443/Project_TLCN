@@ -1,0 +1,20 @@
+/* src/styles/layout/Layout.css */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Chiếm toàn bộ chiều cao màn hình */
+}
+
+.layout-body {
+  display: flex; /* Đây là key! Giúp sidebar và main-content nằm cạnh nhau */
+  flex-grow: 1; /* Cho phép phần body này lấp đầy không gian còn lại */
+  overflow: hidden; /* Ngăn scroll không mong muốn */
+}
+
+.main-content {
+  flex-grow: 1; /* Cho phép nội dung chính lấp đầy không gian còn lại */
+  overflow-y: auto; /* Chỉ cho phép cuộn ở khu vực nội dung chính */
+  padding: 24px; /* Thêm khoảng đệm cho nội dung */
+  background-color: #f4f7f9;
+}
