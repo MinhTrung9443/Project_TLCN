@@ -33,6 +33,15 @@ const authService = {
       throw error;
     }
   },
+  updateProfile: async (formData) => {
+    try {
+      const response = await apiClient.post("/updateProfile", {
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default authService;
