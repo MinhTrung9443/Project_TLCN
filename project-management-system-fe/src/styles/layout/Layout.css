@@ -13,7 +13,8 @@
 }
 
 .main-content {
-  flex-grow: 1; /* Cho phép nội dung chính lấp đầy không gian còn lại */
+  margin-top: 60px; /* Đảm bảo không bị che khuất bởi header */
+  flex-grow: 1;
   overflow-y: auto; /* Chỉ cho phép cuộn ở khu vực nội dung chính */
   padding: 24px; /* Thêm khoảng đệm cho nội dung */
   background-color: #f4f7f9;

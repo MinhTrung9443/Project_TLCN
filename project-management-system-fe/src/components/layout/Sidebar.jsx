@@ -1,70 +1,215 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import '../../styles/layout/Sidebar.css';
+import React from "react";
+import { NavLink } from "react-router-dom";
 
-const menuItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: 'icon-dashboard' },
-  {
-    name: 'Task Management',
-    icon: 'icon-task',
-    subItems: [
-      { name: 'Projects', path: '/task-management/projects' },
-      { name: 'Task Finder', path: '/task-management/task-finder' },
-      { name: 'Gantt', path: '/task-management/gantt' },
-      { name: 'Project Settings', path: '/task-management/projectssetting' },
-    ],
-  },
-  {
-    name: 'Work Tracking',
-    icon: 'icon-work',
-    subItems: [
-        { name: 'Work Logs', path: '/work-tracking/logs'},
-    ]
-  },
+import "../../styles/layout/Sidebar.css";
 
-];
-
-const Sidebar = () => {
-    const [openMenus, setOpenMenus] = useState({'Task Management': true}); 
-
-    const toggleMenu = (menuName) => {
-        setOpenMenus(prev => ({...prev, [menuName]: !prev[menuName]}));
-    }
-
+export const Sidebar = () => {
   return (
-    <aside className="sidebar">
-      <nav>
-        <ul>
-          {menuItems.map((item, index) => (
-            <li key={index}>
-              {item.subItems ? (
-                <>
-                  <div className="menu-item" onClick={() => toggleMenu(item.name)}>
-                    {/* <i className={item.icon}></i> */}
-                    <span>{item.name}</span>
-                    <span className={`arrow ${openMenus[item.name] ? 'up' : 'down'}`}></span>
-                  </div>
-                  {openMenus[item.name] && (
-                    <ul className="submenu">
-                      {item.subItems.map((subItem, subIndex) => (
-                        <li key={subIndex}>
-                          <NavLink to={subItem.path}>{subItem.name}</NavLink>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <NavLink to={item.path} className="menu-item">
-                  <span>{item.name}</span>
+    <div id="webcrumbs">
+      <div className="sidebar w-64 h-screen bg-white border-r shadow-md flex flex-col">
+        <div className="p-4">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="h-8 w-8 bg-primary-500 rounded-md flex items-center justify-center">
+              <span className="material-symbols-outlined text-white text-xl">
+                dashboard
+              </span>
+            </div>
+            <h2 className="text-lg font-semibold">AppDash</h2>
+          </div>
+
+          <nav className="space-y-1">
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                  isActive
+                    ? "bg-gray-100 text-primary-500 font-semibold"
+                    : "hover:bg-gray-100"
+                }`
+              }
+            >
+              <span className="material-symbols-outlined mr-3 text-gray-500">
+                dashboard
+              </span>
+              <span>Dashboard</span>
+            </NavLink>
+
+            <details className="group" open>
+              <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
+                <div className="flex items-center">
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    computer
+                  </span>
+                  <span>Task Management</span>
+                </div>
+                <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">
+                  expand_more
+                </span>
+              </summary>
+
+              <div className="pl-10 mt-1 space-y-1">
+                <NavLink
+                  to="/projects"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive
+                        ? "bg-gray-100 text-primary-500 font-semibold"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    bar_chart
+                  </span>
+                  <span>Projects</span>
                 </NavLink>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </aside>
+
+                <NavLink
+                  to="/task-finder"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive
+                        ? "bg-gray-100 text-primary-500 font-semibold"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    description
+                  </span>
+                  <span>Task Finder</span>
+                </NavLink>
+
+                <NavLink
+                  to="/gantt"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive
+                        ? "bg-gray-100 text-primary-500 font-semibold"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    calendar_month
+                  </span>
+                  <span>Gantt</span>
+                </NavLink>
+
+                <NavLink
+                  to="/backlog"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive
+                        ? "bg-gray-100 text-primary-500 font-semibold"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    checklist
+                  </span>
+                  <span>Backlog</span>
+                </NavLink>
+
+                <NavLink
+                  to="/active-sprint"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive
+                        ? "bg-gray-100 text-primary-500 font-semibold"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    view_kanban
+                  </span>
+                  <span>Active Sprint</span>
+                </NavLink>
+
+                <NavLink
+                  to="/project-settings"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive
+                        ? "bg-gray-100 text-primary-500 font-semibold"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="pl-6">Project Settings</span>
+                </NavLink>
+              </div>
+            </details>
+
+            <details className="group" open>
+              <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md transition-colors cursor-pointer">
+                <div className="flex items-center">
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    apartment
+                  </span>
+                  <span>Organization</span>
+                </div>
+                <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">
+                  expand_more
+                </span>
+              </summary>
+
+              <div className="pl-10 mt-1 space-y-1">
+                <NavLink
+                  to="/group"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive
+                        ? "bg-gray-100 text-primary-500 font-semibold"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    group
+                  </span>
+                  <span>Group</span>
+                </NavLink>
+
+                <NavLink
+                  to="/user"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive
+                        ? "bg-gray-100 text-primary-500 font-semibold"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    person
+                  </span>
+                  <span>User</span>
+                </NavLink>
+              </div>
+            </details>
+
+            <NavLink
+              to="/audit-log"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                  isActive
+                    ? "bg-gray-100 text-primary-500 font-semibold"
+                    : "hover:bg-gray-100"
+                }`
+              }
+            >
+              <span className="material-symbols-outlined mr-3 text-gray-500">
+                receipt_long
+              </span>
+              <span>Audit Log</span>
+            </NavLink>
+          </nav>
+        </div>
+      </div>
+    </div>
   );
 };
-
 export default Sidebar;
