@@ -1,15 +1,14 @@
-/* src/styles/layout/Layout.css */
-
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Chiếm toàn bộ chiều cao màn hình */
+  height: 100vh;
+  overflow: hidden;
 }
 
 .layout-body {
-  display: flex; /* Đây là key! Giúp sidebar và main-content nằm cạnh nhau */
-  flex-grow: 1; /* Cho phép phần body này lấp đầy không gian còn lại */
-  overflow: hidden; /* Ngăn scroll không mong muốn */
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
 }
 
 .main-content {
