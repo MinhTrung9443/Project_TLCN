@@ -10,6 +10,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import MyProfilePage from "./pages/MyProfile";
+import ManageUser from "./pages/ManageUser/ManageUser";
+import UserProfile from "./pages/ManageUser/UserProfile";
 function App() {
   return (
     <BrowserRouter>
@@ -23,6 +25,8 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/my-profile" element={<MyProfilePage />} />
+            <Route path="/Organization/User" element={<ManageUser />} />
+            <Route path="/Organization/User/:id" element={<UserProfile />} />
           </Route>
         </Routes>
 

@@ -1,0 +1,185 @@
+#webcrumbs .user-table-container {
+  margin: 24px auto;
+  padding: 16px;
+  max-width: 1200px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+#webcrumbs .user-table {
+  font-size: 14px;
+  min-width: 900px;
+}
+
+#webcrumbs .user-table th,
+#webcrumbs .user-table td {
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+#webcrumbs .user-table th {
+  font-size: 13px;
+}
+
+#webcrumbs .user-table td {
+  font-size: 14px;
+}
+
+#webcrumbs .user-table tr:hover {
+  background: #f3f4f6;
+}
+
+#webcrumbs .user-table-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+/* Popup menu cho user */
+#webcrumbs .user-popup-menu {
+  position: absolute;
+  right: 32px;
+  top: 60px;
+  z-index: 100;
+  min-width: 140px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 4px 0;
+  animation: fadeInMenu 0.15s ease;
+  display: flex;
+  flex-direction: column;
+}
+#webcrumbs .user-popup-menu button {
+  width: 100%;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 10px 18px;
+  font-size: 14px;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#webcrumbs .user-popup-menu button:hover {
+  background: #f3f4f6;
+}
+#webcrumbs .user-popup-menu .text-red-600 {
+  color: #dc2626;
+}
+#webcrumbs .user-popup-menu .text-gray-500 {
+  color: #6b7280;
+}
+@keyframes fadeInMenu {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button Create User */
+#webcrumbs .create-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  font-weight: 500;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 15px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+#webcrumbs .create-user-btn:hover {
+  background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.13);
+}
+
+/* Popup overlay cho tạo user */
+#webcrumbs .user-create-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 41, 59, 0.18);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Popup tạo user */
+#webcrumbs .user-create-popup {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.13);
+  padding: 18px 12px 14px 12px; /* giảm padding */
+  min-width: 240px; /* popup nhỏ hơn */
+  max-width: 340px; /* giới hạn chiều rộng tối đa */
+  width: 100%;
+  animation: fadeInMenu 0.18s;
+}
+#webcrumbs .user-create-popup .popup-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 18px;
+  color: #374151;
+  text-align: center;
+}
+#webcrumbs .user-create-popup .popup-input {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.15s;
+}
+#webcrumbs .user-create-popup .popup-input:focus {
+  border: 1.5px solid #6366f1;
+}
+#webcrumbs .user-create-popup .popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+#webcrumbs .user-create-popup .popup-btn-primary {
+  background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+#webcrumbs .user-create-popup .popup-btn-primary:hover {
+  background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+}
+#webcrumbs .user-create-popup .popup-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+#webcrumbs .user-create-popup .popup-btn:hover {
+  background: #e5e7eb;
+}
