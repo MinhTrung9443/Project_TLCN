@@ -7,5 +7,6 @@ router.put("/profile", protect, userController.updateProfile);
 router.get("/get-all-users", protect, userController.getAllUsers);
 router.post("/delete-user/:id", admin, userController.deleteUser);
 router.post("/update-user/:id", admin, userController.updateUserInfo);
+router.get("/get-user/:id", protect, userController.getUserById);
 
 module.exports = router;
