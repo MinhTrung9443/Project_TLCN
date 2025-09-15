@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
+require("./Group");
 
 // User Schema
 const userSchema = new Schema(

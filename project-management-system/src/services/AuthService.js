@@ -25,6 +25,9 @@ class AuthService {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
+    user.lastLogin = new Date();
+    await user.save();
+
     return { user, token };
   }
   async forgotPassword(email) {

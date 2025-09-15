@@ -55,15 +55,16 @@ class UserController {
     }
   }
 
-  getUserById(req, res) {
+  async getUserById(req, res) {
     try {
       const userId = req.params.id;
-      const user = userService.getUserById(userId);
+      const user = await userService.getUserById(userId);
       user.password = undefined;
+      console.log(user);
       res.status(200).json(user);
     } catch (error) {
       res.status(400).json({ message: error.message });
-    } 
+    }
   }
 }
 

@@ -1,36 +1,9 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/pages/ManageUser/ManageUser.css";
-
-const users = [
-  {
-    id: 1,
-    avatar: "",
-    fullname: "Nguyen Van A",
-    username: "nguyenvana",
-    email: "nguyenvana@gmail.com",
-    phone: "0123456789",
-    gender: "male",
-    status: "active",
-    role: "user",
-    lastLogin: "2025-09-10T10:00:00Z",
-    groups: ["General", "Project X"],
-  },
-  {
-    id: 2,
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-    fullname: "Tran Thi B",
-    username: "tranthib",
-    email: "tranthib@gmail.com",
-    phone: "0987654321",
-    gender: "female",
-    status: "inactive",
-    role: "admin",
-    lastLogin: "2025-09-12T08:30:00Z",
-    groups: ["General"],
-  },
-  // ...thêm user mẫu khác nếu cần
-];
+import { useEffect } from "react";
+import userService from "../../services/userService";
+import { useAuth } from "../../contexts/AuthContext";
 
 const genderIcon = {
   male: <span className="material-symbols-outlined text-blue-700">male</span>,
@@ -54,8 +27,24 @@ const roleColor = {
 
 const Component = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [popupUserId, setPopupUserId] = useState(null);
   const [showCreatePopup, setShowCreatePopup] = useState(false);
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await userService.getAllUsers();
+        console.log("Fetched users:", response);
+        setUsers(response);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleFullnameClick = (id) => {
     navigate(`/Organization/User/${id}`);
@@ -80,15 +69,17 @@ const Component = () => {
       <div className="user-table-container overflow-x-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-700">User List</h2>
-          <button
-            className="create-user-btn"
-            onClick={() => setShowCreatePopup(true)}
-          >
-            <span className="material-symbols-outlined align-middle mr-2">
-              person_add
-            </span>
-            Create User
-          </button>
+          {user.role === "admin" && (
+            <button
+              className="create-user-btn"
+              onClick={() => setShowCreatePopup(true)}
+            >
+              <span className="material-symbols-outlined align-middle mr-2">
+                person_add
+              </span>
+              Create User
+            </button>
+          )}
         </div>
         <table className="user-table min-w-full border-collapse">
           <thead>
@@ -103,14 +94,16 @@ const Component = () => {
               <th>Role</th>
               <th>Last Login</th>
               <th>Groups</th>
-              <th>
-                <span className="material-symbols-outlined">apps</span>
-              </th>
+              {user.role === "admin" && (
+                <th>
+                  <span className="material-symbols-outlined">apps</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id}>
+              <tr key={user._id}>
                 <td>
                   {user.avatar ? (
                     <img
@@ -133,7 +126,7 @@ const Component = () => {
                       padding: 0,
                       cursor: "pointer",
                     }}
-                    onClick={() => handleFullnameClick(user.id)}
+                    onClick={() => handleFullnameClick(user._id)}
                   >
                     {user.fullname}
                   </button>
@@ -150,18 +143,22 @@ const Component = () => {
                     : ""}
                 </td>
                 <td>
-                  {user.groups && user.groups.length > 0
-                    ? user.groups.join(", ")
+                  {user.group && user.group.length > 0
+                    ? user.group.join(", ")
                     : ""}
                 </td>
-                <td>
-                  <button
-                    className="text-gray-400 hover:text-gray-600 transition-colors duration-150 ease-in-out"
-                    onClick={() => handleMenuClick(user.id)}
-                  >
-                    <span className="material-symbols-outlined">more_vert</span>
-                  </button>
-                </td>
+                {user.role === "admin" && (
+                  <td>
+                    <button
+                      className="text-gray-400 hover:text-gray-600 transition-colors duration-150 ease-in-out"
+                      onClick={() => handleMenuClick(user._id)}
+                    >
+                      <span className="material-symbols-outlined">
+                        more_vert
+                      </span>
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -184,9 +181,17 @@ const Component = () => {
           </button>
           <button
             className="text-red-600"
-            onClick={() => {
+            onClick={async () => {
               handleClosePopup();
-              // Xử lý xóa user ở đây
+              try {
+                const deleteUser = async () => {
+                  await userService.deleteUser(popupUserId);
+                  setUsers(users.filter((u) => u._id !== popupUserId));
+                };
+                deleteUser();
+              } catch (error) {
+                console.error("Error deleting user:", error);
+              }
             }}
           >
             <span className="material-symbols-outlined align-middle mr-2">

@@ -25,8 +25,17 @@ class UserService {
 
   async getAllUsers(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
-    const users = await User.find().skip(skip).limit(limit);
-    return users;
+    const users = await User.find()
+      .skip(skip)
+      .limit(limit)
+      .populate("group", "name -_id")
+      .lean();
+
+    const result = users.map((u) => ({
+      ...u,
+      group: u.group.map((g) => g.name), // chỉ giữ lại tên
+    }));
+    return result;
   }
 
   async deleteUser(userId) {
@@ -62,7 +71,11 @@ class UserService {
   }
 
   async getUserById(userId) {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId)
+      .populate("group", "name -_id")
+      .lean();
+
+    user.group = user.group.map((g) => g.name);
     if (!user) {
       throw new Error("User not found");
     }
