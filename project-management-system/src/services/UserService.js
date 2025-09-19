@@ -12,7 +12,7 @@ class UserService {
     if (!user) {
       throw new Error("User not found");
     }
-    const allowedUpdates = ["fullname", "avatar", "phone", "gender"];
+    const allowedUpdates = ["fullname", "avatar", "phone", "gender", "status"];
     Object.keys(updateData).forEach((key) => {
       if (allowedUpdates.includes(key)) {
         user[key] = updateData[key];

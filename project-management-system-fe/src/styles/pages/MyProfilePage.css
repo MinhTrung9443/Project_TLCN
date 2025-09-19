@@ -12,7 +12,7 @@
     background-color: #fff;
     padding: 24px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .profile-sidebar {
@@ -91,33 +91,116 @@
     cursor: not-allowed;
 }
 
-/* Actions */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    margin-top: 8px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #f0f0f0;
+    border: 2px solid #0d6efd;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #0d6efd;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+input:checked+.slider:before {
+    background-color: white;
+    transform: translateX(20px);
+}
+
 .form-actions {
-    text-align: right;
-    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
 }
 
 .btn-save {
-    padding: 12px 24px;
-    background-color: #2980b9;
-    color: white;
-    border: none;
-    border-radius: 4px;
+    padding: 10px 20px;
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 500;
+    border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.2s;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
 }
 
-.btn-save:hover {
-    background-color: #3498db;
+.btn-save:hover:not(:disabled) {
+    background-color: #2563eb;
+}
+
+.btn-cancel {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background-color: transparent;
+    color: #495057;
+    border: none;
+}
+
+.btn-cancel:hover:not(:disabled) {
+    background-color: #f1f5f9;
+    color: #1e293b;
+}
+
+.btn-save:disabled,
+.btn-cancel:disabled {
+    background-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.btn-cancel:disabled {
+    background-color: transparent;
+    color: #94a3b8;
 }
 
 .avatar-section {
     background-color: #fff;
     padding: 24px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     text-align: center;
 }
 

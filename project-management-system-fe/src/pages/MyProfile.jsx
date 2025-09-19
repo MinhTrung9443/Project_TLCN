@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import '../styles/pages/MyProfilePage.css';
-import userService from '../services/userService'; 
+import userService from '../services/userService';
 
 const MyProfilePage = () => {
     const { user, login } = useAuth();
@@ -24,10 +24,11 @@ const MyProfilePage = () => {
                 email: user.email || '',
                 phone: user.phone || '',
                 gender: user.gender || '',
+                status: user.status || 'inactive',
             });
             setLoading(false);
         }
-    }, [user]); 
+    }, [user]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -36,20 +37,25 @@ const MyProfilePage = () => {
             [name]: value,
         }));
     };
+    const handleStatusToggle = (e) => {
+        const newStatus = e.target.checked ? 'active' : 'inactive';
+        setFormData(prevState => ({
+            ...prevState,
+            status: newStatus,
+        }));
+    };
 
-     const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         toast.info("Updating profile...");
 
         try {
-            // ----- GỌI API THẬT -----
             const response = await userService.updateProfile(formData);
-            
-            // Lấy user đã được cập nhật từ response của API
-            const updatedUser = response.data.user; 
-            
+
+            const updatedUser = response.data.user;
+
             const token = localStorage.getItem('token');
-            login(updatedUser, token); // Cập nhật lại Context
+            login(updatedUser, token); 
 
             toast.success("Profile updated successfully!");
 
@@ -58,6 +64,11 @@ const MyProfilePage = () => {
             toast.error(error.response?.data?.message || "Failed to update profile.");
         }
     };
+    const handleCancel = () => {
+        setFormData(formData);
+        toast.warn("Changes have been canceled.");
+    };
+
 
     if (loading) {
         return <div className="loading-container">Loading profile...</div>;
@@ -106,7 +117,7 @@ const MyProfilePage = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
-                                    disabled 
+                                    disabled
                                 />
                             </div>
                             <div className="form-group">
@@ -127,9 +138,29 @@ const MyProfilePage = () => {
                                     <option value="other">Other</option>
                                 </select>
                             </div>
+                            <div className="form-group">
+                                <label htmlFor="status">Status</label>
+                                <label className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        id="status"
+                                        name="status"
+                                        checked={formData.status === 'active'}
+                                        onChange={handleStatusToggle}
+                                    />
+                                    <span className="slider"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div className="form-actions">
+                        <button 
+                            type="button" 
+                            className="btn-cancel" 
+                            onClick={handleCancel}
+                        >
+                            Cancel
+                        </button>
                         <button type="submit" className="btn-save">Save</button>
                     </div>
                 </div>
@@ -137,7 +168,7 @@ const MyProfilePage = () => {
                 <div className="profile-sidebar">
                     <div className="avatar-section">
                         <div className="avatar-display">
-                           {user.fullname ? user.fullname.charAt(0).toUpperCase() : 'U'}
+                            {user.fullname ? user.fullname.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <button type="button" className="btn-upload-avatar">
                             Upload Avatar
