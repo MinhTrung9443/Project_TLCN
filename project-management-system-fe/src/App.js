@@ -26,7 +26,10 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/my-profile" element={<MyProfilePage />} />
             <Route path="/Organization/User" element={<ManageUser />} />
-            <Route path="/Organization/User/:id" element={<UserProfile />} />
+            <Route
+              path="/Organization/User/:userId"
+              element={<UserProfile />}
+            />
           </Route>
         </Routes>
 

@@ -66,6 +66,20 @@ class UserController {
       res.status(400).json({ message: error.message });
     }
   }
+
+  async addUser(req, res) {
+    try {
+      const userData = req.body;
+      const newUser = await userService.addUser(userData);
+      newUser.password = undefined;
+      res.status(201).json({
+        message: "User added successfully",
+        user: newUser,
+      });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = new UserController();

@@ -761,3 +761,115 @@ video {
 #webcrumbs .user-profile-btn-cancel:hover {
   background: #e5e7eb;
 }
+
+/* Toggle switch for Status */
+#webcrumbs .switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  height: 28px;
+}
+#webcrumbs .switch input[type="checkbox"] {
+  display: none;
+}
+#webcrumbs .slider {
+  position: relative;
+  width: 44px;
+  height: 22px;
+  background: #e5e7eb;
+  border-radius: 22px;
+  transition: background 0.2s;
+  cursor: pointer;
+  display: inline-block;
+}
+#webcrumbs .slider:before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  background: #6366f1;
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+#webcrumbs .switch input:checked + .slider {
+  background: #6366f1;
+}
+#webcrumbs .switch input:checked + .slider:before {
+  transform: translateX(22px);
+  background: #fff;
+}
+#webcrumbs .switch-label {
+  font-size: 15px;
+  color: #374151;
+  min-width: 60px;
+  margin-left: 6px;
+}
+
+/* Responsive: form vừa khung hình hơn */
+#webcrumbs .user-profile-container {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  max-width: 700px;
+  margin: 40px auto 0 auto;
+  padding: 18px 12px 18px 12px;
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+@media (max-width: 900px) {
+  #webcrumbs .user-profile-container {
+    flex-direction: column;
+    max-width: 98vw;
+    padding: 10px 2vw;
+    gap: 12px;
+  }
+}
+#webcrumbs .user-profile-info {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+@media (max-width: 700px) {
+  #webcrumbs .user-profile-info {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+#webcrumbs .user-profile-avatar-img {
+  width: 90px;
+  height: 90px;
+  font-size: 36px;
+}
+#webcrumbs .user-profile-upload-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+#webcrumbs .user-profile-title {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+#webcrumbs .user-profile-label {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+#webcrumbs .user-profile-input,
+#webcrumbs .user-profile-select {
+  padding: 7px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+#webcrumbs .user-profile-actions {
+  gap: 8px;
+  margin-top: 12px;
+}
+#webcrumbs .user-profile-btn-save,
+#webcrumbs .user-profile-btn-cancel {
+  padding: 7px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+}

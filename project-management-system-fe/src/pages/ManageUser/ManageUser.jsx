@@ -1,9 +1,10 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/pages/ManageUser/ManageUser.css";
 import { useEffect } from "react";
 import userService from "../../services/userService";
 import { useAuth } from "../../contexts/AuthContext";
+import { toast } from "react-toastify";
 
 const genderIcon = {
   male: <span className="material-symbols-outlined text-blue-700">male</span>,
@@ -58,10 +59,35 @@ const Component = () => {
     setPopupUserId(null);
   };
 
-  const handleCreateUser = (e) => {
+  const handleCreateUser = async (e) => {
     e.preventDefault();
-    // Xử lý tạo user ở đây
-    setShowCreatePopup(false);
+    // Lấy dữ liệu từ form
+    const formData = new FormData(e.target);
+    const newUser = {
+      fullname: formData.get("fullname"),
+      username: formData.get("username"),
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+      gender: formData.get("gender"),
+      role: formData.get("role"),
+      password: formData.get("password"),
+    };
+    try {
+      // Gọi API tạo user
+      var response = await userService.createUser(newUser);
+      // Cập nhật lại danh sách user
+      console.log("Created user:", response.user);
+      setUsers([...users, response.user]);
+      // Đóng popup
+      setShowCreatePopup(false);
+      // Thông báo thành công
+      toast.success("User created successfully");
+      e.target.reset();
+    } catch (error) {
+      console.error("Error creating user:", error);
+      toast.error("Failed to create user");
+      return;
+    }
   };
 
   return (
@@ -102,18 +128,18 @@ const Component = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user._id}>
+            {users.map((eachUser) => (
+              <tr key={eachUser._id}>
                 <td>
-                  {user.avatar ? (
+                  {eachUser.avatar ? (
                     <img
-                      src={user.avatar}
-                      alt={user.fullname}
+                      src={eachUser.avatar}
+                      alt={eachUser.fullname}
                       className="user-table-avatar rounded-full object-cover"
                     />
                   ) : (
                     <div className="user-table-avatar flex items-center justify-center rounded-full bg-gray-300 text-gray-600 font-bold text-sm">
-                      {user.fullname.charAt(0).toUpperCase()}
+                      {eachUser.fullname.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </td>
@@ -126,32 +152,34 @@ const Component = () => {
                       padding: 0,
                       cursor: "pointer",
                     }}
-                    onClick={() => handleFullnameClick(user._id)}
+                    onClick={() => handleFullnameClick(eachUser._id)}
                   >
-                    {user.fullname}
+                    {eachUser.fullname}
                   </button>
                 </td>
-                <td>{user.username}</td>
-                <td>{user.email}</td>
-                <td>{user.phone}</td>
-                <td>{genderIcon[user.gender] || genderIcon.other}</td>
-                <td className={statusColor[user.status]}>{user.status}</td>
-                <td className={roleColor[user.role]}>{user.role}</td>
+                <td>{eachUser.username}</td>
+                <td>{eachUser.email}</td>
+                <td>{eachUser.phone}</td>
+                <td>{genderIcon[eachUser.gender] || genderIcon.other}</td>
+                <td className={statusColor[eachUser.status]}>
+                  {eachUser.status}
+                </td>
+                <td className={roleColor[eachUser.role]}>{eachUser.role}</td>
                 <td>
-                  {user.lastLogin
-                    ? new Date(user.lastLogin).toLocaleString()
+                  {eachUser.lastLogin
+                    ? new Date(eachUser.lastLogin).toLocaleString()
                     : ""}
                 </td>
                 <td>
-                  {user.group && user.group.length > 0
-                    ? user.group.join(", ")
+                  {eachUser.group && eachUser.group.length > 0
+                    ? eachUser.group.join(", ")
                     : ""}
                 </td>
                 {user.role === "admin" && (
                   <td>
                     <button
                       className="text-gray-400 hover:text-gray-600 transition-colors duration-150 ease-in-out"
-                      onClick={() => handleMenuClick(user._id)}
+                      onClick={() => handleMenuClick(eachUser._id)}
                     >
                       <span className="material-symbols-outlined">
                         more_vert
@@ -186,7 +214,12 @@ const Component = () => {
               try {
                 const deleteUser = async () => {
                   await userService.deleteUser(popupUserId);
-                  setUsers(users.filter((u) => u._id !== popupUserId));
+                  //cập nhật trạng thái user mới xóa thành inactive
+                  setUsers((prevUsers) =>
+                    prevUsers.map((u) =>
+                      u._id === popupUserId ? { ...u, status: "inactive" } : u
+                    )
+                  );
                 };
                 deleteUser();
               } catch (error) {
@@ -217,26 +250,38 @@ const Component = () => {
           >
             <h3 className="popup-title">Create User</h3>
             <form onSubmit={handleCreateUser}>
-              <input className="popup-input" placeholder="Full Name" required />
-              <input className="popup-input" placeholder="Username" required />
               <input
+                name="fullname"
+                className="popup-input"
+                placeholder="Full Name"
+                required
+              />
+              <input
+                name="username"
+                className="popup-input"
+                placeholder="Username"
+                required
+              />
+              <input
+                name="email"
                 className="popup-input"
                 placeholder="Email"
                 type="email"
                 required
               />
-              <input className="popup-input" placeholder="Phone" />
-              <select className="popup-input" required>
+              <input name="phone" className="popup-input" placeholder="Phone" />
+              <select name="gender" className="popup-input" required>
                 <option value="">Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                <option value="male">male</option>
+                <option value="female">female</option>
+                <option value="other">other</option>
               </select>
-              <select className="popup-input" required>
+              <select name="role" className="popup-input" required>
                 <option value="">Role</option>
-                <option value="user">User</option>
+                <option value="user">user</option>
               </select>
               <input
+                name="password"
                 className="popup-input"
                 placeholder="Password"
                 type="password"

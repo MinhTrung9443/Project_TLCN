@@ -8,5 +8,6 @@ router.get("/get-all-users", protect, userController.getAllUsers);
 router.post("/delete-user/:id", admin, userController.deleteUser);
 router.post("/update-user/:id", admin, userController.updateUserInfo);
 router.get("/get-user/:id", protect, userController.getUserById);
+router.post("/create-user", admin, userController.addUser);
 
 module.exports = router;

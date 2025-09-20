@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 require("./Group");
+const bcrypt = require("bcrypt");
 
 // User Schema
 const userSchema = new Schema(
@@ -69,5 +70,25 @@ const userSchema = new Schema(
     timestamps: true,
   }
 );
+
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  // Kiểm tra nếu chưa mã hóa thì mã hóa
+  if (!this.password.startsWith("$2b$")) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  }
+  next();
+});
+
+userSchema.pre("findOneAndUpdate", async function (next) {
+  const update = this.getUpdate();
+  if (update.password && !update.password.startsWith("$2b$")) {
+    const salt = await bcrypt.genSalt(10);
+    update.password = await bcrypt.hash(update.password, salt);
+    this.setUpdate(update);
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", userSchema);

@@ -55,6 +55,15 @@ const userService = {
       throw error;
     }
   },
+
+  createUser: async (userData) => {
+    try {
+      const response = await apiClient.post("/users/create-user", userData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default userService;

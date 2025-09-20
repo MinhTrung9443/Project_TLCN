@@ -53,14 +53,7 @@ class UserService {
     if (!user) {
       throw new Error("User not found");
     }
-    const allowedUpdates = [
-      "fullname",
-      "avatar",
-      "phone",
-      "gender",
-      "email",
-      "username",
-    ];
+    const allowedUpdates = ["fullname", "avatar", "phone", "gender", "status"];
     Object.keys(updateData).forEach((key) => {
       if (allowedUpdates.includes(key)) {
         user[key] = updateData[key];
@@ -80,6 +73,20 @@ class UserService {
       throw new Error("User not found");
     }
     return user;
+  }
+
+  async addUser(userData) {
+    const { username, email } = userData;
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }],
+    });
+    if (existingUser) {
+      throw new Error("User already exists");
+    }
+    const newUser = new User(userData);
+    await newUser.save();
+    newUser.password = undefined;
+    return newUser;
   }
 }
 
