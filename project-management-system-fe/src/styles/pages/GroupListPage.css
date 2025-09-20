@@ -1,0 +1,47 @@
+
+.group-page-container {
+  padding: 20px;
+}
+
+.group-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.group-page-title {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.create-button {
+  background-color: #3b82f6; 
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.create-button:hover {
+  background-color: #2563eb;
+}
+
+.groups-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.groups-table th,
+.groups-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+}
+
+.groups-table th {
+  background-color: #f2f2f2;
+}

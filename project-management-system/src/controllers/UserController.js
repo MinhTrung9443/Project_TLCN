@@ -17,6 +17,18 @@ class UserController {
     } catch (error) {
       res.status(400).json({ message: error.message });
     }
+  };
+  async getUsers(req, res) {
+    try {
+      const filters = req.query;
+      const users = await userService.getAllUsers(filters);
+      res.status(200).json({
+        message: 'Users fetched successfully',
+        data: users,
+      });
+    } catch (error) {
+      res.status(error.statusCode || 500).json({ message: error.message });
+    }
   }
 }
 

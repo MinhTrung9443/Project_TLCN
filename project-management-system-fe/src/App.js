@@ -10,6 +10,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import MyProfilePage from "./pages/MyProfile";
+import GroupListPage from "./pages/GroupListPage"; 
+import GroupMembersPage from "./pages/GroupMembersPage";
+import PrivateRoute from "./routes/PrivateRoute"; 
 function App() {
   return (
     <BrowserRouter>
@@ -23,6 +26,8 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/my-profile" element={<MyProfilePage />} />
+            <Route path="/organization/group" element={<GroupListPage />} />
+            <Route path="/organization/group/:groupId" element={<GroupMembersPage />} />
           </Route>
         </Routes>
 
