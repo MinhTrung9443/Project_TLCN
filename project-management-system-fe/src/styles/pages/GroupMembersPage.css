@@ -1,0 +1,78 @@
+.member-page-container {
+  padding: 24px;
+}
+
+.member-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.breadcrumbs {
+  font-size: 28px;
+  color: #555;
+  margin: 0;
+}
+
+.breadcrumbs a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumbs span {
+  color: #333;
+  font-weight: 600;
+}
+
+.add-member-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-member-button:hover {
+  background-color: #0056b3;
+}
+
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.members-table th,
+.members-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #ddd; 
+  text-align: left;
+}
+
+.members-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.members-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.no-members-message {
+  text-align: center;
+  padding: 30px;
+  font-size: 16px;
+  color: #777;
+}

@@ -158,7 +158,7 @@ export const Sidebar = () => {
 
               <div className="pl-10 mt-1 space-y-1">
                 <NavLink
-                  to="/group"
+                  to="/Organization/group"
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive

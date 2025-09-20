@@ -1,11 +1,6 @@
 const User = require("../models/User");
 
 class UserService {
-  /**
-   * @param {string} userId - ID của user cần cập nhật.
-   * @param {object} updateData - Dữ liệu mới cần cập nhật.
-   * @returns {Promise<User>} - User đã được cập nhật.
-   */
   async updateProfile(userId, updateData) {
     const user = await User.findById(userId);
 
@@ -21,7 +16,14 @@ class UserService {
 
     await user.save();
     return user;
+  };
+ async getAllUsers(filters = {}) {
+    try {
+      const users = await User.find(filters).select('-password');
+      return users;
+    } catch (error) {
+      throw createError(500, 'Error fetching users from database');
+    }
   }
 }
-
 module.exports = new UserService();

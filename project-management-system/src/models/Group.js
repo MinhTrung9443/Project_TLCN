@@ -19,6 +19,12 @@ const groupSchema = new Schema(
       default: "active",
       required: true,
     },
+    members: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     timestamps: true,
