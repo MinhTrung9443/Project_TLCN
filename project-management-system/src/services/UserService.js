@@ -17,6 +17,14 @@ class UserService {
     await user.save();
     return user;
   }
+  async getUsers(filters = {}) {
+    try {
+      const users = await User.find(filters).select("-password");
+      return users;
+    } catch (error) {
+      throw createError(500, "Error fetching users from database");
+    }
+  }
 
   async getAllUsers(page = 1, limit = 20) {
     const skip = (page - 1) * limit;

@@ -41,6 +41,7 @@ const Component = () => {
         setUsers(response);
       } catch (error) {
         console.error("Error fetching users:", error);
+        toast.error("Failed to fetch users");
       }
     };
 
