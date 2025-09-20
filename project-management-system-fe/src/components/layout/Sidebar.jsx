@@ -138,7 +138,10 @@ export const Sidebar = () => {
                     }`
                   }
                 >
-                  <span className="pl-6">Project Settings</span>
+                  <span className="material-symbols-outlined mr-3 text-gray-500">
+                    settings
+                  </span>
+                  <span>Project Settings</span>
                 </NavLink>
               </div>
             </details>
@@ -174,7 +177,7 @@ export const Sidebar = () => {
                 </NavLink>
 
                 <NavLink
-                  to="/user"
+                  to="/Organization/user"
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive

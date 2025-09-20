@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext"; 
+import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/layout/Header.css";
 
 const Header = () => {
@@ -21,9 +21,16 @@ const Header = () => {
 
   const getAvatarInitial = () => {
     if (user) {
-      return user.fullname.charAt(0).toUpperCase();
+      return user.fullname?.charAt(0).toUpperCase() || "U";
     }
     return "U";
+  };
+
+  const getAvatarUrl = () => {
+    if (user && user.avatar) {
+      return user.avatar;
+    }
+    return null;
   };
 
   useEffect(() => {
@@ -49,8 +56,25 @@ const Header = () => {
         <nav>
           {isAuthenticated ? (
             <div className="profile-menu" ref={dropdownRef}>
-              <div className="avatar" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                {getAvatarInitial()}
+              <div
+                className="avatar"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                {getAvatarUrl() ? (
+                  <img
+                    src={getAvatarUrl()}
+                    alt="Avatar"
+                    className="avatar-img"
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  getAvatarInitial()
+                )}
               </div>
 
               {dropdownOpen && user && (
