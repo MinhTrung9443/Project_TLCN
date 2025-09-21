@@ -14,6 +14,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  justify-content: space-between; /* Thêm dòng này */
 }
 
 .setting-menu li {
@@ -56,4 +57,25 @@
   background-color: #2563eb;
   transform: scaleX(0);
   transition: transform 0.3s ease;
+}
+
+.setting-menu-create-btn {
+  background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-left: auto; /* Đẩy nút về lề phải */
+  transition: background 0.18s, box-shadow 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.setting-menu-create-btn:hover {
+  background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }

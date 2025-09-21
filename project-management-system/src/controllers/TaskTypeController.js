@@ -4,10 +4,12 @@ class TaskTypeController {
   // Create a new task type
   async createTaskType(req, res) {
     try {
-      const { name, description } = req.body;
+      const { name, description, icon, projectId } = req.body;
       const newTaskType = await taskTypeService.createTaskType({
         name,
         description,
+        icon,
+        projectId,
       });
       res.status(201).json(newTaskType);
     } catch (error) {
@@ -43,10 +45,11 @@ class TaskTypeController {
   async updateTaskType(req, res) {
     try {
       const { id } = req.params;
-      const { name, description } = req.body;
+      const { name, description, icon } = req.body;
       const updatedTaskType = await taskTypeService.updateTaskType(id, {
         name,
         description,
+        icon,
       });
       if (!updatedTaskType) {
         return res.status(404).json({ error: "Task type not found" });

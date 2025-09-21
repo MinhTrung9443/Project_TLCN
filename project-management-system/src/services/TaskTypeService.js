@@ -3,41 +3,66 @@ const TaskType = require("../models/TaskType.js");
 class TaskTypeService {
   // Create a new task type
   async createTaskType(data) {
-    const newTaskType = await TaskType.create(data);
-    return newTaskType;
+    try {
+      const newTaskType = await TaskType.create(data);
+      return newTaskType;
+    } catch (error) {
+      console.error("Error creating task type:", error);
+      throw error;
+    }
   }
   // Get all task types
   async getAllTaskTypes() {
-    const taskTypes = await TaskType.findAll();
-    return taskTypes;
+    try {
+      const taskTypes = await TaskType.find();
+      return taskTypes;
+    } catch (error) {
+      console.error("Error fetching all task types:", error);
+      throw error;
+    }
   }
   // Get a task type by ID
   async getTaskTypeById(id) {
-    const taskType = await TaskType.findByPk(id);
-    return taskType;
+    try {
+      // Lấy theo id
+      const taskType = await TaskType.findById(id);
+      return taskType;
+    } catch (error) {
+      console.error("Error fetching task type by ID:", error);
+      throw error;
+    }
   }
   // Update a task type by ID
   async updateTaskType(id, data) {
-    const taskType = await TaskType.findByPk(id);
-    if (!taskType) {
-      return null;
+    try {
+      // Update
+      const updated = await TaskType.findByIdAndUpdate(id, data, { new: true });
+      return updated;
+    } catch (error) {
+      console.error("Error updating task type:", error);
+      throw error;
     }
-    await taskType.update(data);
-    return taskType;
   }
   // Delete a task type by ID
   async deleteTaskType(id) {
-    const taskType = await TaskType.findByPk(id);
-    if (!taskType) {
-      return null;
+    try {
+      // Delete
+      await TaskType.findByIdAndDelete(id);
+    } catch (error) {
+      console.error("Error deleting task type:", error);
+      throw error;
     }
-    await taskType.destroy();
-    return taskType;
   }
+
   // get task types by project ID
   async getTaskTypesByProjectId(projectId) {
-    const taskTypes = await TaskType.findAll({ where: { projectId } });
-    return taskTypes;
+    try {
+      const taskTypes = await TaskType.findAll({ where: { projectId } });
+      return taskTypes;
+    } catch (error) {
+      console.error("Error fetching task types by project ID:", error);
+      throw error;
+    }
   }
 }
 
