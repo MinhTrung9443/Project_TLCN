@@ -123,7 +123,7 @@ const Component = () => {
               <option value="other">Other</option>
             </select>
           </div>
-          <div>
+          <div className="form-group">
             <label className="user-profile-label">Status</label>
             <label className="switch">
               <input
@@ -137,11 +137,9 @@ const Component = () => {
                 }
               />
               <span className="slider"></span>
-              <span className="switch-label">
-                {updateUser.status === "active" ? "Active" : "Inactive"}
-              </span>
             </label>
           </div>
+
           <div>
             <label className="user-profile-label">Role</label>
             <select

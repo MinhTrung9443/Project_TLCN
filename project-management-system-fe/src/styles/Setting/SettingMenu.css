@@ -1,0 +1,59 @@
+.setting-menu {
+  border-bottom: 1px solid #e5e7eb; /* border-b */
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.setting-menu ul {
+  display: flex;
+  overflow-x: auto;
+  font-size: 0.875rem; /* text-sm */
+  color: #4b5563; /* text-gray-600 */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.setting-menu li {
+  position: relative;
+  padding: 0.75rem 1rem; /* py-3 px-4 */
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.setting-menu li:hover a {
+  color: #2563eb; /* hover:text-primary-600 */
+}
+
+.setting-menu li.active a {
+  color: #2563eb; /* text-primary-600 */
+  font-weight: 600;
+}
+
+.setting-menu li.active::after,
+.setting-menu li:hover::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: #2563eb; /* underline color */
+  transform: scaleX(1);
+  transition: transform 0.3s ease;
+}
+
+.setting-menu li::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: #2563eb;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}

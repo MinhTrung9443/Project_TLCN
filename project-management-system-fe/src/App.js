@@ -12,9 +12,9 @@ import DashboardPage from "./pages/DashboardPage";
 import MyProfilePage from "./pages/MyProfile";
 import ManageUser from "./pages/ManageUser/ManageUser";
 import UserProfile from "./pages/ManageUser/UserProfile";
-import GroupListPage from "./pages/GroupListPage"; 
+import GroupListPage from "./pages/GroupListPage";
 import GroupMembersPage from "./pages/GroupMembersPage";
-import PrivateRoute from "./routes/PrivateRoute"; 
+import SettingPage from "./pages/Setting/setting";
 function App() {
   return (
     <BrowserRouter>
@@ -34,7 +34,11 @@ function App() {
               element={<UserProfile />}
             />
             <Route path="/organization/group" element={<GroupListPage />} />
-            <Route path="/organization/group/:groupId" element={<GroupMembersPage />} />
+            <Route
+              path="/organization/group/:groupId"
+              element={<GroupMembersPage />}
+            />
+            <Route path="/settings" element={<SettingPage />} />
           </Route>
         </Routes>
 

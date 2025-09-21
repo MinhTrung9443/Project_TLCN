@@ -25,7 +25,9 @@
     "morgan": "^1.10.1",
     "nodemailer": "^7.0.6",
     "otp-generator": "^4.0.1",
-    "pug": "^3.0.3"
+    "pug": "^3.0.3",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

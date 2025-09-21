@@ -12,9 +12,8 @@
 }
 
 .main-content {
-  margin-top: 60px; /* Đảm bảo không bị che khuất bởi header */
+  margin-top: 60px;
   flex-grow: 1;
-  overflow-y: auto; /* Chỉ cho phép cuộn ở khu vực nội dung chính */
-  padding: 24px; /* Thêm khoảng đệm cho nội dung */
+  overflow-y: auto;
   background-color: #f4f7f9;
 }

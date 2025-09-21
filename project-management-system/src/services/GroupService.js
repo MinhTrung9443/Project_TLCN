@@ -1,16 +1,16 @@
-const Group = require('../models/Group');
-const User = require('../models/User');
-const createError = require('http-errors');
+const Group = require("../models/Group");
+const User = require("../models/User");
+const createError = require("http-errors");
 
 class GroupService {
   async getAllGroupsWithCounts() {
     const groups = await Group.aggregate([
       {
         $lookup: {
-          from: 'users', 
-          localField: 'members',
-          foreignField: '_id',
-          as: 'memberDetails',
+          from: "users",
+          localField: "members",
+          foreignField: "_id",
+          as: "memberDetails",
         },
       },
       {
@@ -23,24 +23,24 @@ class GroupService {
           totalActives: {
             $size: {
               $filter: {
-                input: '$memberDetails',
-                as: 'member',
-                cond: { $eq: ['$$member.status', 'active'] },
+                input: "$memberDetails",
+                as: "member",
+                cond: { $eq: ["$$member.status", "active"] },
               },
             },
           },
           totalInactives: {
             $size: {
               $filter: {
-                input: '$memberDetails',
-                as: 'member',
-                cond: { $eq: ['$$member.status', 'inactive'] },
+                input: "$memberDetails",
+                as: "member",
+                cond: { $eq: ["$$member.status", "inactive"] },
               },
             },
           },
         },
       },
-      { $sort: { name: 1 } }
+      { $sort: { name: 1 } },
     ]);
 
     return groups;
@@ -54,7 +54,7 @@ class GroupService {
   }
 
   async updateGroup(groupId, updateData) {
-    const allowedUpdates = ['name', 'description', 'status'];
+    const allowedUpdates = ["name", "description", "status"];
     const updates = {};
     Object.keys(updateData).forEach((key) => {
       if (allowedUpdates.includes(key)) {
@@ -62,29 +62,31 @@ class GroupService {
       }
     });
 
-    const updatedGroup = await Group.findByIdAndUpdate(groupId, updates, { new: true });
-    
+    const updatedGroup = await Group.findByIdAndUpdate(groupId, updates, {
+      new: true,
+    });
+
     if (!updatedGroup) {
-      throw createError(404, 'Group not found');
+      throw createError(404, "Group not found");
     }
-    
+
     return updatedGroup;
   }
 
   async deleteGroup(groupId) {
     const result = await Group.findByIdAndDelete(groupId);
     if (!result) {
-      throw createError(404, 'Group not found');
+      throw createError(404, "Group not found");
     }
   }
 
   async addMember(groupId, userId) {
     const userToAdd = await User.findById(userId);
     if (!userToAdd) {
-      throw createError(404, 'User to add not found');
+      throw createError(404, "User to add not found");
     }
-    if (userToAdd.status !== 'active') {
-      throw createError(400, 'Only active users can be added to a group');
+    if (userToAdd.status !== "active") {
+      throw createError(400, "Only active users can be added to a group");
     }
     const group = await Group.findByIdAndUpdate(
       groupId,
@@ -92,8 +94,10 @@ class GroupService {
       { new: true }
     );
 
+    await User.findByIdAndUpdate(userId, { $addToSet: { group: groupId } });
+
     if (!group) {
-      throw createError(404, 'Group not found');
+      throw createError(404, "Group not found");
     }
 
     return group;
@@ -101,21 +105,23 @@ class GroupService {
 
   async getMembers(groupId, filters = {}) {
     const group = await Group.findById(groupId).populate({
-        path: 'members',
-        match: filters,
-        select: '-password'
+      path: "members",
+      match: filters,
+      select: "-password",
     });
 
     if (!group) {
-        throw createError(404, 'Group not found');
+      throw createError(404, "Group not found");
     }
 
     return group.members;
   }
   async getGroupById(groupId) {
-    const group = await Group.findById(groupId).select('name description status');
+    const group = await Group.findById(groupId).select(
+      "name description status"
+    );
     if (!group) {
-      throw createError(404, 'Group not found');
+      throw createError(404, "Group not found");
     }
     return group;
   }

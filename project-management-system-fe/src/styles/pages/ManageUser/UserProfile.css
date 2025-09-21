@@ -761,19 +761,18 @@ video {
 #webcrumbs .user-profile-btn-cancel:hover {
   background: #e5e7eb;
 }
-
-/* Toggle switch for Status */
-#webcrumbs .switch {
+.switch {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 20px; /* tạo khoảng cách giữa nút và chữ */
   position: relative;
-  height: 28px;
 }
-#webcrumbs .switch input[type="checkbox"] {
+
+.switch input[type="checkbox"] {
   display: none;
 }
-#webcrumbs .slider {
+
+.slider {
   position: relative;
   width: 44px;
   height: 22px;
@@ -781,9 +780,9 @@ video {
   border-radius: 22px;
   transition: background 0.2s;
   cursor: pointer;
-  display: inline-block;
 }
-#webcrumbs .slider:before {
+
+.slider:before {
   content: "";
   position: absolute;
   left: 3px;
@@ -794,18 +793,21 @@ video {
   border-radius: 50%;
   transition: transform 0.2s, background 0.2s;
 }
-#webcrumbs .switch input:checked + .slider {
+
+.switch input:checked + .slider {
   background: #6366f1;
 }
-#webcrumbs .switch input:checked + .slider:before {
+
+.switch input:checked + .slider:before {
   transform: translateX(22px);
   background: #fff;
 }
-#webcrumbs .switch-label {
-  font-size: 15px;
+
+/* chữ hiển thị bên phải switch */
+.switch-label {
+  font-size: 14px;
   color: #374151;
-  min-width: 60px;
-  margin-left: 6px;
+  user-select: none;
 }
 
 /* Responsive: form vừa khung hình hơn */
