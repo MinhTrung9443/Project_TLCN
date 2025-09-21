@@ -34,7 +34,7 @@ export const Sidebar = () => {
               <span>Dashboard</span>
             </NavLink>
 
-            <details className="group" open>
+            <details className="group" closed>
               <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
                 <div className="flex items-center">
                   <span className="material-symbols-outlined mr-3 text-gray-500">
@@ -146,7 +146,7 @@ export const Sidebar = () => {
               </div>
             </details>
 
-            <details className="group" open>
+            <details className="group" closed>
               <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md transition-colors cursor-pointer">
                 <div className="flex items-center">
                   <span className="material-symbols-outlined mr-3 text-gray-500">
@@ -208,6 +208,22 @@ export const Sidebar = () => {
                 receipt_long
               </span>
               <span>Audit Log</span>
+            </NavLink>
+
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                  isActive
+                    ? "bg-gray-100 text-primary-500 font-semibold"
+                    : "hover:bg-gray-100"
+                }`
+              }
+            >
+              <span className="material-symbols-outlined mr-3 text-gray-500">
+                settings
+              </span>
+              <span>Settings</span>
             </NavLink>
           </nav>
         </div>
