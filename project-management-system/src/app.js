@@ -3,7 +3,7 @@ const app = express();
 const appRoute = require("./routes/appRoute");
 const userRoute = require("./routes/userRoutes");
 const groupRoute = require("./routes/groupRoute")
-
+const projectRoute = require("./routes/projectRoute"); 
 const cors = require("cors");
 
 app.use(
@@ -18,5 +18,6 @@ app.use(express.json());
 app.use("/api", appRoute);
 app.use('/api/users', userRoute);
 app.use('/api/groups', groupRoute);
+app.use('/api/projects', projectRoute); 
 
 module.exports = app;
