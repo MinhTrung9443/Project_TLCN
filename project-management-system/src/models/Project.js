@@ -21,7 +21,7 @@ const projectSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["scrum", "kanban"],
+      enum: ["Scrum", "Kanban"],
       required: true,
     },
     startDate: {

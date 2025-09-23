@@ -10,6 +10,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
 
       <Route path="*" element={<Navigate to="/" />} />
+      <Route path="/task-management/projects" element={<ProjectsPage />} />
     </Routes>
   );
 };
