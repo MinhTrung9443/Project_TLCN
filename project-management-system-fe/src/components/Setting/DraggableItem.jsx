@@ -1,19 +1,24 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import PopUpCreate from "../common/PopUpCreate";
 import "../../styles/Setting/DraggableItem.css";
 import typeTaskService from "../../services/typeTaskService";
-
-const ICONS = [
-  "task",
-  "star",
-  "bolt",
-  "check_circle",
-  "calendar_month",
-  "bug_report",
-];
+import platformService from "../../services/platformService";
+import priorityService from "../../services/priorityService";
 
 const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
+  const [hashValue, setHashValue] = useState("");
+  // Cập nhật hashValue khi url thay đổi
+  useEffect(() => {
+    const updateHashValue = () => {
+      setHashValue(window.location.hash);
+    };
+
+    window.addEventListener("hashchange", updateHashValue);
+    updateHashValue();
+    return () => window.removeEventListener("hashchange", updateHashValue);
+  }, []);
+
   const [{ isDragging }, drag] = useDrag({
     type: "ITEM",
     item: { index },
@@ -39,7 +44,20 @@ const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
   // Handle edit submit
   const handleEditSubmit = async (newData) => {
     try {
-      await typeTaskService.updateTypeTask(item._id, newData);
+      switch (hashValue) {
+        case "#typetasks":
+          await typeTaskService.updateTypeTask(item._id, newData);
+          break;
+        case "#prioritys":
+          //chua cau hinh
+          break;
+        case "#platforms":
+          await platformService.updatePlatform(item._id, newData);
+          break;
+        default:
+          await typeTaskService.updateTypeTask(item._id, newData);
+          break;
+      }
       setEditOpen(false);
       setPopupOpen(false);
       if (onRefresh) onRefresh(); // cập nhật lại danh sách
@@ -51,7 +69,21 @@ const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
   // Handle delete
   const handleDelete = async () => {
     try {
-      await typeTaskService.deleteTypeTask(item._id);
+      switch (hashValue) {
+        case "#typetasks":
+          await typeTaskService.deleteTypeTask(item._id);
+          break;
+        case "#prioritys":
+          await priorityService.deletePriority(item._id);
+          break;
+        case "#platforms":
+          await platformService.deletePlatform(item._id);
+          break;
+
+        default:
+          await typeTaskService.deleteTypeTask(item._id);
+          break;
+      }
       setPopupOpen(false);
       if (onRefresh) onRefresh(); // cập nhật lại danh sách
     } catch (error) {

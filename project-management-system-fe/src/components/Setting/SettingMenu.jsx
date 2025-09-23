@@ -1,12 +1,26 @@
+import { useState } from "react";
 import "../../styles/Setting/SettingMenu.css";
 
-const SettingMenu = ({ MenuList, activeIndex = 0, onCreate }) => {
+const SettingMenu = ({ MenuList, activeIndex = 0, onTabChange, onCreate }) => {
+  const [currentIndex, setCurrentIndex] = useState(activeIndex);
+
+  const handleTabClick = (index, item) => {
+    setCurrentIndex(index);
+    if (onTabChange) onTabChange(index, item);
+    window.location.hash = `#${item.toLowerCase().replace(/\s+/g, "-")}`;
+  };
+
   return (
     <nav className="setting-menu">
       <ul>
         {MenuList.map((item, index) => (
-          <li key={index} className={index === activeIndex ? "active" : ""}>
-            <a href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}>{item}</a>
+          <li
+            key={index}
+            className={index === currentIndex ? "active" : ""}
+            onClick={() => handleTabClick(index, item)}
+            style={{ transition: "background 0.25s, color 0.25s" }}
+          >
+            <span>{item}</span>
           </li>
         ))}
         <li>

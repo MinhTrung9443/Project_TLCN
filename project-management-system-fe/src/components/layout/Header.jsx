@@ -7,7 +7,6 @@ import "../../styles/layout/Header.css";
 
 const Header = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  console.log("Header rendering with auth state:", { isAuthenticated, user });
   const navigate = useNavigate();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);

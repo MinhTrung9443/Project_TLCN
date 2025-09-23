@@ -79,3 +79,10 @@
   background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
+
+.setting-menu li.active,
+.setting-menu li:hover {
+  background: #eef2ff;
+  color: #2563eb;
+  transition: background 0.25s, color 0.25s;
+}

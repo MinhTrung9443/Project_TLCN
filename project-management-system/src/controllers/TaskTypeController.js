@@ -45,11 +45,12 @@ class TaskTypeController {
   async updateTaskType(req, res) {
     try {
       const { id } = req.params;
-      const { name, description, icon } = req.body;
+      const { name, description, icon, projectId } = req.body;
       const updatedTaskType = await taskTypeService.updateTaskType(id, {
         name,
         description,
         icon,
+        projectId,
       });
       if (!updatedTaskType) {
         return res.status(404).json({ error: "Task type not found" });
@@ -64,10 +65,7 @@ class TaskTypeController {
   async deleteTaskType(req, res) {
     try {
       const { id } = req.params;
-      const deleted = await taskTypeService.deleteTaskType(id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Task type not found" });
-      }
+      await taskTypeService.deleteTaskType(id);
       res.status(200).json({ message: "Task type deleted successfully" });
     } catch (error) {
       res.status(500).json({ error: error.message });

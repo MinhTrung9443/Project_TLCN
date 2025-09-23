@@ -46,8 +46,7 @@ class TaskTypeService {
   // Delete a task type by ID
   async deleteTaskType(id) {
     try {
-      // Delete
-      await TaskType.findByIdAndDelete(id);
+      await TaskType.findByIdAndDelete({ _id: id });
     } catch (error) {
       console.error("Error deleting task type:", error);
       throw error;
