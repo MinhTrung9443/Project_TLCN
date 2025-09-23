@@ -1,0 +1,88 @@
+.setting-menu {
+  border-bottom: 1px solid #e5e7eb; /* border-b */
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.setting-menu ul {
+  display: flex;
+  overflow-x: auto;
+  font-size: 0.875rem; /* text-sm */
+  color: #4b5563; /* text-gray-600 */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  justify-content: space-between; /* Thêm dòng này */
+}
+
+.setting-menu li {
+  position: relative;
+  padding: 0.75rem 1rem; /* py-3 px-4 */
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.setting-menu li:hover a {
+  color: #2563eb; /* hover:text-primary-600 */
+}
+
+.setting-menu li.active a {
+  color: #2563eb; /* text-primary-600 */
+  font-weight: 600;
+}
+
+.setting-menu li.active::after,
+.setting-menu li:hover::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: #2563eb; /* underline color */
+  transform: scaleX(1);
+  transition: transform 0.3s ease;
+}
+
+.setting-menu li::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: #2563eb;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.setting-menu-create-btn {
+  background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-left: auto; /* Đẩy nút về lề phải */
+  transition: background 0.18s, box-shadow 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.setting-menu-create-btn:hover {
+  background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.setting-menu li.active,
+.setting-menu li:hover {
+  background: #eef2ff;
+  color: #2563eb;
+  transition: background 0.25s, color 0.25s;
+}

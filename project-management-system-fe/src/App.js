@@ -12,8 +12,9 @@ import DashboardPage from "./pages/DashboardPage";
 import MyProfilePage from "./pages/MyProfile";
 import ManageUser from "./pages/ManageUser/ManageUser";
 import UserProfile from "./pages/ManageUser/UserProfile";
-import GroupListPage from "./pages/GroupListPage"; 
+import GroupListPage from "./pages/GroupListPage";
 import GroupMembersPage from "./pages/GroupMembersPage";
+import SettingPage from "./pages/Setting/setting";
 import ProjectsPage from './pages/ManageProject/ProjectsPage';
 function App() {
   return (
@@ -31,11 +32,10 @@ function App() {
             <Route path="/Organization/User" element={<ManageUser />} />
             <Route path="/Organization/User/:userId" element={<UserProfile />}/>
             <Route path="/organization/group" element={<GroupListPage />} />
+            <Route path="/settings" element={<SettingPage />} />
             <Route path="/organization/group/:groupId" element={<GroupMembersPage />} />
 
             <Route path="/projects" element={<ProjectsPage />} />
-
-
           </Route>
         </Routes>
 
