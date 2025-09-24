@@ -37,5 +37,15 @@ const priorityService = {
       throw error;
     }
   },
+
+  updatePriorityLevels: async (items) => {
+    try {
+      const response = await apiClient.put(`/priorities/levels`, { items });
+      return response;
+    } catch (error) {
+      console.error("Error updating priority levels:", error);
+      throw error;
+    }
+  },
 };
 export default priorityService;

@@ -7,6 +7,7 @@ import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService.js";
 import platformService from "../../services/platformService";
 import PopUpCreate from "../../components/common/PopUpCreate";
+import { toast } from "react-toastify";
 
 const SettingPage = () => {
   const [menuList] = useState(["TypeTasks", "Prioritys", "Platforms"]);
@@ -76,36 +77,45 @@ const SettingPage = () => {
   // Nhận object từ PopUpCreate
   const handleTaskTypeCreate = async (newItem) => {
     try {
-      console.log("Creating new item:", newItem);
-      const response = await typeTaskService.createTypeTask(newItem);
-      console.log("Created new item:", response);
+      await typeTaskService.createTypeTask(newItem);
       setOpenCreate(false);
       fetchTypeTasks();
+      toast.success("Add Type Task success.");
     } catch (error) {
       console.error("Error creating new item:", error);
+      toast.error(error?.response?.data?.error || "Error creating new item.");
     }
   };
   // Xử lý tạo mới platform
   const handlePlatformCreate = async (newItem) => {
     try {
-      console.log("Creating new platform:", newItem);
-      const response = await platformService.createPlatform(newItem);
-      console.log("Created new platform:", response);
+      await platformService.createPlatform(newItem);
       setOpenCreate(false);
       fetchPlatforms();
+      toast.success("Add Platform success.");
     } catch (error) {
+      toast.error(
+        error?.response?.data?.error || "Error creating new platform."
+      );
       console.error("Error creating new platform:", error);
     }
   };
 
   const handlePriorityCreate = async (newItem) => {
+    const newPriority = {
+      name: newItem.name,
+      icon: newItem.icon,
+      projectId: null,
+    };
     try {
-      console.log("Creating new priority:", newItem);
-      const response = await priorityService.createPriority(newItem);
-      console.log("Created new priority:", response);
+      await priorityService.createPriority(newPriority);
       setOpenCreate(false);
       fetchPrioritys();
+      toast.success("Add Priority success.");
     } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Error creating new priority."
+      );
       console.error("Error creating new priority:", error);
     }
   };
@@ -132,6 +142,7 @@ const SettingPage = () => {
           onClose={() => setOpenCreate(false)}
           onSubmit={handleCreate}
           title="Create Item"
+          isPri={hashValue === "#prioritys"}
         />
         <div className="draggable-list-wrapper">
           <DndProvider backend={HTML5Backend}>

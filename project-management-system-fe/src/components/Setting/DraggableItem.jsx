@@ -5,7 +5,7 @@ import "../../styles/Setting/DraggableItem.css";
 import typeTaskService from "../../services/typeTaskService";
 import platformService from "../../services/platformService";
 import priorityService from "../../services/priorityService";
-
+import { toast } from "react-toastify";
 const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
   const [hashValue, setHashValue] = useState("");
   // Cập nhật hashValue khi url thay đổi
@@ -49,13 +49,34 @@ const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
           await typeTaskService.updateTypeTask(item._id, newData);
           break;
         case "#prioritys":
-          //chua cau hinh
+          const newPriData = {
+            name: newData.name,
+            icon: newData.icon,
+            projectId: null,
+            level: item.level,
+          };
+          try {
+            await priorityService.updatePriority(item._id, newPriData);
+            toast.success("Priority updated successfully");
+          } catch (error) {
+            console.error("Error updating priority:", error);
+          }
           break;
         case "#platforms":
-          await platformService.updatePlatform(item._id, newData);
+          try {
+            await platformService.updatePlatform(item._id, newData);
+            toast.success("Platform updated successfully");
+          } catch (error) {
+            console.error("Error updating platform:", error);
+          }
           break;
         default:
-          await typeTaskService.updateTypeTask(item._id, newData);
+          try {
+            await typeTaskService.updateTypeTask(item._id, newData);
+            toast.success("Update Type Task success.");
+          } catch (error) {
+            console.error("Error updating type task:", error);
+          }
           break;
       }
       setEditOpen(false);
@@ -71,17 +92,37 @@ const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
     try {
       switch (hashValue) {
         case "#typetasks":
-          await typeTaskService.deleteTypeTask(item._id);
+          try {
+            await typeTaskService.deleteTypeTask(item._id);
+            toast.success("Type Task deleted successfully");
+          } catch (error) {
+            console.error("Error deleting type task:", error);
+          }
           break;
         case "#prioritys":
-          await priorityService.deletePriority(item._id);
+          try {
+            await priorityService.deletePriority(item._id);
+            toast.success("Priority deleted successfully");
+          } catch (error) {
+            console.error("Error deleting priority:", error);
+          }
           break;
         case "#platforms":
-          await platformService.deletePlatform(item._id);
+          try {
+            await platformService.deletePlatform(item._id);
+            toast.success("Platform deleted successfully");
+          } catch (error) {
+            console.error("Error deleting platform:", error);
+          }
           break;
 
         default:
-          await typeTaskService.deleteTypeTask(item._id);
+          try {
+            await typeTaskService.deleteTypeTask(item._id);
+            toast.success("Type Task deleted successfully");
+          } catch (error) {
+            console.error("Error deleting type task:", error);
+          }
           break;
       }
       setPopupOpen(false);
@@ -104,6 +145,7 @@ const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
       </div>
       <span className="item-text">{item.name}</span>
       <span className="item-description">{item.description}</span>
+      <span className="item-description">{item.level}</span>
       {item.projectId && <span className="item-project">{item.projectId}</span>}
       <button
         className="item-action"
@@ -160,6 +202,7 @@ const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
           onSubmit={handleEditSubmit}
           title="Edit Item"
           initialData={item}
+          isPri={hashValue === "#prioritys"}
         />
       )}
     </li>

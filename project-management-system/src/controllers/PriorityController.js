@@ -13,7 +13,7 @@ class PriorityController {
   async createPriority(req, res) {
     try {
       const priority = await priorityService.createPriority(req.body);
-      res.status(201).json(priority);
+      res.status(200).json(priority);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -47,6 +47,18 @@ class PriorityController {
       res.status(200).json(priority);
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  }
+
+  async updatePriorityLevels(req, res) {
+    try {
+      const { items } = req.body;
+      await priorityService.updatePriorityLevels(items);
+      console.log("Priority levels updated:", items);
+      res.status(200).json({ message: "Priority levels updated successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+      console.error("Error updating priority levels:", error);
     }
   }
 }
