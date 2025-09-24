@@ -15,6 +15,8 @@ const typeTaskService = {
     const url = "/task-types";
     try {
       const response = apiClient.post(url, data);
+      if (response?.data?.error) {
+      }
       return response;
     } catch (error) {
       console.error("Error creating task type:", error);

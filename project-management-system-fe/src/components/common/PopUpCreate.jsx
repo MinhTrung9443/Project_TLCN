@@ -16,6 +16,7 @@ const PopUpCreate = ({
   onSubmit,
   title = "Create Item",
   initialData = null,
+  isPri = false,
 }) => {
   const [form, setForm] = useState({
     name: "",
@@ -71,17 +72,19 @@ const PopUpCreate = ({
               placeholder="Enter name"
             />
           </div>
-          <div className="popup-create-form-group">
-            <label className="popup-create-label">Description</label>
-            <textarea
-              className="popup-create-textarea"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              rows={2}
-              placeholder="Enter description"
-            />
-          </div>
+          {isPri ? null : (
+            <div className="popup-create-form-group">
+              <label className="popup-create-label">Description</label>
+              <textarea
+                className="popup-create-textarea"
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows={2}
+                placeholder="Enter description"
+              />
+            </div>
+          )}
           <div className="popup-create-form-group">
             <label className="popup-create-label">Icon</label>
             <div className="popup-create-icon-list">

@@ -11,6 +11,12 @@ class PlatformService {
 
   async createPlatform(platformData) {
     try {
+      const existingPlatform = await Platform.findOne({
+        name: platformData.name,
+      });
+      if (existingPlatform) {
+        throw new Error("Platform with this name already exists.");
+      }
       const newPlatform = new Platform(platformData);
       return await newPlatform.save();
     } catch (error) {
@@ -20,11 +26,17 @@ class PlatformService {
 
   async updatePlatform(platformId, updateData) {
     try {
+      const existingPlatform = await Platform.findOne({
+        name: updateData.name,
+      });
+      if (existingPlatform && existingPlatform._id.toString() !== platformId) {
+        return;
+      }
       return await Platform.findByIdAndUpdate(platformId, updateData, {
         new: true,
       });
     } catch (error) {
-      throw new Error("Error updating platform");
+      throw error;
     }
   }
 

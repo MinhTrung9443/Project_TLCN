@@ -4,6 +4,11 @@ class TaskTypeService {
   // Create a new task type
   async createTaskType(data) {
     try {
+      const typeName = data.name.trim();
+      const existingType = await TaskType.findOne({ name: typeName });
+      if (existingType) {
+        throw new Error("Task type with this name already exists.");
+      }
       const newTaskType = await TaskType.create(data);
       return newTaskType;
     } catch (error) {
@@ -35,6 +40,10 @@ class TaskTypeService {
   // Update a task type by ID
   async updateTaskType(id, data) {
     try {
+      const existingType = await TaskType.findOne({ name: data.name });
+      if (existingType && existingType._id.toString() !== id) {
+        throw new Error("Task type with this name already exists.");
+      }
       // Update
       const updated = await TaskType.findByIdAndUpdate(id, data, { new: true });
       return updated;

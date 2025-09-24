@@ -7,6 +7,13 @@ router.get("/", protect, priorityController.getAllPriorities);
 
 router.post("/", protect, isAdmin, priorityController.createPriority);
 
+router.put(
+  "/levels",
+  protect,
+  isAdmin,
+  priorityController.updatePriorityLevels
+);
+
 router.put("/:id", protect, isAdmin, priorityController.updatePriority);
 
 router.delete("/:id", protect, isAdmin, priorityController.deletePriority);
