@@ -18,12 +18,14 @@ const Header = () => {
     navigate("/login");
   };
 
-  const getAvatarInitial = () => {
-    if (user) {
-      return user.fullname?.charAt(0).toUpperCase() || "U";
-    }
-    return "U";
-  };
+  function getAvatarInitial(name) {
+  // Kiểm tra xem 'name' có phải là một chuỗi ký tự và có độ dài > 0 không
+  if (typeof name === 'string' && name.length > 0) {
+    return name.charAt(0).toUpperCase();
+  }
+  // Nếu không, trả về một giá trị mặc định để không bị crash
+  return '?'; // hoặc return một icon mặc định
+}
 
   const getAvatarUrl = () => {
     if (user && user.avatar) {
@@ -72,7 +74,7 @@ const Header = () => {
                     }}
                   />
                 ) : (
-                  getAvatarInitial()
+                  getAvatarInitial(user.fullname)
                 )}
               </div>
 

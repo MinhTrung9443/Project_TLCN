@@ -64,6 +64,15 @@ const userService = {
       throw error;
     }
   },
+
+  fetchAllUsers: async () => {
+    try {
+      const response = await apiClient.get("/users/get-all-users"); 
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default userService;

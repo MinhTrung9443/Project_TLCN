@@ -6,6 +6,7 @@ const groupRoute = require("./routes/groupRoute");
 const taskTypeRoute = require("./routes/taskTypeRoute.js");
 const priorityRoute = require("./routes/priorityRoute.js");
 const platformRoute = require("./routes/platformRoute.js");
+const projectRoute = require("./routes/projectRoute"); 
 const cors = require("cors");
 
 app.use(
@@ -23,5 +24,6 @@ app.use("/api/groups", groupRoute);
 app.use("/api/task-types", taskTypeRoute);
 app.use("/api/priorities", priorityRoute);
 app.use("/api/platforms", platformRoute);
+app.use('/api/projects', projectRoute); 
 
 module.exports = app;
