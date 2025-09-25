@@ -8,5 +8,14 @@ export const createProject = (projectData) => {
   return apiClient.post('/projects', projectData);
 };
 
-// export const updateProject = (projectId, data) => apiClient.put(`/projects/${projectId}`, data);
-// export const deleteProject = (projectId) => apiClient.delete(`/projects/${projectId}`);
+export const updateProject = (projectId, projectData) => {
+  return apiClient.put(`/projects/${projectId}`, projectData);
+};
+
+export const deleteProject = (projectId) => {
+  return apiClient.delete(`/projects/${projectId}`);
+};
+
+export const cloneProject = (sourceProjectId, cloneData) => {
+  return apiClient.post(`/projects/${sourceProjectId}/clone`, cloneData);
+};

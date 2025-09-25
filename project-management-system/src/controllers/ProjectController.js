@@ -19,7 +19,41 @@ const handleGetAllProjects = async (req, res) => {
   }
 };
 
+const handleUpdateProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const projectData = req.body;
+    const updatedProject = await projectService.updateProject(id, projectData);
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
+  }
+};
+
+const handleDeleteProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await projectService.deleteProject(id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
+  }
+};
+
+const handleCloneProject = async (req, res) => {
+  try {
+    const { id } = req.params; 
+    const cloneData = req.body; 
+    const clonedProject = await projectService.cloneProject(id, cloneData);
+    res.status(201).json(clonedProject);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
+  }
+};
 module.exports = {
   handleCreateProject,
   handleGetAllProjects,
+  handleUpdateProject,
+  handleDeleteProject,
+  handleCloneProject,
 };

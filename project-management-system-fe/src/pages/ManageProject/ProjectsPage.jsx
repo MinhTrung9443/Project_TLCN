@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getProjects } from '../../services/projectService';
+import { getProjects, deleteProject } from '../../services/projectService';
 import { toast } from 'react-toastify';
 import CreateProjectModal from '../../components/project/CreateProjectModal';
-
+import ProjectActionsMenu from '../../components/project/ProjectActionsMenu';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
+import CloneProjectModal from '../../components/project/CloneProjectModal';
 import '../../styles/pages/ManageProject/ProjectsPage.css';
 
 const ProjectsPage = () => {
@@ -11,7 +13,9 @@ const ProjectsPage = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -29,10 +33,36 @@ const ProjectsPage = () => {
   const handleProjectCreated = (newProject) => {
     setProjects([newProject, ...projects]);
   };
+  const handleProjectCloned = (clonedProject) => {
+    setProjects([clonedProject, ...projects]);
+  };
 
+  const openDeleteModal = (project) => {
+    setSelectedProject(project);
+    setIsDeleteModalOpen(true);
+  };
+
+  const openCloneModal = (project) => {
+    setSelectedProject(project);
+    setIsCloneModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedProject) return;
+    try {
+      await deleteProject(selectedProject._id);
+      setProjects(projects.filter(p => p._id !== selectedProject._id));
+      toast.success('Project deleted successfully!');
+    } catch (error) {
+      toast.error('Failed to delete project.');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setSelectedProject(null);
+    }
+  };
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-CA'); 
+    return new Date(dateString).toLocaleDateString('en-CA');
   };
 
   return (
@@ -41,6 +71,19 @@ const ProjectsPage = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onProjectCreated={handleProjectCreated}
+      />
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Project"
+        message={`Are you sure you want to delete the project "${selectedProject?.name}"?`}
+      />
+      <CloneProjectModal
+        isOpen={isCloneModalOpen}
+        onClose={() => setIsCloneModalOpen(false)}
+        sourceProject={selectedProject}
+        onProjectCloned={handleProjectCloned}
       />
       <div className="projects-page-container">
         <header className="projects-header">
@@ -74,6 +117,8 @@ const ProjectsPage = () => {
                     <th>Members</th>
                     <th>Created Date</th>
                     <th>Status</th>
+                    <th>{ }</th>
+
                   </tr>
                 </thead>
                 <tbody>
@@ -90,6 +135,13 @@ const ProjectsPage = () => {
                           <span className="status-badge status-active">
                             {project.status}
                           </span>
+                        </td>
+                        <td>
+                          <ProjectActionsMenu
+                            project={project}
+                            onDelete={openDeleteModal}
+                            onClone={openCloneModal}
+                          />
                         </td>
                       </tr>
                     ))
