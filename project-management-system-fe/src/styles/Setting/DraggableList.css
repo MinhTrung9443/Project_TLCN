@@ -19,3 +19,48 @@
   margin-top: 0;
   padding-right: 6px; /* để không bị che bởi scrollbar */
 }
+
+.draggable-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #eef2ff;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #2563eb;
+  margin-bottom: 6px;
+  box-shadow: none;
+}
+
+.draggable-header .item-icon,
+.draggable-header .item-text,
+.draggable-header .item-description,
+.draggable-header .item-project {
+  color: #2563eb;
+  font-size: 15px;
+}
+
+.setting-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.06);
+  margin-top: 18px;
+  font-size: 15px;
+}
+.setting-table th,
+.setting-table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+.setting-table th {
+  background: #eef2ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+.setting-table tr:last-child td {
+  border-bottom: none;
+}

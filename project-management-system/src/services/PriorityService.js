@@ -1,28 +1,38 @@
 const Priority = require("../models/Priority");
-
+const Project = require("../models/Project");
 class PriorityService {
-  async getAllPriorities() {
+  async getPrioritiesByProjectKey(projectKey) {
     try {
-      return await Priority.find();
+      const project = await Project.findOne({ key: projectKey });
+      return await Priority.find({ projectId: project ? project._id : null });
     } catch (error) {
-      throw new Error("Error fetching priorities");
+      throw new Error("Error fetching priorities by project key");
     }
   }
 
   async createPriority(data) {
     try {
-      const existingPriority = await Priority.findOne({ name: data.name });
+      const project = await Project.findOne({ key: data.projectKey });
+      const existingPriority = await Priority.findOne({
+        name: data.name,
+        projectId: project ? project._id : null,
+      });
       if (existingPriority) {
         throw new Error("Priority with this name already exists.");
       }
       // Tìm priority có level lớn nhất
       const maxPriority = await Priority.findOne({
-        projectId: data.projectId,
+        projectId: project ? project._id : null,
       }).sort({
         level: -1,
       });
       const nextLevel = maxPriority ? maxPriority.level + 1 : 1;
-      const priority = new Priority({ ...data, level: nextLevel });
+
+      const priority = new Priority({
+        ...data,
+        level: nextLevel,
+        projectId: project ? project._id : null,
+      });
       return await priority.save();
     } catch (error) {
       throw error;

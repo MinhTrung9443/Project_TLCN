@@ -8,8 +8,10 @@ import priorityService from "../../services/priorityService.js";
 import platformService from "../../services/platformService";
 import PopUpCreate from "../../components/common/PopUpCreate";
 import { toast } from "react-toastify";
+import { useParams } from "react-router-dom";
 
 const SettingPage = () => {
+  const { projectKey } = useParams();
   const [menuList] = useState(["TypeTasks", "Prioritys", "Platforms"]);
   const [draggableItems, setDraggableItems] = useState([]);
   const [hashValue, setHashValue] = useState("");
@@ -28,7 +30,7 @@ const SettingPage = () => {
   // Lấy danh sách loại công việc
   const fetchTypeTasks = async () => {
     try {
-      const response = await typeTaskService.getAllTypeTask();
+      const response = await typeTaskService.getAllTypeTask(projectKey);
       setDraggableItems(response.data || []);
     } catch (error) {
       toast.error("Error fetching type tasks:", error);
@@ -37,7 +39,7 @@ const SettingPage = () => {
 
   const fetchPrioritys = async () => {
     try {
-      const response = await priorityService.getAllPriorities();
+      const response = await priorityService.getAllPriorities(projectKey);
       setDraggableItems(response.data || []);
     } catch (error) {
       toast.error("Error fetching prioritys:", error);
@@ -46,7 +48,7 @@ const SettingPage = () => {
 
   const fetchPlatforms = async () => {
     try {
-      const response = await platformService.getAllPlatforms();
+      const response = await platformService.getAllPlatforms(projectKey);
       setDraggableItems(response.data || []);
     } catch (error) {
       toast.error("Error fetching platforms:", error);
@@ -100,7 +102,7 @@ const SettingPage = () => {
     const newPriority = {
       name: newItem.name,
       icon: newItem.icon,
-      projectId: null,
+      projectKey: projectKey,
     };
     try {
       await priorityService.createPriority(newPriority);
@@ -116,6 +118,7 @@ const SettingPage = () => {
 
   // Xử lý sự kiện tạo mới dựa trên hashValue
   const handleCreate = (newItem) => {
+    newItem.projectKey = projectKey;
     if (hashValue === "#typetasks" || hashValue === "") {
       handleTaskTypeCreate(newItem);
     } else if (hashValue === "#prioritys") {

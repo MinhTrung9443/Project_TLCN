@@ -3,8 +3,11 @@ const priorityService = require("../services/PriorityService.js");
 class PriorityController {
   async getAllPriorities(req, res) {
     try {
-      const priorities = await priorityService.getAllPriorities();
-      res.status(200).json(priorities);
+      const { projectKey } = req.query;
+      const priorities = await priorityService.getPrioritiesByProjectKey(
+        projectKey
+      );
+      return res.status(200).json(priorities);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
