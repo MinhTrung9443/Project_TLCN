@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { ProjectContext } from '../../contexts/ProjectContext';
 import { getProjects, deleteProject } from '../../services/projectService';
 import { toast } from 'react-toastify';
 import CreateProjectModal from '../../components/project/CreateProjectModal';
@@ -10,6 +12,8 @@ import '../../styles/pages/ManageProject/ProjectsPage.css';
 
 const ProjectsPage = () => {
   const { user } = useAuth();
+  const { setSelectedProjectKey } = useContext(ProjectContext);
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,7 +68,10 @@ const ProjectsPage = () => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-CA');
   };
-
+  const handleProjectSelect = (project) => {
+    setSelectedProjectKey(project.key.toUpperCase());
+    navigate(`/task-mgmt/projects/${project.key}/settings/general`);
+  };
   return (
     <>
       <CreateProjectModal
@@ -124,7 +131,7 @@ const ProjectsPage = () => {
                 <tbody>
                   {projects.length > 0 ? (
                     projects.map((project) => (
-                      <tr key={project._id}>
+                      <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{cursor: 'pointer'}}>
                         <td><a href="#" className="project-name-link">{project.name}</a></td>
                         <td>{project.key}</td>
                         <td>{project.type}</td>

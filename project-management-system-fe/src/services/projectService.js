@@ -19,3 +19,18 @@ export const deleteProject = (projectId) => {
 export const cloneProject = (sourceProjectId, cloneData) => {
   return apiClient.post(`/projects/${sourceProjectId}/clone`, cloneData);
 };
+
+export const getProjectByKey = (key) => {
+  return apiClient.get(`/projects/key/${key}`);
+};
+
+export const getProjectMembers = (projectKey) => {
+  return apiClient.get(`/projects/key/${projectKey}/members`);
+};
+
+export const addMemberToProject = (projectKey, data) => {
+  return apiClient.post(`/projects/key/${projectKey}/members`, data);
+};
+export const addGroupToProject = (projectKey, data) => {
+  return apiClient.post(`/projects/key/${projectKey}/groups`, data);
+};

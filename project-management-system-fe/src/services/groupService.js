@@ -30,6 +30,7 @@ const addMemberToGroup = (groupId, userId) => {
 const getGroupById = (groupId) => {
     return apiClient.get(`/groups/${groupId}`);
 };
+
 export const groupService = {
   getGroups,
   createGroup,

@@ -200,10 +200,80 @@ const cloneProject = async (sourceProjectId, cloneData) => {
   return clonedProject;
 };
 
+const getProjectByKey = async (key) => {
+  const project = await Project.findOne({ key: key.toUpperCase(), isDeleted: false })
+    .populate('projectLeaderId', 'fullname email avatar');
+  if (!project) {
+    const error = new Error('Project not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return project;
+};
+
+const getProjectMembers = async (projectKey) => {
+  const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
+    // Populate lồng nhau: đi vào mảng 'members', và với mỗi object, populate trường 'userId'
+    .populate({
+      path: 'members.userId',
+      select: 'fullname email avatar' // Chỉ lấy các trường cần thiết của user
+    });
+
+  if (!project) {
+    const error = new Error('Project not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  return project.members;
+};
+
+// THÊM THÀNH VIÊN MỚI VÀO PROJECT
+const addMemberToProject = async (projectKey, { userId, role }) => {
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) {
+    const error = new Error('Project not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Kiểm tra xem user đã là thành viên chưa
+  const isAlreadyMember = project.members.some(member => member.userId.equals(userId));
+  if (isAlreadyMember) {
+    const error = new Error('User is already a member of this project');
+    error.statusCode = 400; // Bad Request
+    throw error;
+  }
+
+  project.members.push({ userId, role, addedOn: new Date() }); // Giả sử schema có trường addedOn
+  await project.save();
+  return { message: 'Member added successfully' };
+};
+
+const addGroupToProject = async (projectKey, { groupId }) => {
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) { /* ... xử lý lỗi ... */ }
+
+  // Kiểm tra xem group đã tồn tại trong project chưa
+  const isAlreadyInProject = project.groups.some(id => id.equals(groupId));
+  if (isAlreadyInProject) {
+    const error = new Error('Group is already in this project');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  project.groups.push(groupId);
+  await project.save();
+  return { message: 'Group added successfully' };
+};
 module.exports = {
   createProject,
   getAllProjects,
   updateProject,
   deleteProject,
   cloneProject,
+  getProjectByKey,
+  getProjectMembers,
+  addMemberToProject,
+  addGroupToProject
 };

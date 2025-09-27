@@ -1,103 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getProjects, updateProject } from '../../services/projectService';
-import { toast } from 'react-toastify';
+// src/pages/ManageProject/ProjectSettingsPage.jsx
+
+import React from 'react';
+import { useParams } from 'react-router-dom';
+
+// Import các component con tương ứng với từng tab
+import ProjectSettingsGeneral from './ProjectSettingsGeneral';
+import ProjectSettingMembers from './ProjectSettingMembers';
+
+// Import Menu Tab
+import ProjectSettingMenu from '../../components/project/ProjectSettingMenu';
 
 const ProjectSettingsPage = () => {
-    const { projectId } = useParams();
-    const navigate = useNavigate();
-    const [project, setProject] = useState(null);
-    const [formData, setFormData] = useState({ name: '', key: '', description: '' });
-    const [loading, setLoading] = useState(true);
+    // Lấy tên tab từ URL, ví dụ: "general", "members"
+    const { tabName, projectKey } = useParams();
 
-    useEffect(() => {
-        const fetchProjectDetails = async () => {
-            try {
-                const response = await getProjects();
-                const currentProject = response.data.find(p => p._id === projectId);
-                if (currentProject) {
-                    setProject(currentProject);
-                    setFormData({
-                        name: currentProject.name,
-                        key: currentProject.key,
-                        description: currentProject.description || '',
-                    });
-                } else {
-                    toast.error("Project not found.");
-                    navigate('/task-management/projects');
-                }
-            } catch (error) {
-                toast.error("Failed to fetch project details.");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProjectDetails();
-    }, [projectId, navigate]);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await updateProject(projectId, formData);
-            toast.success("Project updated successfully!");
-            navigate('/task-management/projects');
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to update project.");
+    // Hàm render nội dung dựa vào `tabName`
+    const renderTabContent = () => {
+        switch (tabName) {
+            case 'members':
+                return <ProjectSettingMembers/>;
+            //case 'priority':
+                //return <ProjectSettingPriority/>;
+           // case 'task-type':
+              //  return <ProjectSettingTaskType/>;
+           // case 'platform':
+           //     return <ProjectSettingPlatform/>;
+            case 'general':
+            default:
+                return <ProjectSettingsGeneral/>;
         }
     };
 
-    if (loading) return <div>Loading project settings...</div>;
+     return (
+        <div className="project-settings-container">
 
-    return (
-        <div className="settings-page-container" style={{ padding: '2rem' }}>
-            <h1>Project Settings: {project?.name}</h1>
-            <form onSubmit={handleSubmit} className="settings-form">
-                <div className="form-group">
-                    <label htmlFor="name">Project Name*</label>
-                    <input
-                        id="name"
-                        name="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="key">Key*</label>
-                    <input
-                        id="key"
-                        name="key"
-                        type="text"
-                        value={formData.key}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="description">Description</label>
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="4"
-                        value={formData.description}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div className="form-actions">
-                    <button type="button" onClick={() => navigate('/task-management/projects')} className="btn btn-secondary">
-                        Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                        Save Changes
-                    </button>
-                </div>
-            </form>
+            <ProjectSettingMenu/>
+                <div className="settings-content-area">
+                {renderTabContent()}
+            </div>
         </div>
     );
 };

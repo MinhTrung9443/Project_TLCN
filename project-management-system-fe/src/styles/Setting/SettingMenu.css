@@ -80,9 +80,27 @@
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
-.setting-menu li.active,
-.setting-menu li:hover {
-  background: #eef2ff;
-  color: #2563eb;
-  transition: background 0.25s, color 0.25s;
+/* Style cho thẻ a khi nó active, nằm bên trong li */
+.setting-menu li a.active {
+    display: block; /* Để thẻ a chiếm hết không gian của li */
+    background-color: #eef2ff;
+    color: #4f46e5;
+    border-radius: 6px; /* Thêm bo góc cho đẹp */
+}
+
+/* Thêm hiệu ứng hover cho tất cả các link trong menu */
+.setting-menu li a:hover {
+    background-color: #f9fafb;
+}
+
+/* Bỏ padding mặc định của thẻ a và di chuyển nó ra li để click dễ hơn */
+.setting-menu li a {
+    padding: 10px 16px; 
+    text-decoration: none;
+    color: #374151;
+}
+
+/* Xóa padding của li nếu có */
+.setting-menu li {
+    padding: 0;
 }

@@ -1,0 +1,136 @@
+/* src/styles/pages/ManageProject/ProjectSettingsPage.css */
+
+/* Container chính bao bọc toàn bộ trang settings */
+.project-settings-container {
+  padding: 2rem;
+  background-color: #f9fafb; /* Một màu nền nhẹ nhàng */
+  height: 100%;
+}
+
+/* Form chứa nội dung cài đặt */
+.settings-content-form {
+  margin-top: 1.5rem;
+  background-color: #ffffff;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Khoảng cách giữa các group */
+}
+
+/* Nhóm chứa label và input */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* Khoảng cách giữa label và input */
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151; /* Màu xám đậm */
+}
+
+/* Kiểu chung cho tất cả các ô input, select, textarea */
+.settings-content-form input[type="text"],
+.settings-content-form select,
+.settings-content-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db; /* Viền xám nhạt */
+  border-radius: 6px;
+  font-size: 14px;
+  color: #111827;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+/* Hiệu ứng khi focus vào input */
+.settings-content-form input[type="text"]:focus,
+.settings-content-form select:focus,
+.settings-content-form textarea:focus {
+  border-color: #4f46e5; /* Màu tím Indigo */
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Kiểu riêng cho textarea */
+.settings-content-form textarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit; /* Kế thừa font chữ chung */
+}
+
+/* Kiểu cho ô input bị vô hiệu hóa */
+.settings-content-form input:disabled {
+  background-color: #f3f4f6;
+  color: #6b7281;
+  cursor: not-allowed;
+}
+
+/* Custom style cho thẻ select để có mũi tên tùy chỉnh */
+.settings-content-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7281' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25em;
+  padding-right: 2.5rem;
+}
+
+
+/* Khu vực chứa các nút Save, Cancel */
+.form-actions {
+  display: flex;
+  justify-content: flex-end; /* Căn các nút về bên phải */
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb; /* Đường kẻ phân cách */
+}
+
+/* Kiểu chung cho các nút */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+/* Nút chính (Save) */
+.btn-primary {
+  background-color: #4f46e5; /* Màu tím Indigo */
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #4338ca;
+}
+
+.btn-primary:disabled {
+  background-color: #a5b4fc;
+  cursor: not-allowed;
+}
+
+
+/* Nút phụ (Cancel) */
+.btn-secondary {
+  background-color: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+  background-color: #f3f4f6; /* Nền xám rất nhạt khi hover */
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Chia thành 2 cột bằng nhau */
+  gap: 20px; /* Khoảng cách giữa 2 cột */
+}

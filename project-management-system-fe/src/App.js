@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ProjectProvider } from './contexts/ProjectContext';
 import "./App.css";
 
 import LoginPage from "./pages/Login"; // Giả sử đường dẫn này đúng
@@ -18,12 +19,11 @@ import SettingTaskTypePage from "./pages/Setting/TaskType";
 import SettingPriorityPage from "./pages/Setting/Priority.jsx";
 import SettingPlatformPage from "./pages/Setting/Platform.jsx";
 import ProjectsPage from "./pages/ManageProject/ProjectsPage";
-import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage";
-import ProjectSettingTasktype from "./pages/ManageProject/ProjectSettingTasktype.jsx";
-import ProjectSettingPriority from "./pages/ManageProject/ProjectSettingPriority.jsx";
-import ProjectSettingPlatfrom from "./pages/ManageProject/ProjectSettingPlatform.jsx";
+import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage.jsx";
+
 function App() {
   return (
+    <ProjectProvider>
     <BrowserRouter>
       <AuthProvider>
         <Routes>
@@ -41,45 +41,13 @@ function App() {
               element={<UserProfile />}
             />
             <Route path="/organization/group" element={<GroupListPage />} />
-            <Route
-              path="/settings/TaskTypes"
-              element={<SettingTaskTypePage />}
-            />
-
-            <Route
-              path="/settings/Prioritys"
-              element={<SettingPriorityPage />}
-            />
-
-            <Route
-              path="/settings/Platforms"
-              element={<SettingPlatformPage />}
-            />
-
-            <Route
-              path="/organization/group/:groupId"
-              element={<GroupMembersPage />}
-            />
+            <Route path="/settings/TaskTypes" element={<SettingTaskTypePage />}/>
+            <Route path="/settings/Prioritys" element={<SettingPriorityPage />}/>
+            <Route path="/settings/Platforms" element={<SettingPlatformPage />}/>
+            <Route path="/organization/group/:groupId" element={<GroupMembersPage />}/>
 
             <Route path="/projects" element={<ProjectsPage />} />
-            <Route
-              path="/task-management/projects/:projectId/settings"
-              element={<ProjectSettingsPage />}
-            />
-            <Route
-              path="/task-management/project-settings/TaskTypes/:projectKey"
-              element={<ProjectSettingTasktype />}
-            />
-
-            <Route
-              path="/task-management/project-settings/Prioritys/:projectKey"
-              element={<ProjectSettingPriority />}
-            />
-
-            <Route
-              path="/task-management/project-settings/Platforms/:projectKey"
-              element={<ProjectSettingPlatfrom />}
-            />
+            <Route path="/task-mgmt/projects/:projectKey/settings/:tabName" element={<ProjectSettingsPage/>} />
           </Route>
         </Routes>
 
@@ -97,6 +65,7 @@ function App() {
         />
       </AuthProvider>
     </BrowserRouter>
+    </ProjectProvider>
   );
 }
 

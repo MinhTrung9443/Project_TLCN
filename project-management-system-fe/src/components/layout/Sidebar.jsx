@@ -1,9 +1,16 @@
-import React from "react";
+import React, { useContext }  from "react";
 import { NavLink } from "react-router-dom";
-
+import { ProjectContext } from "../../contexts/ProjectContext";
 import "../../styles/layout/Sidebar.css";
 
 export const Sidebar = () => {
+   const { selectedProjectKey } = useContext(ProjectContext);
+
+    const getProjectPath = (path) => {
+        if (!selectedProjectKey) return "#"; 
+        return `/task-mgmt/projects/${selectedProjectKey}/${path}`;
+    };
+
   return (
     <div id="webcrumbs">
       <div className="sidebar w-64 h-screen bg-white border-r shadow-md flex flex-col">
@@ -65,7 +72,7 @@ export const Sidebar = () => {
                 </NavLink>
 
                 <NavLink
-                  to="/task-finder"
+                  to={getProjectPath("task-finder")}
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive
@@ -77,11 +84,11 @@ export const Sidebar = () => {
                   <span className="material-symbols-outlined mr-3 text-gray-500">
                     description
                   </span>
-                  <span>Task Finder</span>
+                  <span>Task Finder {selectedProjectKey && `(${selectedProjectKey})`}</span>
                 </NavLink>
 
                 <NavLink
-                  to="/gantt"
+                  to={getProjectPath("gantt")}
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive
@@ -93,11 +100,11 @@ export const Sidebar = () => {
                   <span className="material-symbols-outlined mr-3 text-gray-500">
                     calendar_month
                   </span>
-                  <span>Gantt</span>
+                  <span>Gantt {selectedProjectKey && `(${selectedProjectKey})`}</span>
                 </NavLink>
 
                 <NavLink
-                  to="/backlog"
+                  to={getProjectPath("backlog")}
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive
@@ -109,11 +116,11 @@ export const Sidebar = () => {
                   <span className="material-symbols-outlined mr-3 text-gray-500">
                     checklist
                   </span>
-                  <span>Backlog</span>
+                  <span>Backlog {selectedProjectKey && `(${selectedProjectKey})`}</span>
                 </NavLink>
 
                 <NavLink
-                  to="/active-sprint"
+                  to={getProjectPath("active-sprint")}
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive
@@ -125,11 +132,11 @@ export const Sidebar = () => {
                   <span className="material-symbols-outlined mr-3 text-gray-500">
                     view_kanban
                   </span>
-                  <span>Active Sprint</span>
+                  <span>Active Sprint {selectedProjectKey && `(${selectedProjectKey})`}</span>
                 </NavLink>
 
                 <NavLink
-                  to="/task-management/project-settings/TaskTypes/A"
+                  to={getProjectPath("settings/general")}
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive
@@ -141,7 +148,7 @@ export const Sidebar = () => {
                   <span className="material-symbols-outlined mr-3 text-gray-500">
                     settings
                   </span>
-                  <span>Project Settings</span>
+                  <span>Project Settings {selectedProjectKey && `(${selectedProjectKey})`}</span>
                 </NavLink>
               </div>
             </details>
