@@ -14,10 +14,14 @@ import ManageUser from "./pages/ManageUser/ManageUser";
 import UserProfile from "./pages/ManageUser/UserProfile";
 import GroupListPage from "./pages/GroupListPage";
 import GroupMembersPage from "./pages/GroupMembersPage";
-import SettingPage from "./pages/Setting/setting";
+import SettingTaskTypePage from "./pages/Setting/TaskType";
+import SettingPriorityPage from "./pages/Setting/Priority.jsx";
+import SettingPlatformPage from "./pages/Setting/Platform.jsx";
 import ProjectsPage from "./pages/ManageProject/ProjectsPage";
 import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage";
-import ProjectSettings from "./pages/ManageProject/ProjectSettings.jsx";
+import ProjectSettingTasktype from "./pages/ManageProject/ProjectSettingTasktype.jsx";
+import ProjectSettingPriority from "./pages/ManageProject/ProjectSettingPriority.jsx";
+import ProjectSettingPlatfrom from "./pages/ManageProject/ProjectSettingPlatform.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -37,7 +41,21 @@ function App() {
               element={<UserProfile />}
             />
             <Route path="/organization/group" element={<GroupListPage />} />
-            <Route path="/settings" element={<SettingPage />} />
+            <Route
+              path="/settings/TaskTypes"
+              element={<SettingTaskTypePage />}
+            />
+
+            <Route
+              path="/settings/Prioritys"
+              element={<SettingPriorityPage />}
+            />
+
+            <Route
+              path="/settings/Platforms"
+              element={<SettingPlatformPage />}
+            />
+
             <Route
               path="/organization/group/:groupId"
               element={<GroupMembersPage />}
@@ -49,8 +67,18 @@ function App() {
               element={<ProjectSettingsPage />}
             />
             <Route
-              path="/task-management/project-settings/:projectKey"
-              element={<ProjectSettings />}
+              path="/task-management/project-settings/TaskTypes/:projectKey"
+              element={<ProjectSettingTasktype />}
+            />
+
+            <Route
+              path="/task-management/project-settings/Prioritys/:projectKey"
+              element={<ProjectSettingPriority />}
+            />
+
+            <Route
+              path="/task-management/project-settings/Platforms/:projectKey"
+              element={<ProjectSettingPlatfrom />}
             />
           </Route>
         </Routes>
