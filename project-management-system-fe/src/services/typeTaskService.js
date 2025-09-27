@@ -1,8 +1,8 @@
 import apiClient from "./apiClient";
 
 const typeTaskService = {
-  getAllTypeTask: () => {
-    const url = "/task-types";
+  getAllTypeTask: (projectKey) => {
+    const url = `/task-types?projectKey=${projectKey}`;
     try {
       const response = apiClient.get(url);
       return response;

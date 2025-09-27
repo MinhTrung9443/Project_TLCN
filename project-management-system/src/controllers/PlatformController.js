@@ -3,8 +3,11 @@ const platformService = require("../services/platformService.js");
 class PlatformController {
   async getAllPlatforms(req, res) {
     try {
-      const platforms = await platformService.getAllPlatforms();
-      res.status(200).json(platforms);
+      const { projectKey } = req.query;
+      const platforms = await platformService.getPlatformsByProjectKey(
+        projectKey
+      );
+      return res.status(200).json(platforms);
     } catch (error) {
       res.status(400).json({ message: error.message });
     }

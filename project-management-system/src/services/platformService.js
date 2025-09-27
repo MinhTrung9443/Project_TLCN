@@ -1,22 +1,27 @@
 const Platform = require("../models/Platform");
-
+const Project = require("../models/Project");
 class PlatformService {
-  async getAllPlatforms() {
+  async getPlatformsByProjectKey(projectKey) {
     try {
-      return await Platform.find();
+      const project = await Project.findOne({ key: projectKey });
+      return await Platform.find({ projectId: project ? project._id : null });
     } catch (error) {
-      throw new Error("Error fetching platforms");
+      throw new Error("Error fetching platforms by project key");
     }
   }
 
   async createPlatform(platformData) {
     try {
+      const project = await Project.findOne({ key: platformData.projectKey });
       const existingPlatform = await Platform.findOne({
         name: platformData.name,
+        projectId: project ? project._id : null,
       });
       if (existingPlatform) {
         throw new Error("Platform with this name already exists.");
       }
+
+      platformData.projectId = project ? project._id : null;
       const newPlatform = new Platform(platformData);
       return await newPlatform.save();
     } catch (error) {

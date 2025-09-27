@@ -4,12 +4,12 @@ class TaskTypeController {
   // Create a new task type
   async createTaskType(req, res) {
     try {
-      const { name, description, icon, projectId } = req.body;
+      const { name, description, icon, projectKey } = req.body;
       const newTaskType = await taskTypeService.createTaskType({
         name,
         description,
         icon,
-        projectId,
+        projectKey,
       });
       res.status(201).json(newTaskType);
     } catch (error) {
@@ -20,8 +20,11 @@ class TaskTypeController {
   // Get all task types
   async getAllTaskTypes(req, res) {
     try {
-      const taskTypes = await taskTypeService.getAllTaskTypes();
-      res.status(200).json(taskTypes);
+      const { projectKey } = req.query;
+      const taskTypes = await taskTypeService.getTaskTypesByProjectKey(
+        projectKey
+      );
+      return res.status(200).json(taskTypes);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

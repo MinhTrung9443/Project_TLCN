@@ -15,9 +15,9 @@ import UserProfile from "./pages/ManageUser/UserProfile";
 import GroupListPage from "./pages/GroupListPage";
 import GroupMembersPage from "./pages/GroupMembersPage";
 import SettingPage from "./pages/Setting/setting";
-import ProjectsPage from './pages/ManageProject/ProjectsPage';
-import ProjectSettingsPage from './pages/ManageProject/ProjectSettingsPage';
-
+import ProjectsPage from "./pages/ManageProject/ProjectsPage";
+import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage";
+import ProjectSettings from "./pages/ManageProject/ProjectSettings.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -32,14 +32,26 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/my-profile" element={<MyProfilePage />} />
             <Route path="/Organization/User" element={<ManageUser />} />
-            <Route path="/Organization/User/:userId" element={<UserProfile />}/>
+            <Route
+              path="/Organization/User/:userId"
+              element={<UserProfile />}
+            />
             <Route path="/organization/group" element={<GroupListPage />} />
             <Route path="/settings" element={<SettingPage />} />
-            <Route path="/organization/group/:groupId" element={<GroupMembersPage />} />
+            <Route
+              path="/organization/group/:groupId"
+              element={<GroupMembersPage />}
+            />
 
             <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/task-management/projects/:projectId/settings" element={<ProjectSettingsPage />} />
-
+            <Route
+              path="/task-management/projects/:projectId/settings"
+              element={<ProjectSettingsPage />}
+            />
+            <Route
+              path="/task-management/project-settings/:projectKey"
+              element={<ProjectSettings />}
+            />
           </Route>
         </Routes>
 

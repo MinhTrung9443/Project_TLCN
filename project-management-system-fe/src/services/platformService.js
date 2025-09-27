@@ -1,9 +1,11 @@
 import apiClient from "./apiClient";
 
 const platformService = {
-  getAllPlatforms: async () => {
+  getAllPlatforms: async (projectKey) => {
     try {
-      const response = await apiClient.get("/platforms");
+      const response = await apiClient.get("/platforms", {
+        params: { projectKey },
+      });
       return response;
     } catch (error) {
       console.error("Error fetching platforms:", error);

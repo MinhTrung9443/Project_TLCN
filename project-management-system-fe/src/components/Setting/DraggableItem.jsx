@@ -6,7 +6,7 @@ import typeTaskService from "../../services/typeTaskService";
 import platformService from "../../services/platformService";
 import priorityService from "../../services/priorityService";
 import { toast } from "react-toastify";
-const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
+const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow }) => {
   const [hashValue, setHashValue] = useState("");
   // Cập nhật hashValue khi url thay đổi
   useEffect(() => {
@@ -52,7 +52,6 @@ const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
           const newPriData = {
             name: newData.name,
             icon: newData.icon,
-            projectId: null,
             level: item.level,
           };
           try {
@@ -134,6 +133,30 @@ const DraggableItem = ({ item, index, moveItem, onRefresh }) => {
 
   // Position popup menu
   const actionBtnRef = useRef(null);
+
+  if (asTableRow) {
+    return (
+      <tr>
+        <td>
+          <span
+            className="material-symbols-outlined"
+            style={{ color: "#2563eb", fontSize: 22 }}
+          >
+            {item.icon}
+          </span>
+        </td>
+        <td>{item.name}</td>
+        {"level" in item && <td>{item.level}</td>}
+        {"description" in item && <td>{item.description}</td>}
+        <td>{item.projectId || ""}</td>
+        <td>
+          <button className="item-action">
+            <span className="material-symbols-outlined">more_vert</span>
+          </button>
+        </td>
+      </tr>
+    );
+  }
 
   return (
     <li

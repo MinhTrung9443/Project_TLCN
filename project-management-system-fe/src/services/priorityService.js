@@ -1,9 +1,11 @@
 import apiClient from "./apiClient";
 
 const priorityService = {
-  getAllPriorities: async () => {
+  getAllPriorities: async (projectKey) => {
     try {
-      const response = await apiClient.get("/priorities");
+      const response = await apiClient.get("/priorities", {
+        params: { projectKey },
+      });
       return response;
     } catch (error) {
       console.error("Error fetching priorities:", error);
