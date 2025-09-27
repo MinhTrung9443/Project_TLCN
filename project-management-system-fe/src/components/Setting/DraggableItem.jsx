@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import PopUpCreate from "../common/PopUpCreate";
 import "../../styles/Setting/DraggableItem.css";
@@ -6,19 +6,14 @@ import typeTaskService from "../../services/typeTaskService";
 import platformService from "../../services/platformService";
 import priorityService from "../../services/priorityService";
 import { toast } from "react-toastify";
-const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow }) => {
-  const [hashValue, setHashValue] = useState("");
-  // Cập nhật hashValue khi url thay đổi
-  useEffect(() => {
-    const updateHashValue = () => {
-      setHashValue(window.location.hash);
-    };
-
-    window.addEventListener("hashchange", updateHashValue);
-    updateHashValue();
-    return () => window.removeEventListener("hashchange", updateHashValue);
-  }, []);
-
+const DraggableItem = ({
+  item,
+  index,
+  moveItem,
+  onRefresh,
+  asTableRow,
+  currentTab,
+}) => {
   const [{ isDragging }, drag] = useDrag({
     type: "ITEM",
     item: { index },
@@ -44,11 +39,11 @@ const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow }) => {
   // Handle edit submit
   const handleEditSubmit = async (newData) => {
     try {
-      switch (hashValue) {
-        case "#typetasks":
+      switch (currentTab) {
+        case "tasktypes":
           await typeTaskService.updateTypeTask(item._id, newData);
           break;
-        case "#prioritys":
+        case "prioritys":
           const newPriData = {
             name: newData.name,
             icon: newData.icon,
@@ -61,7 +56,7 @@ const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow }) => {
             console.error("Error updating priority:", error);
           }
           break;
-        case "#platforms":
+        case "platforms":
           try {
             await platformService.updatePlatform(item._id, newData);
             toast.success("Platform updated successfully");
@@ -89,8 +84,8 @@ const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow }) => {
   // Handle delete
   const handleDelete = async () => {
     try {
-      switch (hashValue) {
-        case "#typetasks":
+      switch (currentTab) {
+        case "tasktypes":
           try {
             await typeTaskService.deleteTypeTask(item._id);
             toast.success("Type Task deleted successfully");
@@ -98,7 +93,7 @@ const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow }) => {
             console.error("Error deleting type task:", error);
           }
           break;
-        case "#prioritys":
+        case "prioritys":
           try {
             await priorityService.deletePriority(item._id);
             toast.success("Priority deleted successfully");
@@ -106,7 +101,7 @@ const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow }) => {
             console.error("Error deleting priority:", error);
           }
           break;
-        case "#platforms":
+        case "platforms":
           try {
             await platformService.deletePlatform(item._id);
             toast.success("Platform deleted successfully");
@@ -225,7 +220,7 @@ const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow }) => {
           onSubmit={handleEditSubmit}
           title="Edit Item"
           initialData={item}
-          isPri={hashValue === "#prioritys"}
+          isPri={currentTab === "prioritys"}
         />
       )}
     </li>

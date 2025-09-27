@@ -8,14 +8,21 @@ const SettingMenu = ({
   onCreate,
   btnCreateVal,
 }) => {
-  const [MenuList] = useState(["TaskTypes", "Prioritys", "Platforms"]);
+  const [MenuList] = useState([
+    "General",
+    "Project Member",
+    "TaskTypes",
+    "Prioritys",
+    "Platforms",
+    "History",
+  ]);
   const navigate = useNavigate();
   const location = useLocation();
   const [currentIndex, setCurrentIndex] = useState(activeIndex);
 
   useEffect(() => {
     const pathParts = location.pathname.split("/");
-    const currentTab = pathParts[pathParts.length - 1].toLowerCase();
+    const currentTab = pathParts[pathParts.length - 2].toLowerCase();
     const foundIndex = MenuList.findIndex(
       (item) => item.toLowerCase() === currentTab
     );
@@ -27,7 +34,7 @@ const SettingMenu = ({
     if (onTabChange) onTabChange(index, item);
 
     const pathParts = location.pathname.split("/");
-    pathParts[pathParts.length - 1] = item;
+    pathParts[pathParts.length - 2] = item;
     const newPath = pathParts.join("/");
     navigate(newPath);
   };

@@ -3,13 +3,9 @@ import DraggableItem from "./DraggableItem";
 import "../../styles/Setting/DraggableList.css";
 import priorityService from "../../services/priorityService.js";
 import { toast } from "react-toastify";
-const DraggableList = ({ items, onRefresh }) => {
+const DraggableList = ({ items, onRefresh, isPri = false, currentTab }) => {
   const [list, setList] = useState(items);
-  const [hashValue, setHashValue] = useState(window.location.hash);
 
-  React.useEffect(() => {
-    setHashValue(window.location.hash);
-  }, [window.location.hash]);
   // Cập nhật lại danh sách khi kéo thả
   const moveItem = (from, to) => {
     const updated = [...list];
@@ -17,7 +13,7 @@ const DraggableList = ({ items, onRefresh }) => {
     updated.splice(to, 0, moved);
 
     // Kiểm tra nếu là tab Prioritys thì cập nhật lại level
-    if (hashValue.replace("#", "").toLowerCase() === "prioritys") {
+    if (isPri) {
       updated.forEach((item, idx) => {
         item.level = idx + 1;
       });
@@ -47,14 +43,11 @@ const DraggableList = ({ items, onRefresh }) => {
         <li className="draggable-header">
           <div className="item-icon">Icon</div>
           <span className="item-text">Name</span>
-          {hashValue === "#prioritys" && (
-            <span className="item-level">Level</span>
-          )}
-          {!hashValue === "#prioritys" && (
+          {isPri && <span className="item-level">Level</span>}
+          {isPri === false && (
             <span className="item-description">Description</span>
           )}
 
-          <span className="item-description">Level</span>
           <span className="item-project">Project</span>
           <span className="item-action"></span>
         </li>
@@ -65,6 +58,7 @@ const DraggableList = ({ items, onRefresh }) => {
             index={index}
             moveItem={moveItem}
             onRefresh={onRefresh}
+            currentTab={currentTab}
           />
         ))}
       </ul>

@@ -129,7 +129,7 @@ export const Sidebar = () => {
                 </NavLink>
 
                 <NavLink
-                  to="/task-management/project-settings/A"
+                  to="/task-management/project-settings/TaskTypes/A"
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive
@@ -211,7 +211,7 @@ export const Sidebar = () => {
             </NavLink>
 
             <NavLink
-              to="/settings"
+              to="/settings/TaskTypes"
               className={({ isActive }) =>
                 `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
                   isActive
