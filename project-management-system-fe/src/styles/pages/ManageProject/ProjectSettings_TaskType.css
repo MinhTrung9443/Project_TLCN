@@ -1,0 +1,187 @@
+.settings-list-container {
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+/* --- Header --- */
+.settings-list-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 2px solid #f0f0f0;
+    font-weight: 600;
+    color: #5e6c84;
+}
+
+.settings-list-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.settings-list-row:hover {
+    background-color: #f8f9fa;
+}
+
+.settings-list-row:last-child {
+    border-bottom: none;
+}
+
+/* --- Columns --- */
+.header-col, .row-col {
+    display: flex;
+    align-items: center;
+}
+
+.col-icon {
+    width: 80px;
+}
+.col-name {
+    flex-grow: 1;
+}
+.col-actions {
+    width: 50px;
+    justify-content: flex-end;
+}
+
+/* --- Icon Styles --- */
+.icon-wrapper {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    color: white;
+    font-size: 16px;
+}
+
+/* --- Action Buttons --- */
+.btn-add-icon, .btn-menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #5e6c84;
+    padding: 5px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+}
+.btn-add-icon:hover, .btn-menu-toggle:hover {
+    background-color: #dfe1e6;
+}
+
+.action-menu-wrapper {
+    position: relative;
+}
+.row-col.col-drag-handle {
+    width: 30px;
+    cursor: grab;
+    color: #a5adba;
+    justify-content: center;
+}
+.row-col.col-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Điều chỉnh lại độ rộng các cột khác nếu cần */
+.row-col.col-icon {
+    width: 60px;
+}
+.row-col.col-name {
+    flex-grow: 1;
+}
+.action-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    border: 1px solid #dfe1e6;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    width: 120px;
+    padding: 4px 0;
+}
+
+.action-dropdown-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    pointer-events: auto !important;
+}
+
+.action-dropdown-menu button:hover {
+    background-color: #f8f9fa;
+}
+
+/* --- Modal Styles (giữ nguyên hoặc tùy chỉnh) --- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    background: white; padding: 25px; border-radius: 8px;
+    width: 90%; max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.modal-content h2 { margin-top: 0; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* --- Icon Picker Styles --- */
+.icon-picker-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.icon-picker-button {
+    background-color: #f4f5f7;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    padding: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.col-description {
+    flex-grow: 1; /* Cho phép cột này chiếm hết không gian còn lại */
+    color: #5e6c84; /* Màu chữ nhạt hơn một chút */
+    font-size: 0.9em;
+    white-space: nowrap; /* Ngăn không cho xuống dòng */
+    overflow: hidden; /* Ẩn phần chữ bị thừa */
+    text-overflow: ellipsis; /* Hiển thị dấu ... nếu chữ quá dài */
+}
+.col-actions {
+    width: 50px;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+.icon-picker-button:hover {
+    border-color: #dfe1e6;
+}
+
+.icon-picker-button.selected {
+    border-color: #4c9aff; /* Màu viền khi được chọn */
+}
+
+.icon-display {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    border-radius: 4px;
+}

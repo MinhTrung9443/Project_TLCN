@@ -173,7 +173,6 @@ const cloneProject = async (sourceProjectId, cloneData) => {
     throw error;
   }
 
-  // ===> BẮT ĐẦU SỬA ĐỔI <===
 
   // Xóa các trường không nên sao chép
   delete sourceProject._id;

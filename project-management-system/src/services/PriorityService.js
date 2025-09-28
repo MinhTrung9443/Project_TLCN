@@ -1,12 +1,46 @@
 const Priority = require("../models/Priority");
 const Project = require("../models/Project");
 class PriorityService {
-  async getPrioritiesByProjectKey(projectKey) {
+   async getPrioritiesByProjectKey(projectKey) {
     try {
+      // 1. Nếu không có projectKey -> lấy global (cho trang Settings chung)
+      if (!projectKey) {
+        return await Priority.find({ projectId: null }).sort({ level: 'asc' });
+      }
+
+      // 2. Nếu có projectKey -> xử lý cho Project Settings
       const project = await Project.findOne({ key: projectKey });
-      return await Priority.find({ projectId: project ? project._id : null });
+      if (!project) {
+        throw new Error("Project not found");
+      }
+
+      // 3. Kiểm tra xem project đã có bộ Priority riêng chưa
+      const projectPriorities = await Priority.find({ projectId: project._id });
+
+      // 4. Nếu có, trả về bộ riêng đó, đã sắp xếp
+      if (projectPriorities.length > 0) {
+        return projectPriorities.sort((a, b) => a.level - b.level);
+      }
+
+      // 5. Nếu chưa có, sao chép từ global
+      const globalPriorities = await Priority.find({ projectId: null }).sort({ level: 'asc' });
+      if (globalPriorities.length === 0) {
+        return [];
+      }
+
+      const newPrioritiesForProject = globalPriorities.map(p => {
+        const priorityCopy = p.toObject();
+        delete priorityCopy._id;
+        priorityCopy.projectId = project._id;
+        return priorityCopy;
+      });
+
+      const savedNewPriorities = await Priority.insertMany(newPrioritiesForProject);
+      return savedNewPriorities;
+
     } catch (error) {
-      throw new Error("Error fetching priorities by project key");
+      console.error("Error in getPrioritiesByProjectKey:", error);
+      throw new Error("Error fetching priorities");
     }
   }
 
@@ -40,16 +74,32 @@ class PriorityService {
   }
 
   async updatePriority(id, data) {
-    try {
-      const existingPriority = await Priority.findOne({ name: data.name });
-      if (existingPriority && existingPriority._id.toString() !== id) {
-        throw new Error("Priority with this name already exists.");
-      }
-      return await Priority.findByIdAndUpdate(id, data, { new: true });
-    } catch (error) {
-      throw new Error("Error updating priority");
+        try {
+            // 1. Lấy document gốc để biết projectId của nó là gì
+            const priorityToUpdate = await Priority.findById(id);
+            if (!priorityToUpdate) {
+                throw new Error("Priority not found.");
+            }
+
+            // 2. Kiểm tra xem có document NÀO KHÁC trong CÙNG SCOPE (cùng projectId) 
+            // đã có tên mới này chưa.
+            const existingPriority = await Priority.findOne({
+                name: data.name,
+                projectId: priorityToUpdate.projectId, // Chỉ tìm trong cùng project hoặc cùng global
+                _id: { $ne: id } // Loại trừ chính document đang sửa
+            });
+
+            if (existingPriority) {
+                throw new Error("A priority with this name already exists in this project.");
+            }
+
+            // 3. Nếu không trùng, tiến hành cập nhật
+            return await Priority.findByIdAndUpdate(id, data, { new: true });
+        } catch (error) {
+            // Ném lỗi ra để Controller và Frontend có thể bắt được
+            throw error;
+        }
     }
-  }
 
   async deletePriority(id) {
     try {
@@ -66,21 +116,25 @@ class PriorityService {
     }
   }
 
-  async updatePriorityLevels(items) {
+  async updatePriorityLevels(projectKey, items) { 
     try {
-      const updatePromises = items.map((item) =>
-        Priority.findByIdAndUpdate(
-          item._id,
-          { level: item.level },
-          { new: true }
-        )
-      );
-      await Promise.all(updatePromises);
-      return { message: "Priority levels updated successfully" };
+        const project = await Project.findOne({ key: projectKey });
+        if (!project) throw new Error("Project not found");
+
+        const updatePromises = items.map((item, index) =>
+            Priority.updateOne(
+                { _id: item._id, projectId: { $in: [project._id, null] } }, // Chỉ update item thuộc project hoặc global
+                { $set: { level: index + 1 } }
+            )
+        );
+        await Promise.all(updatePromises);
+        return { message: "Priority levels updated successfully" };
     } catch (error) {
-      throw new Error("Error updating priority levels");
+        console.error("Error updating priority levels:", error);
+        throw new Error("Error updating priority levels");
     }
   }
+
 }
 
 module.exports = new PriorityService();

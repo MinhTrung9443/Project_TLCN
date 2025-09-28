@@ -1,36 +1,36 @@
-import apiClient from './apiClient'; 
+  import apiClient from './apiClient'; 
 
-export const getProjects = () => {
-  return apiClient.get('/projects');
-};
+  export const getProjects = () => {
+    return apiClient.get('/projects');
+  };
 
-export const createProject = (projectData) => {
-  return apiClient.post('/projects', projectData);
-};
+  export const createProject = (projectData) => {
+    return apiClient.post('/projects', projectData);
+  };
 
-export const updateProject = (projectId, projectData) => {
-  return apiClient.put(`/projects/${projectId}`, projectData);
-};
+  export const updateProject = (projectId, projectData) => {
+    return apiClient.put(`/projects/${projectId}`, projectData);
+  };
 
-export const deleteProject = (projectId) => {
-  return apiClient.delete(`/projects/${projectId}`);
-};
+  export const deleteProject = (projectId) => {
+    return apiClient.delete(`/projects/${projectId}`);
+  };
 
-export const cloneProject = (sourceProjectId, cloneData) => {
-  return apiClient.post(`/projects/${sourceProjectId}/clone`, cloneData);
-};
+  export const cloneProject = (sourceProjectId, cloneData) => {
+    return apiClient.post(`/projects/${sourceProjectId}/clone`, cloneData);
+  };
 
-export const getProjectByKey = (key) => {
-  return apiClient.get(`/projects/key/${key}`);
-};
+  export const getProjectByKey = (key) => {
+    return apiClient.get(`/projects/key/${key}`);
+  };
 
-export const getProjectMembers = (projectKey) => {
-  return apiClient.get(`/projects/key/${projectKey}/members`);
-};
+  export const getProjectMembers = (projectKey) => {
+    return apiClient.get(`/projects/key/${projectKey}/members`);
+  };
 
-export const addMemberToProject = (projectKey, data) => {
-  return apiClient.post(`/projects/key/${projectKey}/members`, data);
-};
-export const addGroupToProject = (projectKey, data) => {
-  return apiClient.post(`/projects/key/${projectKey}/groups`, data);
-};
+  export const addMemberToProject = (projectKey, data) => {
+    return apiClient.post(`/projects/key/${projectKey}/members`, data);
+  };
+  export const addGroupToProject = (projectKey, data) => {
+    return apiClient.post(`/projects/key/${projectKey}/groups`, data);
+  };

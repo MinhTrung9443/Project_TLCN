@@ -49,21 +49,32 @@ class TaskTypeService {
       throw error;
     }
   }
-  // Update a task type by ID
-  async updateTaskType(id, data) {
-    try {
-      const existingType = await TaskType.findOne({ name: data.name });
-      if (existingType && existingType._id.toString() !== id) {
-        throw new Error("Task type with this name already exists.");
-      }
-      // Update
-      const updated = await TaskType.findByIdAndUpdate(id, data, { new: true });
-      return updated;
-    } catch (error) {
-      console.error("Error updating task type:", error);
-      throw error;
+async updateTaskType(id, data) {
+        try {
+            // 1. Lấy document gốc để biết projectId
+            const taskTypeToUpdate = await TaskType.findById(id);
+            if (!taskTypeToUpdate) {
+                throw new Error("Task type not found.");
+            }
+
+            // 2. Kiểm tra tên trùng lặp trong cùng scope (cùng projectId)
+            const existingType = await TaskType.findOne({
+                name: data.name,
+                projectId: taskTypeToUpdate.projectId, // Chỉ tìm trong scope này
+                _id: { $ne: id } // Loại trừ chính nó
+            });
+
+            if (existingType) {
+                throw new Error("A task type with this name already exists in this project.");
+            }
+
+            // 3. Nếu không trùng, tiến hành cập nhật
+            return await TaskType.findByIdAndUpdate(id, data, { new: true });
+        } catch (error) {
+            console.error("Error updating task type:", error);
+            throw error;
+        }
     }
-  }
   // Delete a task type by ID
   async deleteTaskType(id) {
     try {
@@ -73,7 +84,17 @@ class TaskTypeService {
       throw error;
     }
   }
-
+async getAllTaskTypes() { // Tên hàm có thể khác, ví dụ getSystemTaskTypes
+    try {
+        const taskTypes = await TaskType.find({})
+            .populate('projectId', 'name key') // <-- QUAN TRỌNG: Lấy thêm name và key của project
+            .sort({ order: 'asc' }); // Nếu bạn có trường order
+        return taskTypes;
+    } catch (error) {
+        console.error("Error fetching all task types:", error);
+        throw error;
+    }
+}
   // get task types by project ID
   async getTaskTypesByProjectId(projectId) {
     try {

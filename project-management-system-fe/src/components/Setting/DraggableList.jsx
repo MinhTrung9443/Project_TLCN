@@ -1,69 +1,86 @@
-import React, { useState } from "react";
-import DraggableItem from "./DraggableItem";
-import "../../styles/Setting/DraggableList.css";
-import priorityService from "../../services/priorityService.js";
-import { toast } from "react-toastify";
-const DraggableList = ({ items, onRefresh, isPri = false, currentTab }) => {
-  const [list, setList] = useState(items);
+// src/components/Setting/DraggableList.jsx
+import React from 'react';
+import { useDrag, useDrop } from 'react-dnd';
+import * as FaIcons from 'react-icons/fa';
+import '../../styles/Setting/DraggableList.css'; // Sẽ tạo file CSS này ở bước sau
 
-  // Cập nhật lại danh sách khi kéo thả
-  const moveItem = (from, to) => {
-    const updated = [...list];
-    const [moved] = updated.splice(from, 1);
-    updated.splice(to, 0, moved);
+const ItemType = 'LIST_ITEM'; // Định nghĩa một loại item để kéo thả
 
-    // Kiểm tra nếu là tab Prioritys thì cập nhật lại level
-    if (isPri) {
-      updated.forEach((item, idx) => {
-        item.level = idx + 1;
-      });
-      updateLevels(updated);
-    }
+// Helper render icon
+const IconComponent = ({ name }) => {
+    const Icon = FaIcons[name];
+    return Icon ? <Icon /> : <FaIcons.FaQuestionCircle />;
+};
 
-    setList(updated);
-  };
+// Component cho mỗi dòng trong danh sách
+const DraggableItem = ({ item, index, moveItem }) => {
+    const ref = React.useRef(null);
 
-  const updateLevels = async (items) => {
-    try {
-      await priorityService.updatePriorityLevels(items);
-      toast.success("Priority levels updated successfully");
-    } catch (error) {
-      toast.error("Failed to update priority levels.");
-    }
-  };
+    const [, drop] = useDrop({
+        accept: ItemType,
+        hover(draggedItem) {
+            if (draggedItem.index !== index) {
+                moveItem(draggedItem.index, index);
+                draggedItem.index = index;
+            }
+        },
+    });
 
-  React.useEffect(() => {
-    const sorted = [...items].sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
-    setList(sorted);
-  }, [items]);
+    const [{ isDragging }, drag] = useDrag({
+        type: ItemType,
+        item: { id: item._id, index },
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
 
-  return (
-    <div className="draggable-list">
-      <ul>
-        <li className="draggable-header">
-          <div className="item-icon">Icon</div>
-          <span className="item-text">Name</span>
-          {isPri && <span className="item-level">Level</span>}
-          {isPri === false && (
-            <span className="item-description">Description</span>
-          )}
+    drag(drop(ref));
 
-          <span className="item-project">Project</span>
-          <span className="item-action"></span>
-        </li>
-        {list.map((item, index) => (
-          <DraggableItem
-            key={index}
-            item={item}
-            index={index}
-            moveItem={moveItem}
-            onRefresh={onRefresh}
-            currentTab={currentTab}
-          />
-        ))}
-      </ul>
-    </div>
-  );
+    return (
+        <div ref={ref} className="settings-row" style={{ opacity: isDragging ? 0.5 : 1 }}>
+            <div className="settings-col col-icon">
+                <IconComponent name={item.icon} />
+            </div>
+            <div className="settings-col col-name">{item.name}</div>
+            <div className="settings-col col-description">{item.description}</div>
+            <div className="settings-col col-project">
+                {item.projectId ? item.projectId.name : 'Default'}
+            </div>
+            <div className="settings-col col-actions">
+                <button className="btn-action-menu"><FaIcons.FaEllipsisH /></button>
+            </div>
+        </div>
+    );
+};
+
+
+const DraggableList = ({ items, onRefresh, currentTab }) => {
+    // Tạm thời chưa xử lý logic kéo thả, chỉ dựng giao diện
+    const moveItem = (fromIndex, toIndex) => {
+        console.log(`Move item from ${fromIndex} to ${toIndex}`);
+    };
+
+    return (
+        <div className="settings-container">
+            <div className="settings-header">
+                <div className="settings-col col-icon">Icon</div>
+                <div className="settings-col col-name">Name</div>
+                <div className="settings-col col-description">Description</div>
+                <div className="settings-col col-project">Project</div>
+                <div className="settings-col col-actions"></div>
+            </div>
+            <div className="settings-body">
+                {items.map((item, index) => (
+                    <DraggableItem
+                        key={item._id}
+                        item={item}
+                        index={index}
+                        moveItem={moveItem}
+                    />
+                ))}
+            </div>
+        </div>
+    );
 };
 
 export default DraggableList;

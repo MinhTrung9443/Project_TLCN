@@ -1,11 +1,11 @@
-// src/pages/ManageProject/ProjectSettingsPage.jsx
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 
-// Import các component con tương ứng với từng tab
 import ProjectSettingsGeneral from './ProjectSettingsGeneral';
 import ProjectSettingMembers from './ProjectSettingMembers';
+import ProjectSettingTaskType from './ProjectSettingTasktype';
+import ProjectSettingPriority from './ProjectSettingPriority';
+import ProjectSettingPlatform from './ProjectSettingPlatform';
 
 // Import Menu Tab
 import ProjectSettingMenu from '../../components/project/ProjectSettingMenu';
@@ -19,12 +19,12 @@ const ProjectSettingsPage = () => {
         switch (tabName) {
             case 'members':
                 return <ProjectSettingMembers/>;
-            //case 'priority':
-                //return <ProjectSettingPriority/>;
-           // case 'task-type':
-              //  return <ProjectSettingTaskType/>;
-           // case 'platform':
-           //     return <ProjectSettingPlatform/>;
+            case 'priority':
+                return <ProjectSettingPriority/>;
+            case 'tasktype':
+                return <ProjectSettingTaskType/>;
+            case 'platform':
+                return <ProjectSettingPlatform/>;
             case 'general':
             default:
                 return <ProjectSettingsGeneral/>;

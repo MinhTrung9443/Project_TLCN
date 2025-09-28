@@ -1,64 +1,40 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import "../../styles/Setting/SettingMenu.css";
+import React from 'react';
+import { FaPlus } from 'react-icons/fa';
 
-const SettingMenu = ({
-  activeIndex = 0,
-  onTabChange,
-  onCreate,
-  btnCreateVal,
-}) => {
-  const [MenuList] = useState(["TaskTypes", "Prioritys", "Platforms"]);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [currentIndex, setCurrentIndex] = useState(activeIndex);
+const SettingMenu = ({ activeTab, onTabChange, onCreate }) => {
+    const menuItems = ['TaskTypes', 'Priorities', 'Platforms'];
 
-  useEffect(() => {
-    const pathParts = location.pathname.split("/");
-    const currentTab = pathParts[pathParts.length - 1].toLowerCase();
-    const foundIndex = MenuList.findIndex(
-      (item) => item.toLowerCase() === currentTab
+    const getButtonText = () => {
+        switch (activeTab.toLowerCase()) {
+            case 'priorities': return 'Create Priority';
+            case 'platforms': return 'Create Platform';
+            default: return 'Create TaskType';
+        }
+    };
+
+    return (
+        <div className="setting-menu-container">
+            <nav className="setting-tabs">
+                {menuItems.map(item => (
+                    <button
+                        key={item}
+                        className={`tab-item ${activeTab.toLowerCase() === item.toLowerCase() ? 'active' : ''}`}
+                        onClick={() => onTabChange(item)}
+                    >
+                        {item}
+                    </button>
+                ))}
+            </nav>
+            <div className="setting-actions">
+                {onCreate && (
+                    <button className="btn btn-primary" onClick={onCreate}>
+                        <FaPlus style={{ marginRight: '8px' }} />
+                        {getButtonText()}
+                    </button>
+                )}
+            </div>
+        </div>
     );
-    if (foundIndex !== -1) setCurrentIndex(foundIndex);
-  }, [location.pathname, MenuList]);
-
-  const handleTabClick = (index, item) => {
-    setCurrentIndex(index);
-    if (onTabChange) onTabChange(index, item);
-
-    const pathParts = location.pathname.split("/");
-    pathParts[pathParts.length - 1] = item;
-    const newPath = pathParts.join("/");
-    navigate(newPath);
-  };
-
-  return (
-    <nav className="setting-menu">
-      <ul>
-        {MenuList.map((item, index) => (
-          <li
-            key={index}
-            className={index === currentIndex ? "active" : ""}
-            onClick={() => handleTabClick(index, item)}
-            style={{ transition: "background 0.25s, color 0.25s" }}
-          >
-            <span>{item}</span>
-          </li>
-        ))}
-        <li>
-          <button className="setting-menu-create-btn" onClick={onCreate}>
-            <span
-              className="material-symbols-outlined"
-              style={{ verticalAlign: "middle", marginRight: 4 }}
-            >
-              add
-            </span>
-            {btnCreateVal || "Create New"}
-          </button>
-        </li>
-      </ul>
-    </nav>
-  );
 };
 
 export default SettingMenu;

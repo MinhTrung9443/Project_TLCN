@@ -1,88 +1,238 @@
-import SettingMenu from "../../components/project/ProjectSettingMenu";
-import DraggableList from "../../components/Setting/DraggableList";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { useState, useEffect } from "react";
-import priorityService from "../../services/priorityService.js";
-import PopUpCreate from "../../components/common/PopUpCreate";
-import { toast } from "react-toastify";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import priorityService from '../../services/priorityService';
+import * as FaIcons from 'react-icons/fa';
+import * as VscIcons from 'react-icons/vsc';
+import { FaGripVertical } from 'react-icons/fa';
+import '../../styles/pages/ManageProject/ProjectSettings_TaskType.css';
 
-const SettingPage = () => {
-  const { projectKey } = useParams();
-    const [draggableItems, setDraggableItems] = useState([]);
+const PREDEFINED_PRIORITY_ICONS = [
+  { name: 'FaExclamationCircle', color: '#CD1317' }, // Critical
+  { name: 'FaArrowUp', color: '#F57C00' }, // High
+  { name: 'FaEquals', color: '#2A9D8F' }, // Medium
+  { name: 'FaArrowDown', color: '#2196F3' }, // Low
+  { name: 'FaFire', color: '#E94F37' },
+  { name: 'FaExclamationTriangle', color: '#FFB300' },
+];
 
-  const fetchPrioritys = async () => {
-    try {
-      const response = await priorityService.getAllPriorities(projectKey);
-      setDraggableItems(response.data || []);
-    } catch (error) {
-      toast.error("Error fetching prioritys:", error);
-    }
-  };
+const IconComponent = ({ name }) => {
+  const AllIcons = { ...FaIcons, ...VscIcons };
+  const Icon = AllIcons[name];
+  if (!Icon) return <FaIcons.FaQuestionCircle />;
+  return <Icon />;
+};
 
-  // Gọi hàm fetchTypeTasks khi component được mount
-  useEffect(() => {
-    fetchPrioritys();
-  }, []);
-
-  const handleRefresh = () => {
-    fetchPrioritys();
-  };
-
-  // State để quản lý popup tạo mới
-  const [openCreate, setOpenCreate] = useState(false);
-
-  const handlePriorityCreate = async (newItem) => {
-    const newPriority = {
-      name: newItem.name,
-      icon: newItem.icon,
-      projectKey: projectKey,
-    };
-    try {
-      await priorityService.createPriority(newPriority);
-      setOpenCreate(false);
-      fetchPrioritys();
-      toast.success("Add Priority success.");
-    } catch (error) {
-      toast.error(
-        error?.response?.data?.message || "Error creating new priority."
-      );
-    }
-  };
-
-  // Xử lý sự kiện tạo mới dựa trên hashValue
-  const handleCreate = (newItem) => {
-    newItem.projectKey = projectKey;
-    handlePriorityCreate(newItem);
-  };
-  return (
-    <div id="webcrumbs">
-      <div className="w-full bg-white">
-        <SettingMenu
-          onCreate={() => setOpenCreate(true)}
-          btnCreateVal={"Create New Priority"}
-        />
-        <PopUpCreate
-          open={openCreate}
-          onClose={() => setOpenCreate(false)}
-          onSubmit={handleCreate}
-          title="Create Item"
-          isPri={true}
-        />
-        <div className="draggable-list-wrapper">
-          <DndProvider backend={HTML5Backend}>
-            <DraggableList
-              items={draggableItems}
-              onRefresh={handleRefresh}
-              currentTab={"prioritys"}
-              isPri={true}
-            />
-          </DndProvider>
+const IconPicker = ({ selectedIcon, onSelect }) => (
+  <div className="icon-picker-container">
+    {PREDEFINED_PRIORITY_ICONS.map((icon) => (
+      <button key={icon.name} type="button"
+        className={`icon-picker-button ${selectedIcon === icon.name ? 'selected' : ''}`}
+        onClick={() => onSelect(icon.name)}>
+        <div className="icon-display" style={{ backgroundColor: icon.color }}>
+          <IconComponent name={icon.name} />
         </div>
-      </div>
+      </button>
+    ))}
+  </div>
+);
+
+const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDeleteConfirm, openMenuId, toggleMenu }) => {
+  const ref = React.useRef(null);
+  const menuRef = useRef(null);
+  const ItemType = 'PRIORITY_ITEM';
+const handleRef = React.useRef(null);
+  const [, drop] = useDrop({ accept: ItemType, hover(draggedItem) { if (draggedItem.index !== index) { moveItem(draggedItem.index, index); draggedItem.index = index; } } });
+ const [{ isDragging }, drag] = useDrag({
+        type: ItemType,
+        item: { id: item._id, index },
+        collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+    });
+  drag(handleRef);
+  drop(ref);
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (menuRef.current && !menuRef.current.contains(event.target)) {
+      toggleMenu(null);
+    }
+  };
+  document.addEventListener("click", handleClickOutside);
+  return () => document.removeEventListener("click", handleClickOutside);
+}, [toggleMenu]);
+  const iconInfo = PREDEFINED_PRIORITY_ICONS.find(i => i.name === item.icon);
+
+  const handleEditClick = (e) => {
+    e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+    openEditModal(item);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+    openDeleteConfirm(item._id);
+  };
+
+  const handleToggleMenuClick = (e) => {
+    e.stopPropagation();
+    toggleMenu(item._id);
+  }
+  return (
+    <div ref={ref} className="settings-list-row" style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <div className="row-col col-drag-handle" ref={handleRef}>
+                <FaGripVertical />
+            </div>
+      <div className="row-col col-icon"><span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || '#7A869A' }}><IconComponent name={item.icon} /></span></div>
+      <div className="row-col col-name">{item.name}</div>
+      <div className="row-col col-actions"><div className="action-menu-wrapper" ref={menuRef}><button className="btn-menu-toggle" onClick={handleToggleMenuClick}><FaIcons.FaEllipsisV /></button>{openMenuId === item._id && (<div className="action-dropdown-menu"><button onClick={handleEditClick}>Edit</button>
+        <button onClick={handleDeleteClick}>Delete</button></div>)}</div></div>
     </div>
   );
 };
 
-export default SettingPage;
+
+const ProjectSettingPriority = () => {
+  const params = useParams();
+  const projectKey = params.projectKey ? params.projectKey.toUpperCase() : null;
+
+  const [priorities, setPriorities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [currentPriority, setCurrentPriority] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  const isFetching = useRef(false);
+
+  const fetchPriorities = useCallback(async () => {
+    if (!projectKey || isFetching.current) {
+      return;
+    }
+    try {
+      isFetching.current = true; // Bắt đầu fetch
+      setLoading(true);
+      const response = await priorityService.getAllPriorities(projectKey);
+      setPriorities(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch priorities.');
+    } finally {
+      setLoading(false);
+      isFetching.current = false; // Kết thúc fetch
+    }
+  }, [projectKey]); // Dependency chỉ còn là projectKey
+
+  useEffect(() => {
+    fetchPriorities();
+  }, [fetchPriorities]);
+
+  const handleOpenModal = (priority = null) => {
+    setCurrentPriority(priority ? { ...priority } : { name: '', icon: 'FaFire' });
+    setIsModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const payload = { name: currentPriority.name, icon: currentPriority.icon, projectKey: projectKey };
+    try {
+      if (currentPriority._id) {
+        await priorityService.updatePriority(currentPriority._id, payload);
+        toast.success('Priority updated!');
+      } else {
+        await priorityService.createPriority(payload);
+        toast.success('Priority created for this project!');
+      }
+      handleCloseModal();
+      fetchPriorities(); // Gọi làm mới
+    } catch (error) { toast.error(error.response?.data?.message || 'An error occurred.'); }
+    finally { setIsSaving(false); }
+  };
+
+  const handleDelete = async (id) => {
+    // ... Logic handleDelete của bạn đã đúng ...
+    setOpenMenuId(null);
+    if (window.confirm("Are you sure?")) {
+      try {
+        await priorityService.deletePriority(id);
+        toast.success("Priority deleted!");
+        fetchPriorities(); // Gọi làm mới
+      } catch (error) { toast.error("Failed to delete priority."); }
+    }
+  };
+
+  const movePriority = useCallback(async (dragIndex, hoverIndex) => {
+    const newPriorities = [...priorities];
+    const [draggedItem] = newPriorities.splice(dragIndex, 1);
+    newPriorities.splice(hoverIndex, 0, draggedItem);
+
+    const updatedItemsWithLevel = newPriorities.map((item, index) => ({ ...item, level: index + 1 }));
+    setPriorities(updatedItemsWithLevel);
+
+    try {
+      await priorityService.updatePriorityLevels(projectKey, updatedItemsWithLevel);
+    } catch (error) {
+      toast.error("Failed to save new order. Reverting.");
+      fetchPriorities(); // Tải lại nếu có lỗi
+    }
+  }, [priorities, projectKey, fetchPriorities]);
+
+  const handleCloseModal = () => setIsModalOpen(false);
+  const handleChange = (e) => { const { name, value } = e.target; setCurrentPriority(prev => ({ ...prev, [name]: value })); };
+  const handleIconSelect = (iconName) => { setCurrentPriority(prev => ({ ...prev, icon: iconName })); };
+  const toggleMenu = (id) => { setOpenMenuId(openMenuId === id ? null : id); };
+
+  if (loading && priorities.length === 0) return <div>Loading priorities...</div>;
+
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <div className="settings-list-container">
+        <div className="settings-list-header">
+          <div className="header-col col-drag-handle"></div> 
+          <div className="header-col col-icon">Icon</div>
+          <div className="header-col col-name">Priority Name</div>
+          <div className="header-col col-actions">
+            <button className="btn-add-icon" onClick={() => handleOpenModal()}><VscIcons.VscAdd /></button>
+          </div>
+        </div>
+        <div className="settings-list-body">
+          {priorities.map((item, index) => (
+            <DraggablePriorityItem
+              key={item._id}
+              item={item}
+              index={index}
+              moveItem={movePriority}
+              openEditModal={handleOpenModal}
+              openDeleteConfirm={handleDelete}
+              openMenuId={openMenuId}
+              toggleMenu={toggleMenu}
+            />
+          ))}
+        </div>
+      </div>
+      {isModalOpen ? (
+    <div className="modal-overlay">
+        <div className="modal-content">
+            <h2>{currentPriority?._id ? 'Edit Priority' : 'Create Priority'}</h2>
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label htmlFor="name">Priority Name*</label>
+                    <input id="name" name="name" value={currentPriority.name} onChange={handleChange} required />
+                </div>
+                <div className="form-group">
+                    <label>Icon</label>
+                    <IconPicker selectedIcon={currentPriority.icon} onSelect={handleIconSelect} />
+                </div>
+                <div className="modal-actions">
+                    <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+) : null} 
+    </DndProvider>
+  );
+};
+
+export default ProjectSettingPriority;

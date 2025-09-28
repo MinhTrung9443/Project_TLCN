@@ -15,11 +15,9 @@ import ManageUser from "./pages/ManageUser/ManageUser";
 import UserProfile from "./pages/ManageUser/UserProfile";
 import GroupListPage from "./pages/GroupListPage";
 import GroupMembersPage from "./pages/GroupMembersPage";
-import SettingTaskTypePage from "./pages/Setting/TaskType";
-import SettingPriorityPage from "./pages/Setting/Priority.jsx";
-import SettingPlatformPage from "./pages/Setting/Platform.jsx";
 import ProjectsPage from "./pages/ManageProject/ProjectsPage";
 import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage.jsx";
+import GlobalSettingsPage from "./pages/Setting/GlobalSettingsPage"; // <-- Import trang cha
 
 function App() {
   return (
@@ -36,18 +34,17 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/my-profile" element={<MyProfilePage />} />
             <Route path="/Organization/User" element={<ManageUser />} />
-            <Route
-              path="/Organization/User/:userId"
-              element={<UserProfile />}
-            />
+            <Route path="/Organization/User/:userId" element={<UserProfile />}/>
             <Route path="/organization/group" element={<GroupListPage />} />
-            <Route path="/settings/TaskTypes" element={<SettingTaskTypePage />}/>
-            <Route path="/settings/Prioritys" element={<SettingPriorityPage />}/>
-            <Route path="/settings/Platforms" element={<SettingPlatformPage />}/>
+
+            <Route path="/settings/:tabName" element={<GlobalSettingsPage />} />
+            <Route path="/settings" element={<GlobalSettingsPage />} /> 
+
             <Route path="/organization/group/:groupId" element={<GroupMembersPage />}/>
 
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/task-mgmt/projects/:projectKey/settings/:tabName" element={<ProjectSettingsPage/>} />
+            
           </Route>
         </Routes>
 

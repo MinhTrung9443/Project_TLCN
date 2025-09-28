@@ -10,7 +10,7 @@ const ProjectSettingMenu = () => {
         { path: "members", label: "Project Members" },
         { path: "tasktype", label: "Task Type" },
         { path: "priority", label: "Priority" },
-        { path: "storyline", label: "Storyline" },
+        { path: "platform", label: "Platform" },
     ];
 
     return (

@@ -40,9 +40,9 @@ const priorityService = {
     }
   },
 
-  updatePriorityLevels: async (items) => {
+  updatePriorityLevels: async (projectKey, items) => {
     try {
-      const response = await apiClient.put(`/priorities/levels`, { items });
+      const response = await apiClient.put(`/priorities/levels/${projectKey}`, { items });
       return response;
     } catch (error) {
       console.error("Error updating priority levels:", error);

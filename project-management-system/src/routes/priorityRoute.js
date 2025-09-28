@@ -7,12 +7,8 @@ router.get("/", protect, priorityController.getAllPriorities);
 
 router.post("/", protect, isAdmin, priorityController.createPriority);
 
-router.put(
-  "/levels",
-  protect,
-  isAdmin,
-  priorityController.updatePriorityLevels
-);
+router.put('/levels/:projectKey', priorityController.updatePriorityLevels);
+
 
 router.put("/:id", protect, isAdmin, priorityController.updatePriority);
 

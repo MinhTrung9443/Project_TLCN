@@ -1,81 +1,203 @@
-import SettingMenu from "../../components/Setting/SettingMenu";
-import DraggableList from "../../components/Setting/DraggableList";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { useState, useEffect } from "react";
-import platformService from "../../services/platformService";
-import PopUpCreate from "../../components/common/PopUpCreate";
-import { toast } from "react-toastify";
+// src/pages/Setting/SettingsPlatforms.jsx
 
-const SettingPage = () => {
-  const [menuList] = useState(["TypeTasks", "Prioritys", "Platforms"]);
-  const [draggableItems, setDraggableItems] = useState([]);
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'react-toastify';
+import platformService from '../../services/platformService'; // Service cho Platform
+import * as FaIcons from 'react-icons/fa';
+import * as VscIcons from 'react-icons/vsc';
 
-  const fetchPlatforms = async () => {
-    try {
-      const response = await platformService.getAllPlatforms();
-      setDraggableItems(response.data || []);
-    } catch (error) {
-      toast.error("Error fetching platforms:", error);
-    }
-  };
+import '../../styles/pages/ManageProject/ProjectSettings_TaskType.css';
 
-  // Gọi hàm fetchTypeTasks khi component được mount
-  useEffect(() => {
-    fetchPlatforms();
-  }, []);
+const PREDEFINED_PLATFORM_ICONS = [
+    { name: 'FaCode', color: '#8E44AD' },
+    { name: 'FaCog', color: '#E74C3C' },
+    { name: 'FaCubes', color: '#27AE60' },
+    { name: 'FaExpandArrowsAlt', color: '#3498DB' },
+    { name: 'FaApple', color: '#95A5A6' },
+    { name: 'FaAndroid', color: '#2ECC71' },
+    { name: 'FaChartBar', color: '#34495E' },
+    { name: 'FaTerminal', color: '#F1C40F' },
+    { name: 'FaPalette', color: '#9B59B6' },
+    { name: 'FaFlask', color: '#C0392B' },
+];
 
-  const handleRefresh = () => {
-    fetchPlatforms();
-  };
-
-  // State để quản lý popup tạo mới
-  const [openCreate, setOpenCreate] = useState(false);
-
-  // Xử lý tạo mới platform
-  const handlePlatformCreate = async (newItem) => {
-    try {
-      await platformService.createPlatform(newItem);
-      setOpenCreate(false);
-      fetchPlatforms();
-      toast.success("Add Platform success.");
-    } catch (error) {
-      toast.error(
-        error?.response?.data?.error || "Error creating new platform."
-      );
-    }
-  };
-
-  const handleCreate = (newItem) => {
-    handlePlatformCreate(newItem);
-  };
-  return (
-    <div id="webcrumbs">
-      <div className="w-full bg-white">
-        <SettingMenu
-          MenuList={menuList}
-          onCreate={() => setOpenCreate(true)}
-          btnCreateVal="Create Platform"
-        />
-        <PopUpCreate
-          open={openCreate}
-          onClose={() => setOpenCreate(false)}
-          onSubmit={handleCreate}
-          title="Create Item"
-          isPri={false}
-        />
-        <div className="draggable-list-wrapper">
-          <DndProvider backend={HTML5Backend}>
-            <DraggableList
-              items={draggableItems}
-              onRefresh={handleRefresh}
-              currentTab={"platforms"}
-            />
-          </DndProvider>
-        </div>
-      </div>
-    </div>
-  );
+const IconComponent = ({ name }) => {
+    const AllIcons = { ...FaIcons, ...VscIcons };
+    const Icon = AllIcons[name];
+    if (!Icon) return <FaIcons.FaQuestionCircle />;
+    return <Icon />;
 };
 
-export default SettingPage;
+// IconPicker giờ sẽ nhận danh sách icons làm props
+const IconPicker = ({ selectedIcon, onSelect, icons }) => {
+    return (
+        <div className="icon-picker-container">
+            {icons.map((icon) => (
+                <button
+                    key={icon.name} type="button"
+                    className={`icon-picker-button ${selectedIcon === icon.name ? 'selected' : ''}`}
+                    onClick={() => onSelect(icon.name)}
+                >
+                    <div className="icon-display" style={{ backgroundColor: icon.color }}>
+                        <IconComponent name={icon.name} />
+                    </div>
+                </button>
+            ))}
+        </div>
+    );
+};
+
+
+// --- COMPONENT CHÍNH ---
+export const SettingsPlatforms = () => {
+    const [platforms, setPlatforms] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [currentPlatform, setCurrentPlatform] = useState(null);
+    const [openMenuId, setOpenMenuId] = useState(null);
+    const menuRef = useRef(null);
+
+    const fetchPlatforms = useCallback(async () => {
+        try {
+            setLoading(true);
+            // Gọi API lấy TẤT CẢ platform (không cần projectKey)
+            const response = await platformService.getAllPlatforms(); 
+            setPlatforms(response.data);
+        } catch (error) { toast.error('Failed to fetch platforms.'); } 
+        finally { setLoading(false); }
+    }, []);
+
+    useEffect(() => { fetchPlatforms(); }, [fetchPlatforms]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) setOpenMenuId(null);
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleOpenModal = (platform = null) => {
+        setCurrentPlatform(platform ? { ...platform } : { name: '', icon: 'FaCode' });
+        setIsModalOpen(true);
+        setOpenMenuId(null);
+    };
+    const handleCloseModal = () => setIsModalOpen(false);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setCurrentPlatform(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleIconSelect = (iconName) => {
+        setCurrentPlatform(prev => ({ ...prev, icon: iconName }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSaving(true);
+        const payload = {
+            name: currentPlatform.name,
+            icon: currentPlatform.icon,
+        };
+        try {
+            if (currentPlatform._id) {
+                await platformService.updatePlatform(currentPlatform._id, payload);
+                toast.success('Platform updated successfully!');
+            } else {
+                await platformService.createPlatform(payload); 
+                toast.success('Platform created successfully!');
+            }
+            handleCloseModal();
+            fetchPlatforms();
+        } catch (error) { toast.error(error.response?.data?.message || 'An error occurred.'); } 
+        finally { setIsSaving(false); }
+    };
+
+    const handleDelete = async (platformId) => {
+        setOpenMenuId(null);
+        if (window.confirm('Are you sure you want to delete this platform?')) {
+            try {
+                await platformService.deletePlatform(platformId);
+                toast.success('Platform deleted successfully!');
+                fetchPlatforms();
+            } catch (error) { toast.error('Failed to delete platform.'); }
+        }
+    };
+
+    const toggleMenu = (platformId) => setOpenMenuId(openMenuId === platformId ? null : platformId);
+
+    if (loading) return <div>Loading...</div>;
+
+    return (
+        <div className="settings-list-container">
+             <div className="header-actions">
+                <h3>Manage Global Platforms</h3>
+                <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+                    + Add Platform
+                </button>
+            </div>
+
+            <div className="settings-list-body">
+                 {platforms.map(p => {
+                    const iconInfo = PREDEFINED_PLATFORM_ICONS.find(i => i.name === p.icon);
+                    return (
+                        <div className="settings-list-row" key={p._id}>
+                            <div className="row-col col-icon">
+                                <span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || '#4BADE8' }}>
+                                    <IconComponent name={p.icon} />
+                                </span>
+                            </div>
+                            <div className="row-col col-name">{p.name}</div>
+                            <div className="row-col col-description"></div> 
+                            <div className="row-col col-project">
+                                {p.projectId ? p.projectId.name : <span className="default-badge">Default</span>}
+                            </div>
+                            <div className="row-col col-actions">
+                                <div className="action-menu-wrapper" ref={openMenuId === p._id ? menuRef : null}>
+                                    <button className="btn-menu-toggle" onClick={() => toggleMenu(p._id)}><FaIcons.FaEllipsisV /></button>
+                                    {openMenuId === p._id && (
+                                        <div className="action-dropdown-menu">
+                                            {!p.projectId && <button onClick={() => handleOpenModal(p)}>Edit</button>}
+                                            {!p.projectId && <button onClick={() => handleDelete(p._id)}>Delete</button>}
+                                            {p.projectId && <span className="menu-item-disabled">Managed in Project</span>}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {isModalOpen && (
+                 <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h2>{currentPlatform?._id ? 'Edit Platform' : 'Create Platform'}</h2>
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <label htmlFor="name">Name*</label>
+                                <input id="name" name="name" value={currentPlatform.name} onChange={handleChange} required/>
+                            </div>
+                            <div className="form-group">
+                               <label>Icon</label>
+                               <IconPicker
+                                   selectedIcon={currentPlatform.icon}
+                                   onSelect={handleIconSelect}
+                                   icons={PREDEFINED_PLATFORM_ICONS} // Truyền danh sách icon vào
+                               />
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default SettingsPlatforms;

@@ -1,6 +1,7 @@
 const priorityService = require("../services/PriorityService.js");
 
 class PriorityController {
+  
   async getAllPriorities(req, res) {
     try {
       const { projectKey } = req.query;
@@ -21,6 +22,7 @@ class PriorityController {
       res.status(500).json({ message: error.message });
     }
   }
+
   async updatePriority(req, res) {
     try {
       const priority = await priorityService.updatePriority(
@@ -55,9 +57,12 @@ class PriorityController {
 
   async updatePriorityLevels(req, res) {
     try {
+      const { projectKey } = req.params; 
       const { items } = req.body;
-      await priorityService.updatePriorityLevels(items);
-      console.log("Priority levels updated:", items);
+      
+      await priorityService.updatePriorityLevels(projectKey, items); 
+      
+      console.log(`Priority levels updated for project ${projectKey}:`, items);
       res.status(200).json({ message: "Priority levels updated successfully" });
     } catch (error) {
       res.status(500).json({ message: error.message });
