@@ -13,15 +13,33 @@ const ProjectSettingMembers = () => {
     const isAdmin = user?.role === 'admin';
     const { projectKey } = useParams();
     const { setSelectedProjectKey } = useContext(ProjectContext);
-    const [members, setMembers] = useState([]);
+    const [directMembers, setDirectMembers] = useState([]);
+    const [groupMembers, setGroupMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const formatDate = (dateString) => {
+    if (!dateString) {
+        return 'N/A'; // Trả về N/A nếu không có ngày
+    }
+    const date = new Date(dateString);
+    // Kiểm tra xem date có hợp lệ không
+    if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+    }
+    return date.toLocaleDateString('en-US', { // Dùng định dạng US hoặc en-CA tùy bạn
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+};
 
     const fetchMembers = useCallback(async () => {
         setLoading(true);
         try {
             const response = await getProjectMembers(projectKey);
-            setMembers(response.data);
+            setDirectMembers(response.data.members || []);
+            setGroupMembers(response.data.groups || []);
         } catch (error) {
             toast.error("Could not fetch project members.");
         } finally {
@@ -47,6 +65,10 @@ const ProjectSettingMembers = () => {
 
     if (loading) return <div>Loading members...</div>;
 
+    const existingMemberIds = directMembers.map(m => m.userId?._id).filter(Boolean);
+    const existingGroupIds = groupMembers.map(g => g.groupId?._id).filter(Boolean);
+
+
     return (
         <div className="project-members-container">
             {isAdmin && (
@@ -62,17 +84,31 @@ const ProjectSettingMembers = () => {
                     <div>Added On</div>
                     <div></div>
                 </div>
-                {/* Danh sách member */}
-                {members.map(member => (
-                    <div className="table-row" key={member._id}>
-                        <div className="member-info">
-                            <img src={member.userId.avatar || '/default-avatar.png'} alt={member.userId.fullname} className="member-avatar" />
-                            <span>{member.userId.fullname}</span>
+                 {groupMembers.map(groupRelation => (
+                    groupRelation.groupId && (
+                        <div className="table-row" key={groupRelation.groupId._id}>
+                            <div className="member-info">
+                                <span className="material-symbols-outlined group-icon">group</span>
+                                <span>{groupRelation.groupId.name} ({groupRelation.groupId.members?.length || 0} members)</span>
+                            </div>
+                            <div>{groupRelation.role}</div>
+                            <div>{formatDate(groupRelation.addedOn)}</div>
+                            <div>⋮</div>
                         </div>
-                        <div>{member.role}</div>
-                        <div>{new Date(member.addedOn).toLocaleDateString()}</div>
-                        <div>⋮</div>
-                    </div>
+                    )
+                ))}
+                {directMembers.map(member => (
+                    member.userId && ( 
+                        <div className="table-row" key={member.userId._id}>
+                            <div className="member-info">
+                                <img src={member.userId.avatar || '/default-avatar.png'} alt={member.userId.fullname} className="member-avatar" />
+                                <span>{member.userId.fullname}</span>
+                            </div>
+                            <div>{member.role}</div>
+                            <div>{formatDate(member.addedOn)}</div>
+                            <div>⋮</div>
+                        </div>
+                    )
                 ))}
             </div>
 
@@ -81,6 +117,8 @@ const ProjectSettingMembers = () => {
                 onClose={() => setIsModalOpen(false)}
                 projectKey={projectKey}
                 onMemberAdded={handleMemberAdded}
+                existingMemberIds={existingMemberIds}
+                existingGroupIds={existingGroupIds}
             />
         </div>
     );

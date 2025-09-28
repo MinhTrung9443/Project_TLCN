@@ -5,8 +5,14 @@ import userService from '../../services/userService';
 import { groupService } from '../../services/groupService'; 
 import { addMemberToProject, addGroupToProject } from '../../services/projectService';
 import '../../styles/pages/ManageProject/AddMemberModal.css';
-
-const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded }) => {
+const AddMemberModal = ({ 
+    isOpen, 
+    onClose, 
+    projectKey, 
+    onMemberAdded,
+    existingMemberIds = [], 
+    existingGroupIds = [] 
+}) => {
     const [allUsers, setAllUsers] = useState([]);
     const [allGroups, setAllGroups] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState('');
@@ -15,40 +21,33 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [loadingData, setLoadingData] = useState(true);
 
-    useEffect(() => {
+useEffect(() => {
         if (isOpen) {
             setLoadingData(true);
             const fetchData = async () => {
                 try {
                     const [userResponse, groupResponse] = await Promise.all([
                         userService.getAllUsers(1, 1000), 
-                        groupService.getGroups()
+                        groupService.getGroups({ limit: 1000 }) 
                     ]);
                     
-                    // ===> SỬA LẠI 2 DÒNG DƯỚI ĐÂY <===
+                    const availableUsers = (userResponse || [])
+                        .filter(user => !existingMemberIds.includes(user._id));
+                    
+                    const availableGroups = (groupResponse.data.data || [])
+                        .filter(group => !existingGroupIds.includes(group._id));
 
-                    // 1. API user trả về thẳng một mảng, nên ta gán trực tiếp userResponse.data
-                    setAllUsers(userResponse || []); 
-
-                    // 2. Tương tự, giả sử API group cũng trả về thẳng một mảng
-                    setAllGroups(groupResponse.data.data || []); 
+                    setAllUsers(availableUsers);
+                    setAllGroups(availableGroups);
                     
                 } catch (error) {
-                    console.error("Fetch Data Error:", error);
-                    // Kiểm tra xem có phải lỗi 401 không
-                    if (error.response && error.response.status === 401) {
-                         toast.error("Authentication error. Please log in again.");
-                    } else {
-                         toast.error("Could not fetch data for modal.");
-                    }
                 } finally {
                     setLoadingData(false);
                 }
             };
             fetchData();
         }
-    }, [isOpen]);
-
+    }, [isOpen, existingMemberIds, existingGroupIds]); 
 
     const handleSubmit = async () => {
         if (!selectedUserId && !selectedGroupId) {
@@ -62,7 +61,8 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded }) => {
                 promises.push(addMemberToProject(projectKey, { userId: selectedUserId, role: selectedRole }));
             }
             if (selectedGroupId) {
-                promises.push(addGroupToProject(projectKey, { groupId: selectedGroupId }));
+                promises.push(addGroupToProject(projectKey, { groupId: selectedGroupId, role: selectedRole }));
+
             }
             await Promise.all(promises);
             toast.success("Items added successfully!");

@@ -60,12 +60,27 @@ const projectSchema = new Schema(
           type: String,
           required: true,
         },
+        addedOn: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
     groups: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "Group",
+        groupId: {
+          type: Schema.Types.ObjectId,
+          ref: "Group",
+          required: true,
+        },
+        role: {
+          type: String,
+          required: true,
+        },
+        addedOn: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
     isDeleted: {

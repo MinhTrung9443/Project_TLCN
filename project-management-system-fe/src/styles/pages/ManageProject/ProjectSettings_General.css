@@ -134,3 +134,15 @@
   grid-template-columns: 1fr 1fr; /* Chia thành 2 cột bằng nhau */
   gap: 20px; /* Khoảng cách giữa 2 cột */
 }
+
+.error-message {
+  color: #d9534f; /* Màu đỏ cho thông báo lỗi */
+  font-size: 0.875rem;
+  margin-top: 5px;
+}
+
+/* Tùy chọn: Thêm viền đỏ cho input khi có lỗi */
+.form-group input.error,
+.form-group textarea.error {
+    border-color: #d9534f;
+}

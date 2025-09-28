@@ -85,11 +85,20 @@ const handleAddMemberToProject = async (req, res) => {
 const handleAddGroupToProject = async (req, res) => {
   try {
     const { key } = req.params;
-    const { groupId } = req.body;
-    const result = await projectService.addGroupToProject(key, { groupId });
+    // req.body bây giờ là một object { groupId, role }
+    const { groupId, role } = req.body; 
+
+    // Kiểm tra xem có nhận đủ dữ liệu không
+    if (!groupId || !role) {
+      return res.status(400).json({ message: 'groupId and role are required.' });
+    }
+
+    // Truyền object vào service
+    const result = await projectService.addGroupToProject(key, { groupId, role });
+    
     res.status(200).json(result);
   } catch (error) {
-    res.status(error.statusCode || 500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
   }
 };
 module.exports = {

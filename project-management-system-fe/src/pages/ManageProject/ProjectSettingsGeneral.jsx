@@ -1,5 +1,3 @@
-// src/pages/ManageProject/ProjectSettingsPage.jsx
-
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -36,7 +34,8 @@ const ProjectSettingsGeneral  = () => {
         startDate: '', 
         endDate: '',   
     });
-
+    
+    const [errors, setErrors] = useState({});
     const [allUsers, setAllUsers] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -49,7 +48,6 @@ const ProjectSettingsGeneral  = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Sử dụng Promise.all để gọi 2 API song song, tăng tốc độ load
                 const [projectResponse, usersResponse] = await Promise.all([
                     getProjectByKey(projectKey),
                     userService.fetchAllUsers()
@@ -59,7 +57,6 @@ const ProjectSettingsGeneral  = () => {
                 setProject(projectData);
                 setAllUsers(usersResponse);
 
-                // Đồng bộ dữ liệu vào form, bao gồm cả ngày tháng đã định dạng
                 setFormData({
                     name: projectData.name,
                     key: projectData.key,
@@ -87,13 +84,46 @@ const ProjectSettingsGeneral  = () => {
             ...prevData,
             [name]: value,
         }));
+        if (errors[name]) {
+            setErrors(prevErrors => ({
+                ...prevErrors,
+                [name]: null
+            }));
+        }
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+        if (!formData.name || formData.name.trim() === '') {
+            newErrors.name = 'Project Name is required.';
+        }
+        if (!formData.key || formData.key.trim() === '') {
+            newErrors.key = 'Key is required.';
+        }
+        // Kiểm tra ngày
+        if (formData.startDate && formData.endDate) {
+            const start = new Date(formData.startDate);
+            const end = new Date(formData.endDate);
+            if (end < start) {
+                newErrors.endDate = 'End Date must be on or after the Start Date.';
+            }
+        }
+        return newErrors;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const validationErrors = validateForm();
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            toast.error("Please fix the errors before saving.");
+            return; // Dừng việc submit nếu có lỗi
+        }
+        setErrors({}); 
+
         setIsSaving(true);
         try {
-            // Trước khi gửi, đảm bảo ngày tháng trống được gửi là null
             const payload = {
                 ...formData,
                 startDate: formData.startDate || null,
@@ -118,112 +148,115 @@ const ProjectSettingsGeneral  = () => {
             startDate: formatDateForInput(project.startDate),
             endDate: formatDateForInput(project.endDate),
         });
+        setErrors({}); 
     };
 
     if (loading) return <div>Loading project settings...</div>;
     if (!project) return <div>Project not found.</div>;
 
      return (
-            <form onSubmit={handleSubmit} className="settings-content-form">
+        <form onSubmit={handleSubmit} className="settings-content-form">
+            <div className="form-group">
+                <label>Project Name*</label>
+                <input 
+                    name="name" 
+                    value={formData.name} 
+                    onChange={handleChange} 
+                    required 
+                    disabled={!isAdmin}
+                />
+                {errors.name && <p className="error-message">{errors.name}</p>}
+            </div>
+            <div className="form-group">
+                <label>Key*</label>
+                <input 
+                    name="key" 
+                    value={formData.key} 
+                    onChange={handleChange} 
+                    required 
+                    disabled={!isAdmin}
+                />
+                {errors.key && <p className="error-message">{errors.key}</p>}
+            </div>
+            <div className="form-group">
+                <label>Type</label>
+                <select 
+                    name="type" 
+                    value={formData.type} 
+                    onChange={handleChange} 
+                    disabled={!isAdmin}
+                >
+                    <option>Scrum</option>
+                    <option>Kanban</option>
+                </select>
+            </div>
+            
+            <div className="form-row">
                 <div className="form-group">
-                    <label>Project Name*</label>
-                    <input 
-                        name="name" 
-                        value={formData.name} 
-                        onChange={handleChange} 
-                        required 
-                        disabled={!isAdmin} // <-- VÔ HIỆU HÓA NẾU KHÔNG PHẢI ADMIN
-                    />
-                </div>
-                <div className="form-group">
-                    <label>Key*</label>
-                    <input 
-                        name="key" 
-                        value={formData.key} 
-                        onChange={handleChange} 
-                        required 
-                        disabled={!isAdmin} // <-- VÔ HIỆU HÓA
-                    />
-                </div>
-                <div className="form-group">
-                    <label>Type</label>
-                    <select 
-                        name="type" 
-                        value={formData.type} 
-                        onChange={handleChange} 
-                        disabled={!isAdmin} // <-- VÔ HIỆU HÓA
-                    >
-                        <option>Scrum</option>
-                        <option>Kanban</option>
-                    </select>
-                </div>
-                
-                <div className="form-row">
-                    <div className="form-group">
-                        <label htmlFor="startDate">Start Date</label>
-                        <input
-                            id="startDate"
-                            name="startDate"
-                            type="date"
-                            value={formData.startDate}
-                            onChange={handleChange}
-                            disabled={!isAdmin} // <-- VÔ HIỆU HÓA
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="endDate">End Date</label>
-                        <input
-                            id="endDate"
-                            name="endDate"
-                            type="date"
-                            value={formData.endDate}
-                            onChange={handleChange}
-                            disabled={!isAdmin} // <-- VÔ HIỆU HÓA
-                        />
-                    </div>
-                </div>
-
-                <div className="form-group">
-                    <label>Description</label>
-                    <textarea 
-                        name="description" 
-                        value={formData.description} 
-                        onChange={handleChange} 
-                        rows="4"
-                        disabled={!isAdmin} // <-- VÔ HIỆU HÓA
-                    />
-                </div>
-
-                 <div className="form-group">
-                    <label htmlFor="projectLeaderId">Project Manager</label>
-                    <select
-                        id="projectLeaderId"
-                        name="projectLeaderId"
-                        value={formData.projectLeaderId}
+                    <label htmlFor="startDate">Start Date</label>
+                    <input
+                        id="startDate"
+                        name="startDate"
+                        type="date"
+                        value={formData.startDate}
                         onChange={handleChange}
-                        disabled={!isAdmin} // <-- VÔ HIỆU HÓA
-                    >
-                        <option value="">-- Select a Manager --</option>
-                        {allUsers.map(u => (
-                            <option key={u._id} value={u._id}>
-                                {u.fullname} ({u.email})
-                            </option>
-                        ))}
-                    </select>
+                        disabled={!isAdmin}
+                    />
                 </div>
-                
-                {/* ===> CHỈ HIỂN THỊ CÁC NÚT KHI LÀ ADMIN <=== */}
-                {isAdmin && (
-                    <div className="form-actions">
-                        <button type="button" onClick={handleCancel} className="btn btn-secondary">
-                            Cancel
-                        </button>
-                        <button type="submit" className="btn btn-primary" disabled={isSaving}>
-                            {isSaving ? 'Saving...' : 'Save'}
-                        </button>
-                    </div>
-                )}
-            </form>
+                <div className="form-group">
+                    <label htmlFor="endDate">End Date</label>
+                    <input
+                        id="endDate"
+                        name="endDate"
+                        type="date"
+                        value={formData.endDate}
+                        onChange={handleChange}
+                        disabled={!isAdmin}
+                    />
+                    {errors.endDate && <p className="error-message">{errors.endDate}</p>}
+                </div>
+            </div>
+
+            <div className="form-group">
+                <label>Description</label>
+                <textarea 
+                    name="description" 
+                    value={formData.description} 
+                    onChange={handleChange} 
+                    rows="4"
+                    disabled={!isAdmin}
+                />
+            </div>
+
+             <div className="form-group">
+                <label htmlFor="projectLeaderId">Project Manager</label>
+                <select
+                    id="projectLeaderId"
+                    name="projectLeaderId"
+                    value={formData.projectLeaderId}
+                    onChange={handleChange}
+                    disabled={!isAdmin}
+                >
+                    <option value="">-- Select a Manager --</option>
+                    {allUsers.map(u => (
+                        <option key={u._id} value={u._id}>
+                            {u.fullname} ({u.email})
+                        </option>
+                    ))}
+                </select>
+            </div>
+            
+            {isAdmin && (
+                <div className="form-actions">
+                    <button type="button" onClick={handleCancel} className="btn btn-secondary">
+                        Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                        {isSaving ? 'Saving...' : 'Save'}
+                    </button>
+                </div>
+            )}
+        </form>
     );
 };
 

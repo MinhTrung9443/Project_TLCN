@@ -173,24 +173,39 @@ const cloneProject = async (sourceProjectId, cloneData) => {
     throw error;
   }
 
+  // ===> BẮT ĐẦU SỬA ĐỔI <===
+
+  // Xóa các trường không nên sao chép
   delete sourceProject._id;
   delete sourceProject.createdAt;
   delete sourceProject.updatedAt;
+  delete sourceProject.__v;
+  // Quan trọng: Xóa mảng members và groups cũ để khởi tạo lại
+  delete sourceProject.members;
+  delete sourceProject.groups;
+
 
   const newProjectData = {
     ...sourceProject,
+    // Ghi đè các thông tin mới
     name,
     key,
     projectLeaderId,
+    // Khởi tạo lại mảng members với chỉ Project Leader
     members: [{ userId: projectLeaderId, role: 'Project Manager' }],
+    // Khởi tạo mảng groups rỗng
+    groups: [],
+    // Reset các trạng thái
     status: 'active',
     isDeleted: false,
     deletedAt: null,
   };
   
   const clonedProject = new Project(newProjectData);
+  // Dòng này sẽ không còn báo lỗi validation nữa
   await clonedProject.save();
 
+  // Bây giờ mới sao chép các setting khác (TaskType, Priority...)
   try {
     await copySettingsFromSourceProject(sourceProjectId, clonedProject._id);
   } catch (copyError) {
@@ -199,7 +214,6 @@ const cloneProject = async (sourceProjectId, cloneData) => {
 
   return clonedProject;
 };
-
 const getProjectByKey = async (key) => {
   const project = await Project.findOne({ key: key.toUpperCase(), isDeleted: false })
     .populate('projectLeaderId', 'fullname email avatar');
@@ -214,10 +228,14 @@ const getProjectByKey = async (key) => {
 
 const getProjectMembers = async (projectKey) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
-    // Populate lồng nhau: đi vào mảng 'members', và với mỗi object, populate trường 'userId'
     .populate({
       path: 'members.userId',
-      select: 'fullname email avatar' // Chỉ lấy các trường cần thiết của user
+      select: 'fullname email avatar'
+    })
+    .populate({
+      path: 'groups.groupId',
+      select: 'name members',
+      model: 'Group'
     });
 
   if (!project) {
@@ -225,9 +243,13 @@ const getProjectMembers = async (projectKey) => {
     error.statusCode = 404;
     throw error;
   }
-  return project.members;
-};
 
+  // Luôn trả về cấu trúc này, ngay cả khi mảng rỗng
+  return {
+    members: project.members || [],
+    groups: project.groups || []
+  };
+};
 // THÊM THÀNH VIÊN MỚI VÀO PROJECT
 const addMemberToProject = async (projectKey, { userId, role }) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase() });
@@ -237,35 +259,39 @@ const addMemberToProject = async (projectKey, { userId, role }) => {
     throw error;
   }
 
-  // Kiểm tra xem user đã là thành viên chưa
+  // Logic kiểm tra này đã đúng, `member.userId` là một ObjectId
   const isAlreadyMember = project.members.some(member => member.userId.equals(userId));
   if (isAlreadyMember) {
     const error = new Error('User is already a member of this project');
-    error.statusCode = 400; // Bad Request
+    error.statusCode = 400;
     throw error;
   }
 
-  project.members.push({ userId, role, addedOn: new Date() }); // Giả sử schema có trường addedOn
+  project.members.push({ userId, role });
   await project.save();
   return { message: 'Member added successfully' };
 };
 
-const addGroupToProject = async (projectKey, { groupId }) => {
+const addGroupToProject = async (projectKey, { groupId, role }) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase() });
-  if (!project) { /* ... xử lý lỗi ... */ }
-
-  // Kiểm tra xem group đã tồn tại trong project chưa
-  const isAlreadyInProject = project.groups.some(id => id.equals(groupId));
+  if (!project) {
+    const error = new Error('Project not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  const isAlreadyInProject = project.groups.some(g => g.groupId && g.groupId.equals(groupId));
+  
   if (isAlreadyInProject) {
     const error = new Error('Group is already in this project');
     error.statusCode = 400;
     throw error;
   }
 
-  project.groups.push(groupId);
+  project.groups.push({ groupId, role });
   await project.save();
   return { message: 'Group added successfully' };
 };
+
 module.exports = {
   createProject,
   getAllProjects,
