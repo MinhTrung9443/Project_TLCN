@@ -1,48 +1,73 @@
+// src/pages/ManageProject/ProjectsPage.jsx
+
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProjectContext } from '../../contexts/ProjectContext';
-import { getProjects, deleteProject } from '../../services/projectService';
+import { getProjects, getArchivedProjects, archiveProject, restoreProject, permanentlyDeleteProject } from '../../services/projectService';
 import { toast } from 'react-toastify';
 import CreateProjectModal from '../../components/project/CreateProjectModal';
 import ProjectActionsMenu from '../../components/project/ProjectActionsMenu';
+import ArchivedProjectActionsMenu from '../../components/project/ArchivedProjectActionsMenu';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import CloneProjectModal from '../../components/project/CloneProjectModal';
 import '../../styles/pages/ManageProject/ProjectsPage.css';
 
 const ProjectsPage = () => {
   const { user } = useAuth();
-  const { setSelectedProjectKey } = useContext(ProjectContext);
+  const { selectedProjectKey, setSelectedProjectKey } = useContext(ProjectContext); // <--- CẬP NHẬT DÒNG NÀY
   const navigate = useNavigate();
+  
   const [projects, setProjects] = useState([]);
+  const [archivedProjects, setArchivedProjects] = useState([]); // **NEW**
+  const [view, setView] = useState('active'); // 'active' or 'archived' **NEW**
+
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteAction, setDeleteAction] = useState(null); // 'archive' or 'permanent' **NEW**
   const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+
   useEffect(() => {
     const fetchProjects = async () => {
+      setLoading(true);
       try {
-        const response = await getProjects();
-        setProjects(response.data);
+        if (view === 'active') {
+          const response = await getProjects();
+          setProjects(response.data);
+        } else {
+          const response = await getArchivedProjects();
+          setArchivedProjects(response.data);
+        }
       } catch (error) {
-        toast.error('Could not fetch projects.');
+        toast.error(`Could not fetch ${view} projects.`);
       } finally {
         setLoading(false);
       }
     };
     fetchProjects();
-  }, []);
+  }, [view]); // Re-fetch khi view thay đổi
 
   const handleProjectCreated = (newProject) => {
     setProjects([newProject, ...projects]);
   };
+
   const handleProjectCloned = (clonedProject) => {
     setProjects([clonedProject, ...projects]);
   };
 
-  const openDeleteModal = (project) => {
+  // Mở modal cho việc Archive
+  const openArchiveModal = (project) => {
     setSelectedProject(project);
+    setDeleteAction('archive');
+    setIsDeleteModalOpen(true);
+  };
+  
+  // Mở modal cho việc Xóa vĩnh viễn
+  const openPermanentDeleteModal = (project) => {
+    setSelectedProject(project);
+    setDeleteAction('permanent');
     setIsDeleteModalOpen(true);
   };
 
@@ -51,62 +76,137 @@ const ProjectsPage = () => {
     setIsCloneModalOpen(true);
   };
 
+  // Xử lý cả Archive và Permanent Delete
   const handleConfirmDelete = async () => {
-    if (!selectedProject) return;
+    if (!selectedProject || !deleteAction) return;
+    
     try {
-      await deleteProject(selectedProject._id);
-      setProjects(projects.filter(p => p._id !== selectedProject._id));
-      toast.success('Project deleted successfully!');
+      if (deleteAction === 'archive') {
+        await archiveProject(selectedProject._id);
+        
+        // Tạo danh sách project còn lại
+        const remainingProjects = projects.filter(p => p._id !== selectedProject._id);
+        setProjects(remainingProjects);
+        
+        // *** LOGIC MỚI ĐỂ CẬP NHẬT CONTEXT ***
+        // Kiểm tra xem project bị xóa có phải là project đang được chọn không
+        if (selectedProject.key.toUpperCase() === selectedProjectKey) {
+          if (remainingProjects.length > 0) {
+            // Nếu vẫn còn project, chọn project đầu tiên làm project mới
+            setSelectedProjectKey(remainingProjects[0].key.toUpperCase());
+          } else {
+            // Nếu không còn project nào, xóa key đã chọn
+            setSelectedProjectKey(null);
+          }
+        }
+        // *** KẾT THÚC LOGIC MỚI ***
+
+        toast.success('Project archived successfully!');
+
+      } else if (deleteAction === 'permanent') {
+        await permanentlyDeleteProject(selectedProject._id);
+        setArchivedProjects(archivedProjects.filter(p => p._id !== selectedProject._id));
+        toast.success('Project permanently deleted!');
+      }
     } catch (error) {
-      toast.error('Failed to delete project.');
+      toast.error(`Failed to ${deleteAction} project.`);
     } finally {
       setIsDeleteModalOpen(false);
       setSelectedProject(null);
+      setDeleteAction(null);
     }
   };
+
+
+  // **NEW**: Xử lý Restore
+  const handleRestore = async (project) => {
+    try {
+      await restoreProject(project._id);
+      setArchivedProjects(archivedProjects.filter(p => p._id !== project._id));
+      toast.success('Project restored successfully!');
+    } catch (error) {
+      toast.error('Failed to restore project.');
+    }
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-CA');
   };
+
   const handleProjectSelect = (project) => {
-    setSelectedProjectKey(project.key.toUpperCase());
-    navigate(`/task-mgmt/projects/${project.key}/settings/general`);
+    if(view === 'active') {
+       setSelectedProjectKey(project.key.toUpperCase());
+       navigate(`/task-mgmt/projects/${project.key}/settings/general`);
+    }
+    // Không làm gì khi click vào project đã archived
   };
+
+  const renderProjects = () => {
+    const projectList = view === 'active' ? projects : archivedProjects;
+    
+    return projectList.map((project) => (
+      <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{cursor: view === 'active' ? 'pointer' : 'default'}}>
+        <td><a href="#" className="project-name-link">{project.name}</a></td>
+        <td>{project.key}</td>
+        <td>{project.type}</td>
+        <td>{project.projectLeaderId?.fullname || 'N/A'}</td>
+        <td>{project.members.length}</td>
+        <td>{formatDate(view === 'active' ? project.createdAt : project.deletedAt)}</td>
+        <td>
+          <span className={`status-badge ${view === 'active' ? 'status-active' : 'status-archived'}`}>
+            {view === 'active' ? project.status : 'Archived'}
+          </span>
+        </td>
+        <td>
+          {view === 'active' ? (
+            <ProjectActionsMenu
+              project={project}
+              onDelete={openArchiveModal}
+              onClone={openCloneModal}
+            />
+          ) : (
+            <ArchivedProjectActionsMenu 
+              project={project}
+              onRestore={handleRestore}
+              onDelete={openPermanentDeleteModal}
+            />
+          )}
+        </td>
+      </tr>
+    ));
+  };
+  
   return (
     <>
-      <CreateProjectModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onProjectCreated={handleProjectCreated}
-      />
+      <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onProjectCreated={handleProjectCreated} />
+      
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
-        title="Delete Project"
-        message={`Are you sure you want to delete the project "${selectedProject?.name}"?`}
+        title={deleteAction === 'archive' ? "Archive Project" : "Delete Project Permanently"}
+        message={`Are you sure you want to ${deleteAction === 'archive' ? 'archive' : 'permanently delete'} the project "${selectedProject?.name}"? This action cannot be undone.`}
       />
-      <CloneProjectModal
-        isOpen={isCloneModalOpen}
-        onClose={() => setIsCloneModalOpen(false)}
-        sourceProject={selectedProject}
-        onProjectCloned={handleProjectCloned}
-      />
+      
+      <CloneProjectModal isOpen={isCloneModalOpen} onClose={() => setIsCloneModalOpen(false)} sourceProject={selectedProject} onProjectCloned={handleProjectCloned} />
+      
       <div className="projects-page-container">
         <header className="projects-header">
           <h1 className="projects-title">Projects</h1>
-          <div className="projects-actions">
-            {user && user.role === 'admin' && (
-              <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
-                Create Project
-              </button>
-            )}
-          </div>
+          {view === 'active' && user?.role === 'admin' && (
+            <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+              Create Project
+            </button>
+          )}
         </header>
 
         <div className="projects-content-wrapper">
           <div className="projects-controls">
-            <button className="filter-btn">Filter</button>
+            <div className="view-toggle">
+              <button className={`toggle-btn ${view === 'active' ? 'active' : ''}`} onClick={() => setView('active')}>All Projects</button>
+              <button className={`toggle-btn ${view === 'archived' ? 'active' : ''}`} onClick={() => setView('archived')}>Archived Projects</button>
+            </div>
             <input type="search" placeholder="Search..." className="search-input" />
           </div>
 
@@ -122,39 +222,15 @@ const ProjectsPage = () => {
                     <th>Type</th>
                     <th>Project Manager</th>
                     <th>Members</th>
-                    <th>Created Date</th>
+                    <th>{view === 'active' ? 'Created Date' : 'Archived Date'}</th>
                     <th>Status</th>
-                    <th>{ }</th>
-
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {projects.length > 0 ? (
-                    projects.map((project) => (
-                      <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{cursor: 'pointer'}}>
-                        <td><a href="#" className="project-name-link">{project.name}</a></td>
-                        <td>{project.key}</td>
-                        <td>{project.type}</td>
-                        <td>{project.projectLeaderId?.fullname || 'N/A'}</td>
-                        <td>{project.members.length}</td>
-                        <td>{formatDate(project.createdAt)}</td>
-                        <td>
-                          <span className="status-badge status-active">
-                            {project.status}
-                          </span>
-                        </td>
-                        <td>
-                          <ProjectActionsMenu
-                            project={project}
-                            onDelete={openDeleteModal}
-                            onClone={openCloneModal}
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
+                  {renderProjects().length > 0 ? renderProjects() : (
                     <tr className="no-projects-message">
-                      <td colSpan="7">No projects found.</td>
+                      <td colSpan="8">No projects found.</td>
                     </tr>
                   )}
                 </tbody>
