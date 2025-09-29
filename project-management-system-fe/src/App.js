@@ -18,6 +18,7 @@ import GroupMembersPage from "./pages/GroupMembersPage";
 import ProjectsPage from "./pages/ManageProject/ProjectsPage";
 import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage.jsx";
 import GlobalSettingsPage from "./pages/Setting/GlobalSettingsPage"; // <-- Import trang cha
+import TaskFinderPage from "./pages/ManageTask/TaskFinderPage"; // <-- IMPORT
 
 function App() {
   return (
@@ -44,7 +45,8 @@ function App() {
 
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/task-mgmt/projects/:projectKey/settings/:tabName" element={<ProjectSettingsPage/>} />
-            
+            <Route path="/task-mgmt/projects/:projectKey/task-finder" element={<TaskFinderPage />} />
+
           </Route>
         </Routes>
 

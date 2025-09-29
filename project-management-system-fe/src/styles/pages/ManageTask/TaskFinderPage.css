@@ -1,0 +1,190 @@
+/* src/styles/pages/ManageTask/TaskFinderPage.css */
+
+.task-finder-container {
+  padding: 24px;
+  background-color: #f7f8fa;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-finder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.task-finder-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #172b4d;
+}
+
+.create-task-btn {
+  background: linear-gradient(90deg, #4f46e5, #818cf8);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.create-task-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
+}
+
+
+.task-list-container {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  overflow: hidden; /* Important for rounded corners */
+  flex-grow: 1;
+}
+
+/* Base styles for rows and headers */
+.task-list-header, .task-row {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid #dfe1e6;
+  min-height: 50px;
+}
+
+.task-list-header {
+  background-color: #f4f5f7;
+  font-weight: 600;
+  font-size: 14px;
+  color: #5e6c84;
+}
+
+.task-row {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.task-row:hover {
+  background-color: #f7f8fa;
+}
+
+/* Cell styles */
+.task-cell {
+  padding: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+}
+
+/* Specific column widths */
+.task-key { flex: 0 0 100px; }
+.task-name { flex: 1 1 300px; font-weight: 500; color: #172b4d; }
+.task-sprint { flex: 0 0 120px; }
+.task-assignee, .task-reporter { flex: 0 0 80px; justify-content: center; }
+.task-priority { flex: 0 0 80px; justify-content: center; }
+.task-status { flex: 0 0 120px; }
+.task-due-date { flex: 0 0 120px; }
+
+/* Avatar styles */
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.default-avatar {
+  background-color: #dfe1e6;
+  color: #172b4d;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+}
+
+/* Priority icon */
+.priority-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Status Pill */
+.status-pill {
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.loading-text, .info-text {
+    padding: 20px;
+    text-align: center;
+    color: #5e6c84;
+    font-size: 16px;
+}
+.task-cell {
+  padding: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+}
+
+.task-key { flex: 0 0 120px; } 
+.task-name { flex: 1 1 280px; font-weight: 500; color: #172b4d; }
+.task-sprint { flex: 0 0 120px; }
+.task-platform { flex: 0 0 80px; justify-content: center; } 
+.task-assignee, .task-reporter { flex: 0 0 80px; justify-content: center; }
+.task-priority { flex: 0 0 80px; justify-content: center; }
+.task-status { flex: 0 0 120px; }
+.task-due-date { flex: 0 0 120px; }
+
+/* Avatar styles (giữ nguyên) */
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.default-avatar {
+  background-color: #dfe1e6;
+  color: #172b4d;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+}
+
+.icon-wrapper-list {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    color: white;
+    font-size: 16px;
+}
+
+/* Style cho wrapper icon nhỏ hơn, nằm cạnh Key */
+.icon-wrapper-list-small {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    margin-right: 8px; /* Tạo khoảng cách với text Key */
+}

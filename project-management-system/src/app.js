@@ -7,8 +7,11 @@ const taskTypeRoute = require("./routes/taskTypeRoute.js");
 const priorityRoute = require("./routes/priorityRoute.js");
 const platformRoute = require("./routes/platformRoute.js");
 const projectRoute = require("./routes/projectRoute"); 
+const taskRoutes = require('./routes/taskRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const cors = require("cors");
-
+const path = require('path');
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -17,7 +20,7 @@ app.use(
   })
 );
 app.use(express.json());
-
+app.use(express.static(path.join(__dirname, 'public')));
 app.use("/api", appRoute);
 app.use("/api/users", userRoute);
 app.use("/api/groups", groupRoute);
@@ -25,5 +28,8 @@ app.use("/api/task-types", taskTypeRoute);
 app.use("/api/priorities", priorityRoute);
 app.use("/api/platforms", platformRoute);
 app.use('/api/projects', projectRoute); 
+app.use('/api/tasks', taskRoutes); 
+app.use('/api/settings', settingsRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 module.exports = app;
