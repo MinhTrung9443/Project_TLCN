@@ -14,24 +14,7 @@ class PlatformService {
 
       const projectPlatforms = await Platform.find({ projectId: project._id });
 
-      // Nếu đã có bộ riêng, trả về
-      if (projectPlatforms.length > 0) {
-        return projectPlatforms;
-      }
-
-      // Nếu chưa có, sao chép từ global
-      const globalPlatforms = await Platform.find({ projectId: null });
-      if (globalPlatforms.length === 0) return [];
-
-      const newPlatformsForProject = globalPlatforms.map(p => {
-        const platformCopy = p.toObject();
-        delete platformCopy._id;
-        platformCopy.projectId = project._id;
-        return platformCopy;
-      });
-
-      return await Platform.insertMany(newPlatformsForProject);
-
+      return projectPlatforms;
     } catch (error) {
       console.error("Error fetching platforms:", error);
       throw new Error("Error fetching platforms");
@@ -50,7 +33,7 @@ class PlatformService {
       if (existingPlatform) {
         throw new Error("Platform with this name already exists.");
       }
-      
+
       const newPlatform = new Platform({ ...platformData, projectId });
       return await newPlatform.save();
     } catch (error) {
@@ -59,26 +42,26 @@ class PlatformService {
   }
 
   async updatePlatform(platformId, updateData) {
-        try {
-            const platformToUpdate = await Platform.findById(platformId);
-            if (!platformToUpdate) {
-                throw new Error("Platform not found.");
-            }
+    try {
+      const platformToUpdate = await Platform.findById(platformId);
+      if (!platformToUpdate) {
+        throw new Error("Platform not found.");
+      }
 
-            const existingPlatform = await Platform.findOne({
-                name: updateData.name,
-                projectId: platformToUpdate.projectId, // Chỉ kiểm tra trong cùng scope
-                _id: { $ne: platformId } // Loại trừ chính nó ra khỏi việc kiểm tra
-            });
-            
-            if (existingPlatform) {
-                throw new Error("Platform with this name already exists in this project.");
-            }
-            return await Platform.findByIdAndUpdate(platformId, updateData, { new: true });
-        } catch (error) {
-            throw error;
-        }
+      const existingPlatform = await Platform.findOne({
+        name: updateData.name,
+        projectId: platformToUpdate.projectId, // Chỉ kiểm tra trong cùng scope
+        _id: { $ne: platformId }, // Loại trừ chính nó ra khỏi việc kiểm tra
+      });
+
+      if (existingPlatform) {
+        throw new Error("Platform with this name already exists in this project.");
+      }
+      return await Platform.findByIdAndUpdate(platformId, updateData, { new: true });
+    } catch (error) {
+      throw error;
     }
+  }
 
   async deletePlatform(platformId) {
     try {

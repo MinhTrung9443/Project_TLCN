@@ -8,7 +8,7 @@ import * as FaIcons from 'react-icons/fa';
 import * as VscIcons from 'react-icons/vsc';
 import { FaGripVertical } from 'react-icons/fa';
 import '../../styles/pages/ManageProject/ProjectSettings_TaskType.css';
-
+import { useAuth } from "../../contexts/AuthContext"; 
 const PREDEFINED_PRIORITY_ICONS = [
   { name: 'FaExclamationCircle', color: '#CD1317' }, // Critical
   { name: 'FaArrowUp', color: '#F57C00' }, // High
@@ -94,7 +94,7 @@ useEffect(() => {
 const ProjectSettingPriority = () => {
   const params = useParams();
   const projectKey = params.projectKey ? params.projectKey.toUpperCase() : null;
-
+  const { user } = useAuth();
   const [priorities, setPriorities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -188,12 +188,16 @@ const ProjectSettingPriority = () => {
     <DndProvider backend={HTML5Backend}>
       <div className="settings-list-container">
         <div className="settings-list-header">
-          <div className="header-col col-drag-handle"></div> 
+          <div className="header-col col-drag-handle"></div>
           <div className="header-col col-icon">Icon</div>
           <div className="header-col col-name">Priority Name</div>
-          <div className="header-col col-actions">
-            <button className="btn-add-icon" onClick={() => handleOpenModal()}><VscIcons.VscAdd /></button>
-          </div>
+          {user.role === "admin" && (
+            <div className="header-col col-actions">
+              <button className="btn-add-icon" onClick={() => handleOpenModal()}>
+                <VscIcons.VscAdd />
+              </button>
+            </div>
+          )}
         </div>
         <div className="settings-list-body">
           {priorities.map((item, index) => (
@@ -211,26 +215,30 @@ const ProjectSettingPriority = () => {
         </div>
       </div>
       {isModalOpen ? (
-    <div className="modal-overlay">
-        <div className="modal-content">
-            <h2>{currentPriority?._id ? 'Edit Priority' : 'Create Priority'}</h2>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>{currentPriority?._id ? "Edit Priority" : "Create Priority"}</h2>
             <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label htmlFor="name">Priority Name*</label>
-                    <input id="name" name="name" value={currentPriority.name} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                    <label>Icon</label>
-                    <IconPicker selectedIcon={currentPriority.icon} onSelect={handleIconSelect} />
-                </div>
-                <div className="modal-actions">
-                    <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Cancel</button>
-                    <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</button>
-                </div>
+              <div className="form-group">
+                <label htmlFor="name">Priority Name*</label>
+                <input id="name" name="name" value={currentPriority.name} onChange={handleChange} required />
+              </div>
+              <div className="form-group">
+                <label>Icon</label>
+                <IconPicker selectedIcon={currentPriority.icon} onSelect={handleIconSelect} />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
             </form>
+          </div>
         </div>
-    </div>
-) : null} 
+      ) : null}
     </DndProvider>
   );
 };
