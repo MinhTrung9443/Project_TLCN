@@ -19,22 +19,20 @@ const handleGetAllProjects = async (req, res) => {
   }
 };
 
+const handleGetArchivedProjects = async (req, res) => {
+  try {
+    const projects = await projectService.getArchivedProjects();
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Server Error' });
+  }
+};
 const handleUpdateProject = async (req, res) => {
   try {
     const { id } = req.params;
     const projectData = req.body;
     const updatedProject = await projectService.updateProject(id, projectData);
     res.status(200).json(updatedProject);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
-  }
-};
-
-const handleDeleteProject = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await projectService.deleteProject(id);
-    res.status(200).json(result);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
   }
@@ -101,11 +99,45 @@ const handleAddGroupToProject = async (req, res) => {
     res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
   }
 };
+
+const handleArchiveProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await projectService.archiveProject(id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
+  }
+};
+
+const handleRestoreProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await projectService.restoreProject(id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
+  }
+};
+
+const handlePermanentlyDeleteProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await projectService.permanentlyDeleteProject(id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
+  }
+};
+
 module.exports = {
   handleCreateProject,
   handleGetAllProjects,
+  handleGetArchivedProjects, 
   handleUpdateProject,
-  handleDeleteProject,
+  handleArchiveProject, 
+  handleRestoreProject, 
+  handlePermanentlyDeleteProject, 
   handleCloneProject,
   handleGetProjectByKey,
   handleGetProjectMembers,

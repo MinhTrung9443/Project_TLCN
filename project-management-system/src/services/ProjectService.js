@@ -108,9 +108,16 @@ const createProject = async (projectData) => {
 };
 
 const getAllProjects = async () => {
+  // Lấy các dự án đang hoạt động (chưa bị xóa mềm)
   const projects = await Project.find({ isDeleted: false })
     .populate('projectLeaderId', 'fullname email avatar') 
     .sort({ createdAt: -1 });
+  return projects;
+};
+const getArchivedProjects = async () => {
+  const projects = await Project.find({ isDeleted: true })
+    .populate('projectLeaderId', 'fullname email avatar') 
+    .sort({ deletedAt: -1 }); // Sắp xếp theo ngày lưu trữ
   return projects;
 };
 
@@ -140,7 +147,7 @@ const updateProject = async (projectId, projectData) => {
   return updatedProject;
 };
 
-const deleteProject = async (projectId) => {
+const archiveProject = async (projectId) => {
   const project = await Project.findById(projectId);
 
   if (!project) {
@@ -153,7 +160,43 @@ const deleteProject = async (projectId) => {
   project.deletedAt = new Date();
   await project.save();
 
-  return { message: 'Project deleted successfully' };
+  return { message: 'Project archived successfully' };
+};
+
+const restoreProject = async (projectId) => {
+  const project = await Project.findById(projectId);
+
+  if (!project) {
+    const error = new Error('Project not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  project.isDeleted = false;
+  project.deletedAt = null;
+  await project.save();
+
+  return { message: 'Project restored successfully' };
+};
+
+const permanentlyDeleteProject = async (projectId) => {
+  // Xóa dự án
+  const deletedProject = await Project.findByIdAndDelete(projectId);
+
+  if (!deletedProject) {
+    const error = new Error('Project not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Xóa tất cả các cài đặt liên quan (quan trọng để giữ DB sạch)
+  await Promise.all([
+    TaskType.deleteMany({ projectId }),
+    Priority.deleteMany({ projectId }),
+    Platform.deleteMany({ projectId }),
+  ]);
+
+  return { message: 'Project permanently deleted successfully' };
 };
 
 const cloneProject = async (sourceProjectId, cloneData) => {
@@ -249,7 +292,6 @@ const getProjectMembers = async (projectKey) => {
     groups: project.groups || []
   };
 };
-// THÊM THÀNH VIÊN MỚI VÀO PROJECT
 const addMemberToProject = async (projectKey, { userId, role }) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase() });
   if (!project) {
@@ -295,7 +337,11 @@ module.exports = {
   createProject,
   getAllProjects,
   updateProject,
-  deleteProject,
+  getArchivedProjects,
+  updateProject,
+  archiveProject,
+  restoreProject, 
+  permanentlyDeleteProject,
   cloneProject,
   getProjectByKey,
   getProjectMembers,

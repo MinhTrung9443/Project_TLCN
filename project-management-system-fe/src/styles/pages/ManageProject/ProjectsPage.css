@@ -62,7 +62,6 @@
   background-color: var(--container-bg-color);
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  overflow: hidden; 
 }
 
 .projects-controls {
@@ -92,9 +91,6 @@
     width: 250px;
 }
 
-.table-wrapper {
-    overflow-x: auto; 
-}
 .projects-table {
   width: 100%;
   border-collapse: collapse;
@@ -206,4 +202,61 @@
 
 .actions-dropdown li .delete-option:hover {
   background-color: #f2dede;
+}
+.projects-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.view-toggle {
+  display: flex;
+  background-color: #f0f2f5;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.toggle-btn {
+  background-color: transparent;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #5e6c84;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.toggle-btn.active {
+  background-color: #ffffff;
+  color: #0c66e4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.status-badge.status-archived {
+  background-color: #dfe1e6; /* Màu xám cho status archived */
+  color: #42526e;
+}
+
+/* Style cho các nút trong ArchivedProjectActionsMenu */
+.actions-dropdown button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.actions-dropdown button:hover {
+  background-color: #f4f5f7;
+}
+
+.actions-dropdown .delete-option:hover {
+  background-color: #ffebe6;
+  color: #de350b;
 }
