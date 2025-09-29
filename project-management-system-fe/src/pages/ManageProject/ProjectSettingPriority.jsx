@@ -9,6 +9,7 @@ import * as VscIcons from 'react-icons/vsc';
 import { FaGripVertical } from 'react-icons/fa';
 import '../../styles/pages/ManageProject/ProjectSettings_TaskType.css';
 import { useAuth } from "../../contexts/AuthContext"; 
+
 const PREDEFINED_PRIORITY_ICONS = [
   { name: 'FaExclamationCircle', color: '#CD1317' }, // Critical
   { name: 'FaArrowUp', color: '#F57C00' }, // High
@@ -39,28 +40,27 @@ const IconPicker = ({ selectedIcon, onSelect }) => (
   </div>
 );
 
-const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDeleteConfirm, openMenuId, toggleMenu }) => {
+const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDeleteConfirm }) => {
   const ref = React.useRef(null);
-  const menuRef = useRef(null);
   const ItemType = 'PRIORITY_ITEM';
-const handleRef = React.useRef(null);
-  const [, drop] = useDrop({ accept: ItemType, hover(draggedItem) { if (draggedItem.index !== index) { moveItem(draggedItem.index, index); draggedItem.index = index; } } });
- const [{ isDragging }, drag] = useDrag({
+  const handleRef = React.useRef(null);
+  const [{ isDragging }, drag] = useDrag({
         type: ItemType,
         item: { id: item._id, index },
         collect: (monitor) => ({ isDragging: monitor.isDragging() }),
     });
+  const [, drop] = useDrop({ 
+    accept: ItemType, 
+    hover(draggedItem) { 
+      if (draggedItem.index !== index) { 
+        moveItem(draggedItem.index, index); 
+        draggedItem.index = index; 
+      } 
+    } 
+  });
   drag(handleRef);
   drop(ref);
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (menuRef.current && !menuRef.current.contains(event.target)) {
-      toggleMenu(null);
-    }
-  };
-  document.addEventListener("click", handleClickOutside);
-  return () => document.removeEventListener("click", handleClickOutside);
-}, [toggleMenu]);
+
   const iconInfo = PREDEFINED_PRIORITY_ICONS.find(i => i.name === item.icon);
 
   const handleEditClick = (e) => {
@@ -73,10 +73,6 @@ useEffect(() => {
     openDeleteConfirm(item._id);
   };
 
-  const handleToggleMenuClick = (e) => {
-    e.stopPropagation();
-    toggleMenu(item._id);
-  }
   return (
     <div ref={ref} className="settings-list-row" style={{ opacity: isDragging ? 0.5 : 1 }}>
       <div className="row-col col-drag-handle" ref={handleRef}>
@@ -84,8 +80,14 @@ useEffect(() => {
             </div>
       <div className="row-col col-icon"><span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || '#7A869A' }}><IconComponent name={item.icon} /></span></div>
       <div className="row-col col-name">{item.name}</div>
-      <div className="row-col col-actions"><div className="action-menu-wrapper" ref={menuRef}><button className="btn-menu-toggle" onClick={handleToggleMenuClick}><FaIcons.FaEllipsisV /></button>{openMenuId === item._id && (<div className="action-dropdown-menu"><button onClick={handleEditClick}>Edit</button>
-        <button onClick={handleDeleteClick}>Delete</button></div>)}</div></div>
+      <div className="row-col col-actions">
+        <button className="btn-edit" onClick={handleEditClick}>
+          <FaIcons.FaPencilAlt />
+        </button>
+        <button className="btn-delete" onClick={handleDeleteClick}>
+          <FaIcons.FaTrash />
+        </button>
+      </div>
     </div>
   );
 };
@@ -100,7 +102,6 @@ const ProjectSettingPriority = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPriority, setCurrentPriority] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
 
   const isFetching = useRef(false);
 
@@ -128,7 +129,6 @@ const ProjectSettingPriority = () => {
   const handleOpenModal = (priority = null) => {
     setCurrentPriority(priority ? { ...priority } : { name: '', icon: 'FaFire' });
     setIsModalOpen(true);
-    setOpenMenuId(null);
   };
 
   const handleSubmit = async (e) => {
@@ -151,7 +151,6 @@ const ProjectSettingPriority = () => {
 
   const handleDelete = async (id) => {
     // ... Logic handleDelete của bạn đã đúng ...
-    setOpenMenuId(null);
     if (window.confirm("Are you sure?")) {
       try {
         await priorityService.deletePriority(id);
@@ -180,7 +179,6 @@ const ProjectSettingPriority = () => {
   const handleCloseModal = () => setIsModalOpen(false);
   const handleChange = (e) => { const { name, value } = e.target; setCurrentPriority(prev => ({ ...prev, [name]: value })); };
   const handleIconSelect = (iconName) => { setCurrentPriority(prev => ({ ...prev, icon: iconName })); };
-  const toggleMenu = (id) => { setOpenMenuId(openMenuId === id ? null : id); };
 
   if (loading && priorities.length === 0) return <div>Loading priorities...</div>;
 
@@ -208,8 +206,6 @@ const ProjectSettingPriority = () => {
               moveItem={movePriority}
               openEditModal={handleOpenModal}
               openDeleteConfirm={handleDelete}
-              openMenuId={openMenuId}
-              toggleMenu={toggleMenu}
             />
           ))}
         </div>

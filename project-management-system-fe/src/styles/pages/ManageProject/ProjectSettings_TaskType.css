@@ -1,4 +1,4 @@
-.settings-list-container {
+    .settings-list-container {
     padding: 30px;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     border-radius: 16px;
@@ -68,9 +68,10 @@
     text-overflow: ellipsis;
 }
 .col-actions {
-    width: 60px;
+    width: 80px;
     justify-content: flex-end;
     flex-shrink: 0;
+    gap: 5px;
 }
 
 /* --- Icon Styles --- */
@@ -92,7 +93,7 @@
 }
 
 /* --- Action Buttons --- */
-.btn-add-icon, .btn-menu-toggle {
+.btn-add-icon {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     cursor: pointer;
@@ -105,13 +106,9 @@
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
-.btn-add-icon:hover, .btn-menu-toggle:hover {
+.btn-add-icon:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
-
-.action-menu-wrapper {
-    position: relative;
 }
 
 .row-col.col-drag-handle {
@@ -153,43 +150,36 @@
     font-weight: 500;
 }
 
-.action-dropdown-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    z-index: 100;
-    width: 140px;
-    padding: 8px 0;
-    backdrop-filter: blur(10px);
-}
-
-.action-dropdown-menu button {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 10px 15px;
-    background: none;
+/* --- Edit and Delete Buttons --- */
+.btn-edit, .btn-delete {
+    width: 28px;
+    height: 28px;
     border: none;
+    border-radius: 6px;
     cursor: pointer;
-    pointer-events: auto !important;
-    transition: background-color 0.2s ease;
-    color: #495057;
-    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    color: #6c757d;
+    background: transparent;
 }
 
-.action-dropdown-menu button:hover {
-    background-color: rgba(0, 123, 255, 0.1);
-    color: #007bff;
+.btn-edit:hover {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    transform: scale(1.1);
 }
 
-.menu-item-disabled {
-    color: #6c757d !important;
-    cursor: not-allowed !important;
-    font-style: italic;
+.btn-delete:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    transform: scale(1.1);
+}
+
+.btn-edit:active, .btn-delete:active {
+    transform: scale(0.95);
 }
 
 /* --- Modal Styles --- */
@@ -379,7 +369,7 @@
     }
 
     .col-actions {
-        width: 50px;
+        width: 60px;
     }
 
     .modal-content {
@@ -389,5 +379,11 @@
 
     .icon-picker-container {
         grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    }
+
+    .btn-edit, .btn-delete {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
     }
 }

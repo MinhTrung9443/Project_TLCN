@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import platformService from "../../services/platformService"; // Service mới cho platform
@@ -51,8 +51,6 @@ const ProjectSettingPlatform = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPlatform, setCurrentPlatform] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const menuRef = useRef(null);
 
   const fetchPlatforms = useCallback(async () => {
     try {
@@ -70,18 +68,9 @@ const ProjectSettingPlatform = () => {
     fetchPlatforms();
   }, [fetchPlatforms]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setOpenMenuId(null);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const handleOpenModal = (platform = null) => {
-    setCurrentPlatform(platform ? { ...platform } : { name: "", icon: "FaCode" });
+    setCurrentPlatform(platform ? { ...platform } : { name: "", icon: "FaCode", description: "" });
     setIsModalOpen(true);
-    setOpenMenuId(null);
   };
 
   const handleSubmit = async (e) => {
@@ -101,7 +90,7 @@ const ProjectSettingPlatform = () => {
         await platformService.createPlatform(payload);
         toast.success("Platform created!");
       }
-      setIsModalOpen();
+      setIsModalOpen(false);
       fetchPlatforms();
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
@@ -111,7 +100,6 @@ const ProjectSettingPlatform = () => {
   };
 
   const handleDelete = async (id) => {
-    setOpenMenuId(null);
     if (window.confirm("Are you sure?")) {
       try {
         await platformService.deletePlatform(id);
@@ -123,7 +111,6 @@ const ProjectSettingPlatform = () => {
     }
   };
 
-  const toggleMenu = (id) => setOpenMenuId(openMenuId === id ? null : id);
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
@@ -164,19 +151,16 @@ const ProjectSettingPlatform = () => {
               </div>
               <div className="row-col col-name">{p.name}</div>
               <div className="row-col col-description">{p.description || "-"}</div>
-              <div className="row-col col-actions">
-                <div className="action-menu-wrapper" ref={openMenuId === p._id ? menuRef : null}>
-                  <button className="btn-menu-toggle" onClick={() => toggleMenu(p._id)}>
-                    <FaIcons.FaEllipsisV />
+              {user.role === "admin" && (
+                <div className="row-col col-actions">
+                  <button className="btn-edit" onClick={() => handleOpenModal(p)}>
+                    <FaIcons.FaPencilAlt />
                   </button>
-                  {openMenuId === p._id && (
-                    <div className="action-dropdown-menu">
-                      <button onClick={() => handleOpenModal(p)}>Edit</button>
-                      <button onClick={() => handleDelete(p._id)}>Delete</button>
-                    </div>
-                  )}
+                  <button className="btn-delete" onClick={() => handleDelete(p._id)}>
+                    <FaIcons.FaTrash />
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
@@ -193,7 +177,7 @@ const ProjectSettingPlatform = () => {
               </div>
               <div className="form-group">
                 <label>Icon</label>
-                <IconPicker selectedIcon={currentPlatform.icon} onSelect={handleIconSelect} icons={PREDEFINED_PLATFORM_ICONS} />
+                <IconPicker selectedIcon={currentPlatform.icon} onSelect={handleIconSelect} />
               </div>
               <div className="form-group">
                 <label htmlFor="description">Description</label>

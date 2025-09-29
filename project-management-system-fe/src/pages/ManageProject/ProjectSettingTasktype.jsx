@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import typeTaskService from "../../services/typeTaskService";
@@ -54,8 +54,6 @@ const ProjectSettingTaskType = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentTaskType, setCurrentTaskType] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const menuRef = useRef(null);
 
   const fetchTaskTypes = useCallback(async () => {
     try {
@@ -73,18 +71,9 @@ const ProjectSettingTaskType = () => {
     fetchTaskTypes();
   }, [fetchTaskTypes]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setOpenMenuId(null);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const handleOpenModal = (taskType = null) => {
     setCurrentTaskType(taskType ? { ...taskType } : { name: "", icon: "FaTasks", description: "" });
     setIsModalOpen(true);
-    setOpenMenuId(null);
   };
   const handleCloseModal = () => setIsModalOpen(false);
 
@@ -123,7 +112,6 @@ const ProjectSettingTaskType = () => {
   };
 
   const handleDelete = async (taskTypeId) => {
-    setOpenMenuId(null);
     if (window.confirm("Are you sure you want to delete this task type?")) {
       try {
         await typeTaskService.deleteTypeTask(taskTypeId);
@@ -134,8 +122,6 @@ const ProjectSettingTaskType = () => {
       }
     }
   };
-
-  const toggleMenu = (taskTypeId) => setOpenMenuId(openMenuId === taskTypeId ? null : taskTypeId);
 
   if (loading) return <div>Loading...</div>;
 
@@ -166,19 +152,16 @@ const ProjectSettingTaskType = () => {
               </div>
               <div className="row-col col-name">{tt.name}</div>
               <div className="row-col col-description">{tt.description || "-"}</div>
-              <div className="row-col col-actions">
-                <div className="action-menu-wrapper" ref={openMenuId === tt._id ? menuRef : null}>
-                  <button className="btn-menu-toggle" onClick={() => toggleMenu(tt._id)}>
-                    <FaIcons.FaEllipsisV />
+              {user.role === "admin" && (
+                <div className="row-col col-actions">
+                  <button className="btn-edit" onClick={() => handleOpenModal(tt)}>
+                    <FaIcons.FaPencilAlt />
                   </button>
-                  {openMenuId === tt._id && (
-                    <div className="action-dropdown-menu">
-                      <button onClick={() => handleOpenModal(tt)}>Edit</button>
-                      <button onClick={() => handleDelete(tt._id)}>Delete</button>
-                    </div>
-                  )}
+                  <button className="btn-delete" onClick={() => handleDelete(tt._id)}>
+                    <FaIcons.FaTrash />
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
           );
         })}

@@ -1,6 +1,4 @@
-// src/pages/Setting/SettingsPlatforms.jsx
-
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import platformService from "../../services/platformService"; // Service cho Platform
 import * as FaIcons from "react-icons/fa";
@@ -56,8 +54,6 @@ export const SettingsPlatforms = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPlatform, setCurrentPlatform] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const menuRef = useRef(null);
 
   const fetchPlatforms = useCallback(async () => {
     try {
@@ -76,18 +72,9 @@ export const SettingsPlatforms = () => {
     fetchPlatforms();
   }, [fetchPlatforms]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setOpenMenuId(null);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const handleOpenModal = (platform = null) => {
     setCurrentPlatform(platform ? { ...platform } : { name: "", icon: "FaCode" });
     setIsModalOpen(true);
-    setOpenMenuId(null);
   };
   const handleCloseModal = () => setIsModalOpen(false);
 
@@ -125,7 +112,6 @@ export const SettingsPlatforms = () => {
   };
 
   const handleDelete = async (platformId) => {
-    setOpenMenuId(null);
     if (window.confirm("Are you sure you want to delete this platform?")) {
       try {
         await platformService.deletePlatform(platformId);
@@ -137,7 +123,15 @@ export const SettingsPlatforms = () => {
     }
   };
 
-  const toggleMenu = (platformId) => setOpenMenuId(openMenuId === platformId ? null : platformId);
+  const handleEditClick = (e, platform) => {
+    e.stopPropagation();
+    handleOpenModal(platform);
+  };
+
+  const handleDeleteClick = (e, platformId) => {
+    e.stopPropagation();
+    handleDelete(platformId);
+  };
 
   if (loading) return <div>Loading...</div>;
 
@@ -165,23 +159,23 @@ export const SettingsPlatforms = () => {
                 </span>
               </div>
               <div className="row-col col-name">{p.name}</div>
-              <div className="row-col col-description"></div>
+              <div className="row-col col-description">{p.description || "-"}</div>
               <div className="row-col col-project">{p.projectId ? p.projectId.name : <span className="default-badge">Default</span>}</div>
-              <div className="row-col col-description">{p.description}</div>
-              <div className="row-col col-actions">
-                <div className="action-menu-wrapper" ref={openMenuId === p._id ? menuRef : null}>
-                  <button className="btn-menu-toggle" onClick={() => toggleMenu(p._id)}>
-                    <FaIcons.FaEllipsisV />
+              {!p.projectId && user.role === "admin" && (
+                <div className="row-col col-actions">
+                  <button className="btn-edit" onClick={(e) => handleEditClick(e, p)}>
+                    <FaIcons.FaPencilAlt />
                   </button>
-                  {openMenuId === p._id && (
-                    <div className="action-dropdown-menu">
-                      {!p.projectId && <button onClick={() => handleOpenModal(p)}>Edit</button>}
-                      {!p.projectId && <button onClick={() => handleDelete(p._id)}>Delete</button>}
-                      {p.projectId && <span className="menu-item-disabled">Managed in Project</span>}
-                    </div>
-                  )}
+                  <button className="btn-delete" onClick={(e) => handleDeleteClick(e, p._id)}>
+                    <FaIcons.FaTrash />
+                  </button>
                 </div>
-              </div>
+              )}
+              {p.projectId && user.role === "admin" && (
+                <div className="row-col col-actions">
+                  <span className="menu-item-disabled">Managed in Project</span>
+                </div>
+              )}
             </div>
           );
         })}

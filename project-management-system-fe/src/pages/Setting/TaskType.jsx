@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 // KHÔNG CẦN useParams ở đây vì đây là trang global
 import { toast } from "react-toastify";
 import typeTaskService from "../../services/typeTaskService";
@@ -54,8 +54,6 @@ const SettingTaskTypePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentTaskType, setCurrentTaskType] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const menuRef = useRef(null);
 
   const fetchTaskTypes = useCallback(async () => {
     try {
@@ -74,18 +72,9 @@ const SettingTaskTypePage = () => {
     fetchTaskTypes();
   }, [fetchTaskTypes]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setOpenMenuId(null);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const handleOpenModal = (taskType = null) => {
     setCurrentTaskType(taskType ? { ...taskType } : { name: "", icon: "FaTasks", description: "" });
     setIsModalOpen(true);
-    setOpenMenuId(null);
   };
   const handleCloseModal = () => setIsModalOpen(false);
 
@@ -127,7 +116,6 @@ const SettingTaskTypePage = () => {
   };
 
   const handleDelete = async (taskTypeId) => {
-    setOpenMenuId(null);
     if (window.confirm("Are you sure you want to delete this task type? This might affect projects using it.")) {
       try {
         await typeTaskService.deleteTypeTask(taskTypeId);
@@ -138,8 +126,6 @@ const SettingTaskTypePage = () => {
       }
     }
   };
-
-  const toggleMenu = (taskTypeId) => setOpenMenuId(openMenuId === taskTypeId ? null : taskTypeId);
 
   if (loading) return <div>Loading...</div>;
 
@@ -175,21 +161,21 @@ const SettingTaskTypePage = () => {
               <div className="row-col col-description">{tt.description || "-"}</div>
               {/* THÊM CỘT PROJECT */}
               <div className="row-col col-project">{tt.projectId ? tt.projectId.name : <span className="default-badge">Default</span>}</div>
-              <div className="row-col col-actions">
-                <div className="action-menu-wrapper" ref={openMenuId === tt._id ? menuRef : null}>
-                  <button className="btn-menu-toggle" onClick={() => toggleMenu(tt._id)}>
-                    <FaIcons.FaEllipsisV />
+              {user.role === "admin" && !tt.projectId && (
+                <div className="row-col col-actions">
+                  <button className="btn-edit" onClick={() => handleOpenModal(tt)}>
+                    <FaIcons.FaPencilAlt />
                   </button>
-                  {openMenuId === tt._id && (
-                    <div className="action-dropdown-menu">
-                      {/* Chỉ cho sửa nếu là item default */}
-                      {!tt.projectId && <button onClick={() => handleOpenModal(tt)}>Edit</button>}
-                      {!tt.projectId && <button onClick={() => handleDelete(tt._id)}>Delete</button>}
-                      {tt.projectId && <span className="menu-item-disabled">Managed in Project</span>}
-                    </div>
-                  )}
+                  <button className="btn-delete" onClick={() => handleDelete(tt._id)}>
+                    <FaIcons.FaTrash />
+                  </button>
                 </div>
-              </div>
+              )}
+              {user.role === "admin" && tt.projectId && (
+                <div className="row-col col-actions">
+                  <span className="menu-item-disabled">Managed in Project</span>
+                </div>
+              )}
             </div>
           );
         })}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -47,7 +47,7 @@ const IconPicker = ({ selectedIcon, onSelect }) => (
 );
 
 // (Bạn có thể tách ra file DraggablePriorityItem.jsx riêng nếu muốn)
-const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete, openMenuId, toggleMenu, menuRef }) => {
+const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete }) => {
   const ref = React.useRef(null);
   const ItemType = "PRIORITY_ITEM";
 
@@ -70,8 +70,21 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete,
   drag(drop(ref));
   const iconInfo = PREDEFINED_PRIORITY_ICONS.find((i) => i.name === item.icon);
 
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    openEditModal(item);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    onDelete(item._id);
+  };
+
   return (
     <div ref={ref} className="settings-list-row" style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <div className="row-col col-drag-handle">
+        <FaIcons.FaGripVertical />
+      </div>
       <div className="row-col col-icon">
         <span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || "#7A869A" }}>
           <IconComponent name={item.icon} />
@@ -80,20 +93,21 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete,
       <div className="row-col col-name">{item.name}</div>
       <div className="row-col col-level">{item.level}</div>
       <div className="row-col col-project">{item.projectId ? item.projectId.name : <span className="default-badge">Default</span>}</div>
-      <div className="row-col col-actions">
-        <div className="action-menu-wrapper" ref={openMenuId === item._id ? menuRef : null}>
-          <button className="btn-menu-toggle" onClick={() => toggleMenu(item._id)}>
-            <FaIcons.FaEllipsisV />
+      {!item.projectId && (
+        <div className="row-col col-actions">
+          <button className="btn-edit" onClick={handleEditClick}>
+            <FaIcons.FaPencilAlt />
           </button>
-          {openMenuId === item._id && (
-            <div className="action-dropdown-menu">
-              {!item.projectId && <button onClick={() => openEditModal(item)}>Edit</button>}
-              {!item.projectId && <button onClick={() => onDelete(item._id)}>Delete</button>}
-              {item.projectId && <span className="menu-item-disabled">Managed in Project</span>}
-            </div>
-          )}
+          <button className="btn-delete" onClick={handleDeleteClick}>
+            <FaIcons.FaTrash />
+          </button>
         </div>
-      </div>
+      )}
+      {item.projectId && (
+        <div className="row-col col-actions">
+          <span className="menu-item-disabled">Managed in Project</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -106,8 +120,6 @@ export const SettingsPriorities = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPriority, setCurrentPriority] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const menuRef = useRef(null);
 
   const fetchPriorities = useCallback(async () => {
     try {
@@ -125,26 +137,14 @@ export const SettingsPriorities = () => {
     fetchPriorities();
   }, [fetchPriorities]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const handleOpenModal = (priority = null) => {
     setCurrentPriority(priority ? { ...priority } : { name: "", icon: "FaFire" });
     setIsModalOpen(true);
-    setOpenMenuId(null);
   };
 
   const handleCloseModal = () => setIsModalOpen(false);
 
   const handleDelete = async (priorityId) => {
-    setOpenMenuId(null);
     if (window.confirm("Are you sure you want to delete this priority? This might affect projects using it.")) {
       try {
         await priorityService.deletePriority(priorityId);
@@ -154,10 +154,6 @@ export const SettingsPriorities = () => {
         toast.error("Failed to delete priority.");
       }
     }
-  };
-
-  const toggleMenu = (priorityId) => {
-    setOpenMenuId(openMenuId === priorityId ? null : priorityId);
   };
 
   const handleChange = (e) => {
@@ -242,9 +238,6 @@ export const SettingsPriorities = () => {
               moveItem={movePriority}
               openEditModal={handleOpenModal}
               onDelete={handleDelete}
-              openMenuId={openMenuId}
-              toggleMenu={toggleMenu}
-              menuRef={menuRef}
             />
           ))}
         </div>
