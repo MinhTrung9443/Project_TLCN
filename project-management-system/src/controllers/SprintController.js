@@ -4,9 +4,8 @@ const SprintController = {
   handleGetSprintsByProjectKey: async (req, res) => {
     try {
       const { projectKey } = req.params;
-      const { sprints, tasksWithoutSprint } = await sprintService.getSprintsByProjectKey(projectKey);
-
-      res.status(200).json({ sprints, tasksWithoutSprint });
+      const { sprint, tasksWithoutSprint } = await sprintService.getSprintsByProjectKey(projectKey);
+      res.status(200).json({ sprint, tasksWithoutSprint });
     } catch (error) {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
     }
@@ -14,8 +13,8 @@ const SprintController = {
   handleCreateSprint: async (req, res) => {
     try {
       const { projectKey } = req.params;
-      const sprintData = req.body;
-      const newSprint = await sprintService.createSprint(sprintData, projectKey);
+
+      const newSprint = await sprintService.createSprint(projectKey);
       res.status(201).json(newSprint);
     } catch (error) {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });

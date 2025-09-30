@@ -19,8 +19,8 @@ import ProjectsPage from "./pages/ManageProject/ProjectsPage";
 import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage.jsx";
 import GlobalSettingsPage from "./pages/Setting/GlobalSettingsPage"; // <-- Import trang cha
 import TaskFinderPage from "./pages/ManageTask/TaskFinderPage"; // <-- IMPORT
-import backlogPage from "./pages/ManageSprint/BacklogPage"; // <-- IMPORT
-import activeSprintPage from "./pages/ManageSprint/ActiveSprintPage"; // <-- IMPORT
+import BacklogPage from "./pages/ManageSprint/BacklogPage";
+import ActiveSprintPage from "./pages/ManageSprint/ActiveSprintPage";
 
 function App() {
   return (
@@ -48,8 +48,8 @@ function App() {
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/task-mgmt/projects/:projectKey/settings/:tabName" element={<ProjectSettingsPage />} />
               <Route path="/task-mgmt/projects/:projectKey/task-finder" element={<TaskFinderPage />} />
-              <Route path="/task-mgmt/projects/:projectKey/backlog" element={<backlogPage />} />
-              <Route path="/task-mgmt/projects/:projectKey/active-sprint" element={<activeSprintPage />} />
+              <Route path="/task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
+              <Route path="/task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
             </Route>
           </Routes>
 
