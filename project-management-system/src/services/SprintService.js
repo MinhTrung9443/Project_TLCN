@@ -63,7 +63,6 @@ const sprintService = {
       } while (exists);
       const sprintData = {
         name: sprintName,
-        status: "not started",
         startDate: new Date(),
         endDate: new Date(),
         projectId: project._id,
