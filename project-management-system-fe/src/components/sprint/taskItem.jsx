@@ -2,14 +2,6 @@ import { useDrag, useDrop } from "react-dnd";
 import "../../styles/pages/ManageSprint/taskItem.css";
 import { IconComponent } from "../../components/common/IconPicker";
 
-const PREDEFINED_PRIORITY_ICONS = [
-  { name: "FaExclamationCircle", color: "#CD1317" }, // Critical
-  { name: "FaArrowUp", color: "#F57C00" }, // High
-  { name: "FaEquals", color: "#2A9D8F" }, // Medium
-  { name: "FaArrowDown", color: "#2196F3" }, // Low
-  { name: "FaFire", color: "#E94F37" },
-  { name: "FaExclamationTriangle", color: "#FFB300" },
-];
 // Draggable Task Item
 const DraggableTask = ({ task, source }) => {
   const PREDEFINED_PRIORITY_ICONS = [

@@ -8,6 +8,7 @@ import { ProjectContext } from "../../contexts/ProjectContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import SprintEditModal from "../../components/sprint/SprintEditModal";
 import "../../styles/pages/ManageSprint/BacklogPage.css";
+import { toast } from "react-toastify";
 
 const BacklogPage = () => {
   const { selectedProjectKey, setSelectedProjectKey } = useContext(ProjectContext);
@@ -72,7 +73,11 @@ const BacklogPage = () => {
 
   const handleStartSprint = async (sprint) => {
     try {
-      await sprintService.updateSprint(sprint._id, { status: "started" });
+      if (!sprint.tasks || sprint.tasks.length === 0) {
+        toast.error("Cannot start a sprint with no tasks.");
+        return;
+      }
+      await sprintService.updateSprint(sprint._id, { status: "Started" });
       fetchSprintList();
     } catch (error) {
       console.error("Error starting sprint:", error);
@@ -81,7 +86,7 @@ const BacklogPage = () => {
 
   const handleCompleteSprint = async (sprint) => {
     try {
-      await sprintService.updateSprint(sprint._id, { status: "completed" });
+      await sprintService.updateSprint(sprint._id, { status: "Completed" });
       fetchSprintList();
     } catch (error) {
       console.error("Error completing sprint:", error);

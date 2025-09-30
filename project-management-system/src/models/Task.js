@@ -73,6 +73,7 @@ const taskSchema = new Schema(
     storyPoints: {
       type: Number,
       min: 0,
+      default: 0,
     },
     startDate: {
       type: Date,

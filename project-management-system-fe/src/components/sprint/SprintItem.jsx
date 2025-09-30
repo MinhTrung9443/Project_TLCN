@@ -56,7 +56,7 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete }) =
                     Edit
                   </button>
                 </li>
-                {sprint.status === "not started" && (
+                {sprint.status === "Not Start" && (
                   <li>
                     <button
                       onClick={() => {
@@ -68,7 +68,7 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete }) =
                     </button>
                   </li>
                 )}
-                {sprint.status === "started" && (
+                {sprint.status === "Started" && (
                   <li>
                     <button
                       onClick={() => {
@@ -97,7 +97,13 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete }) =
         </div>
         <div className="sprint-status-row">
           <div className="sprint-status-box">
-            <span className="material-symbols-outlined">schedule</span>
+            {sprint.status === "Not Start" && (
+              <span className="material-symbols-outlined sprint-status-icon sprint-status-notstarted">radio_button_unchecked</span>
+            )}
+            {sprint.status === "Started" && <span className="material-symbols-outlined sprint-status-icon sprint-status-started">schedule</span>}
+            {sprint.status === "Completed" && (
+              <span className="material-symbols-outlined sprint-status-icon sprint-status-completed">check_circle</span>
+            )}
             <span className="sprint-status-text">{sprint.status}</span>
             <span className="sprint-date">
               {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
