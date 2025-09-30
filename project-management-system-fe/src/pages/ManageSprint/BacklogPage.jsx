@@ -132,13 +132,14 @@ const BacklogPage = () => {
               onDelete={handleDeleteSprint}
             />
           </div>
-          <div className="backlogpage-backlog-section">
-            <div className="backlogpage-backlog-header">
-              <span className="backlogpage-backlog-title">Backlog</span>
-              <span className="backlogpage-backlog-count">{taskList.length}</span>
-            </div>
-            <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} />
+          {/* Backlog section moved below */}
+        </div>
+        <div className="backlogpage-backlog-section backlogpage-backlog-section-full">
+          <div className="backlogpage-backlog-header">
+            <span className="backlogpage-backlog-title">Backlog</span>
+            <span className="backlogpage-backlog-count">{taskList.length}</span>
           </div>
+          <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} />
         </div>
         <ConfirmationModal
           isOpen={showDeleteModal}
