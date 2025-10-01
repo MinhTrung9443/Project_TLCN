@@ -84,17 +84,17 @@ const sprintService = {
           throw { statusCode: 400, message: "Invalid sprint status" };
         }
       }
-      if (sprintData.status === "Started") {
-        //update task cua sprint tu To Do sang In Progress
-        await Task.updateMany(
-          { sprintId: sprintId, statusId: { $ne: null } },
-          {
-            $set: {
-              statusId: (await Workflow.findOne({ isDefault: true })).statuses.find((s) => s.name === "In Progress")._id,
-            },
-          }
-        );
-      }
+      // if (sprintData.status === "Started") {
+      //   //update task cua sprint tu To Do sang In Progress
+      //   await Task.updateMany(
+      //     { sprintId: sprintId, statusId: { $ne: null } },
+      //     {
+      //       $set: {
+      //         statusId: (await Workflow.findOne({ isDefault: true })).statuses.find((s) => s.name === "In Progress")._id,
+      //       },
+      //     }
+      //   );
+      // }
     } catch (error) {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" };
