@@ -78,10 +78,28 @@ const sprintService = {
     try {
       const sprint = await Sprint.findById(sprintId);
       if (!sprint) throw { statusCode: 404, message: "Sprint not found" };
+      if (sprintData.status) {
+        const validStatuses = ["Not Start", "Started", "Completed"];
+        if (!validStatuses.includes(sprintData.status)) {
+          throw { statusCode: 400, message: "Invalid sprint status" };
+        }
+      }
+      if (sprintData.status === "Started") {
+        //update task cua sprint tu To Do sang In Progress
+        await Task.updateMany(
+          { sprintId: sprintId, statusId: { $ne: null } },
+          {
+            $set: {
+              statusId: (await Workflow.findOne({ isDefault: true })).statuses.find((s) => s.name === "In Progress")._id,
+            },
+          }
+        );
+      }
     } catch (error) {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" };
     }
+
     return await Sprint.findByIdAndUpdate(sprintId, sprintData, { new: true });
   },
   deleteSprint: async (sprintId) => {

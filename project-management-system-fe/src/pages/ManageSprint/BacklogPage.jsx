@@ -10,6 +10,7 @@ import ConfirmationModal from "../../components/common/ConfirmationModal";
 import SprintEditModal from "../../components/sprint/SprintEditModal";
 import "../../styles/pages/ManageSprint/BacklogPage.css";
 import { toast } from "react-toastify";
+import { useAuth } from "../../contexts/AuthContext";
 
 const BacklogPage = () => {
   const { selectedProjectKey, setSelectedProjectKey } = useContext(ProjectContext);
@@ -19,7 +20,7 @@ const BacklogPage = () => {
   const [sprintToDelete, setSprintToDelete] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [sprintToEdit, setSprintToEdit] = useState(null);
-
+  const { user } = useAuth();
   const fetchSprintList = async () => {
     try {
       const data = await sprintService.getSprints(selectedProjectKey);
@@ -117,9 +118,11 @@ const BacklogPage = () => {
       <div className="backlogpage-container">
         <div className="backlogpage-header">
           <h2 className="backlogpage-title">Backlog & Sprints</h2>
-          <button className="backlogpage-create-btn" onClick={handleCreateSprint}>
-            + Create Sprint
-          </button>
+          {user.role === "admin" && (
+            <button className="backlogpage-create-btn" onClick={handleCreateSprint}>
+              + Create Sprint
+            </button>
+          )}
         </div>
         <div className="backlogpage-content">
           <div className="backlogpage-sprint-list">
