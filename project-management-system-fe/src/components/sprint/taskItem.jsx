@@ -16,6 +16,7 @@ const DraggableTask = ({ task, source }) => {
     () => ({
       type: "task",
       item: { task, source },
+      log: console.log(`Dragging task: ${task.name}`, source),
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging(),
       }),
@@ -93,7 +94,7 @@ const DraggableTask = ({ task, source }) => {
 };
 
 // DropZone for Task List (Backlog hoặc Sprint)
-export const TaskList = ({ tasks, source, onDrop }) => {
+const TaskList = ({ tasks, source, onDrop }) => {
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: "task",

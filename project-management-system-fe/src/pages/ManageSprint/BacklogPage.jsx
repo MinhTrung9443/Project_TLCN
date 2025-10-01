@@ -4,6 +4,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import SprintList from "../../components/sprint/sprintList";
 import TaskList from "../../components/sprint/taskItem";
 import sprintService from "../../services/sprintService";
+import { updateTaskSprint } from "../../services/taskService";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import SprintEditModal from "../../components/sprint/SprintEditModal";
@@ -40,18 +41,12 @@ const BacklogPage = () => {
 
   const handleDrop = async (draggedItem, target) => {
     const { task, source } = draggedItem;
-    if (source === target) return;
-    // Cập nhật UI tạm thời
-    if (source === "backlog") setTaskList((prev) => prev.filter((t) => t.id !== task.id));
-    else setSprintList((prev) => prev.map((s) => (s._id === source ? { ...s, tasks: s.tasks.filter((t) => t.id !== task.id) } : s)));
-    if (target === "backlog") setTaskList((prev) => [...prev, task]);
-    else setSprintList((prev) => prev.map((s) => (s._id === target ? { ...s, tasks: [...s.tasks, task] } : s)));
-    // Gọi API
+    console.log(`Dropped task: ${task.name} from ${source} to ${target}`);
     try {
-      await sprintService.updateTaskSprint(task.id, target === "backlog" ? null : target);
+      await updateTaskSprint(task._id, target === "backlog" ? null : target);
+      fetchSprintList();
     } catch (error) {
       console.error("Error updating task sprint:", error);
-      fetchSprintList();
     }
   };
 
