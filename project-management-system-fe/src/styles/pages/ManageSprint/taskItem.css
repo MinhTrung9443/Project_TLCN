@@ -1,3 +1,24 @@
+/* Due date number alignment and color */
+.task-due-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 28px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-radius: 14px;
+  background: #f1f5f9;
+  margin-left: 4px;
+}
+.task-due-left {
+  color: #22c55e;
+  background: #e0fbe5;
+}
+.task-due-overdue {
+  color: #ef4444;
+  background: #fee2e2;
+}
 /* Task Item modern row style */
 .task-item {
   display: flex;

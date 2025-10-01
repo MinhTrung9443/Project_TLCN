@@ -74,17 +74,17 @@ const DraggableTask = ({ task, source }) => {
             <span className="material-symbols-outlined task-assignee-icon">person</span>
           )}
         </div>
-        {/* Due Date/Days Left */}
+        {/* Due Date/Days Left - Redesigned for alignment and color */}
         <div className="task-duedate" title="Due Date">
           {(() => {
-            if (!task.dueDate) return <span className="task-due-label">due</span>;
+            if (!task.dueDate) return <span className="task-due-label">-</span>;
             const due = new Date(task.dueDate);
             const now = new Date();
             const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
             if (diff < 0) {
-              return <span className="task-overdue">{Math.abs(diff)}d overdue</span>;
+              return <span className="task-due-number task-due-overdue">{Math.abs(diff)}d</span>;
             } else {
-              return <span className="task-daysleft">{diff}d left</span>;
+              return <span className="task-due-number task-due-left">{diff}d</span>;
             }
           })()}
         </div>
