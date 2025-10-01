@@ -1,3 +1,10 @@
+/* Chevron icon for expand/collapse */
+.sprint-chevron-icon {
+  transition: transform 0.2s;
+}
+.sprint-chevron-icon.expanded {
+  transform: rotate(90deg);
+}
 #Sprint Card & Header .sprint-card {
   background: #fff;
   border-radius: 12px;

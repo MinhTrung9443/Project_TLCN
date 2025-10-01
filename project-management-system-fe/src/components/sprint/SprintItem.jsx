@@ -3,13 +3,12 @@ import TaskList from "./taskItem";
 import "../../styles/pages/ManageSprint/SprintList.css";
 import { useDrop } from "react-dnd";
 import CreateTaskModal from "../../components/task/CreateTaskModal";
-import { ProjectContext } from "../../contexts/ProjectContext";
 
 const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete }) => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [expanded, setExpanded] = useState(true);
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -45,8 +44,8 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete }) =
       <div className="sprint-card" key={sprint._id}>
         <div ref={drop} className={`sprint-card-dropzone${isOver ? " sprint-card-dropzone-over" : ""}`}>
           <div className="sprint-header">
-            <button className="sprint-chevron-btn">
-              <span className="material-symbols-outlined">chevron_right</span>
+            <button className="sprint-chevron-btn" onClick={() => setExpanded((prev) => !prev)}>
+              <span className={`material-symbols-outlined sprint-chevron-icon${expanded ? " expanded" : ""}`}>chevron_right</span>
             </button>
             <span className="sprint-title">{sprint.name}</span>
             <span className="sprint-task-badge">{sprint.tasks?.length || 0} Tasks</span>
@@ -105,32 +104,38 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete }) =
               )}
             </div>
           </div>
-          <div className="sprint-status-row">
-            <div className="sprint-status-box">
-              {sprint.status === "Not Start" && (
-                <span className="material-symbols-outlined sprint-status-icon sprint-status-notstarted">radio_button_unchecked</span>
-              )}
-              {sprint.status === "Started" && <span className="material-symbols-outlined sprint-status-icon sprint-status-started">schedule</span>}
-              {sprint.status === "Completed" && (
-                <span className="material-symbols-outlined sprint-status-icon sprint-status-completed">check_circle</span>
-              )}
-              <span className="sprint-status-text">{sprint.status}</span>
-              <span className="sprint-date">
-                {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
-              </span>
-            </div>
-          </div>
-          <div className="task-list">
-            <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} />
-          </div>
-          <div className="sprint-create-task-row">
-            <button className="sprint-add-btn">
-              <span className="material-symbols-outlined">add_circle</span>
-            </button>
-            <span className="sprint-create-task-label" onClick={() => setIsModalOpen(true)}>
-              Create Task
-            </span>
-          </div>
+          {expanded && (
+            <>
+              <div className="sprint-status-row">
+                <div className="sprint-status-box">
+                  {sprint.status === "Not Start" && (
+                    <span className="material-symbols-outlined sprint-status-icon sprint-status-notstarted">radio_button_unchecked</span>
+                  )}
+                  {sprint.status === "Started" && (
+                    <span className="material-symbols-outlined sprint-status-icon sprint-status-started">schedule</span>
+                  )}
+                  {sprint.status === "Completed" && (
+                    <span className="material-symbols-outlined sprint-status-icon sprint-status-completed">check_circle</span>
+                  )}
+                  <span className="sprint-status-text">{sprint.status}</span>
+                  <span className="sprint-date">
+                    {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              <div className="task-list">
+                <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} />
+              </div>
+              <div className="sprint-create-task-row">
+                <button className="sprint-add-btn">
+                  <span className="material-symbols-outlined">add_circle</span>
+                </button>
+                <span className="sprint-create-task-label" onClick={() => setIsModalOpen(true)}>
+                  Create Task
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>
