@@ -1,5 +1,5 @@
-const taskService = require('../services/TaskService');
-const Workflow = require('../models/Workflow');
+const taskService = require("../services/TaskService");
+const Workflow = require("../models/Workflow");
 
 const handleGetTasksByProjectKey = async (req, res) => {
   try {
@@ -7,13 +7,13 @@ const handleGetTasksByProjectKey = async (req, res) => {
     const tasks = await taskService.getTasksByProjectKey(projectKey);
     res.status(200).json(tasks);
   } catch (error) {
-    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
   }
 };
 
 const handleCreateTask = async (req, res) => {
   try {
-    const reporterId = req.user.id; 
+    const reporterId = req.user.id;
     const createdById = req.user.id;
 
     const taskData = { ...req.body, reporterId, createdById };
@@ -24,7 +24,7 @@ const handleCreateTask = async (req, res) => {
         return res.status(400).json({ message: "No default workflow found" });
       }
 
-      const defaultStatus = defaultWorkflow.statuses.find(s => s.category === "To Do");
+      const defaultStatus = defaultWorkflow.statuses.find((s) => s.category === "To Do");
 
       if (!defaultStatus) {
         return res.status(400).json({ message: "No default 'To Do' status found in workflow" });
@@ -35,11 +35,23 @@ const handleCreateTask = async (req, res) => {
     const newTask = await taskService.createTask(taskData);
     res.status(201).json(newTask);
   } catch (error) {
-    res.status(error.statusCode || 500).json({ message: error.message || 'Server Error' });
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
+};
+
+const changeSprint = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { sprintId } = req.body;
+    const updatedTask = await taskService.changeTaskSprint(taskId, sprintId);
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
   }
 };
 
 module.exports = {
   handleGetTasksByProjectKey,
   handleCreateTask,
+  changeSprint,
 };

@@ -26,8 +26,8 @@ const sprintSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["not started", "started", "completed"],
-      default: "not started",
+      enum: ["Not Start", "Started", "Completed"],
+      default: "Not Start",
       required: true,
     },
   },

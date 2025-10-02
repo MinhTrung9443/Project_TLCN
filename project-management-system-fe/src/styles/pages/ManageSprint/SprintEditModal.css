@@ -1,0 +1,109 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 41, 59, 0.18);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content.sprint-edit-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 32px rgba(30, 41, 59, 0.18);
+  padding: 32px 28px 24px 28px;
+  min-width: 340px;
+  max-width: 95vw;
+}
+.modal-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.modal-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+.modal-close-button {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+  transition: background 0.18s;
+}
+.modal-close-button:hover {
+  background: #f1f5f9;
+}
+.sprint-edit-form label {
+  display: block;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+.sprint-edit-form input,
+.sprint-edit-form textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-top: 4px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #f8fafc;
+  transition: border 0.18s;
+}
+.sprint-edit-form input:focus,
+.sprint-edit-form textarea:focus {
+  border: 1.5px solid #2563eb;
+  outline: none;
+}
+.sprint-edit-dates {
+  display: flex;
+  gap: 18px;
+}
+.sprint-edit-dates label {
+  flex: 1;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+.cancel-button {
+  background: #f1f5f9;
+  color: #64748b;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.18s;
+}
+.cancel-button:hover {
+  background: #e0e7ff;
+}
+.confirm-button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.18s;
+}
+.confirm-button:hover {
+  background: #1e40af;
+}

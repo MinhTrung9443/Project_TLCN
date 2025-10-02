@@ -10,6 +10,7 @@ const projectRoute = require("./routes/projectRoute");
 const taskRoutes = require('./routes/taskRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const sprintRoute = require('./routes/sprintRoutes.js');
 const cors = require("cors");
 const path = require('path');
 app.use(
@@ -31,5 +32,6 @@ app.use('/api/projects', projectRoute);
 app.use('/api/tasks', taskRoutes); 
 app.use('/api/settings', settingsRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/sprints', sprintRoute);
 
 module.exports = app;
