@@ -1,0 +1,386 @@
+/* Active Sprint Page Layout */
+.active-sprint-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f8fafc;
+}
+
+.active-sprint-header {
+  padding: 20px 24px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Sprint Selector */
+.sprint-selector {
+  position: relative;
+  display: inline-block;
+}
+
+.sprint-selector-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  min-width: 200px;
+}
+
+.sprint-selector-button:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.sprint-name {
+  flex: 1;
+  text-align: left;
+}
+
+.sprint-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  margin-top: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.sprint-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sprint-option:hover {
+  background: #f8fafc;
+}
+
+.sprint-option.selected {
+  background: #eff6ff;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.sprint-option:last-child {
+  border-bottom: none;
+}
+
+/* Board Layout */
+.active-sprint-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  padding: 24px;
+  flex: 1;
+  overflow-x: auto;
+  min-height: 0;
+}
+
+/* Column Styles */
+.board-column {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
+}
+
+.board-column-header {
+  font-weight: 700;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.board-column-header-todo {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.board-column-header-inprogress {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.board-column-header-done {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.board-column-header-default {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.board-column-count {
+  font-size: 0.9em;
+  opacity: 0.8;
+  margin-left: 8px;
+}
+
+.board-column-body {
+  flex: 1;
+  min-height: 400px;
+  transition: background 0.2s ease;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.board-column-body.drop-over {
+  background: #e0e7ff;
+  border: 2px dashed #6366f1;
+}
+
+.board-column-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #94a3b8;
+  font-style: italic;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+/* Task Card Styles */
+.board-task-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: grab;
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.board-task-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.board-task-card.dragging {
+  transform: rotate(5deg);
+  z-index: 1000;
+}
+
+.board-task-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.board-task-checkbox {
+  color: #64748b;
+  font-size: 18px;
+}
+
+.board-task-code {
+  font-size: 12px;
+  color: #3b82f6;
+  font-weight: 600;
+  background: #eff6ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.board-task-menu {
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.board-task-menu:hover {
+  color: #64748b;
+}
+
+/* Task Type Row */
+.board-task-type-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.icon-wrapper-task {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+}
+
+.board-task-type-name {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.board-task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+/* Task Footer */
+.board-task-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.icon-wrapper-priority {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+}
+
+/* Avatar Styles */
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  background: #6366f1;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar.unassigned {
+  background: #e2e8f0;
+  color: #94a3b8;
+}
+
+/* Loading States */
+.active-sprint-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  gap: 16px;
+  color: #64748b;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty State */
+.active-sprint-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 500px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #64748b;
+}
+
+.empty-state .material-symbols-outlined {
+  font-size: 64px;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: #374151;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .active-sprint-board {
+    grid-template-columns: 1fr;
+  }
+
+  .board-column {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 640px) {
+  .active-sprint-header {
+    padding: 16px;
+  }
+
+  .active-sprint-board {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .sprint-selector-button {
+    min-width: 150px;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+}

@@ -85,8 +85,45 @@ const changeTaskSprint = async (taskId, sprintId) => {
   return task;
 };
 
+// Update task status
+const updateTaskStatus = async (taskId, statusId) => {
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    const error = new Error("Invalid Task ID");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!mongoose.Types.ObjectId.isValid(statusId)) {
+    const error = new Error("Invalid Status ID");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const task = await Task.findById(taskId);
+  if (!task) {
+    const error = new Error("Task not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  task.statusId = statusId;
+  await task.save();
+
+  // Return updated task with populated fields
+  const updatedTask = await Task.findById(taskId)
+    .populate("taskTypeId", "name icon")
+    .populate("priorityId", "name icon")
+    .populate("assigneeId", "fullname avatar")
+    .populate("reporterId", "fullname avatar")
+    .populate("sprintId", "name")
+    .populate("platformId", "name icon")
+    .lean();
+
+  return updatedTask;
+};
+
 module.exports = {
   getTasksByProjectKey,
   createTask,
   changeTaskSprint,
+  updateTaskStatus,
 };

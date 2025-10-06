@@ -39,5 +39,25 @@ const SprintController = {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
     }
   },
+
+  handleGetStartedSprints: async (req, res) => {
+    try {
+      const { projectKey } = req.params;
+      const startedSprints = await sprintService.getStartedSprintsByProjectKey(projectKey);
+      res.status(200).json(startedSprints);
+    } catch (error) {
+      res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+  },
+
+  handleGetTasksBySprintWithStatus: async (req, res) => {
+    try {
+      const { sprintId } = req.params;
+      const result = await sprintService.getTasksBySprintWithStatus(sprintId);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+  },
 };
 module.exports = SprintController;

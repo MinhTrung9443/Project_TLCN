@@ -11,3 +11,7 @@ export const createTask = (taskData) => {
 export const updateTaskSprint = (taskId, sprintId) => {
   return apiClient.put(`/tasks/change-sprint/${taskId}`, { sprintId });
 };
+
+export const updateTaskStatus = (taskId, statusId) => {
+  return apiClient.put(`/tasks/update-status/${taskId}`, { statusId });
+};

@@ -54,5 +54,23 @@ const sprintService = {
       throw error;
     }
   },
+
+  getStartedSprints: async (projectKey) => {
+    try {
+      const response = await apiClient.get(`/sprints/${projectKey}/started`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getTasksBySprintWithStatus: async (sprintId) => {
+    try {
+      const response = await apiClient.get(`/sprints/tasks/${sprintId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 export default sprintService;

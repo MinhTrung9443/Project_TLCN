@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import SprintList from "../../components/sprint/sprintList";
@@ -21,6 +22,7 @@ const BacklogPage = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [sprintToEdit, setSprintToEdit] = useState(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const fetchSprintList = async () => {
     try {
       const data = await sprintService.getSprints(selectedProjectKey);
@@ -74,9 +76,18 @@ const BacklogPage = () => {
         return;
       }
       await sprintService.updateSprint(sprint._id, { status: "Started" });
-      fetchSprintList();
+      toast.success("Sprint started successfully!");
+
+      // Navigate to active sprint page with sprint ID
+      navigate(`/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
     } catch (error) {
       console.error("Error starting sprint:", error);
+    }
+  };
+
+  const handleSprintNameClick = (sprint) => {
+    if (sprint.status === "Started") {
+      navigate(`/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
     }
   };
 
@@ -133,6 +144,7 @@ const BacklogPage = () => {
               onStart={handleStartSprint}
               onComplete={handleCompleteSprint}
               onDelete={handleDeleteSprint}
+              onSprintNameClick={handleSprintNameClick}
             />
           </div>
           {/* Backlog section moved below */}

@@ -4,7 +4,7 @@ import "../../styles/pages/ManageSprint/SprintList.css";
 import { useDrop } from "react-dnd";
 import CreateTaskModal from "../../components/task/CreateTaskModal";
 
-const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete }) => {
+const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete, onSprintNameClick }) => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,7 +47,12 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete }) =
             <button className="sprint-chevron-btn" onClick={() => setExpanded((prev) => !prev)}>
               <span className={`material-symbols-outlined sprint-chevron-icon${expanded ? " expanded" : ""}`}>chevron_right</span>
             </button>
-            <span className="sprint-title">{sprint.name}</span>
+            <span
+              className={`sprint-title ${sprint.status === "Started" ? "sprint-title-clickable" : ""}`}
+              onClick={() => onSprintNameClick && sprint.status === "Started" && onSprintNameClick(sprint)}
+            >
+              {sprint.name}
+            </span>
             <span className="sprint-task-badge">{sprint.tasks?.length || 0} Tasks</span>
             <div className="sprint-header-menu" ref={openMenuId === sprint._id ? menuRef : null}>
               <button onClick={() => handleMenuToggle(sprint._id)} className="sprint-menu-btn">

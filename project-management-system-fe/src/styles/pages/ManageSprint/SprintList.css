@@ -28,6 +28,17 @@
   font-weight: 700;
   color: #1e293b;
 }
+
+.sprint-title-clickable {
+  cursor: pointer;
+  color: #3b82f6;
+  transition: color 0.2s ease;
+}
+
+.sprint-title-clickable:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
 .sprint-task-badge {
   background: #e0f2fe;
   color: #2563eb;

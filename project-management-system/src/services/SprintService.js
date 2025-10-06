@@ -114,6 +114,61 @@ const sprintService = {
     }
     return await Sprint.findByIdAndDelete(sprintId);
   },
+
+  // Get started sprints by project key
+  getStartedSprintsByProjectKey: async (projectKey) => {
+    try {
+      const project = await Project.findOne({ key: projectKey, status: "active" });
+      if (!project) throw { statusCode: 404, message: "Project not found or inactive" };
+
+      const startedSprints = await Sprint.find({
+        projectId: project._id,
+        status: "Started",
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      return startedSprints;
+    } catch (error) {
+      if (error.statusCode) throw error;
+      throw { statusCode: 500, message: "Server Error: " + error.message };
+    }
+  },
+
+  // Get tasks by sprint with status details
+  getTasksBySprintWithStatus: async (sprintId) => {
+    try {
+      const sprint = await Sprint.findById(sprintId);
+      if (!sprint) throw { statusCode: 404, message: "Sprint not found" };
+
+      const tasks = await Task.find({ sprintId })
+        .populate("taskTypeId", "name icon")
+        .populate("priorityId", "name icon")
+        .populate("assigneeId", "fullname avatar")
+        .populate("reporterId", "fullname avatar")
+        .populate("platformId", "name icon")
+        .lean();
+
+      // Enrichment status for tasks
+      const enrichedTasks = await Promise.all(
+        tasks.map(async (task) => {
+          if (task.statusId) {
+            const workflow = await Workflow.findOne({ "statuses._id": task.statusId });
+            if (workflow) {
+              const status = workflow.statuses.find((s) => s._id.toString() === task.statusId.toString());
+              task.statusId = status || null;
+            }
+          }
+          return task;
+        })
+      );
+
+      return { sprint, tasks: enrichedTasks };
+    } catch (error) {
+      if (error.statusCode) throw error;
+      throw { statusCode: 500, message: "Server Error: " + error.message };
+    }
+  },
 };
 
 module.exports = sprintService;

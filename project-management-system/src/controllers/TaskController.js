@@ -50,8 +50,20 @@ const changeSprint = async (req, res) => {
   }
 };
 
+const handleUpdateTaskStatus = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { statusId } = req.body;
+    const updatedTask = await taskService.updateTaskStatus(taskId, statusId);
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
+};
+
 module.exports = {
   handleGetTasksByProjectKey,
   handleCreateTask,
   changeSprint,
+  handleUpdateTaskStatus,
 };
