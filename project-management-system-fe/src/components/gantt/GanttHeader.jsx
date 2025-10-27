@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const GanttHeader = ({
   filter,
@@ -9,7 +9,8 @@ const GanttHeader = ({
   setShowGroupByPanel,
   handleGroupByChange,
   timeView,
-  setTimeView
+  setTimeView,
+  
 }) => {
   return (
     <div className="gantt-header">
@@ -31,27 +32,15 @@ const GanttHeader = ({
           <div className="gantt-dropdown gantt-groupby-dropdown">
             <div className="gantt-dropdown-header">GROUP BY</div>
             <label className="gantt-dropdown-item">
-              <input 
-                type="checkbox" 
-                checked={groupBy.includes("project")} 
-                onChange={() => handleGroupByChange("project")} 
-              />
+              <input type="checkbox" checked={groupBy.includes("project")} onChange={() => handleGroupByChange("project")} />
               <span>Project</span>
             </label>
             <label className="gantt-dropdown-item">
-              <input 
-                type="checkbox" 
-                checked={groupBy.includes("sprint")} 
-                onChange={() => handleGroupByChange("sprint")} 
-              />
+              <input type="checkbox" checked={groupBy.includes("sprint")} onChange={() => handleGroupByChange("sprint")} />
               <span>Sprint</span>
             </label>
             <label className="gantt-dropdown-item">
-              <input 
-                type="checkbox" 
-                checked={groupBy.includes("task")} 
-                onChange={() => handleGroupByChange("task")} 
-              />
+              <input type="checkbox" checked={groupBy.includes("task")} onChange={() => handleGroupByChange("task")} />
               <span>Task</span>
             </label>
           </div>
