@@ -22,6 +22,7 @@ const GanttPage = () => {
   const [groupBy, setGroupBy] = useState(["project", "sprint", "task"]);
   const [timeView, setTimeView] = useState("weeks"); // weeks, months, years
   const [ganttData, setGanttData] = useState([]);
+  const [backlogTasks, setBacklogTasks] = useState([]);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showGroupByPanel, setShowGroupByPanel] = useState(false);
@@ -57,12 +58,14 @@ const GanttPage = () => {
         const response = await ganttService.getGanttData(filter, groupBy);
         console.log("Gantt Data Response:", response);
 
-        // API trả về { message, data: { type, data } }
+        // API trả về { message, data: { type, data, backlogTasks } }
         const ganttResult = response.data || response;
         setGanttData(ganttResult.data || []);
+        setBacklogTasks(ganttResult.backlogTasks || []);
       } catch (error) {
         console.error("Error fetching gantt data:", error);
         setGanttData([]);
+        setBacklogTasks([]);
       }
     };
 
@@ -91,8 +94,8 @@ const GanttPage = () => {
     });
   };
 
-  // Generate timeline columns,
-  const dateRange = calculateDateRange(ganttData);
+  // Generate timeline columns, include backlogTasks in date range calculation
+  const dateRange = calculateDateRange(ganttData, backlogTasks);
   const timelineColumns = generateTimelineColumns(timeView, dateRange.startDate, dateRange.endDate);
 
   // Calculate bar position wrapper
@@ -120,6 +123,7 @@ const GanttPage = () => {
         {/* Left Section - Fixed */}
         <GanttLeftSection
           projects={ganttData}
+          backlogTasks={backlogTasks}
           groupBy={groupBy}
           expandedItems={expandedItems}
           toggleExpand={toggleExpand}
@@ -129,6 +133,7 @@ const GanttPage = () => {
         {/* Right Section - Scrollable */}
         <GanttRightSection
           projects={ganttData}
+          backlogTasks={backlogTasks}
           groupBy={groupBy}
           expandedItems={expandedItems}
           timelineColumns={timelineColumns}

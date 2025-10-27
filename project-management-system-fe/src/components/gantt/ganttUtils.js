@@ -11,12 +11,17 @@ export const formatDate = (dateString) => {
 };
 
 // Calculate earliest start date and latest end date from gantt data
-export const calculateDateRange = (projects) => {
-  if (!Array.isArray(projects) || projects.length === 0) {
-    return {
-      startDate: new Date("2025-02-01"),
-      endDate: new Date("2025-12-31"),
-    };
+export const calculateDateRange = (items, backlogTasks = []) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    // Check if backlogTasks has data
+    if (Array.isArray(backlogTasks) && backlogTasks.length > 0) {
+      items = backlogTasks;
+    } else {
+      return {
+        startDate: new Date("2025-02-01"),
+        endDate: new Date("2025-12-31"),
+      };
+    }
   }
 
   let minDate = null;
@@ -37,38 +42,66 @@ export const calculateDateRange = (projects) => {
     }
   };
 
-  // Iterate through projects
-  projects.forEach((project) => {
-    updateDates(project.startDate, project.endDate);
+  // Iterate through items (could be projects, sprints, or tasks)
+  items.forEach((item) => {
+    // Item could be a project
+    if (item.sprints || item.backlogTasks || item.tasks) {
+      const project = item;
+      updateDates(project.startDate, project.endDate);
 
-    // Check sprints if exists
-    if (project.sprints && Array.isArray(project.sprints)) {
-      project.sprints.forEach((sprint) => {
-        updateDates(sprint.startDate, sprint.endDate);
+      // Check sprints if exists
+      if (project.sprints && Array.isArray(project.sprints)) {
+        project.sprints.forEach((sprint) => {
+          updateDates(sprint.startDate, sprint.endDate);
 
-        // Check tasks in sprint if exists
-        if (sprint.tasks && Array.isArray(sprint.tasks)) {
-          sprint.tasks.forEach((task) => {
-            updateDates(task.startDate, task.dueDate);
-          });
-        }
-      });
+          // Check tasks in sprint if exists
+          if (sprint.tasks && Array.isArray(sprint.tasks)) {
+            sprint.tasks.forEach((task) => {
+              updateDates(task.startDate, task.dueDate);
+            });
+          }
+        });
+      }
+
+      // Check backlog tasks if exists
+      if (project.backlogTasks && Array.isArray(project.backlogTasks)) {
+        project.backlogTasks.forEach((task) => {
+          updateDates(task.startDate, task.dueDate);
+        });
+      }
+
+      // Check tasks if exists (for project-task groupby)
+      if (project.tasks && Array.isArray(project.tasks)) {
+        project.tasks.forEach((task) => {
+          updateDates(task.startDate, task.dueDate);
+        });
+      }
     }
+    // Item could be a sprint
+    else if (item.tasks && item.projectId) {
+      const sprint = item;
+      updateDates(sprint.startDate, sprint.endDate);
 
-    // Check backlog tasks if exists
-    if (project.backlogTasks && Array.isArray(project.backlogTasks)) {
-      project.backlogTasks.forEach((task) => {
-        updateDates(task.startDate, task.dueDate);
-      });
+      // Check tasks in sprint if exists
+      if (sprint.tasks && Array.isArray(sprint.tasks)) {
+        sprint.tasks.forEach((task) => {
+          updateDates(task.startDate, task.dueDate);
+        });
+      }
     }
-
-    // Check tasks if exists (for project-task groupby)
-    if (project.tasks && Array.isArray(project.tasks)) {
-      project.tasks.forEach((task) => {
-        updateDates(task.startDate, task.dueDate);
-      });
+    // Item could be a task
+    else {
+      const task = item;
+      updateDates(task.startDate, task.dueDate);
     }
   });
+
+  // Process backlogTasks separately
+  if (Array.isArray(backlogTasks) && backlogTasks.length > 0) {
+    backlogTasks.forEach((task) => {
+      updateDates(task.startDate, task.dueDate);
+    });
+  }
 
   // If no valid dates found, use defaults
   if (!minDate) minDate = new Date("2025-02-01");
