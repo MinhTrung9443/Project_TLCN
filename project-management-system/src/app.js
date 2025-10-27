@@ -12,6 +12,7 @@ const settingsRoutes = require("./routes/settingsRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const sprintRoute = require("./routes/sprintRoutes.js");
 const workflowRoutes = require("./routes/workflowRoutes.js");
+const ganttRoutes = require("./routes/ganttRoutes.js");
 const cors = require("cors");
 const path = require("path");
 app.use(
@@ -35,5 +36,6 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/sprints", sprintRoute);
 app.use("/api/workflows", workflowRoutes);
+app.use("/api/gantt", ganttRoutes);
 
 module.exports = app;

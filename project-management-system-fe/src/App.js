@@ -21,6 +21,7 @@ import GlobalSettingsPage from "./pages/Setting/GlobalSettingsPage"; // <-- Impo
 import TaskFinderPage from "./pages/ManageTask/TaskFinderPage"; // <-- IMPORT
 import BacklogPage from "./pages/ManageSprint/BacklogPage";
 import ActiveSprintPage from "./pages/ManageSprint/ActiveSprintPage";
+import GanttPage from "./pages/Gantt/GantPage.jsx";
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
               <Route path="/task-mgmt/projects/:projectKey/task-finder" element={<TaskFinderPage />} />
               <Route path="/task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
               <Route path="/task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
+              <Route path="/gantt" element={<GanttPage />} />
             </Route>
           </Routes>
 
