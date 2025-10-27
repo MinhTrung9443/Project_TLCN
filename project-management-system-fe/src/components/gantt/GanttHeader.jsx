@@ -36,33 +36,36 @@ const GanttHeader = ({
         <button
           className={`gantt-filter-btn ${Object.keys(filter).some((k) => filter[k]?.length > 0) ? "active" : ""}`}
           onClick={() => setShowFilterPanel(!showFilterPanel)}
+          ref={filterRef}
         >
           <span className="material-symbols-outlined">filter_alt</span>
           Filter (0)
         </button>
 
-        <button className="gantt-groupby-btn" onClick={() => setShowGroupByPanel(!showGroupByPanel)}>
-          Group by {groupBy.length} Project
-        </button>
+        <div ref={groupByRef} style={{ position: "relative" }}>
+          <button className="gantt-groupby-btn" onClick={() => setShowGroupByPanel(!showGroupByPanel)}>
+            Group by {groupBy.length} Project
+          </button>
 
-        {/* Group By Dropdown */}
-        {showGroupByPanel && (
-          <div className="gantt-dropdown gantt-groupby-dropdown">
-            <div className="gantt-dropdown-header">GROUP BY</div>
-            <label className="gantt-dropdown-item">
-              <input type="checkbox" checked={groupBy.includes("project")} onChange={() => handleGroupByChange("project")} />
-              <span>Project</span>
-            </label>
-            <label className="gantt-dropdown-item">
-              <input type="checkbox" checked={groupBy.includes("sprint")} onChange={() => handleGroupByChange("sprint")} />
-              <span>Sprint</span>
-            </label>
-            <label className="gantt-dropdown-item">
-              <input type="checkbox" checked={groupBy.includes("task")} onChange={() => handleGroupByChange("task")} />
-              <span>Task</span>
-            </label>
-          </div>
-        )}
+          {/* Group By Dropdown */}
+          {showGroupByPanel && (
+            <div className="gantt-dropdown gantt-groupby-dropdown">
+              <div className="gantt-dropdown-header">GROUP BY</div>
+              <label className="gantt-dropdown-item">
+                <input type="checkbox" checked={groupBy.includes("project")} onChange={() => handleGroupByChange("project")} />
+                <span>Project</span>
+              </label>
+              <label className="gantt-dropdown-item">
+                <input type="checkbox" checked={groupBy.includes("sprint")} onChange={() => handleGroupByChange("sprint")} />
+                <span>Sprint</span>
+              </label>
+              <label className="gantt-dropdown-item">
+                <input type="checkbox" checked={groupBy.includes("task")} onChange={() => handleGroupByChange("task")} />
+                <span>Task</span>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="gantt-header-center">
