@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
-import { ProjectContext } from "../../contexts/ProjectContext";
+import * as ganttService from "../../services/ganttService";
 import GanttHeader from "../../components/gantt/GanttHeader";
 import GanttLeftSection from "../../components/gantt/GanttLeftSection";
 import GanttRightSection from "../../components/gantt/GanttRightSection";
-import { generateTimelineColumns, calculateBarPosition } from "../../components/gantt/ganttUtils";
+import { generateTimelineColumns, calculateBarPosition, calculateDateRange } from "../../components/gantt/ganttUtils";
 import "../../styles/pages/Gantt/GanttPage.css";
 
 const GanttPage = () => {
-
   // Refs for scroll sync
   const leftSectionRef = useRef(null);
   const rightSectionRef = useRef(null);
@@ -19,7 +18,7 @@ const GanttPage = () => {
     assigneeIds: [],
     includeUnassigned: false,
   });
-  
+
   const [groupBy, setGroupBy] = useState(["project", "sprint", "task"]);
   const [timeView, setTimeView] = useState("weeks"); // weeks, months, years
   const [ganttData, setGanttData] = useState([]);
@@ -51,36 +50,24 @@ const GanttPage = () => {
     };
   }, []);
 
-  // Mock data for demonstration
-  const mockProjects = [
-    {
-      id: "1",
-      name: "ICT Triển khai",
-      key: "ICT",
-      startDate: "2022-05-09",
-      endDate: "2022-07-15",
-      sprints: [
-        {
-          id: "s1",
-          name: "Sprint 1",
-          startDate: "2022-05-09",
-          endDate: "2022-05-23",
-          tasks: [
-            { id: "t1", name: "Setup infrastructure", startDate: "2022-05-09", endDate: "2022-05-15" },
-            { id: "t2", name: "Design database", startDate: "2022-05-16", endDate: "2022-05-23" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "2",
-      name: "ETL Triển khai",
-      key: "ETL",
-      startDate: "2022-09-04",
-      endDate: "2022-09-08",
-      sprints: [],
-    },
-  ];
+  // Fetch Gantt data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await ganttService.getGanttData(filter, groupBy);
+        console.log("Gantt Data Response:", response);
+
+        // API trả về { message, data: { type, data } }
+        const ganttResult = response.data || response;
+        setGanttData(ganttResult.data || []);
+      } catch (error) {
+        console.error("Error fetching gantt data:", error);
+        setGanttData([]);
+      }
+    };
+
+    fetchData();
+  }, [filter, groupBy]);
 
   // Toggle expand/collapse
   const toggleExpand = (id) => {
@@ -104,8 +91,9 @@ const GanttPage = () => {
     });
   };
 
-  // Generate timeline columns, 
-  const timelineColumns = generateTimelineColumns(timeView);
+  // Generate timeline columns,
+  const dateRange = calculateDateRange(ganttData);
+  const timelineColumns = generateTimelineColumns(timeView, dateRange.startDate, dateRange.endDate);
 
   // Calculate bar position wrapper
   const calculatePosition = (startDate, endDate) => {
@@ -131,7 +119,7 @@ const GanttPage = () => {
       <div className="gantt-container">
         {/* Left Section - Fixed */}
         <GanttLeftSection
-          projects={mockProjects}
+          projects={ganttData}
           groupBy={groupBy}
           expandedItems={expandedItems}
           toggleExpand={toggleExpand}
@@ -140,7 +128,7 @@ const GanttPage = () => {
 
         {/* Right Section - Scrollable */}
         <GanttRightSection
-          projects={mockProjects}
+          projects={ganttData}
           groupBy={groupBy}
           expandedItems={expandedItems}
           timelineColumns={timelineColumns}

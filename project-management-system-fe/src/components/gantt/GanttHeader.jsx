@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 
 const GanttHeader = ({
   filter,
@@ -10,8 +10,26 @@ const GanttHeader = ({
   handleGroupByChange,
   timeView,
   setTimeView,
-  
 }) => {
+  const groupByRef = useRef(null);
+  const filterRef = useRef(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (groupByRef.current && !groupByRef.current.contains(event.target)) {
+        setShowGroupByPanel(false);
+      }
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setShowFilterPanel(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [setShowGroupByPanel, setShowFilterPanel]);
   return (
     <div className="gantt-header">
       <div className="gantt-header-left">

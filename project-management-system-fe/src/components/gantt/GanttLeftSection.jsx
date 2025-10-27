@@ -4,6 +4,20 @@ import GanttSprintRow from "./GanttSprintRow";
 import GanttTaskRow from "./GanttTaskRow";
 
 const GanttLeftSection = ({ projects, groupBy, expandedItems, toggleExpand, leftSectionRef }) => {
+  // Safety check
+  if (!Array.isArray(projects)) {
+    return (
+      <div className="gantt-left-section" ref={leftSectionRef}>
+        <div className="gantt-left-header">
+          <span>Project</span>
+        </div>
+        <div className="gantt-body">
+          <div style={{ padding: "20px", textAlign: "center", color: "#6b7280" }}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="gantt-left-section" ref={leftSectionRef}>
       {/* Header */}

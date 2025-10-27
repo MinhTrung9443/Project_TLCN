@@ -189,6 +189,7 @@
 
 .gantt-left-header {
   width: 350px;
+  height: 60px;
   font-weight: 600;
   color: #374151;
   padding: 12px 16px;
@@ -198,38 +199,62 @@
   position: sticky;
   left: 0;
   z-index: 101;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .gantt-right-header {
   background: #f9fafb;
   min-width: max-content;
+  height: 60px;
 }
 
 /* Timeline Header */
 .gantt-timeline-header {
   display: flex;
-  height: 100%;
+  height: 60px;
 }
 
 .gantt-timeline-col {
+  width: 80px;
   min-width: 80px;
+  max-width: 80px;
+  height: 60px;
   border-left: 1px solid #e5e7eb;
   padding: 8px 4px;
   text-align: center;
   flex-shrink: 0;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Remove border from first column */
+.gantt-timeline-col:first-child {
+  border-left: none;
 }
 
 /* Adjust column width based on time view */
 .gantt-page[data-timeview="weeks"] .gantt-timeline-col {
+  width: 80px;
   min-width: 80px;
+  max-width: 80px;
 }
 
 .gantt-page[data-timeview="months"] .gantt-timeline-col {
+  width: 100px;
   min-width: 100px;
+  max-width: 100px;
 }
 
 .gantt-page[data-timeview="years"] .gantt-timeline-col {
+  width: 120px;
   min-width: 120px;
+  max-width: 120px;
 }
 
 .gantt-timeline-label {
@@ -372,17 +397,32 @@
   position: relative;
   height: 48px;
   display: flex;
+  width: 100%;
+  background: #fff;
 }
 
-.gantt-timeline::before {
+/* Add grid by using pseudo element with exact column widths */
+.gantt-timeline::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
   top: 0;
   bottom: 0;
-  background: repeating-linear-gradient(to right, transparent, transparent 79px, #e5e7eb 79px, #e5e7eb 80px);
+  left: 0;
+  right: 0;
   pointer-events: none;
+  z-index: 0;
+}
+
+/* Bars should be above grid */
+.gantt-bar {
+  position: absolute;
+  z-index: 1;
+}
+
+/* Body */
+.gantt-body {
+  background: #fff;
+  position: relative;
 }
 
 /* Gantt Bar */

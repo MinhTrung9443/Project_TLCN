@@ -5,6 +5,20 @@ import GanttSprintBar from "./GanttSprintBar";
 import GanttTaskBar from "./GanttTaskBar";
 
 const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, calculateBarPosition, rightSectionRef }) => {
+  // Safety check
+  if (!Array.isArray(projects)) {
+    return (
+      <div className="gantt-right-section" ref={rightSectionRef}>
+        <div className="gantt-wrapper">
+          <GanttTimeline timelineColumns={timelineColumns} />
+          <div className="gantt-body">
+            <div style={{ padding: "20px", textAlign: "center", color: "#6b7280" }}>Loading...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="gantt-right-section" ref={rightSectionRef}>
       <div className="gantt-wrapper">

@@ -17,6 +17,7 @@ const INITIAL_FORM_STATE = {
   assigneeId: "",
   reporterId: "",
   storyPoints: "",
+  startDate: "",
   dueDate: "",
   platformId: "",
   sprintId: "",
