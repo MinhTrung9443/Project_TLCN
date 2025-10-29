@@ -72,7 +72,7 @@ export const Sidebar = () => {
                 </NavLink>
 
                 <NavLink
-                  to={getProjectPath("task-finder")}
+                  to="/task-finder"
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                       isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
@@ -80,7 +80,7 @@ export const Sidebar = () => {
                   }
                 >
                   <span className="material-symbols-outlined mr-3 text-gray-500">description</span>
-                  <span>Task Finder {selectedProjectKey && `(${selectedProjectKey})`}</span>
+                  <span>Task Finder</span>
                 </NavLink>
 
                 <NavLink

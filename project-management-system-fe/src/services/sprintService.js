@@ -72,5 +72,14 @@ const sprintService = {
       throw error;
     }
   },
+  getSprintList: async () => {
+  try {
+    const response = await apiClient.get(`/sprints/list`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+},
+
 };
 export default sprintService;

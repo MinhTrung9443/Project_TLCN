@@ -18,6 +18,15 @@ const workflowService = {
       throw error;
     }
   },
+  getStatusList: async () => {
+  try {
+    const response = await apiClient.get("/statuses/list"); // Giả sử API endpoint là đây
+    return response;
+  } catch (error) {
+    console.error("Error fetching statuses:", error);
+    throw error;
+  }
+  },
 };
 
 export default workflowService;

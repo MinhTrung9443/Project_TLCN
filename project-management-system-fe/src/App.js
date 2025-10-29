@@ -48,7 +48,7 @@ function App() {
 
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/task-mgmt/projects/:projectKey/settings/:tabName" element={<ProjectSettingsPage />} />
-              <Route path="/task-mgmt/projects/:projectKey/task-finder" element={<TaskFinderPage />} />
+              <Route path="/task-finder" element={<TaskFinderPage />} />
               <Route path="/task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
               <Route path="/task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
               <Route path="/gantt" element={<GanttPage />} />

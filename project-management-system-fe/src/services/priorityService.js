@@ -49,5 +49,15 @@ const priorityService = {
       throw error;
     }
   },
+  getPriorityList: async () => {
+  try {
+    // Gọi API lấy tất cả priorities
+    const response = await apiClient.get("/priorities/list"); 
+    return response;
+  } catch (error) {
+    console.error("Error fetching all priorities:", error);
+    throw error;
+  }
+}
 };
 export default priorityService;

@@ -188,3 +188,133 @@
     font-size: 14px;
     margin-right: 8px; /* Tạo khoảng cách với text Key */
 }
+
+.task-finder-wrapper {
+  display: flex;
+  transition: all 0.3s ease-in-out;
+}
+
+.task-finder-main-content {
+  flex-grow: 1;
+  width: 100%;
+  transition: width 0.3s ease-in-out;
+}
+
+.task-finder-wrapper.panel-open .task-finder-main-content {
+  width: calc(100% - 450px); /* Giảm chiều rộng khi panel mở */
+}
+
+.filters-bar {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.filters-bar select, .filters-bar .search-input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.filters-bar .search-input {
+  flex-grow: 1; /* Cho ô search chiếm phần còn lại */
+}
+
+.task-row {
+    /* ... (css cũ) ... */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.task-row:hover {
+    background-color: #f5f5f5;
+}
+
+.filters-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* --- CSS for AdvancedFilterBar --- */
+.advanced-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.active-filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.filter-pill {
+    display: flex;
+    align-items: center;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 14px;
+}
+
+.filter-pill-label {
+    margin-right: 8px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.filter-select-input {
+    min-width: 180px;
+}
+
+.remove-filter-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6c757d;
+    margin-left: 8px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+.remove-filter-btn:hover {
+    color: #343a40;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.add-filter-select {
+    min-width: 150px;
+}
+
+.search-btn {
+    padding: 8px 16px;
+    border: none;
+    background-color: #4f46e5;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.search-btn:hover {
+    background-color: #4338ca;
+}
+
+.keyword-search-input {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    min-width: 250px;
+}

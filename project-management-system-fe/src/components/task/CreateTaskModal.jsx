@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
-import { ProjectContext } from "../../contexts/ProjectContext";
 import { getProjects } from "../../services/projectService";
 import { getCreateTaskFormData } from "../../services/settingsService";
 import { createTask } from "../../services/taskService";
@@ -23,9 +22,9 @@ const INITIAL_FORM_STATE = {
   sprintId: "",
 };
 
-const CreateTaskModal = ({ sprint, isOpen, onClose, onTaskCreated }) => {
+// FIX 1: Đặt giá trị mặc định cho sprint là null để an toàn hơn
+const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
   const { user } = useAuth();
-  const { selectedProjectKey } = useContext(ProjectContext);
 
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [projects, setProjects] = useState([]);
@@ -40,34 +39,41 @@ const CreateTaskModal = ({ sprint, isOpen, onClose, onTaskCreated }) => {
         try {
           const res = await getProjects();
           setProjects(res.data);
-          const currentProject = res.data.find((p) => p.key.toUpperCase() === selectedProjectKey?.toUpperCase());
-          if (currentProject) {
-            setFormData((prev) => ({ ...prev, projectId: currentProject._id, reporterId: user.id }));
-          }
+          // FIX 2: Luôn set reporterId và sprintId (nếu có) khi modal mở
+          // Không tự động chọn project nữa, để người dùng tự quyết định
+          setFormData((prev) => ({
+            ...prev,
+            reporterId: user.id,
+            sprintId: sprint ? sprint._id : "", // Chỉ set sprintId nếu prop sprint tồn tại
+          }));
         } catch (error) {
           toast.error("Could not fetch projects.");
         }
       };
       fetchAllProjects();
     } else {
+      // Reset mọi thứ khi modal đóng
       setFormData(INITIAL_FORM_STATE);
       setErrors({});
       setShowMore(false);
     }
-  }, [isOpen, selectedProjectKey, user.id]);
+  }, [isOpen, user.id, sprint]); // Bỏ phụ thuộc vào selectedProjectKey
 
   useEffect(() => {
     const fetchSettingsForProject = async () => {
-      const selectedProject = projects.find((p) => p._id === formData.projectId);
-      if (!selectedProject) {
+      if (!formData.projectId) {
         setSettings({ taskTypes: [], priorities: [], members: [], platforms: [] });
         return;
       }
+      
+      const selectedProject = projects.find((p) => p._id === formData.projectId);
+      if (!selectedProject) return;
 
       try {
         const res = await getCreateTaskFormData(selectedProject.key);
         setSettings(res.data);
 
+        // Tự động chọn priority là Medium nếu có
         if (res.data.priorities && res.data.priorities.length > 0) {
           const defaultPriority = res.data.priorities.find((p) => p.name.toLowerCase() === "medium") || res.data.priorities[0];
           setFormData((prev) => ({ ...prev, priorityId: defaultPriority._id }));
@@ -76,11 +82,8 @@ const CreateTaskModal = ({ sprint, isOpen, onClose, onTaskCreated }) => {
         toast.error(`Could not fetch settings for ${selectedProject.name}.`);
       }
     };
-
-    if (formData.projectId) {
-      fetchSettingsForProject();
-    }
-  }, [formData.projectId, projects]); // Phụ thuộc vào `formData.projectId`
+    fetchSettingsForProject();
+  }, [formData.projectId, projects]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -92,7 +95,7 @@ const CreateTaskModal = ({ sprint, isOpen, onClose, onTaskCreated }) => {
         projectId: value, // Cập nhật projectId mới
         name: prev.name, // Giữ lại tên và mô tả đã gõ
         description: prev.description,
-        sprintId: sprint._id, 
+        sprintId: sprint ? sprint._id : "", 
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -149,7 +152,7 @@ const CreateTaskModal = ({ sprint, isOpen, onClose, onTaskCreated }) => {
         <form onSubmit={handleSubmit} className="modal-body">
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="projectId">Project *</label>
+              <label htmlFor="projectId" className="required">Project</label>
               <select id="projectId" name="projectId" value={formData.projectId} onChange={handleInputChange}>
                 <option value="">Select Project</option>
                 {projects.map((p) => (
@@ -161,7 +164,7 @@ const CreateTaskModal = ({ sprint, isOpen, onClose, onTaskCreated }) => {
               {errors.projectId && <p className="error-text">{errors.projectId}</p>}
             </div>
             <div className="form-group">
-              <label htmlFor="taskTypeId">Type *</label>
+              <label htmlFor="taskTypeId" className="required">Type</label>
               <select id="taskTypeId" name="taskTypeId" value={formData.taskTypeId} onChange={handleInputChange} disabled={!formData.projectId}>
                 <option value="">Select Type</option>
                 {settings.taskTypes.map((t) => (
@@ -175,7 +178,7 @@ const CreateTaskModal = ({ sprint, isOpen, onClose, onTaskCreated }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="name">Task Name *</label>
+            <label htmlFor="name" className="required">Task Name</label>
             <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} />
             {errors.name && <p className="error-text">{errors.name}</p>}
           </div>
@@ -188,7 +191,7 @@ const CreateTaskModal = ({ sprint, isOpen, onClose, onTaskCreated }) => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="priorityId">Priority *</label>
+              <label htmlFor="priorityId" className="required">Priority</label>
               <select id="priorityId" name="priorityId" value={formData.priorityId} onChange={handleInputChange} disabled={!formData.projectId}>
                 <option value="">Select Priority</option>
                 {settings.priorities.map((p) => (

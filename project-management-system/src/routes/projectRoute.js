@@ -16,5 +16,5 @@ router.post('/key/:key/members', protect, isAdmin, handleAddMemberToProject);
 router.post('/key/:key/groups', protect, isAdmin, handleAddGroupToProject);
 router.get('/archived', protect, handleGetArchivedProjects); // **NEW**
 router.put('/:id/restore', protect, isAdmin, handleRestoreProject); // **NEW**
-
+router.get('/:key/members', protect, handleGetProjectMembers);
 module.exports = router;

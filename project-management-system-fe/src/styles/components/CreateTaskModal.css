@@ -11,7 +11,11 @@
   align-items: center;
   z-index: 1000;
 }
-
+.modal-body .form-group label.required::after {
+  content: " *"; /* Dấu cách ở trước rất quan trọng để tạo khoảng trống */
+  color: #dc3545; /* Một màu đỏ đẹp cho thông báo lỗi */
+  font-weight: bold;
+}
 .modal-content {
   background: white;
   width: 90%;

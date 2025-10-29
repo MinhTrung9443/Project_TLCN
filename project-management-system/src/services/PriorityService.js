@@ -112,6 +112,15 @@ class PriorityService {
       throw new Error("Error updating priority levels");
     }
   }
+  async getAllPrioritiesList() {
+    try {
+      // Lấy tất cả priorities, không phân biệt project
+      return await Priority.find({}).sort({ name: "asc" });
+    } catch (error) {
+      console.error("Error in getAllPrioritiesList:", error);
+      throw new Error("Error fetching all priorities");
+    }
+  }
 }
 
 module.exports = new PriorityService();

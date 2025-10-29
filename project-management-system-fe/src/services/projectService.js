@@ -40,7 +40,9 @@ export const permanentlyDeleteProject = (projectId) => {
 export const getProjectMembers = (projectKey) => {
   return apiClient.get(`/projects/key/${projectKey}/members`);
 };
-
+export const getProjectMember = (projectKey) => {
+    return apiClient.get(`/projects/${projectKey}/members`);
+};
 export const addMemberToProject = (projectKey, data) => {
   return apiClient.post(`/projects/key/${projectKey}/members`, data);
 };

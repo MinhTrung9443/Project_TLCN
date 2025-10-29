@@ -15,5 +15,5 @@ router.put("/:id", protect, isAdmin, priorityController.updatePriority);
 router.delete("/:id", protect, isAdmin, priorityController.deletePriority);
 
 router.get("/:id", protect, priorityController.getPriorityById);
-
+router.get("/list", protect, priorityController.getPriorityList);
 module.exports = router;

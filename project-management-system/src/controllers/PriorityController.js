@@ -69,6 +69,15 @@ class PriorityController {
       console.error("Error updating priority levels:", error);
     }
   }
+  async getPriorityList(req, res) {
+    try {
+      const priorities = await priorityService.getAllPrioritiesList();
+      return res.status(200).json(priorities);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
 }
 
 module.exports = new PriorityController();

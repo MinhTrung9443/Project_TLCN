@@ -15,3 +15,15 @@ export const updateTaskSprint = (taskId, sprintId) => {
 export const updateTaskStatus = (taskId, statusId) => {
   return apiClient.put(`/tasks/update-status/${taskId}`, { statusId });
 };
+
+export const searchTasks = (params) => {
+  const query = new URLSearchParams(JSON.parse(JSON.stringify(params))).toString();
+  return apiClient.get(`/tasks/search?${query}`);
+};
+
+export const updateTask = (taskId, updateData) => {
+  return apiClient.patch(`/tasks/${taskId}`, updateData);
+};
+export const deleteTask = (taskId) => {
+  return apiClient.delete(`/tasks/${taskId}`);
+};
