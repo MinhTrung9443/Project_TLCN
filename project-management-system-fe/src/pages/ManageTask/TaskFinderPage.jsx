@@ -3,12 +3,9 @@ import { toast } from 'react-toastify';
 import _ from 'lodash';
 
 import { getProjects } from '../../services/projectService';
-import { searchTasks, updateTask, deleteTask } from '../../services/taskService';
+import { searchTasks, deleteTask } from '../../services/taskService';
 import userService from '../../services/userService'; // Import default object
-import statusService from '../../services/workflowService'; // Import default object
-import priorityService from '../../services/priorityService'; // Import default object
-import taskTypeService from '../../services/typeTaskService'; // Import default object
-import sprintService from '../../services/sprintService'; // Import default object
+import statusService from '../../services/workflowService'; 
 
 import CreateTaskModal from '../../components/task/CreateTaskModal';
 import TaskRow from './TaskRow';
@@ -19,46 +16,45 @@ const TaskFinderPage = () => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-
     const [keyword, setKeyword] = useState('');
-    
+
     const [activeFilters, setActiveFilters] = useState({});
-    
+
     const [selectedTask, setSelectedTask] = useState(null);
 
     const [filterData, setFilterData] = useState({
-        projects: [], users: [], statuses: [], priorities: [], taskTypes: [], sprints: [],
+        projects: [],
+        users: [],
+        statuses: [],
+        priorities: [],
+        taskTypes: [],
+        sprints: [],
     });
 
     useEffect(() => {
         const fetchFilterData = async () => {
             try {
-                // FIX 2: Sửa lại cách gọi hàm bằng cách thêm tên service object ở trước
                 const [
-                    projectsRes, 
-                    usersRes, 
+                    projectsRes,
                     statusesRes, 
-                    prioritiesRes, 
-                    taskTypesRes, 
-                    sprintsRes
+                    usersRes,
                 ] = await Promise.all([
                     getProjects(), // Hàm này có thể đã được export riêng lẻ
                     userService.getAllUsers(), // Gọi qua object
-                    statusService.getStatusList(), // Gọi qua object
-                    priorityService.getPriorityList(), // Gọi qua object
-                    taskTypeService.getAllTypeTask(), // Gọi qua object
-                    sprintService.getSprintList(), // Gọi qua object
+                    statusService.getStatusList(),
                 ]);
+
                 setFilterData({
                     projects: projectsRes.data || [],
                     users: usersRes.data || [],
                     statuses: statusesRes.data || [],
-                    priorities: prioritiesRes.data || [],
-                    taskTypes: taskTypesRes.data || [],
-                    sprints: sprintsRes.data || [],
+                    priorities: [],
+                    taskTypes: [],
+                    sprints: [],
                 });
             } catch (error) {
                 toast.error("Could not load initial data.");
+                console.error("!!!!!!!!!! [DEBUG] FAILED to fetch initial data. Error:", error); // <-- LOG LỖI
             }
         };
         fetchFilterData();
@@ -100,20 +96,20 @@ const TaskFinderPage = () => {
 
     const handleTaskUpdate = (updatedTask) => {
         // Cập nhật danh sách task chính
-        setTasks(prevTasks => 
-            prevTasks.map(task => 
+        setTasks(prevTasks =>
+            prevTasks.map(task =>
                 task._id === updatedTask._id ? updatedTask : task
             )
         );
-         if (selectedTask && selectedTask._id === updatedTask._id) {
+        if (selectedTask && selectedTask._id === updatedTask._id) {
             setSelectedTask(updatedTask);
         }
     };
-    
+
     const handleTaskClick = (task) => {
         setSelectedTask(task);
     };
-    
+
     const closePanel = () => {
         setSelectedTask(null);
     };
@@ -129,13 +125,9 @@ const TaskFinderPage = () => {
             toast.error("Failed to delete task.");
         }
     };
-    
-    // HÀM MỚI: Xử lý clone task (hiện tại chỉ là placeholder)
+
     const handleTaskClone = (taskId) => {
-        // TODO: Gọi API để clone task
         console.log("Cloning task with ID:", taskId);
-        // Sau khi clone thành công, có thể tải lại danh sách
-        // fetchTasks(activeFilters, keyword);
     };
 
     return (
@@ -161,7 +153,7 @@ const TaskFinderPage = () => {
                     </div>
 
                     <div className="task-list-container">
-                         {!loading && (
+                        {!loading && (
                             <div className="task-list-summary">
                                 Task List / {tasks.length} {tasks.length === 1 ? 'Task' : 'Tasks'}
                             </div>
@@ -194,13 +186,13 @@ const TaskFinderPage = () => {
                         </div>
                     </div>
                 </div>
-                <TaskDetailPanel 
-                    key={selectedTask?._id} // Thêm key để component re-mount khi đổi task
-                    task={selectedTask} 
+                <TaskDetailPanel
+                    key={selectedTask?._id}
+                    task={selectedTask}
                     onClose={() => setSelectedTask(null)}
                     onTaskUpdate={handleTaskUpdate}
-                    onTaskDelete={handleTaskDelete} // << TRUYỀN HÀM MỚI
-                    onTaskClone={handleTaskClone} // << TRUYỀN HÀM MỚI
+                    onTaskDelete={handleTaskDelete} 
+                    onTaskClone={handleTaskClone} 
                     statuses={selectOptions.statuses}
                     priorities={selectOptions.priorities}
                     taskTypes={selectOptions.taskTypes}

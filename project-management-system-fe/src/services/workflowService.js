@@ -20,7 +20,7 @@ const workflowService = {
   },
   getStatusList: async () => {
   try {
-    const response = await apiClient.get("/statuses/list"); // Giả sử API endpoint là đây
+    const response = await apiClient.get("/workflows/list"); 
     return response;
   } catch (error) {
     console.error("Error fetching statuses:", error);
