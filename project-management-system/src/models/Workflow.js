@@ -15,7 +15,7 @@ const workflowSchema = new Schema(
     },
     isDefault: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     statuses: [
       {

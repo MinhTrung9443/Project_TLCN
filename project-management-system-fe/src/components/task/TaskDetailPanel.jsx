@@ -3,7 +3,10 @@ import { toast } from "react-toastify";
 import Select from "react-select";
 import { updateTask } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
-import RichTextEditor from "../common/RichTextEditor"; // Giả sử bạn có component này
+import typeTaskService from "../../services/typeTaskService";
+import priorityService from "../../services/priorityService";
+import sprintService from "../../services/sprintService";
+import RichTextEditor from "../common/RichTextEditor";
 import "../../styles/components/TaskDetailPanel.css";
 import ActionsMenu from "../common/ActionsMenu";
 
@@ -13,21 +16,36 @@ const TaskDetailPanel = ({
   onClose,
   onTaskDelete,
   onTaskClone,
-  statuses = [],
-  priorities = [],
-  taskTypes = [],
-  sprints = [],
+  statuses = [], 
 }) => {
-  // State nội bộ để quản lý các giá trị đang chỉnh sửa
   const [editableTask, setEditableTask] = useState(task);
   const [projectMembers, setProjectMembers] = useState([]);
-  // Cập nhật state nội bộ khi prop `task` từ bên ngoài thay đổi
+  const [projectTaskTypes, setProjectTaskTypes] = useState([]);
+  const [projectPriorities, setProjectPriorities] = useState([]);
+  const [projectSprints, setProjectSprints] = useState([]);
   useEffect(() => {
     setEditableTask(task);
-    if (task?.projectId?.key) {
+    setProjectMembers([]);
+    setProjectTaskTypes([]);
+    setProjectPriorities([]);
+    setProjectSprints([]);
+    if (task && task.projectId && task.projectId.key) {
+      const projectKey = task.projectId.key;
+
+      const fetchTaskTypesForProject = async () => {
+        try {
+          const res = await typeTaskService.getAllTypeTask(projectKey);
+          const formattedTypes = res.data.map(t => ({ value: t._id, label: t.name }));
+          setProjectTaskTypes(formattedTypes);
+        } catch (error) {
+          toast.error(`Could not load task types for project ${projectKey}.`);
+          setProjectTaskTypes([]);
+        }
+      };
+
       const fetchMembers = async () => {
         try {
-          const res = await getProjectMember(task.projectId.key);
+          const res = await getProjectMember(projectKey);
           const memberOptions = res.data.members.map((member) => ({
             value: member.userId._id,
             label: member.userId.fullname,
@@ -38,33 +56,74 @@ const TaskDetailPanel = ({
           setProjectMembers([]);
         }
       };
-      fetchMembers();
-    } else {
-      setProjectMembers([]); // Reset nếu không có project
+
+      const fetchPrioritiesForProject = async () => {
+        try {
+          // Chỉ cần thay đổi tên hàm ở đây
+          const res = await priorityService.getAllPriorities(projectKey);
+          const formattedPriorities = res.data.map(p => ({ value: p._id, label: p.name }));
+          setProjectPriorities(formattedPriorities);
+        } catch (error) {
+          toast.error(`Could not load priorities for project ${projectKey}.`);
+          setProjectPriorities([]);
+        }
+      };
+
+      const fetchSprintsForProject = async () => {
+        try {
+          const responseData = await sprintService.getSprints(projectKey);
+
+          const allSprints = responseData.sprint || [];
+
+          const activeSprints = allSprints.filter(
+            sprint => sprint.status === 'Not Started' || sprint.status === 'Started'
+          );
+
+          const currentSprintId = task.sprintId?._id || task.sprintId;
+          if (currentSprintId) {
+            const isInActiveList = activeSprints.some(s => s._id === currentSprintId);
+            if (!isInActiveList) {
+              // Tìm sprint đã completed trong danh sách gốc và thêm vào
+              const completedSprint = allSprints.find(s => s._id === currentSprintId);
+              if (completedSprint) {
+                activeSprints.push(completedSprint);
+              }
+            }
+          }
+
+          const formattedSprints = activeSprints.map(s => ({ value: s._id, label: s.name }));
+          setProjectSprints(formattedSprints);
+        } catch (error) {
+          toast.error(`Could not load sprints for project ${projectKey}.`);
+          setProjectSprints([]);
+        }
+      };
+
+      Promise.all([
+        fetchTaskTypesForProject(),
+        fetchMembers(),
+        fetchPrioritiesForProject(),
+        fetchSprintsForProject(),
+      ]);
+
     }
   }, [task]);
 
   if (!editableTask) return null;
 
-  // Hàm chung để xử lý việc cập nhật
   const handleUpdate = async (fieldName, value) => {
     const updateValue = value === "" ? null : value;
 
-    // --- BẮT ĐẦU LOGIC VALIDATION ---
     const newStartDate = fieldName === "startDate" ? updateValue : editableTask.startDate;
     const newDueDate = fieldName === "dueDate" ? updateValue : editableTask.dueDate;
 
-    // Chỉ kiểm tra khi cả hai ngày đều có giá trị
     if (newStartDate && newDueDate && new Date(newStartDate) > new Date(newDueDate)) {
       toast.error("Start Date cannot be after Due Date.");
-      // Không thực hiện cập nhật và không thay đổi UI
       return;
     }
-    // --- KẾT THÚC LOGIC VALIDATION ---
 
     const originalTask = { ...editableTask };
 
-    // Cập nhật giao diện trước (optimistic update)
     setEditableTask((prev) => ({ ...prev, [fieldName]: updateValue }));
 
     try {
@@ -78,7 +137,6 @@ const TaskDetailPanel = ({
   };
 
   const handleDescriptionUpdate = (content) => {
-    // Hàm này có thể có debounce để không gọi API liên tục
     handleUpdate("description", content);
   };
 
@@ -88,7 +146,6 @@ const TaskDetailPanel = ({
     return options.find((opt) => opt.value === idToFind);
   };
   const handleDelete = () => {
-    // Hỏi xác nhận trước khi xóa
     if (window.confirm(`Are you sure you want to delete task ${editableTask.key}?`)) {
       onTaskDelete(editableTask._id);
     }
@@ -106,7 +163,6 @@ const TaskDetailPanel = ({
   return (
     <div className="task-detail-panel">
       <header className="panel-header">
-        {/* Cập nhật header */}
         <div className="panel-header-left">
           <h3>
             {editableTask.key}: {editableTask.name}
@@ -150,7 +206,6 @@ const TaskDetailPanel = ({
           <div className="detail-item-editable">
             <strong>Assignee</strong>
             <Select
-              // Tìm trong danh sách members đã được lọc
               value={findOption(projectMembers, editableTask.assigneeId)}
               options={projectMembers} // Sử dụng danh sách members
               onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
@@ -161,7 +216,6 @@ const TaskDetailPanel = ({
           <div className="detail-item-editable">
             <strong>Reporter</strong>
             <Select
-              // Reporter cũng nên là một thành viên của project
               value={findOption(projectMembers, editableTask.reporterId)}
               options={projectMembers} // Sử dụng danh sách members
               onChange={(option) => handleUpdate("reporterId", option.value)}
@@ -171,27 +225,29 @@ const TaskDetailPanel = ({
           <div className="detail-item-editable">
             <strong>Type</strong>
             <Select
-              value={findOption(taskTypes, editableTask.taskTypeId?._id)}
-              options={taskTypes}
+              value={findOption(projectTaskTypes, editableTask.taskTypeId)}
+              options={projectTaskTypes}
               onChange={(option) => handleUpdate("taskTypeId", option.value)}
+              placeholder={projectTaskTypes.length === 0 ? "Loading..." : "Select..."}
             />
           </div>
           <div className="detail-item-editable">
             <strong>Priority</strong>
             <Select
-              value={findOption(priorities, editableTask.priorityId?._id)}
-              options={priorities}
+              value={findOption(projectPriorities, editableTask.priorityId?._id)}
+              options={projectPriorities}
               onChange={(option) => handleUpdate("priorityId", option.value)}
+              placeholder={projectPriorities.length === 0 ? "Loading..." : "Select..."}
             />
           </div>
           <div className="detail-item-editable">
             <strong>Sprint</strong>
             <Select
-              value={findOption(sprints, editableTask.sprintId?._id)}
-              options={sprints}
+              value={findOption(projectSprints, editableTask.sprintId?._id)}
+              options={projectSprints}
               onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
               isClearable
-              placeholder="Backlog"
+              placeholder={!task ? "" : (projectSprints.length === 0 && task.projectId) ? "Loading..." : "Backlog"}
             />
           </div>
           <div className="detail-item-editable">
@@ -227,7 +283,6 @@ const TaskDetailPanel = ({
 
         <div className="panel-section">
           <h4>Description</h4>
-          {/* Giả sử bạn có component RichTextEditor sẵn sàng */}
           <RichTextEditor value={editableTask.description || ""} onChange={handleDescriptionUpdate} />
         </div>
 

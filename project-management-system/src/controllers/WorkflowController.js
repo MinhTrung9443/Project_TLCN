@@ -19,6 +19,15 @@ class WorkflowController {
       res.status(error.statusCode || 500).json({ message: error.message });
     }
   }
+  async getAllStatuses(req, res) {
+    try {
+      const statuses = await workflowService.getAllStatuses();
+      res.status(200).json(statuses);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  
 }
 
 module.exports = new WorkflowController();
