@@ -1,7 +1,8 @@
 const Task = require("../models/Task");
 const Project = require("../models/Project");
 const mongoose = require("mongoose");
-
+const { logHistory } = require("./HistoryService"); 
+const TaskHistory = require('../models/TaskHistory');
 // Hàm lấy task theo projectId
 const getTasksByProjectKey = async (projectKey) => {
   // 1. Tìm project để lấy projectId
@@ -26,7 +27,7 @@ const getTasksByProjectKey = async (projectKey) => {
 };
 
 // Hàm tạo một task mới
-const createTask = async (taskData) => {
+const createTask = async (taskData, userId) => {
   const { projectId } = taskData;
 
   // Kiểm tra projectId có hợp lệ không
@@ -43,15 +44,20 @@ const createTask = async (taskData) => {
     throw error;
   }
 
-  const taskCount = await Task.countDocuments({ projectId });
+  const taskCount = await Task.countDocuments({ projectId: taskData.projectId });
   const taskKey = `${project.key.toUpperCase()}-${taskCount + 1}`;
 
   const newTask = new Task({
     ...taskData,
     key: taskKey,
+    createdById: userId, // Đảm bảo gán người tạo
+    reporterId: userId,  // Thường người tạo cũng là reporter
   });
 
   const savedTask = await newTask.save();
+
+  // *** GHI LOG HISTORY CHO HÀNH ĐỘNG TẠO TASK ***
+  await logHistory(savedTask._id, userId, "Task", null, savedTask.name, "CREATE");
   const populatedTask = await Task.findById(savedTask._id)
     .populate("taskTypeId", "name icon")
     .populate("priorityId", "name icon")
@@ -61,64 +67,6 @@ const createTask = async (taskData) => {
     .populate("statusId", "name color")
     .populate("platformId", "name icon");
   return populatedTask;
-};
-
-const changeTaskSprint = async (taskId, sprintId) => {
-  if (!mongoose.Types.ObjectId.isValid(taskId)) {
-    const error = new Error("Invalid Task ID");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (sprintId && !mongoose.Types.ObjectId.isValid(sprintId)) {
-    const error = new Error("Invalid Sprint ID");
-    error.statusCode = 400;
-    throw error;
-  }
-  const task = await Task.findById(taskId);
-  if (!task) {
-    const error = new Error("Task not found");
-    error.statusCode = 404;
-    throw error;
-  }
-  task.sprintId = sprintId || null;
-  await task.save();
-  return task;
-};
-
-// Update task status
-const updateTaskStatus = async (taskId, statusId) => {
-  if (!mongoose.Types.ObjectId.isValid(taskId)) {
-    const error = new Error("Invalid Task ID");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (!mongoose.Types.ObjectId.isValid(statusId)) {
-    const error = new Error("Invalid Status ID");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const task = await Task.findById(taskId);
-  if (!task) {
-    const error = new Error("Task not found");
-    error.statusCode = 404;
-    throw error;
-  }
-
-  task.statusId = statusId;
-  await task.save();
-
-  // Return updated task with populated fields
-  const updatedTask = await Task.findById(taskId)
-    .populate("taskTypeId", "name icon")
-    .populate("priorityId", "name icon")
-    .populate("assigneeId", "fullname avatar")
-    .populate("reporterId", "fullname avatar")
-    .populate("sprintId", "name")
-    .populate("platformId", "name icon")
-    .lean();
-
-  return updatedTask;
 };
 
 const searchTasks = async (queryParams) => {
@@ -181,26 +129,57 @@ const searchTasks = async (queryParams) => {
   return tasks;
 };
 
-const updateTask = async (taskId, updateData) => {
-  console.log('Type of progress:', typeof updateData.progress);
+const updateTask = async (taskId, updateData, userId) => {
   if (!mongoose.Types.ObjectId.isValid(taskId)) {
     const error = new Error("Invalid Task ID");
     error.statusCode = 400;
     throw error;
   }
 
-  // Sử dụng findByIdAndUpdate để đơn giản hóa
-  // { new: true } để đảm bảo nó trả về document sau khi đã được cập nhật
-  const updatedTask = await Task.findByIdAndUpdate(taskId, updateData, { new: true });
-
-  if (!updatedTask) {
-    const error = new Error("Task not found or update failed");
+  // 1. Lấy task hiện tại TRƯỚC KHI cập nhật để so sánh
+  const originalTask = await Task.findById(taskId).lean();
+  if (!originalTask) {
+    const error = new Error("Task not found");
     error.statusCode = 404;
     throw error;
   }
 
-  // Populate các trường cần thiết trên document đã được cập nhật
-  // Mongoose 6+ cho phép populate trực tiếp trên kết quả của findByIdAndUpdate
+  // 2. Cập nhật task (Chức năng cốt lõi)
+  const updatedTask = await Task.findByIdAndUpdate(taskId, updateData, { new: true });
+
+  if (!updatedTask) {
+    const error = new Error("Task update failed in database");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 3. Ghi log History (Tính năng phụ, được bảo vệ)
+  // Dùng try...catch để nếu phần này lỗi, nó sẽ không làm sập server
+  try {
+    for (const key in updateData) {
+      const oldValue = originalTask[key];
+      const newValue = updateData[key];
+
+      // Chỉ ghi log nếu giá trị thực sự thay đổi
+      if (String(oldValue) !== String(newValue)) {
+        await logHistory(
+          taskId,
+          userId,
+          key,
+          oldValue,
+          newValue,
+          "UPDATE"
+        );
+      }
+    }
+  } catch (historyError) {
+    // Nếu có lỗi khi ghi history, chúng ta chỉ ghi log ra console
+    // và KHÔNG làm ảnh hưởng đến kết quả trả về cho người dùng.
+    console.error("--- CRITICAL: Failed to log task history but update was successful ---");
+    console.error(historyError);
+  }
+
+  // 4. Populate và trả về kết quả
   await updatedTask.populate([
     { path: "projectId", select: "name key" },
     { path: "taskTypeId", select: "name icon" },
@@ -215,6 +194,14 @@ const updateTask = async (taskId, updateData) => {
 
   return updatedTask;
 };
+
+const changeTaskSprint = async (taskId, sprintId, userId) => {
+    return updateTask(taskId, { sprintId: sprintId || null }, userId);
+}
+
+const updateTaskStatus = async (taskId, statusId, userId) => {
+    return updateTask(taskId, { statusId }, userId);
+}
 
 const deleteTask = async (taskId) => {
   if (!mongoose.Types.ObjectId.isValid(taskId)) {
@@ -231,12 +218,13 @@ const deleteTask = async (taskId) => {
     throw error;
   }
 
-  // TODO: Xử lý các logic phụ thuộc nếu cần
-  // Ví dụ: xóa các task con, xóa comment, xóa attachment...
-
   return { message: "Task deleted successfully" };
 };
-
+const getTaskHistory = async (taskId) => {
+    return TaskHistory.find({ taskId: taskId, userId: { $exists: true, $ne: null } })
+    .populate("userId", "fullname avatar")
+    .sort({ createdAt: -1 });
+};
 
 module.exports = {
   getTasksByProjectKey,
@@ -245,6 +233,8 @@ module.exports = {
   updateTaskStatus,
   searchTasks, // Xuất hàm mới
   updateTask,
-  deleteTask
+  deleteTask,
+  getTaskHistory,
+
 };
 

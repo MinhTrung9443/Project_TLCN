@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-/**
- * TaskHistory (Lịch sử thay đổi)
- */
+
 const TaskHistorySchema = new Schema({
   taskId: { type: Schema.Types.ObjectId, required: true, ref: "Task" },
   userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },

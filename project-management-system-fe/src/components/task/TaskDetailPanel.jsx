@@ -1,34 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import Select from "react-select";
+// import các service...
 import { updateTask } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import sprintService from "../../services/sprintService";
-import RichTextEditor from "../common/RichTextEditor";
-import "../../styles/components/TaskDetailPanel.css";
+// import các component con
 import ActionsMenu from "../common/ActionsMenu";
+import TaskDetailsTab from './TaskDetailsTab'; // COMPONENT MỚI SẼ TẠO
+import CommentsTab from './CommentsTab';       // COMPONENT TỪ LẦN TRƯỚC
+import HistoryTab from './HistoryTab';         // COMPONENT TỪ LẦN TRƯỚC
+// import CSS
+import "../../styles/components/TaskDetailPanel.css";
 
-const TaskDetailPanel = ({
-  task,
-  onTaskUpdate,
-  onClose,
-  onTaskDelete,
-  onTaskClone,
-  statuses = [], 
-}) => {
+const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClone, statuses = [] }) => {
   const [editableTask, setEditableTask] = useState(task);
+  const [activeTab, setActiveTab] = useState('Details'); // State quản lý tab
+
+  // State cho các dropdown options
   const [projectMembers, setProjectMembers] = useState([]);
   const [projectTaskTypes, setProjectTaskTypes] = useState([]);
   const [projectPriorities, setProjectPriorities] = useState([]);
   const [projectSprints, setProjectSprints] = useState([]);
+  
+  // ----- Toàn bộ logic trong useEffect để fetch data vẫn giữ nguyên -----
   useEffect(() => {
     setEditableTask(task);
+    // Reset state khi task thay đổi
     setProjectMembers([]);
     setProjectTaskTypes([]);
     setProjectPriorities([]);
     setProjectSprints([]);
+
     if (task && task.projectId && task.projectId.key) {
       const projectKey = task.projectId.key;
 
@@ -175,120 +179,44 @@ const TaskDetailPanel = ({
           </button>
         </div>
       </header>
-      <main className="panel-body">
-        <div className="panel-section">
-          <div className="detail-item-editable">
-            <strong>Progress</strong>
-            <div className="progress-bar-container">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={editableTask.progress || 0}
-                className="progress-slider"
-                onChange={(e) => setEditableTask((prev) => ({ ...prev, progress: parseInt(e.target.value, 10) }))}
-                onMouseUp={(e) => handleUpdate("progress", parseInt(e.target.value, 10))}
-              />
-              <span>{editableTask.progress || 0}%</span>
-            </div>
-          </div>
+        <main className="panel-body">
+        <div className="panel-tabs">
+          <button 
+            className={`tab-btn ${activeTab === 'Details' ? 'active' : ''}`}
+            onClick={() => setActiveTab('Details')}
+          >
+            Details
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'Comments' ? 'active' : ''}`}
+            onClick={() => setActiveTab('Comments')}
+          >
+            Comments
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'History' ? 'active' : ''}`}
+            onClick={() => setActiveTab('History')}
+          >
+            History
+          </button>
         </div>
 
-        <div className="panel-section detail-grid-editable">
-          <div className="detail-item-editable">
-            <strong>Status</strong>
-            <Select
-              value={findOption(statuses, editableTask.statusId?._id)}
-              options={statuses}
-              onChange={(option) => handleUpdate("statusId", option.value)}
+        <div className="panel-tab-content">
+          {activeTab === 'Details' && (
+            <TaskDetailsTab
+              editableTask={editableTask}
+              setEditableTask={setEditableTask}
+              handleUpdate={handleUpdate}
+              statuses={statuses}
+              projectMembers={projectMembers}
+              projectTaskTypes={projectTaskTypes}
+              projectPriorities={projectPriorities}
+              projectSprints={projectSprints}
             />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Assignee</strong>
-            <Select
-              value={findOption(projectMembers, editableTask.assigneeId)}
-              options={projectMembers} // Sử dụng danh sách members
-              onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
-              isClearable
-              placeholder="Select..."
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Reporter</strong>
-            <Select
-              value={findOption(projectMembers, editableTask.reporterId)}
-              options={projectMembers} // Sử dụng danh sách members
-              onChange={(option) => handleUpdate("reporterId", option.value)}
-              placeholder="Select..."
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Type</strong>
-            <Select
-              value={findOption(projectTaskTypes, editableTask.taskTypeId)}
-              options={projectTaskTypes}
-              onChange={(option) => handleUpdate("taskTypeId", option.value)}
-              placeholder={projectTaskTypes.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Priority</strong>
-            <Select
-              value={findOption(projectPriorities, editableTask.priorityId?._id)}
-              options={projectPriorities}
-              onChange={(option) => handleUpdate("priorityId", option.value)}
-              placeholder={projectPriorities.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Sprint</strong>
-            <Select
-              value={findOption(projectSprints, editableTask.sprintId?._id)}
-              options={projectSprints}
-              onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
-              isClearable
-              placeholder={!task ? "" : (projectSprints.length === 0 && task.projectId) ? "Loading..." : "Backlog"}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Story Point</strong>
-            <input
-              type="number"
-              value={editableTask.storyPoints || ""}
-              onChange={(e) => setEditableTask((prev) => ({ ...prev, storyPoints: e.target.value }))}
-              onBlur={(e) => handleUpdate("storyPoints", parseInt(e.target.value, 10) || 0)}
-              className="editable-input"
-              min="0"
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Start Date</strong>
-            <input
-              type="date"
-              value={editableTask.startDate ? new Date(editableTask.startDate).toISOString().split("T")[0] : ""}
-              onChange={(e) => handleUpdate("startDate", e.target.value)}
-              className="editable-input"
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Due Date</strong>
-            <input
-              type="date"
-              value={editableTask.dueDate ? new Date(editableTask.dueDate).toISOString().split("T")[0] : ""}
-              onChange={(e) => handleUpdate("dueDate", e.target.value)}
-              className="editable-input"
-            />
-          </div>
+          )}
+          {activeTab === 'Comments' && <CommentsTab taskId={editableTask._id} />}
+          {activeTab === 'History' && <HistoryTab taskId={editableTask._id} />}
         </div>
-
-        <div className="panel-section">
-          <h4>Description</h4>
-          <RichTextEditor value={editableTask.description || ""} onChange={handleDescriptionUpdate} />
-        </div>
-
-        <footer className="panel-footer">
-          <span>Created By: {editableTask.createdById?.fullname || "N/A"}</span>
-        </footer>
       </main>
     </div>
   );
