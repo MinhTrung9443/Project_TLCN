@@ -20,6 +20,7 @@ const sprintRoute = require("./routes/sprintRoutes.js");
 const workflowRoutes = require("./routes/workflowRoutes.js");
 const ganttRoutes = require("./routes/ganttRoutes.js");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const auditLogRoutes = require("./routes/auditLogRoutes");
 
 // --- Cấu hình CORS (Định nghĩa một lần, sử dụng nhiều lần) ---
 const corsOptions = {
@@ -58,6 +59,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/sprints", sprintRoute);
 app.use("/api/workflows", workflowRoutes);
+app.use("/api/auditlog", auditLogRoutes);
 app.use("/api/gantt", ganttRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
