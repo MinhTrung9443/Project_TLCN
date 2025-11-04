@@ -1,5 +1,6 @@
 const Platform = require("../models/Platform");
 const Project = require("../models/Project");
+const { logAction } = require("./AuditLogHelper");
 class PlatformService {
   async getPlatformsByProjectKey(projectKey) {
     try {
@@ -21,7 +22,7 @@ class PlatformService {
     }
   }
 
-  async createPlatform(platformData) {
+  async createPlatform(platformData, userId) {
     try {
       const project = platformData.projectKey ? await Project.findOne({ key: platformData.projectKey }) : null;
       const projectId = project ? project._id : null;
@@ -35,18 +36,27 @@ class PlatformService {
       }
 
       const newPlatform = new Platform({ ...platformData, projectId });
-      return await newPlatform.save();
+      await newPlatform.save();
+      await logAction({
+        userId,
+        action: "create_platform",
+        tableName: "Platform",
+        recordId: newPlatform._id,
+        newData: newPlatform,
+      });
+      return newPlatform;
     } catch (error) {
       throw new Error("Error creating platform: " + error.message);
     }
   }
 
-  async updatePlatform(platformId, updateData) {
+  async updatePlatform(platformId, updateData, userId) {
     try {
       const platformToUpdate = await Platform.findById(platformId);
       if (!platformToUpdate) {
         throw new Error("Platform not found.");
       }
+      const oldPlatform = platformToUpdate.toObject();
 
       const existingPlatform = await Platform.findOne({
         name: updateData.name,
@@ -57,7 +67,16 @@ class PlatformService {
       if (existingPlatform) {
         throw new Error("Platform with this name already exists in this project.");
       }
-      return await Platform.findByIdAndUpdate(platformId, updateData, { new: true });
+      await Platform.findByIdAndUpdate(platformId, updateData, { new: true });
+      await logAction({
+        userId,
+        action: "update_platform",
+        tableName: "Platform",
+        recordId: platformToUpdate._id,
+        oldData: oldPlatform,
+        newData: platformToUpdate,
+      });
+      return platformToUpdate;
     } catch (error) {
       throw error;
     }

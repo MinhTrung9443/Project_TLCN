@@ -4,9 +4,7 @@ class PlatformController {
   async getAllPlatforms(req, res) {
     try {
       const { projectKey } = req.query;
-      const platforms = await platformService.getPlatformsByProjectKey(
-        projectKey
-      );
+      const platforms = await platformService.getPlatformsByProjectKey(projectKey);
       return res.status(200).json(platforms);
     } catch (error) {
       res.status(400).json({ message: error.message });
@@ -16,7 +14,11 @@ class PlatformController {
   async createPlatform(req, res) {
     try {
       const platformData = req.body;
-      const newPlatform = await platformService.createPlatform(platformData);
+      const userId = req.user && req.user._id ? req.user._id : undefined;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: userId missing" });
+      }
+      const newPlatform = await platformService.createPlatform(platformData, userId);
       res.status(201).json({
         message: "Platform created successfully",
         platform: newPlatform,
@@ -29,10 +31,11 @@ class PlatformController {
     try {
       const platformId = req.params.id;
       const updateData = req.body;
-      const updatedPlatform = await platformService.updatePlatform(
-        platformId,
-        updateData
-      );
+      const userId = req.user && req.user._id ? req.user._id : undefined;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: userId missing" });
+      }
+      const updatedPlatform = await platformService.updatePlatform(platformId, updateData, userId);
       res.status(200).json({
         message: "Platform updated successfully",
         platform: updatedPlatform,

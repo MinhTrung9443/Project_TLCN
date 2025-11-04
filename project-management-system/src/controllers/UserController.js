@@ -5,11 +5,8 @@ class UserController {
     try {
       const userId = req.user.id;
       const updateData = req.body;
-
-      const updatedUser = await userService.updateProfile(userId, updateData);
-
+      const updatedUser = await userService.updateProfile(userId, updateData, userId);
       updatedUser.password = undefined;
-
       res.status(200).json({
         message: "Profile updated successfully",
         user: updatedUser,
@@ -45,7 +42,8 @@ class UserController {
   async deleteUser(req, res) {
     try {
       const userId = req.params.id;
-      await userService.deleteUser(userId);
+      const actorId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      await userService.deleteUser(userId, actorId);
       res.status(200).json({ message: "User deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error.message });
@@ -56,7 +54,8 @@ class UserController {
     try {
       const userId = req.params.id;
       const updateData = req.body;
-      const updatedUser = await userService.updateUserInfo(userId, updateData);
+      const actorId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const updatedUser = await userService.updateUserInfo(userId, updateData, actorId);
       updatedUser.password = undefined;
       res.status(200).json({
         message: "User information updated successfully",

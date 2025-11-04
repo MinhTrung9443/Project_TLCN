@@ -99,16 +99,57 @@ const DashboardPage = () => {
           </ul>
         </div>
 
-        {/* Activity feed */}
+        {/* Recent Activity feed - hiển thị đúng format UI */}
         <div className="dashboard-card" style={{ gridColumn: "span 2" }}>
           <h3>Recent Activity</h3>
-          <ul style={{ paddingLeft: 18, margin: 0, fontSize: 13 }}>
-            {activity.length === 0 && <li>No recent activity.</li>}
-            {activity.map((log, idx) => (
-              <li key={log._id || idx}>
-                <b>{log.action}</b> - {log.tableName} {log.recordId ? `#${log.recordId}` : ""}
-                <br />
-                <span style={{ color: "#888" }}>{new Date(log.createdAt).toLocaleString()}</span>
+          <ul style={{ paddingLeft: 0, margin: 0, fontSize: 13, listStyle: "none" }}>
+            {(!overview?.recentActivity || overview.recentActivity.length === 0) && <li>No recent activity.</li>}
+            {overview?.recentActivity?.map((log, idx) => (
+              <li key={log._id || idx} style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+                {/* Avatar */}
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "#e0e0e0",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 600,
+                    marginRight: 10,
+                  }}
+                >
+                  {log.user.avatar ? (
+                    <img src={log.user.avatar} alt={log.user.name} style={{ width: 32, height: 32, borderRadius: "50%" }} />
+                  ) : (
+                    <span>{log.user.name?.[0] || "?"}</span>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontWeight: 500, color: "#1976d2" }}>{log.user.name}</span>
+                  &nbsp;<span style={{ color: "#444" }}>{log.action}</span>
+                  {log.entityUrl ? (
+                    <>
+                      &nbsp;
+                      <a href={log.entityUrl} style={{ color: "#d32f2f", fontWeight: 500, textDecoration: "none" }}>
+                        {log.entityKey}
+                      </a>
+                    </>
+                  ) : null}
+                  {log.entityName && (
+                    <>
+                      &nbsp;<span style={{ color: "#333" }}>{log.entityName}</span>
+                    </>
+                  )}
+                  {log.entityStatus && (
+                    <span style={{ marginLeft: 8, background: "#eee", borderRadius: 4, padding: "2px 8px", fontSize: 12, fontWeight: 500 }}>
+                      {log.entityStatus}
+                    </span>
+                  )}
+                  <br />
+                  <span style={{ color: "#888", fontSize: 12 }}>{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</span>
+                </div>
               </li>
             ))}
           </ul>

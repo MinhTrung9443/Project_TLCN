@@ -5,12 +5,16 @@ class TaskTypeController {
   async createTaskType(req, res) {
     try {
       const { name, description, icon, projectKey } = req.body;
-      const newTaskType = await taskTypeService.createTaskType({
-        name,
-        description,
-        icon,
-        projectKey,
-      });
+      const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const newTaskType = await taskTypeService.createTaskType(
+        {
+          name,
+          description,
+          icon,
+          projectKey,
+        },
+        userId
+      );
       res.status(201).json(newTaskType);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -21,9 +25,7 @@ class TaskTypeController {
   async getAllTaskTypes(req, res) {
     try {
       const { projectKey } = req.query;
-      const taskTypes = await taskTypeService.getTaskTypesByProjectKey(
-        projectKey
-      );
+      const taskTypes = await taskTypeService.getTaskTypesByProjectKey(projectKey);
       return res.status(200).json(taskTypes);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -49,12 +51,17 @@ class TaskTypeController {
     try {
       const { id } = req.params;
       const { name, description, icon, projectId } = req.body;
-      const updatedTaskType = await taskTypeService.updateTaskType(id, {
-        name,
-        description,
-        icon,
-        projectId,
-      });
+      const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const updatedTaskType = await taskTypeService.updateTaskType(
+        id,
+        {
+          name,
+          description,
+          icon,
+          projectId,
+        },
+        userId
+      );
       if (!updatedTaskType) {
         return res.status(404).json({ error: "Task type not found" });
       }

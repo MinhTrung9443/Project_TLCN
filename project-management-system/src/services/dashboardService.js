@@ -51,12 +51,37 @@ const dashboardService = {
       })
     );
 
-    // Thông báo gần đây (AuditLog)
-    const notifications = await AuditLog.find({
-      $or: [{ userId }, { "newData.assigneeId": userId }, { "newData.mentionIds": userId }],
-    })
+    // Recent Activity: lấy từ bảng AuditLog, chỉ lấy các thay đổi do user này thực hiện
+    const auditLogs = await require("../models/AuditLog")
+      .find({ userId })
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(10)
+      .populate("userId", "fullname avatar")
+      .lean();
+
+    // Chuẩn hóa dữ liệu trả về cho Recent Activity đúng format UI
+    const recentActivity = auditLogs.map((log) => {
+      // Xác định loại entity
+      let entityType = log.tableName?.toLowerCase() || "task";
+      let entityKey = log.newData?.key || log.newData?.code || log.recordId || log.newData?._id || log.oldData?._id || "";
+      let entityName = log.newData?.name || log.newData?.title || log.oldData?.name || log.oldData?.title || "";
+      let entityUrl = null;
+      if (entityType === "task") entityUrl = `/tasks/${entityKey}`;
+      else if (entityType === "project") entityUrl = `/projects/${entityKey}`;
+      // ...có thể mở rộng cho các loại entity khác
+      return {
+        user: {
+          name: log.userId?.fullname || "Unknown",
+          avatar: log.userId?.avatar || null,
+        },
+        action: log.action || "activity",
+        entityType,
+        entityKey,
+        entityName,
+        createdAt: log.createdAt,
+        entityUrl,
+      };
+    });
 
     return {
       doing,
@@ -64,7 +89,7 @@ const dashboardService = {
       overdue,
       upcomingTasks,
       projectProgress,
-      notifications,
+      recentActivity,
     };
   },
 

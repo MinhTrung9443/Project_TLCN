@@ -2,6 +2,7 @@ const Sprint = require("../models/Sprint");
 const Task = require("../models/Task.js");
 const Project = require("../models/Project.js");
 const Workflow = require("../models/Workflow.js");
+const { logAction } = require("./AuditLogHelper");
 const sprintService = {
   getSprintsByProjectKey: async (projectKey) => {
     try {
@@ -49,7 +50,7 @@ const sprintService = {
     }
   },
 
-  createSprint: async (projectKey) => {
+  createSprint: async (projectKey, userId) => {
     try {
       const project = await Project.findOne({ key: projectKey, status: "active" });
       if (!project) throw { statusCode: 404, message: "Project not found or inactive" };
@@ -68,13 +69,21 @@ const sprintService = {
         projectId: project._id,
       };
       const newSprint = new Sprint(sprintData);
-      return await newSprint.save();
+      const savedSprint = await newSprint.save();
+      await logAction({
+        userId,
+        action: "create_sprint",
+        tableName: "Sprint",
+        recordId: savedSprint._id,
+        newData: savedSprint,
+      });
+      return savedSprint;
     } catch (error) {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" + error.message };
     }
   },
-  updateSprint: async (sprintId, sprintData) => {
+  updateSprint: async (sprintId, sprintData, userId) => {
     try {
       const sprint = await Sprint.findById(sprintId);
       if (!sprint) throw { statusCode: 404, message: "Sprint not found" };
@@ -100,9 +109,19 @@ const sprintService = {
       throw { statusCode: 500, message: "Server Error" };
     }
 
-    return await Sprint.findByIdAndUpdate(sprintId, sprintData, { new: true });
+    const oldSprint = await Sprint.findById(sprintId).lean();
+    const updatedSprint = await Sprint.findByIdAndUpdate(sprintId, sprintData, { new: true });
+    await logAction({
+      userId,
+      action: "update_sprint",
+      tableName: "Sprint",
+      recordId: updatedSprint._id,
+      oldData: oldSprint,
+      newData: updatedSprint,
+    });
+    return updatedSprint;
   },
-  deleteSprint: async (sprintId) => {
+  deleteSprint: async (sprintId, userId) => {
     try {
       const sprint = await Sprint.findById(sprintId);
       if (!sprint) throw { statusCode: 404, message: "Sprint not found" };
@@ -112,7 +131,15 @@ const sprintService = {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" };
     }
-    return await Sprint.findByIdAndDelete(sprintId);
+    const deletedSprint = await Sprint.findByIdAndDelete(sprintId);
+    await logAction({
+      userId,
+      action: "delete_sprint",
+      tableName: "Sprint",
+      recordId: deletedSprint._id,
+      oldData: deletedSprint,
+    });
+    return { message: "Sprint deleted successfully" };
   },
 
   // Get started sprints by project key
