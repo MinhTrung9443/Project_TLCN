@@ -22,6 +22,7 @@ import TaskFinderPage from "./pages/ManageTask/TaskFinderPage"; // <-- IMPORT
 import BacklogPage from "./pages/ManageSprint/BacklogPage";
 import ActiveSprintPage from "./pages/ManageSprint/ActiveSprintPage";
 import GanttPage from "./pages/Gantt/GantPage.jsx";
+import AdminAuditLogPage from "./pages/AuditLog/AdminAuditLogPage.jsx";
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
               <Route path="/task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
               <Route path="/task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
               <Route path="/gantt" element={<GanttPage />} />
+              <Route path="/audit-log" element={<AdminAuditLogPage />} />
             </Route>
           </Routes>
 

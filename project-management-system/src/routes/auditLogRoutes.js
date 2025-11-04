@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getProjectAuditOverview, getProjectAuditLogs } = require("../controllers/AuditLogController");
+const { getProjectAuditOverview, getProjectAuditLogs } = require("../controllers/auditLogController");
 const { protect, isAdmin } = require("../middleware/authMiddleware");
 
 // Admin xem tổng quan auditlog của 1 project

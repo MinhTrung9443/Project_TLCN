@@ -4,10 +4,13 @@ const auditLogService = require("../services/auditLogService");
 exports.getProjectAuditOverview = async (req, res) => {
   try {
     const { projectId } = req.query;
+    if (!projectId) {
+      return res.status(400).json({ message: "projectId is required" });
+    }
     const data = await auditLogService.getProjectAuditOverview(projectId);
-    res.json(data);
+    res.json({ success: true, data });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };
 
@@ -15,9 +18,12 @@ exports.getProjectAuditOverview = async (req, res) => {
 exports.getProjectAuditLogs = async (req, res) => {
   try {
     const { projectId, page = 1, limit = 20 } = req.query;
+    if (!projectId) {
+      return res.status(400).json({ message: "projectId is required" });
+    }
     const logs = await auditLogService.getProjectAuditLogs(projectId, page, limit);
-    res.json(logs);
+    res.json({ success: true, data: logs });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };
