@@ -4,41 +4,56 @@ const AuditLog = require("../models/AuditLog");
 
 const dashboardService = {
   async getUserOverview(userId) {
+    // Sử dụng ObjectId thực tế của statusId
+    const STATUS = {
+      TODO: "68db39cfb382ed0ccf39b1f7",
+      IN_PROGRESS: "68db39cfb382ed0ccf39b1f8",
+      DONE: "68db39cfb382ed0ccf39b1f9",
+    };
+
+    // Đếm số task theo trạng thái
     const [doing, done, overdue] = await Promise.all([
-      Task.countDocuments({ assignee_id: userId, status: "In Progress" }),
-      Task.countDocuments({ assignee_id: userId, status: "Done" }),
+      Task.countDocuments({ assigneeId: userId, statusId: STATUS.IN_PROGRESS }),
+      Task.countDocuments({ assigneeId: userId, statusId: STATUS.DONE }),
       Task.countDocuments({
-        assignee_id: userId,
-        status: { $ne: "Done" },
+        assigneeId: userId,
+        statusId: { $ne: STATUS.DONE },
         dueDate: { $lt: new Date() },
       }),
     ]);
 
+    // Task sắp đến hạn (chưa done, còn hạn)
     const upcomingTasks = await Task.find({
-      assignee_id: userId,
-      status: { $ne: "Done" },
+      assigneeId: userId,
+      statusId: { $ne: STATUS.DONE },
       dueDate: { $gte: new Date() },
     })
       .sort({ dueDate: 1 })
       .limit(5)
-      .select("name dueDate status project_key");
+      .select("name dueDate statusId projectId")
+      .populate("projectId", "name key")
+      .populate("statusId", "name");
 
-    const projects = await Project.find({ members: userId });
+    // Dự án tham gia (dựa vào Project.members.userId)
+    const projects = await Project.find({ "members.userId": userId });
     const projectProgress = await Promise.all(
       projects.map(async (project) => {
-        const total = await Task.countDocuments({ project_key: project.project_key });
-        const completed = await Task.countDocuments({ project_key: project.project_key, status: "Done" });
+        const total = await Task.countDocuments({ projectId: project._id });
+        const completed = await Task.countDocuments({ projectId: project._id, statusId: STATUS.DONE });
+        // Tìm role của user trong project
+        const member = project.members.find((m) => m.userId.equals(userId));
         return {
-          project: project.project_name,
-          projectKey: project.project_key,
+          project: project.name,
+          projectKey: project.key,
           progress: total > 0 ? Math.round((completed / total) * 100) : 0,
-          role: project.membersWithRole?.find((m) => m.userId.equals(userId))?.role || "Member",
+          role: member?.role || "Member",
         };
       })
     );
 
+    // Thông báo gần đây (AuditLog)
     const notifications = await AuditLog.find({
-      $or: [{ userId }, { "newData.assignee_id": userId }, { "newData.mentionIds": userId }],
+      $or: [{ userId }, { "newData.assigneeId": userId }, { "newData.mentionIds": userId }],
     })
       .sort({ createdAt: -1 })
       .limit(10);
@@ -54,17 +69,17 @@ const dashboardService = {
   },
 
   async getMyTasks(userId, filters) {
-    const { projectKey, priority, status } = filters;
-    const query = { assignee_id: userId };
-    if (projectKey) query.project_key = projectKey;
-    if (priority) query.priority = priority;
-    if (status) query.status = status;
-    return Task.find(query).populate("project_key", "project_name").sort({ dueDate: 1 });
+    const { projectId, priorityId, statusId } = filters;
+    const query = { assigneeId: userId };
+    if (projectId) query.projectId = projectId;
+    if (priorityId) query.priorityId = priorityId;
+    if (statusId) query.statusId = statusId;
+    return Task.find(query).populate("projectId", "name key").populate("statusId", "name").sort({ dueDate: 1 });
   },
 
   async getUserActivityFeed(userId, limit = 20) {
     return AuditLog.find({
-      $or: [{ userId }, { "newData.assignee_id": userId }, { "newData.mentionIds": userId }],
+      $or: [{ userId }, { "newData.assigneeId": userId }, { "newData.mentionIds": userId }],
     })
       .sort({ createdAt: -1 })
       .limit(Number(limit))
@@ -72,9 +87,12 @@ const dashboardService = {
   },
 
   async getUserStats(userId) {
-    const statusAgg = await Task.aggregate([{ $match: { assignee_id: userId } }, { $group: { _id: "$status", count: { $sum: 1 } } }]);
+    const STATUS = {
+      DONE: "68db39cfb382ed0ccf39b1f9",
+    };
+    const statusAgg = await Task.aggregate([{ $match: { assigneeId: userId } }, { $group: { _id: "$statusId", count: { $sum: 1 } } }]);
     const weekAgg = await Task.aggregate([
-      { $match: { assignee_id: userId, status: "Done" } },
+      { $match: { assigneeId: userId, statusId: STATUS.DONE } },
       {
         $group: {
           _id: { $isoWeek: "$updatedAt" },
@@ -83,12 +101,12 @@ const dashboardService = {
       },
       { $sort: { _id: 1 } },
     ]);
-    const doneCount = await Task.countDocuments({ assignee_id: userId, status: "Done" });
+    const doneCount = await Task.countDocuments({ assigneeId: userId, statusId: STATUS.DONE });
     return { statusAgg, weekAgg, doneCount };
   },
 
   async getUserProjects(userId) {
-    return Project.find({ members: userId }).select("project_name project_key membersWithRole");
+    return Project.find({ "members.userId": userId }).select("name key members");
   },
 };
 
