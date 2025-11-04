@@ -19,13 +19,14 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const sprintRoute = require("./routes/sprintRoutes.js");
 const workflowRoutes = require("./routes/workflowRoutes.js");
 const ganttRoutes = require("./routes/ganttRoutes.js");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 // --- Cấu hình CORS (Định nghĩa một lần, sử dụng nhiều lần) ---
 const corsOptions = {
-  origin: 'http://localhost:3000', // Cho phép origin này
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Đảm bảo có 'PATCH'
-  allowedHeaders: ['Content-Type', 'Authorization'], // Các header được phép
-  credentials: true
+  origin: "http://localhost:3000", // Cho phép origin này
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // Đảm bảo có 'PATCH'
+  allowedHeaders: ["Content-Type", "Authorization"], // Các header được phép
+  credentials: true,
 };
 
 // --- Sử dụng Middlewares ---
@@ -35,7 +36,7 @@ app.use(cors(corsOptions));
 
 // Bật xử lý pre-flight cho tất cả các route
 app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.sendStatus(204); // No Content
   } else {
     next();
@@ -58,5 +59,6 @@ app.use("/api/uploads", uploadRoutes);
 app.use("/api/sprints", sprintRoute);
 app.use("/api/workflows", workflowRoutes);
 app.use("/api/gantt", ganttRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 module.exports = app;
