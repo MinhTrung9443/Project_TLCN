@@ -17,142 +17,193 @@ const DashboardPage = () => {
         setOverview(overviewRes.data);
         setActivity(activityRes.data);
       })
+      .catch((err) => {
+        console.error("Error loading dashboard:", err);
+      })
       .finally(() => setLoading(false));
   }, [user]);
 
   if (!user || loading) {
-    return <div className="loading-container">Loading dashboard...</div>;
+    return (
+      <div className="dashboard-loading">
+        <div className="spinner"></div>
+        <p>Loading your dashboard...</p>
+      </div>
+    );
   }
 
   return (
     <div className="dashboard-container">
-      <header className="dashboard-header">
-        <h2>Welcome back, {user.fullname}!</h2>
-        <p>Here's a summary of your projects and tasks.</p>
-      </header>
+      {/* Header */}
+      <div className="dashboard-header">
+        <div className="header-content">
+          <div className="header-text">
+            <h1 className="welcome-title">
+              <span className="material-symbols-outlined">dashboard</span>
+              Welcome back, {user.fullname}!
+            </h1>
+            <p className="welcome-subtitle">Here's your productivity overview and recent activities</p>
+          </div>
+          <div className="header-date">
+            <span className="material-symbols-outlined">calendar_today</span>
+            <span>{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+          </div>
+        </div>
+      </div>
 
-      <div className="dashboard-cards">
-        {/* Tổng quan nhanh */}
-        <div className="dashboard-card">
-          <div className="card-stat" style={{ color: "#2980db" }}>
-            {overview?.doing ?? 0}
+      {/* Statistics Cards */}
+      <div className="stats-grid">
+        <div className="stat-card primary">
+          <div className="stat-icon">
+            <span className="material-symbols-outlined">pending_actions</span>
           </div>
-          <h3>Tasks In Progress</h3>
-          <p>Tasks you are currently working on.</p>
-        </div>
-        <div className="dashboard-card">
-          <div className="card-stat" style={{ color: "#27ae60" }}>
-            {overview?.done ?? 0}
+          <div className="stat-content">
+            <div className="stat-value">{overview?.doing ?? 0}</div>
+            <div className="stat-label">In Progress</div>
+            <div className="stat-description">Tasks currently being worked on</div>
           </div>
-          <h3>Tasks Done</h3>
-          <p>Tasks you have completed.</p>
-        </div>
-        <div className="dashboard-card">
-          <div className="card-stat" style={{ color: "#e67e22" }}>
-            {overview?.upcomingTasks?.length ?? 0}
-          </div>
-          <h3>Upcoming Deadlines</h3>
-          <ul style={{ paddingLeft: 18, margin: 0, fontSize: 13 }}>
-            {overview?.upcomingTasks?.length === 0 && <li>No upcoming tasks.</li>}
-            {overview?.upcomingTasks?.map((task) => (
-              <li key={task._id}>
-                <b>{task.name}</b> ({task.status})
-                <br />
-                <span style={{ color: "#888" }}>Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "N/A"}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="dashboard-card">
-          <div className="card-stat" style={{ color: "#c0392b" }}>
-            {overview?.overdue ?? 0}
-          </div>
-          <h3>Overdue Tasks</h3>
-          <p>Tasks that have passed their due date.</p>
         </div>
 
-        {/* Tiến độ dự án */}
-        <div className="dashboard-card" style={{ gridColumn: "span 2" }}>
-          <h3>Project Progress</h3>
-          <ul style={{ paddingLeft: 18, margin: 0, fontSize: 13 }}>
-            {overview?.projectProgress?.length === 0 && <li>No active projects.</li>}
-            {overview?.projectProgress?.map((proj) => (
-              <li key={proj.projectKey}>
-                <b>{proj.project}</b> ({proj.role})<span style={{ float: "right", color: "#2980db" }}>{proj.progress}%</span>
-              </li>
-            ))}
-          </ul>
+        <div className="stat-card success">
+          <div className="stat-icon">
+            <span className="material-symbols-outlined">check_circle</span>
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{overview?.done ?? 0}</div>
+            <div className="stat-label">Completed</div>
+            <div className="stat-description">Tasks successfully finished</div>
+          </div>
         </div>
 
-        {/* Thông báo gần đây */}
-        <div className="dashboard-card" style={{ gridColumn: "span 2" }}>
-          <h3>Recent Notifications</h3>
-          <ul style={{ paddingLeft: 18, margin: 0, fontSize: 13 }}>
-            {overview?.notifications?.length === 0 && <li>No notifications.</li>}
-            {overview?.notifications?.map((noti, idx) => (
-              <li key={noti._id || idx}>
-                <b>{noti.action}</b> - {noti.tableName} {noti.recordId ? `#${noti.recordId}` : ""}
-                <br />
-                <span style={{ color: "#888" }}>{new Date(noti.createdAt).toLocaleString()}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="stat-card warning">
+          <div className="stat-icon">
+            <span className="material-symbols-outlined">schedule</span>
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{overview?.upcomingTasks?.length ?? 0}</div>
+            <div className="stat-label">Upcoming</div>
+            <div className="stat-description">Tasks with approaching deadlines</div>
+          </div>
         </div>
 
-        {/* Recent Activity feed - hiển thị đúng format UI */}
-        <div className="dashboard-card" style={{ gridColumn: "span 2" }}>
-          <h3>Recent Activity</h3>
-          <ul style={{ paddingLeft: 0, margin: 0, fontSize: 13, listStyle: "none" }}>
-            {(!overview?.recentActivity || overview.recentActivity.length === 0) && <li>No recent activity.</li>}
-            {overview?.recentActivity?.map((log, idx) => (
-              <li key={log._id || idx} style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-                {/* Avatar */}
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    background: "#e0e0e0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 600,
-                    marginRight: 10,
-                  }}
-                >
+        <div className="stat-card danger">
+          <div className="stat-icon">
+            <span className="material-symbols-outlined">warning</span>
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{overview?.overdue ?? 0}</div>
+            <div className="stat-label">Overdue</div>
+            <div className="stat-description">Tasks past their deadline</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="dashboard-grid">
+        {/* Upcoming Tasks */}
+        <div className="dashboard-card upcoming-tasks">
+          <h3 className="card-title">
+            <span className="material-symbols-outlined">event</span>
+            Upcoming Deadlines
+          </h3>
+          <div className="upcoming-tasks-list">
+            {!overview?.upcomingTasks || overview.upcomingTasks.length === 0 ? (
+              <div className="empty-state">
+                <span className="material-symbols-outlined">task_alt</span>
+                <p>No upcoming tasks</p>
+              </div>
+            ) : (
+              overview.upcomingTasks.map((task) => (
+                <div key={task._id} className="upcoming-task-item">
+                  <div className="task-info">
+                    <div className="task-name">{task.name}</div>
+                    <div className="task-meta">
+                      <span className="task-project">{task.projectId?.name || "Unknown Project"}</span>
+                      {task.statusId?.name && <span className="task-status">{task.statusId.name}</span>}
+                    </div>
+                  </div>
+                  <div className="task-due">
+                    <span className="material-symbols-outlined">event</span>
+                    <span>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No deadline"}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Project Progress */}
+        <div className="dashboard-card project-progress">
+          <h3 className="card-title">
+            <span className="material-symbols-outlined">trending_up</span>
+            Project Progress
+          </h3>
+          <div className="project-progress-list">
+            {!overview?.projectProgress || overview.projectProgress.length === 0 ? (
+              <div className="empty-state">
+                <span className="material-symbols-outlined">folder_off</span>
+                <p>No active projects</p>
+              </div>
+            ) : (
+              overview.projectProgress.map((proj) => (
+                <div key={proj.projectKey} className="project-progress-item">
+                  <div className="project-header">
+                    <div className="project-info">
+                      <div className="project-name">{proj.project}</div>
+                      <div className="project-role">{proj.role}</div>
+                    </div>
+                    <div className="project-percentage">{proj.progress}%</div>
+                  </div>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${proj.progress}%` }}></div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="dashboard-card activity-feed">
+        <h3 className="card-title">
+          <span className="material-symbols-outlined">notifications_active</span>
+          Recent Activity
+        </h3>
+        <div className="activity-timeline">
+          {!overview?.recentActivity || overview.recentActivity.length === 0 ? (
+            <div className="empty-state">
+              <span className="material-symbols-outlined">history</span>
+              <p>No recent activity</p>
+            </div>
+          ) : (
+            overview.recentActivity.map((log, idx) => (
+              <div key={log._id || idx} className="timeline-item">
+                <div className="timeline-avatar">
                   {log.user.avatar ? (
-                    <img src={log.user.avatar} alt={log.user.name} style={{ width: 32, height: 32, borderRadius: "50%" }} />
+                    <img src={log.user.avatar} alt={log.user.name} />
                   ) : (
-                    <span>{log.user.name?.[0] || "?"}</span>
+                    <div className="avatar-placeholder">{log.user.name?.[0] || "?"}</div>
                   )}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <span style={{ fontWeight: 500, color: "#1976d2" }}>{log.user.name}</span>
-                  &nbsp;<span style={{ color: "#444" }}>{log.action}</span>
-                  {log.entityUrl ? (
-                    <>
-                      &nbsp;
-                      <a href={log.entityUrl} style={{ color: "#d32f2f", fontWeight: 500, textDecoration: "none" }}>
+                <div className="timeline-content">
+                  <div className="timeline-header">
+                    <span className="user-name">{log.user.name}</span>
+                    <span className="action-text">{log.action}</span>
+                    {log.entityUrl ? (
+                      <a href={log.entityUrl} className="entity-link">
                         {log.entityKey}
                       </a>
-                    </>
-                  ) : null}
-                  {log.entityName && (
-                    <>
-                      &nbsp;<span style={{ color: "#333" }}>{log.entityName}</span>
-                    </>
-                  )}
-                  {log.entityStatus && (
-                    <span style={{ marginLeft: 8, background: "#eee", borderRadius: 4, padding: "2px 8px", fontSize: 12, fontWeight: 500 }}>
-                      {log.entityStatus}
-                    </span>
-                  )}
-                  <br />
-                  <span style={{ color: "#888", fontSize: 12 }}>{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</span>
+                    ) : log.entityKey ? (
+                      <span className="entity-key">{log.entityKey}</span>
+                    ) : null}
+                    {log.entityName && <span className="entity-name">{log.entityName}</span>}
+                  </div>
+                  <div className="timeline-time">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</div>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
