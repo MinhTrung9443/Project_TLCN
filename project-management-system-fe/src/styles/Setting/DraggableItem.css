@@ -1,131 +1,581 @@
-.draggable-item {
+/* DraggableItem.css - Modern Settings Item Styling */.draggable-item {
+
   display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  cursor: grab;
+
+/* ===============================================  align-items: center;
+
+   TABLE ROW STYLES  padding: 0.75rem 1rem;
+
+   =============================================== */  cursor: grab;
+
   position: relative;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.04);
-  margin-bottom: 8px;
-  transition: background 0.18s, box-shadow 0.18s;
-}
 
-.draggable-item.dragging {
-  opacity: 0.6;
-  background: #eef2ff;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
-}
+.settings-table-row {  border-radius: 10px;
 
-.item-icon {
-  width: 2.2rem;
-  height: 2.2rem;
+  background: white;  background: #fff;
+
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.04);
+
+  border-bottom: 1px solid #e5e7eb;  margin-bottom: 8px;
+
+  height: 64px;  transition: background 0.18s, box-shadow 0.18s;
+
+}}
+
+
+
+.settings-table-row:hover {.draggable-item.dragging {
+
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);  opacity: 0.6;
+
+  transform: translateX(2px);  background: #eef2ff;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+
+}}
+
+
+
+.settings-table-row:active {.item-icon {
+
+  transform: scale(0.99);  width: 2.2rem;
+
+}  height: 2.2rem;
+
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  margin-right: 1.1rem;
-  color: #3b7fec;
-  font-weight: bold;
+
+/* Column Widths */  align-items: center;
+
+.col-drag {  justify-content: center;
+
+  width: 40px;  border-radius: 8px;
+
+  text-align: center;  margin-right: 1.1rem;
+
+  padding: 0 8px;  color: #3b7fec;
+
+}  font-weight: bold;
+
   font-size: 1.3rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
-}
 
-/* Text */
-.item-text {
+.col-icon {  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+
+  width: 60px;}
+
+  text-align: center;
+
+  padding: 0 8px;/* Text */
+
+}.item-text {
+
   flex: 1 1 180px;
-  font-size: 16px;
-  color: #374151;
-  font-weight: 500;
-  margin-right: 18px;
-}
 
-/* Description */
-.item-description {
-  flex: 1 1 220px;
-  color: #6b7280;
-  font-size: 15px;
+.col-name {  font-size: 16px;
+
+  width: 20%;  color: #374151;
+
+  min-width: 150px;  font-weight: 500;
+
+  padding: 0 16px;  margin-right: 18px;
+
+}}
+
+
+
+.col-level {/* Description */
+
+  width: 100px;.item-description {
+
+  text-align: center;  flex: 1 1 220px;
+
+  padding: 0 16px;  color: #6b7280;
+
+}  font-size: 15px;
+
   margin-right: 18px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+
+.col-description {  white-space: nowrap;
+
+  width: auto;  overflow: hidden;
+
+  min-width: 200px;  text-overflow: ellipsis;
+
+  padding: 0 16px;}
+
 }
 
 /* Project */
-.item-project {
-  color: #6366f1;
-  font-size: 15px;
-  font-weight: 500;
-  margin-right: 18px;
+
+.col-status {.item-project {
+
+  width: 120px;  color: #6366f1;
+
+  text-align: center;  font-size: 15px;
+
+  padding: 0 16px;  font-weight: 500;
+
+}  margin-right: 18px;
+
   background: #eef2ff;
-  border-radius: 6px;
-  padding: 2px 10px;
-  white-space: nowrap;
+
+.col-actions {  border-radius: 6px;
+
+  width: 120px;  padding: 2px 10px;
+
+  text-align: center;  white-space: nowrap;
+
+  padding: 0 16px;}
+
 }
 
 /* Action button */
-.item-action {
-  color: #9ca3af;
-  padding: 0.25rem;
+
+/* ===============================================.item-action {
+
+   DRAG HANDLE  color: #9ca3af;
+
+   =============================================== */  padding: 0.25rem;
+
   opacity: 0;
+
+.drag-handle {  background: none;
+
+  color: #9ca3af;  border: none;
+
+  cursor: grab;  outline: none;
+
+  font-size: 20px;  cursor: pointer;
+
+  transition: all 0.2s ease;  font-size: 20px;
+
+  user-select: none;  transition: opacity 0.2s, color 0.18s;
+
+}}
+
+
+
+.drag-handle:hover {.draggable-item:hover .item-action {
+
+  color: #6366f1;  opacity: 1;
+
+  transform: scale(1.1);  color: #6366f1;
+
+}}
+
+
+
+.drag-handle:active {/* Popup Menu */
+
+  cursor: grabbing;.item-popup-menu {
+
+}  position: absolute;
+
+  top: 44px; /* hoặc 100% nếu muốn sát nút */
+
+/* ===============================================  right: 18px;
+
+   ICON WRAPPER  z-index: 9999; /* Đảm bảo nằm trên cùng */
+
+   =============================================== */  min-width: 140px;
+
+  background: #fff;
+
+.icon-wrapper {  border: 1px solid #e5e7eb;
+
+  width: 36px;  border-radius: 8px;
+
+  height: 36px;  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.13);
+
+  border-radius: 10px;  padding: 4px 0;
+
+  display: inline-flex;  animation: fadeInMenu 0.15s ease;
+
+  align-items: center;  display: flex;
+
+  justify-content: center;  flex-direction: column;
+
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);}
+
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+
+  transition: all 0.3s ease;.item-popup-btn {
+
+}  width: 100%;
+
   background: none;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  font-size: 20px;
-  transition: opacity 0.2s, color 0.18s;
+
+.icon-wrapper .material-symbols-outlined {  border: none;
+
+  color: white;  outline: none;
+
+  font-size: 20px;  padding: 10px 18px;
+
+  font-weight: 500;  font-size: 14px;
+
+}  color: #374151;
+
+  text-align: left;
+
+.settings-table-row:hover .icon-wrapper {  cursor: pointer;
+
+  transform: rotate(-5deg) scale(1.05);  transition: background 0.15s, color 0.15s;
+
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);  display: flex;
+
+}  align-items: center;
+
+  gap: 8px;
+
+/* ===============================================}
+
+   TEXT CONTENT
+
+   =============================================== */.item-popup-btn:hover {
+
+  background: #f3f4f6;
+
+.item-name-text {}
+
+  font-weight: 600;
+
+  font-size: 14px;.item-popup-btn.text-red-600 {
+
+  color: #111827;  color: #dc2626;
+
+  display: block;}
+
+  white-space: nowrap;
+
+  overflow: hidden;@keyframes fadeInMenu {
+
+  text-overflow: ellipsis;  from {
+
+}    opacity: 0;
+
+    transform: translateY(-8px);
+
+.description-text {  }
+
+  font-size: 13px;  to {
+
+  color: #6b7280;    opacity: 1;
+
+  display: block;    transform: translateY(0);
+
+  line-height: 1.4;  }
+
+  max-width: 100%;}
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;/* Responsive */
+
+  white-space: nowrap;@media (max-width: 700px) {
+
+}  .draggable-item {
+
+    flex-wrap: wrap;
+
+.settings-table-row:hover .description-text {    padding: 0.75rem 0.5rem;
+
+  color: #374151;  }
+
+}  .item-description,
+
+  .item-project {
+
+/* ===============================================    margin-right: 8px;
+
+   LEVEL BADGE    font-size: 14px;
+
+   =============================================== */  }
+
 }
 
-.draggable-item:hover .item-action {
-  opacity: 1;
+.level-badge {
+
+  display: inline-flex;.material-symbols-outlined {
+
+  align-items: center;  font-family: "Material Symbols Outlined";
+
+  justify-content: center;  font-weight: normal;
+
+  padding: 4px 12px;  font-style: normal;
+
+  border-radius: 20px;  font-size: 24px;
+
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);  line-height: 1;
+
+  color: #374151;  letter-spacing: normal;
+
+  font-size: 12px;  text-transform: none;
+
+  font-weight: 600;  display: inline-block;
+
+  border: 1px solid #d1d5db;  white-space: nowrap;
+
+  transition: all 0.2s ease;  direction: ltr;
+
+}  -webkit-font-feature-settings: "liga";
+
+  -webkit-font-smoothing: antialiased;
+
+.settings-table-row:hover .level-badge {}
+
+  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+  border-color: #9ca3af;
+  transform: scale(1.05);
+}
+
+/* ===============================================
+   STATUS BADGE
+   =============================================== */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.status-badge.default {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.status-badge.active {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.status-badge.inactive {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.settings-table-row:hover .status-badge {
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ===============================================
+   ACTION BUTTONS
+   =============================================== */
+
+.action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 0 2px;
+}
+
+.action-btn .material-symbols-outlined {
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.action-btn.edit-btn {
   color: #6366f1;
 }
 
-/* Popup Menu */
-.item-popup-menu {
-  position: absolute;
-  top: 44px; /* hoặc 100% nếu muốn sát nút */
-  right: 18px;
-  z-index: 9999; /* Đảm bảo nằm trên cùng */
-  min-width: 140px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.13);
-  padding: 4px 0;
-  animation: fadeInMenu 0.15s ease;
-  display: flex;
-  flex-direction: column;
+.action-btn.edit-btn:hover {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
 }
 
-.item-popup-btn {
-  width: 100%;
-  background: none;
-  border: none;
-  outline: none;
-  padding: 10px 18px;
-  font-size: 14px;
-  color: #374151;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+.action-btn.edit-btn:hover .material-symbols-outlined {
+  transform: rotate(-10deg) scale(1.1);
+}
+
+.action-btn.delete-btn {
+  color: #ef4444;
+}
+
+.action-btn.delete-btn:hover {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+}
+
+.action-btn.delete-btn:hover .material-symbols-outlined {
+  transform: scale(1.15);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===============================================
+   LIST ITEM STYLES (Alternative View)
+   =============================================== */
+
+.draggable-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: move;
 }
 
-.item-popup-btn:hover {
-  background: #f3f4f6;
+.draggable-item:hover {
+  border-color: #6366f1;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
 }
 
-.item-popup-btn.text-red-600 {
-  color: #dc2626;
+.draggable-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-@keyframes fadeInMenu {
+.item-drag-handle {
+  color: #9ca3af;
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.draggable-item:hover .item-drag-handle {
+  color: #6366f1;
+}
+
+.draggable-item .item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  flex-shrink: 0;
+}
+
+.draggable-item .item-icon .material-symbols-outlined {
+  color: white;
+  font-size: 22px;
+}
+
+.draggable-item:hover .item-icon {
+  transform: rotate(-5deg) scale(1.05);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.item-text {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  flex: 0 0 200px;
+}
+
+.item-description {
+  font-size: 13px;
+  color: #6b7280;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-level {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6366f1;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #c7d2fe;
+  flex-shrink: 0;
+}
+
+.item-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+  flex-shrink: 0;
+}
+
+.item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.draggable-item:hover .item-actions {
+  opacity: 1;
+}
+
+/* ===============================================
+   RESPONSIVE DESIGN
+   =============================================== */
+
+@media (max-width: 1024px) {
+  .col-description {
+    display: none;
+  }
+  
+  .item-description {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .col-status,
+  .status-badge {
+    display: none;
+  }
+  
+  .item-status {
+    display: none;
+  }
+  
+  .action-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .action-btn .material-symbols-outlined {
+    font-size: 16px;
+  }
+}
+
+/* ===============================================
+   ANIMATIONS
+   =============================================== */
+
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -133,30 +583,10 @@
   }
 }
 
-/* Responsive */
-@media (max-width: 700px) {
-  .draggable-item {
-    flex-wrap: wrap;
-    padding: 0.75rem 0.5rem;
-  }
-  .item-description,
-  .item-project {
-    margin-right: 8px;
-    font-size: 14px;
-  }
+.settings-table-row {
+  animation: fadeInUp 0.3s ease forwards;
 }
 
-.material-symbols-outlined {
-  font-family: "Material Symbols Outlined";
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  direction: ltr;
-  -webkit-font-feature-settings: "liga";
-  -webkit-font-smoothing: antialiased;
+.draggable-item {
+  animation: fadeInUp 0.3s ease forwards;
 }

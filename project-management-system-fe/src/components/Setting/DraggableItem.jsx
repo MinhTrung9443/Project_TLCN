@@ -6,14 +6,7 @@ import typeTaskService from "../../services/typeTaskService";
 import platformService from "../../services/platformService";
 import priorityService from "../../services/priorityService";
 import { toast } from "react-toastify";
-const DraggableItem = ({
-  item,
-  index,
-  moveItem,
-  onRefresh,
-  asTableRow,
-  currentTab,
-}) => {
+const DraggableItem = ({ item, index, moveItem, onRefresh, asTableRow, currentTab }) => {
   const [{ isDragging }, drag] = useDrag({
     type: "ITEM",
     item: { index },
@@ -131,22 +124,43 @@ const DraggableItem = ({
 
   if (asTableRow) {
     return (
-      <tr>
-        <td>
-          <span
-            className="material-symbols-outlined"
-            style={{ color: "#2563eb", fontSize: 22 }}
-          >
-            {item.icon}
-          </span>
+      <tr className="settings-table-row">
+        <td className="col-drag">
+          <span className="material-symbols-outlined drag-handle">drag_indicator</span>
         </td>
-        <td>{item.name}</td>
-        {"level" in item && <td>{item.level}</td>}
-        {"description" in item && <td>{item.description}</td>}
-        <td>{item.projectId || ""}</td>
-        <td>
-          <button className="item-action">
-            <span className="material-symbols-outlined">more_vert</span>
+        <td className="col-icon">
+          <div className="icon-wrapper" style={{ backgroundColor: item.color || "#6366f1" }}>
+            <span className="material-symbols-outlined">{item.icon || "task"}</span>
+          </div>
+        </td>
+        <td className="col-name">
+          <span className="item-name-text">{item.name}</span>
+        </td>
+        {"level" in item && (
+          <td className="col-level">
+            <span className="level-badge">{item.level}</span>
+          </td>
+        )}
+        {"description" in item && (
+          <td className="col-description">
+            <span className="description-text">{item.description || "-"}</span>
+          </td>
+        )}
+        <td className="col-status">
+          <span className="status-badge default">Default</span>
+        </td>
+        <td className="col-actions">
+          <button
+            className="action-btn edit-btn"
+            onClick={() => {
+              setEditOpen(true);
+            }}
+            title="Edit"
+          >
+            <span className="material-symbols-outlined">edit</span>
+          </button>
+          <button className="action-btn delete-btn" onClick={handleDelete} title="Delete">
+            <span className="material-symbols-outlined">delete</span>
           </button>
         </td>
       </tr>
@@ -154,63 +168,25 @@ const DraggableItem = ({
   }
 
   return (
-    <li
-      ref={(node) => drag(drop(node))}
-      className={`draggable-item ${isDragging ? "dragging" : ""}`}
-    >
-      <div className="item-icon">
+    <li ref={(node) => drag(drop(node))} className={`draggable-item ${isDragging ? "dragging" : ""}`}>
+      <div className="item-drag-handle">
+        <span className="material-symbols-outlined">drag_indicator</span>
+      </div>
+      <div className="item-icon" style={{ backgroundColor: item.color || "#6366f1" }}>
         <span className="material-symbols-outlined">{item.icon || "task"}</span>
       </div>
       <span className="item-text">{item.name}</span>
-      <span className="item-description">{item.description}</span>
-      <span className="item-description">{item.level}</span>
-      {item.projectId && <span className="item-project">{item.projectId}</span>}
-      <button
-        className="item-action"
-        ref={actionBtnRef}
-        onClick={() => setPopupOpen(true)}
-      >
-        <span className="material-symbols-outlined">more_vert</span>
-      </button>
-
-      {/* Popup menu */}
-      {popupOpen && (
-        <div className="item-popup-menu">
-          <button
-            className="item-popup-btn"
-            onClick={() => {
-              setEditOpen(true);
-              setPopupOpen(false);
-            }}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ marginRight: 6 }}
-            >
-              edit
-            </span>
-            Edit
-          </button>
-          <button
-            className="item-popup-btn text-red-600"
-            onClick={handleDelete}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ marginRight: 6 }}
-            >
-              delete
-            </span>
-            Delete
-          </button>
-          <button
-            className="item-popup-btn"
-            onClick={() => setPopupOpen(false)}
-          >
-            Close
-          </button>
-        </div>
-      )}
+      {item.description && <span className="item-description">{item.description}</span>}
+      {item.level && <span className="item-level">Level {item.level}</span>}
+      <span className="item-status">Default</span>
+      <div className="item-actions">
+        <button className="action-btn edit-btn" onClick={() => setEditOpen(true)} title="Edit">
+          <span className="material-symbols-outlined">edit</span>
+        </button>
+        <button className="action-btn delete-btn" onClick={handleDelete} title="Delete">
+          <span className="material-symbols-outlined">delete</span>
+        </button>
+      </div>
 
       {/* Popup edit */}
       {editOpen && (

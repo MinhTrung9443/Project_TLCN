@@ -1,80 +1,269 @@
-.settings-container {
-    padding: 0 24px 24px 24px;
+/* DraggableList.css - Modern Settings Table Styling */
+
+/* ===============================================
+   TABLE CONTAINER
+   =============================================== */
+
+.settings-table-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  margin-top: 24px;
 }
 
-.settings-header {
-    display: flex;
-    align-items: center;
-    background-color: #f3f0ff; /* Màu nền tím nhạt */
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 12px;
+/* ===============================================
+   TABLE STRUCTURE
+   =============================================== */
+
+.settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
 }
 
-.settings-body {
-    display: flex;
-    flex-direction: column;
-    gap: 12px; /* Khoảng cách giữa các dòng */
+/* ===============================================
+   TABLE HEADER
+   =============================================== */
+
+.settings-table-header {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-bottom: 2px solid #e5e7eb;
+  height: 48px;
 }
 
-.settings-row {
-    display: flex;
-    align-items: center;
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    cursor: grab;
+.settings-table-header th {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  padding: 12px 16px;
+  white-space: nowrap;
 }
 
-.settings-row:active {
-    cursor: grabbing;
+.settings-table-header th:first-child {
+  border-top-left-radius: 16px;
 }
 
-.settings-col {
-    display: flex;
-    align-items: center;
-    color: #5e6c84;
+.settings-table-header th:last-child {
+  border-top-right-radius: 16px;
+  text-align: center;
 }
 
-.settings-header .settings-col {
-    font-weight: 600;
-    color: #42526e;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    color: #6c5ce7; /* Màu chữ tím */
+.settings-table-header .col-icon,
+.settings-table-header .col-level,
+.settings-table-header .col-status {
+  text-align: center;
 }
 
-.col-icon {
-    width: 60px;
-    font-size: 1.2rem;
-    color: #42526e;
-}
-.col-name {
-    width: 20%;
-    font-weight: 500;
-    color: #172b4d;
-}
-.col-description {
-    flex-grow: 1;
-}
-.col-project {
-    width: 15%;
-}
-.col-actions {
-    width: 50px;
-    justify-content: flex-end;
+/* ===============================================
+   TABLE BODY
+   =============================================== */
+
+.settings-table tbody {
+  background: white;
 }
 
-.btn-action-menu {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #5e6c84;
-    padding: 5px;
-    border-radius: 50%;
+.settings-table tbody tr:last-child {
+  border-bottom: none;
 }
-.btn-action-menu:hover {
-    background-color: #f4f5f7;
+
+/* ===============================================
+   EMPTY STATE
+   =============================================== */
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #fafbfc 0%, #f3f4f6 100%);
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: fadeIn 0.5s ease;
+}
+
+.empty-state-content .material-symbols-outlined {
+  font-size: 64px;
+  color: #d1d5db;
+  margin-bottom: 8px;
+}
+
+.empty-state-content p {
+  font-size: 16px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0;
+}
+
+.empty-state-subtitle {
+  font-size: 14px;
+  color: #9ca3af;
+  margin-top: -4px;
+}
+
+/* ===============================================
+   SCROLLBAR STYLING
+   =============================================== */
+
+.settings-table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.settings-table-container::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.settings-table-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.settings-table-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+/* ===============================================
+   RESPONSIVE DESIGN
+   =============================================== */
+
+@media (max-width: 1200px) {
+  .settings-table-container {
+    overflow-x: auto;
+  }
+
+  .settings-table {
+    min-width: 900px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .settings-table-header .col-description {
+    display: none;
+  }
+
+  .settings-table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-table-container {
+    border-radius: 12px;
+    margin-top: 16px;
+  }
+
+  .settings-table-header {
+    height: 40px;
+  }
+
+  .settings-table-header th {
+    font-size: 11px;
+    padding: 8px 12px;
+  }
+
+  .settings-table-header .col-status {
+    display: none;
+  }
+
+  .settings-table {
+    min-width: 500px;
+  }
+
+  .empty-state {
+    padding: 40px 20px;
+  }
+
+  .empty-state-content .material-symbols-outlined {
+    font-size: 48px;
+  }
+
+  .empty-state-content p {
+    font-size: 14px;
+  }
+
+  .empty-state-subtitle {
+    font-size: 12px;
+  }
+}
+
+/* ===============================================
+   ANIMATIONS
+   =============================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-table-container {
+  animation: fadeIn 0.4s ease;
+}
+
+/* ===============================================
+   LOADING STATE
+   =============================================== */
+
+.settings-table-loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.settings-table-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* ===============================================
+   HOVER EFFECTS
+   =============================================== */
+
+.settings-table tbody tr {
+  position: relative;
+}
+
+.settings-table tbody tr::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.settings-table tbody tr:hover::before {
+  opacity: 1;
 }
