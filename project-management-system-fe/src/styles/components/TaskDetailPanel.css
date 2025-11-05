@@ -289,3 +289,12 @@
 .comment-edit-form button {
     margin-right: 8px;
 }
+.comment-replies {
+    margin-left: 44px; /* Bằng chiều rộng avatar + margin-right */
+    border-left: 2px solid #dfe1e6;
+    padding-left: 16px;
+}
+.reply-form {
+    margin-left: 44px;
+    margin-top: 8px;
+}

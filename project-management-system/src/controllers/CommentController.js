@@ -52,11 +52,26 @@ const handleDeleteComment = async (req, res) => {
         console.error("Error deleting comment:", error);
         res.status(error.statusCode || 500).json({ message: error.message });
     }
-}
+};
+const handleToggleReaction = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const { emoji } = req.body;
+        const userId = req.user.id;
+        
+        const updatedComment = await commentService.toggleReaction(commentId, userId, emoji);
+        res.status(200).json(updatedComment);
+    } catch (error) {
+        console.error("Error toggling reaction:", error);
+        res.status(error.statusCode || 500).json({ message: error.message });
+    }
+};
 
 module.exports = {
   handleGetComments,
   handleCreateComment,
   handleUpdateComment,
   handleDeleteComment,
+  handleToggleReaction,
+
 };

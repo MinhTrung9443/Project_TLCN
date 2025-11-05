@@ -1,5 +1,5 @@
 // src/components/task/CommentsTab.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import apiClient from '../../services/apiClient';
 import CommentItem from './CommentItem';
 
@@ -8,7 +8,7 @@ const CommentsTab = ({ taskId }) => {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null); // <-- THÊM: State để xử lý lỗi
-
+  const [activeReplyId, setActiveReplyId] = useState(null);
   const fetchComments = useCallback(async () => {
     // Nếu không có taskId thì không làm gì cả
     if (!taskId) {
@@ -54,46 +54,60 @@ const CommentsTab = ({ taskId }) => {
     setComments(comments.filter(c => c._id !== commentId));
   };
 
+  const commentTree = useMemo(() => {
+        const commentMap = {};
+        const rootComments = [];
+
+        // Đưa tất cả comment vào một map để truy cập nhanh
+        comments.forEach(comment => {
+            commentMap[comment._id] = { ...comment, children: [] };
+        });
+
+        // Lặp lại để xây dựng cây
+        comments.forEach(comment => {
+            if (comment.parentId && commentMap[comment.parentId]) {
+                // Nếu là comment con, thêm vào mảng children của cha
+                commentMap[comment.parentId].children.push(commentMap[comment._id]);
+            } else {
+                // Nếu là comment gốc, thêm vào root
+                rootComments.push(commentMap[comment._id]);
+            }
+        });
+        return rootComments;
+    }, [comments]); 
   const renderContent = () => {
-    if (loading) {
-      return <div>Loading comments...</div>;
+        if (loading) return <div>Loading...</div>;
+        if (error) return <div style={{ color: 'red' }}>{error}</div>;
+        if (commentTree.length === 0) return <div>No comments yet.</div>;
+        
+        return commentTree.map(comment => (
+            <CommentItem
+                key={comment._id}
+                comment={comment}
+                onCommentUpdated={handleCommentUpdated}
+                onCommentDeleted={handleCommentDeleted}
+                // --- TRUYỀN PROPS MỚI XUỐNG ---
+                activeReplyId={activeReplyId}
+                setActiveReplyId={setActiveReplyId}
+            />
+        ));
     }
-
-    if (error) {
-      return <div style={{ color: 'red' }}>{error}</div>;
-    }
-
-    if (comments.length === 0) {
-      return <div>No comments yet. Be the first to add one!</div>;
-    }
-
-    return comments.map(comment => (
-      <CommentItem
-        key={comment._id}
-        comment={comment}
-        onCommentUpdated={handleCommentUpdated}
-        onCommentDeleted={handleCommentDeleted}
-      />
-    ));
-  }
-
-  return (
-    <div className="comments-section">
-      <div className="comment-list">
-        {renderContent()}
-      </div>
-      
-      <form onSubmit={handlePostComment} className="comment-form">
-        <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add a comment..."
-            rows="3"
-        />
-        <button type="submit">Post Comment</button>
-      </form>
-    </div>
-  );
+    return (
+        <div className="comments-section">
+            <div className="comment-list">
+                {renderContent()}
+            </div>
+            <form onSubmit={handlePostComment} className="comment-form">
+                <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    rows="3"
+                />
+                <button type="submit">Post Comment</button>
+            </form>
+        </div>
+    );
 };
 
 export default CommentsTab;

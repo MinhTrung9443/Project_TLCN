@@ -50,9 +50,30 @@ const deleteComment = async (commentId, userId) => {
     return { message: "Comment deleted successfully" };
 }
 
+const toggleReaction = async (commentId, userId, emoji) => {
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
+
+    const reactionIndex = comment.reactions.findIndex(
+        r => r.userId.toString() === userId.toString() && r.emoji === emoji
+    );
+
+    if (reactionIndex > -1) {
+        // Nếu đã react, xóa nó đi (toggle off)
+        comment.reactions.splice(reactionIndex, 1);
+    } else {
+        // Nếu chưa, thêm vào (toggle on)
+        comment.reactions.push({ userId, emoji });
+    }
+
+    await comment.save();
+    return comment.populate('userId', 'fullname avatar');
+};
+
 module.exports = { 
     getCommentsByTaskId, 
     createComment,
     updateComment,
-    deleteComment
+    deleteComment,
+    toggleReaction
 };
