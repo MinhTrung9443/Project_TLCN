@@ -19,5 +19,40 @@ const createComment = async (commentData, userId) => {
     return newComment.populate('userId', 'fullname avatar');
 }
 
+const updateComment = async (commentId, content, userId) => {
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
 
-module.exports = { getCommentsByTaskId, createComment };
+    if (comment.userId.toString() !== userId.toString()) {
+        const error = new Error("Not authorized to edit this comment");
+        error.statusCode = 403; // Forbidden
+        throw error;
+    }
+
+    comment.content = content;
+    await comment.save();
+    return comment.populate('userId', 'fullname avatar');
+}
+
+const deleteComment = async (commentId, userId) => {
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
+
+    if (comment.userId.toString() !== userId.toString()) {
+        const error = new Error("Not authorized to delete this comment");
+        error.statusCode = 403;
+        throw error;
+    }
+
+    await Comment.findByIdAndDelete(commentId);
+    // Cũng có thể xóa các comment con nếu cần
+    // await Comment.deleteMany({ parentId: commentId });
+    return { message: "Comment deleted successfully" };
+}
+
+module.exports = { 
+    getCommentsByTaskId, 
+    createComment,
+    updateComment,
+    deleteComment
+};

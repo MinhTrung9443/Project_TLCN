@@ -9,6 +9,7 @@ const commentSchema = new Schema(
       ref: "Task",
       required: true,
     },
+    parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",

@@ -27,7 +27,36 @@ const handleCreateComment = async (req, res) => {
   }
 };
 
+const handleUpdateComment = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const { content } = req.body;
+        const userId = req.user.id;
+
+        const updatedComment = await commentService.updateComment(commentId, content, userId);
+        res.status(200).json(updatedComment);
+    } catch (error) {
+        console.error("Error updating comment:", error);
+        res.status(error.statusCode || 500).json({ message: error.message });
+    }
+}
+
+const handleDeleteComment = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const userId = req.user.id;
+
+        const result = await commentService.deleteComment(commentId, userId);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("Error deleting comment:", error);
+        res.status(error.statusCode || 500).json({ message: error.message });
+    }
+}
+
 module.exports = {
   handleGetComments,
   handleCreateComment,
+  handleUpdateComment,
+  handleDeleteComment,
 };

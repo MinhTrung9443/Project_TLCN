@@ -11,7 +11,7 @@ const {
   handleDeleteTask,
   handleGetTaskHistory,
 } = require("../controllers/TaskController");
-const { handleGetComments, handleCreateComment } = require("../controllers/CommentController");
+const { handleGetComments, handleCreateComment} = require("../controllers/CommentController");
 const { protect, isAdmin } = require("../middleware/authMiddleware"); 
 
 router.get("/search", protect, handleSearchTasks);
