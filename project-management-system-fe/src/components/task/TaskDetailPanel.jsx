@@ -1,33 +1,49 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef  } from "react";
 import { toast } from "react-toastify";
-// import các service...
 import { updateTask } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import sprintService from "../../services/sprintService";
-// import các component con
 import ActionsMenu from "../common/ActionsMenu";
-import TaskDetailsTab from './TaskDetailsTab'; // COMPONENT MỚI SẼ TẠO
-import CommentsTab from './CommentsTab';       // COMPONENT TỪ LẦN TRƯỚC
-import HistoryTab from './HistoryTab';         // COMPONENT TỪ LẦN TRƯỚC
-// import CSS
+import TaskDetailsTab from './TaskDetailsTab'; 
+import CommentsTab from './CommentsTab';       
+import HistoryTab from './HistoryTab';         
 import "../../styles/components/TaskDetailPanel.css";
+import { IconComponent } from "../common/IconPicker"; 
+const PREDEFINED_TASKTYPE_ICONS = [
+  { name: "FaTasks", color: "#4BADE8" },
+  { name: "FaStar", color: "#2ECC71" },
+  { name: "FaCheckSquare", color: "#5297FF" },
+  { name: "FaRegWindowMaximize", color: "#00A8A2" },
+  { name: "FaBug", color: "#E44D42" },
+  { name: "FaArrowUp", color: "#F57C00" },
+  { name: "FaBullseye", color: "#654DF7" },
+  { name: "FaQuestionCircle", color: "#7A869A" },
+  { name: "FaRegClone", color: "#4BADE8" },
+  { name: "FaEquals", color: "#DE350B" },
+  { name: "FaFileAlt", color: "#00B8D9" },
+];
+
 
 const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClone, statuses = [] }) => {
   const [editableTask, setEditableTask] = useState(task);
-  const [activeTab, setActiveTab] = useState('Details'); // State quản lý tab
+  const [activeTab, setActiveTab] = useState('Details');
 
-  // State cho các dropdown options
+  const nameTextAreaRef = useRef(null);
+  useEffect(() => {
+    if (nameTextAreaRef.current) {
+      nameTextAreaRef.current.style.height = "auto";
+      nameTextAreaRef.current.style.height = `${nameTextAreaRef.current.scrollHeight}px`;
+    }
+  }, [editableTask?.name, task]); 
   const [projectMembers, setProjectMembers] = useState([]);
   const [projectTaskTypes, setProjectTaskTypes] = useState([]);
   const [projectPriorities, setProjectPriorities] = useState([]);
   const [projectSprints, setProjectSprints] = useState([]);
-  
-  // ----- Toàn bộ logic trong useEffect để fetch data vẫn giữ nguyên -----
+
   useEffect(() => {
     setEditableTask(task);
-    // Reset state khi task thay đổi
     setProjectMembers([]);
     setProjectTaskTypes([]);
     setProjectPriorities([]);
@@ -63,7 +79,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
 
       const fetchPrioritiesForProject = async () => {
         try {
-          // Chỉ cần thay đổi tên hàm ở đây
           const res = await priorityService.getAllPriorities(projectKey);
           const formattedPriorities = res.data.map(p => ({ value: p._id, label: p.name }));
           setProjectPriorities(formattedPriorities);
@@ -76,25 +91,20 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       const fetchSprintsForProject = async () => {
         try {
           const responseData = await sprintService.getSprints(projectKey);
-
           const allSprints = responseData.sprint || [];
-
           const activeSprints = allSprints.filter(
             sprint => sprint.status === 'Not Started' || sprint.status === 'Started'
           );
-
           const currentSprintId = task.sprintId?._id || task.sprintId;
           if (currentSprintId) {
             const isInActiveList = activeSprints.some(s => s._id === currentSprintId);
             if (!isInActiveList) {
-              // Tìm sprint đã completed trong danh sách gốc và thêm vào
               const completedSprint = allSprints.find(s => s._id === currentSprintId);
               if (completedSprint) {
                 activeSprints.push(completedSprint);
               }
             }
           }
-
           const formattedSprints = activeSprints.map(s => ({ value: s._id, label: s.name }));
           setProjectSprints(formattedSprints);
         } catch (error) {
@@ -127,13 +137,15 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     }
 
     const originalTask = { ...editableTask };
-
-    setEditableTask((prev) => ({ ...prev, [fieldName]: updateValue }));
+    const updatedTask = { ...editableTask, [fieldName]: updateValue };
+    setEditableTask(updatedTask); // Cập nhật state ngay lập tức
 
     try {
       const res = await updateTask(editableTask._id, { [fieldName]: updateValue });
       onTaskUpdate(res.data);
-      toast.success(`${fieldName.replace(/([A-Z])/g, " $1")} updated successfully!`);
+      if (fieldName !== 'name') {
+        toast.success(`${fieldName.replace(/([A-Z])/g, " $1")} updated successfully!`);
+      }
     } catch (error) {
       toast.error("Update failed. Reverting changes.");
       setEditableTask(originalTask); // Hoàn tác nếu lỗi
@@ -154,23 +166,51 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       onTaskDelete(editableTask._id);
     }
   };
-
   const handleClone = () => {
     onTaskClone(editableTask._id);
     toast.info("Clone function not implemented yet.");
   };
-
   const handleAddAttachment = () => {
     toast.info("Add attachment function not implemented yet.");
   };
 
-  return (
+  const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find(
+    i => i.name === editableTask.taskTypeId?.icon
+  );
+
+    return (
     <div className="task-detail-panel">
       <header className="panel-header">
         <div className="panel-header-left">
-          <h3>
-            {editableTask.key}: {editableTask.name}
-          </h3>
+          <div className="task-key-container">
+            {typeIconInfo && (
+              <span 
+                className="icon-wrapper-list-small" 
+                style={{ backgroundColor: typeIconInfo.color }} 
+                title={editableTask.taskTypeId.name}
+              >
+                <IconComponent name={editableTask.taskTypeId.icon} />
+              </span>
+            )}
+            <span className="task-key-text">{editableTask.key}</span>
+          </div>
+
+          <textarea
+            ref={nameTextAreaRef} // Gán ref vào đây
+            className="editable-task-name"
+            value={editableTask.name}
+            onChange={(e) => setEditableTask(prev => ({ ...prev, name: e.target.value }))}
+            onBlur={() => handleUpdate("name", editableTask.name)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { // Chỉ lưu khi nhấn Enter (không phải Shift+Enter)
+                e.preventDefault();
+                e.target.blur();
+              }
+            }}
+            rows="1"
+            spellCheck="false"
+            placeholder="Enter a task name..."
+          />
         </div>
         <div className="panel-header-right">
           <ActionsMenu onDelete={handleDelete} onClone={handleClone} onAddAttachment={handleAddAttachment} />
