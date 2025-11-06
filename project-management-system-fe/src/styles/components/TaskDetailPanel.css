@@ -1,125 +1,300 @@
+/* src/styles/components/TaskDetailPanel.css */
+
+/* --- TỔNG THỂ PANEL --- */
 .task-detail-panel {
-  width: 450px;
-  min-width: 450px;
-  height: calc(100vh - 60px); 
-  position: fixed;
-  right: 0;
-  top: 60px; 
-  background-color: #ffffff;
-  border-left: 1px solid #e0e0e0;
-  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-  z-index: 100;
+  /* Thêm một chút đổ bóng để panel nổi bật */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.panel-header {
+  padding: 12px 20px;
+  border-bottom: 1px solid #dfe1e6;
+}
+
+.panel-body {
+  padding: 0 20px 20px 20px;
+  overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
+  flex-grow: 1;
+}
+
+/* --- TABS --- */
+.panel-tabs {
+  display: flex;
+  border-bottom: 1px solid #dfe1e6;
+  margin: 0 -20px 16px -20px; /* Kéo dài border ra sát mép panel */
+  padding: 0 20px;
+  position: sticky; /* Giữ tabs cố định khi cuộn */
+  top: 0;
+  background-color: white;
+  z-index: 10;
+}
+
+.tab-btn {
+  padding: 10px 4px;
+  margin: 0 12px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5e6c84;
+  margin-bottom: -1px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.tab-btn:first-child {
+  margin-left: 0;
+}
+
+.tab-btn:hover {
+  color: #0052cc;
+}
+
+.tab-btn.active {
+  color: #0052cc;
+  border-bottom: 3px solid #0052cc;
+}
+
+
+/* --- CÁC KHU VỰC NỘI DUNG (SECTION) --- */
+.panel-section {
+  margin-bottom: 24px; /* TẠO KHOẢNG CÁCH GIỮA CÁC KHU VỰC */
+}
+
+.panel-section h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5e6c84;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+/* --- LƯỚI CHI TIẾT (GRID) --- */
+.detail-grid-editable {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Chia thành 2 cột đều nhau */
+  gap: 20px; /* Khoảng cách giữa các item trong lưới */
+}
+
+/* --- ITEM TRONG LƯỚI --- */
+.detail-item-editable {
   display: flex;
   flex-direction: column;
 }
 
-.panel-header {
-  padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-}
-.panel-header h3 { margin: 0; }
-.close-btn { background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #888; }
-
-.panel-body {
-  padding: 1.2rem;
-  overflow-y: auto;
-  flex-grow: 1;
-}
-
-.panel-section {
-    margin-bottom: 1.5rem;
-}
-
-.detail-grid-editable {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.2rem 1rem;
-}
-
-.detail-item-editable {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-}
-
 .detail-item-editable strong {
-    color: #555;
-    font-size: 0.85rem;
-    font-weight: 600;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5e6c84;
+  margin-bottom: 6px;
+}
+
+/* --- STYLE CHUNG CHO CÁC INPUT VÀ DROPDOWN --- */
+.editable-input,
+.Select__control {
+  border: 1px solid #dfe1e6 !important;
+  border-radius: 3px !important;
+  background-color: #fafbfc !important;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.editable-input:hover,
+.Select__control:hover {
+  background-color: #f4f5f7 !important;
+  border-color: #c1c7d0 !important;
+}
+
+.editable-input:focus,
+.Select__control--is-focused {
+  background-color: white !important;
+  border-color: #4c9aff !important;
+  box-shadow: 0 0 0 1px #4c9aff !important;
 }
 
 .editable-input {
-    border: 1px solid #dcdcdc;
-    border-radius: 4px;
-    padding: 8px;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-.editable-input:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-    outline: none;
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
+/* --- THANH PROGRESS --- */
 .progress-bar-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .progress-slider {
-    flex-grow: 1;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #dfe1e6;
+  outline: none;
+  border-radius: 3px;
+  opacity: 0.8;
+  transition: opacity .2s;
 }
-.progress-bar-container span {
-    font-weight: 500;
-    min-width: 35px;
+.progress-slider:hover {
+  opacity: 1;
+}
+.progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #0052cc;
+  cursor: pointer;
+  border-radius: 50%;
 }
 
-.panel-footer {
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e9ecef;
-    font-size: 12px;
-    color: #6c757d;
+/* --- COMMENTS TAB --- */
+.comments-section {
+  display: flex;
+  flex-direction: column;
 }
-
-/* Kiểu cho react-select */
-.detail-item-editable .react-select__control {
-    min-height: 38px;
-    border-color: #dcdcdc;
+.comment-list {
+  margin-bottom: 16px;
 }
-.detail-item-editable .react-select__control:hover {
-    border-color: #a0a0a0;
+.comment-item {
+  display: flex;
+  margin-bottom: 16px;
 }
-.detail-item-editable .react-select--is-focused .react-select__control {
-    border-color: #4f46e5 !important;
-    box-shadow: 0 0 0 1px #4f46e5 !important;
+.comment-item .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
 }
-.panel-header {
-  padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex; /* Dùng flexbox */
-  justify-content: space-between; /* Đẩy các phần tử ra hai bên */
+.comment-body {
+  flex-grow: 1;
+}
+.comment-header {
+  margin-bottom: 4px;
+  display: flex;
   align-items: center;
-  flex-shrink: 0;
+}
+.comment-header strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #172b4d;
+  margin-right: 8px;
+}
+.comment-header span {
+  font-size: 12px;
+  color: #5e6c84;
+}
+.comment-body p {
+  margin: 0;
+  font-size: 14px;
+  color: #172b4d;
+  line-height: 1.5;
+}
+.comment-form textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 12px;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+  font-size: 14px;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+  resize: vertical;
+}
+.comment-form textarea:focus {
+  outline: none;
+  border-color: #4c9aff;
+  box-shadow: 0 0 0 1px #4c9aff;
+}
+.comment-form button {
+  background-color: #0052cc;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.comment-form button:hover {
+  background-color: #0065ff;
 }
 
-.panel-header-left {
-    flex-grow: 1;
-    min-width: 0; /* Cho phép co lại */
+
+/* --- HISTORY TAB --- */
+.history-list {
+  display: flex;
+  flex-direction: column;
 }
-.panel-header-left h3 {
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.history-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 0;
+}
+.history-item:not(:last-child) {
+  border-bottom: 1px solid #f4f5f7;
+}
+.history-item .avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+.history-content {
+  flex-grow: 1;
+}
+.history-message {
+  margin: 0;
+  font-size: 14px;
+  color: #172b4d;
+}
+.history-message strong {
+  font-weight: 600;
+}
+.history-timestamp {
+  font-size: 12px;
+  color: #5e6c84;
 }
 
-.panel-header-right {
-    display: flex;
-    align-items: center;
-    gap: 8px; /* Khoảng cách giữa các nút */
+/* --- FOOTER --- */
+.panel-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #dfe1e6;
+  font-size: 12px;
+  color: #5e6c84;
+}
+
+/* Thêm vào TaskDetailPanel.css */
+.comment-actions button {
+  background: none;
+  border: none;
+  color: #5e6c84;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 3px;
+}
+.comment-actions button:hover {
+  background-color: #f4f5f7;
+  color: #172b4d;
+}
+.comment-edit-form textarea {
+    width: 100%;
+    margin-bottom: 8px;
+}
+.comment-edit-form button {
+    margin-right: 8px;
+}
+.comment-replies {
+    margin-left: 44px; /* Bằng chiều rộng avatar + margin-right */
+    border-left: 2px solid #dfe1e6;
+    padding-left: 16px;
+}
+.reply-form {
+    margin-left: 44px;
+    margin-top: 8px;
 }

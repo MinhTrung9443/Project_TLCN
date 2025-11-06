@@ -1,34 +1,54 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef  } from "react";
 import { toast } from "react-toastify";
-import Select from "react-select";
 import { updateTask } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import sprintService from "../../services/sprintService";
-import RichTextEditor from "../common/RichTextEditor";
-import "../../styles/components/TaskDetailPanel.css";
 import ActionsMenu from "../common/ActionsMenu";
+import TaskDetailsTab from './TaskDetailsTab'; 
+import CommentsTab from './CommentsTab';       
+import HistoryTab from './HistoryTab';         
+import "../../styles/components/TaskDetailPanel.css";
+import { IconComponent } from "../common/IconPicker"; 
+const PREDEFINED_TASKTYPE_ICONS = [
+  { name: "FaTasks", color: "#4BADE8" },
+  { name: "FaStar", color: "#2ECC71" },
+  { name: "FaCheckSquare", color: "#5297FF" },
+  { name: "FaRegWindowMaximize", color: "#00A8A2" },
+  { name: "FaBug", color: "#E44D42" },
+  { name: "FaArrowUp", color: "#F57C00" },
+  { name: "FaBullseye", color: "#654DF7" },
+  { name: "FaQuestionCircle", color: "#7A869A" },
+  { name: "FaRegClone", color: "#4BADE8" },
+  { name: "FaEquals", color: "#DE350B" },
+  { name: "FaFileAlt", color: "#00B8D9" },
+];
 
-const TaskDetailPanel = ({
-  task,
-  onTaskUpdate,
-  onClose,
-  onTaskDelete,
-  onTaskClone,
-  statuses = [], 
-}) => {
+
+const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClone, statuses = [] }) => {
   const [editableTask, setEditableTask] = useState(task);
+  const [activeTab, setActiveTab] = useState('Details');
+
+  const nameTextAreaRef = useRef(null);
+  useEffect(() => {
+    if (nameTextAreaRef.current) {
+      nameTextAreaRef.current.style.height = "auto";
+      nameTextAreaRef.current.style.height = `${nameTextAreaRef.current.scrollHeight}px`;
+    }
+  }, [editableTask?.name, task]); 
   const [projectMembers, setProjectMembers] = useState([]);
   const [projectTaskTypes, setProjectTaskTypes] = useState([]);
   const [projectPriorities, setProjectPriorities] = useState([]);
   const [projectSprints, setProjectSprints] = useState([]);
+
   useEffect(() => {
     setEditableTask(task);
     setProjectMembers([]);
     setProjectTaskTypes([]);
     setProjectPriorities([]);
     setProjectSprints([]);
+
     if (task && task.projectId && task.projectId.key) {
       const projectKey = task.projectId.key;
 
@@ -59,7 +79,6 @@ const TaskDetailPanel = ({
 
       const fetchPrioritiesForProject = async () => {
         try {
-          // Chỉ cần thay đổi tên hàm ở đây
           const res = await priorityService.getAllPriorities(projectKey);
           const formattedPriorities = res.data.map(p => ({ value: p._id, label: p.name }));
           setProjectPriorities(formattedPriorities);
@@ -72,25 +91,20 @@ const TaskDetailPanel = ({
       const fetchSprintsForProject = async () => {
         try {
           const responseData = await sprintService.getSprints(projectKey);
-
           const allSprints = responseData.sprint || [];
-
           const activeSprints = allSprints.filter(
             sprint => sprint.status === 'Not Started' || sprint.status === 'Started'
           );
-
           const currentSprintId = task.sprintId?._id || task.sprintId;
           if (currentSprintId) {
             const isInActiveList = activeSprints.some(s => s._id === currentSprintId);
             if (!isInActiveList) {
-              // Tìm sprint đã completed trong danh sách gốc và thêm vào
               const completedSprint = allSprints.find(s => s._id === currentSprintId);
               if (completedSprint) {
                 activeSprints.push(completedSprint);
               }
             }
           }
-
           const formattedSprints = activeSprints.map(s => ({ value: s._id, label: s.name }));
           setProjectSprints(formattedSprints);
         } catch (error) {
@@ -123,13 +137,15 @@ const TaskDetailPanel = ({
     }
 
     const originalTask = { ...editableTask };
-
-    setEditableTask((prev) => ({ ...prev, [fieldName]: updateValue }));
+    const updatedTask = { ...editableTask, [fieldName]: updateValue };
+    setEditableTask(updatedTask); // Cập nhật state ngay lập tức
 
     try {
       const res = await updateTask(editableTask._id, { [fieldName]: updateValue });
       onTaskUpdate(res.data);
-      toast.success(`${fieldName.replace(/([A-Z])/g, " $1")} updated successfully!`);
+      if (fieldName !== 'name') {
+        toast.success(`${fieldName.replace(/([A-Z])/g, " $1")} updated successfully!`);
+      }
     } catch (error) {
       toast.error("Update failed. Reverting changes.");
       setEditableTask(originalTask); // Hoàn tác nếu lỗi
@@ -150,23 +166,51 @@ const TaskDetailPanel = ({
       onTaskDelete(editableTask._id);
     }
   };
-
   const handleClone = () => {
     onTaskClone(editableTask._id);
     toast.info("Clone function not implemented yet.");
   };
-
   const handleAddAttachment = () => {
     toast.info("Add attachment function not implemented yet.");
   };
 
-  return (
+  const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find(
+    i => i.name === editableTask.taskTypeId?.icon
+  );
+
+    return (
     <div className="task-detail-panel">
       <header className="panel-header">
         <div className="panel-header-left">
-          <h3>
-            {editableTask.key}: {editableTask.name}
-          </h3>
+          <div className="task-key-container">
+            {typeIconInfo && (
+              <span 
+                className="icon-wrapper-list-small" 
+                style={{ backgroundColor: typeIconInfo.color }} 
+                title={editableTask.taskTypeId.name}
+              >
+                <IconComponent name={editableTask.taskTypeId.icon} />
+              </span>
+            )}
+            <span className="task-key-text">{editableTask.key}</span>
+          </div>
+
+          <textarea
+            ref={nameTextAreaRef} // Gán ref vào đây
+            className="editable-task-name"
+            value={editableTask.name}
+            onChange={(e) => setEditableTask(prev => ({ ...prev, name: e.target.value }))}
+            onBlur={() => handleUpdate("name", editableTask.name)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { // Chỉ lưu khi nhấn Enter (không phải Shift+Enter)
+                e.preventDefault();
+                e.target.blur();
+              }
+            }}
+            rows="1"
+            spellCheck="false"
+            placeholder="Enter a task name..."
+          />
         </div>
         <div className="panel-header-right">
           <ActionsMenu onDelete={handleDelete} onClone={handleClone} onAddAttachment={handleAddAttachment} />
@@ -175,120 +219,44 @@ const TaskDetailPanel = ({
           </button>
         </div>
       </header>
-      <main className="panel-body">
-        <div className="panel-section">
-          <div className="detail-item-editable">
-            <strong>Progress</strong>
-            <div className="progress-bar-container">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={editableTask.progress || 0}
-                className="progress-slider"
-                onChange={(e) => setEditableTask((prev) => ({ ...prev, progress: parseInt(e.target.value, 10) }))}
-                onMouseUp={(e) => handleUpdate("progress", parseInt(e.target.value, 10))}
-              />
-              <span>{editableTask.progress || 0}%</span>
-            </div>
-          </div>
+        <main className="panel-body">
+        <div className="panel-tabs">
+          <button 
+            className={`tab-btn ${activeTab === 'Details' ? 'active' : ''}`}
+            onClick={() => setActiveTab('Details')}
+          >
+            Details
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'Comments' ? 'active' : ''}`}
+            onClick={() => setActiveTab('Comments')}
+          >
+            Comments
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'History' ? 'active' : ''}`}
+            onClick={() => setActiveTab('History')}
+          >
+            History
+          </button>
         </div>
 
-        <div className="panel-section detail-grid-editable">
-          <div className="detail-item-editable">
-            <strong>Status</strong>
-            <Select
-              value={findOption(statuses, editableTask.statusId?._id)}
-              options={statuses}
-              onChange={(option) => handleUpdate("statusId", option.value)}
+        <div className="panel-tab-content">
+          {activeTab === 'Details' && (
+            <TaskDetailsTab
+              editableTask={editableTask}
+              setEditableTask={setEditableTask}
+              handleUpdate={handleUpdate}
+              statuses={statuses}
+              projectMembers={projectMembers}
+              projectTaskTypes={projectTaskTypes}
+              projectPriorities={projectPriorities}
+              projectSprints={projectSprints}
             />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Assignee</strong>
-            <Select
-              value={findOption(projectMembers, editableTask.assigneeId)}
-              options={projectMembers} // Sử dụng danh sách members
-              onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
-              isClearable
-              placeholder="Select..."
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Reporter</strong>
-            <Select
-              value={findOption(projectMembers, editableTask.reporterId)}
-              options={projectMembers} // Sử dụng danh sách members
-              onChange={(option) => handleUpdate("reporterId", option.value)}
-              placeholder="Select..."
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Type</strong>
-            <Select
-              value={findOption(projectTaskTypes, editableTask.taskTypeId)}
-              options={projectTaskTypes}
-              onChange={(option) => handleUpdate("taskTypeId", option.value)}
-              placeholder={projectTaskTypes.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Priority</strong>
-            <Select
-              value={findOption(projectPriorities, editableTask.priorityId?._id)}
-              options={projectPriorities}
-              onChange={(option) => handleUpdate("priorityId", option.value)}
-              placeholder={projectPriorities.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Sprint</strong>
-            <Select
-              value={findOption(projectSprints, editableTask.sprintId?._id)}
-              options={projectSprints}
-              onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
-              isClearable
-              placeholder={!task ? "" : (projectSprints.length === 0 && task.projectId) ? "Loading..." : "Backlog"}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Story Point</strong>
-            <input
-              type="number"
-              value={editableTask.storyPoints || ""}
-              onChange={(e) => setEditableTask((prev) => ({ ...prev, storyPoints: e.target.value }))}
-              onBlur={(e) => handleUpdate("storyPoints", parseInt(e.target.value, 10) || 0)}
-              className="editable-input"
-              min="0"
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Start Date</strong>
-            <input
-              type="date"
-              value={editableTask.startDate ? new Date(editableTask.startDate).toISOString().split("T")[0] : ""}
-              onChange={(e) => handleUpdate("startDate", e.target.value)}
-              className="editable-input"
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Due Date</strong>
-            <input
-              type="date"
-              value={editableTask.dueDate ? new Date(editableTask.dueDate).toISOString().split("T")[0] : ""}
-              onChange={(e) => handleUpdate("dueDate", e.target.value)}
-              className="editable-input"
-            />
-          </div>
+          )}
+          {activeTab === 'Comments' && <CommentsTab taskId={editableTask._id} />}
+          {activeTab === 'History' && <HistoryTab taskId={editableTask._id} />}
         </div>
-
-        <div className="panel-section">
-          <h4>Description</h4>
-          <RichTextEditor value={editableTask.description || ""} onChange={handleDescriptionUpdate} />
-        </div>
-
-        <footer className="panel-footer">
-          <span>Created By: {editableTask.createdById?.fullname || "N/A"}</span>
-        </footer>
       </main>
     </div>
   );
