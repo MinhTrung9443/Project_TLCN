@@ -1,86 +1,54 @@
 // src/components/Setting/DraggableList.jsx
-import React from 'react';
-import { useDrag, useDrop } from 'react-dnd';
-import * as FaIcons from 'react-icons/fa';
-import '../../styles/Setting/DraggableList.css'; // Sẽ tạo file CSS này ở bước sau
+import React from "react";
+import DraggableItem from "./DraggableItem";
+import "../../styles/Setting/DraggableList.css";
 
-const ItemType = 'LIST_ITEM'; // Định nghĩa một loại item để kéo thả
+const DraggableList = ({ items, onRefresh, currentTab, moveItem }) => {
+  const hasPriority = currentTab === "prioritys";
+  const hasDescription = currentTab !== "prioritys";
 
-// Helper render icon
-const IconComponent = ({ name }) => {
-    const Icon = FaIcons[name];
-    return Icon ? <Icon /> : <FaIcons.FaQuestionCircle />;
-};
-
-// Component cho mỗi dòng trong danh sách
-const DraggableItem = ({ item, index, moveItem }) => {
-    const ref = React.useRef(null);
-
-    const [, drop] = useDrop({
-        accept: ItemType,
-        hover(draggedItem) {
-            if (draggedItem.index !== index) {
-                moveItem(draggedItem.index, index);
-                draggedItem.index = index;
-            }
-        },
-    });
-
-    const [{ isDragging }, drag] = useDrag({
-        type: ItemType,
-        item: { id: item._id, index },
-        collect: (monitor) => ({
-            isDragging: monitor.isDragging(),
-        }),
-    });
-
-    drag(drop(ref));
-
-    return (
-        <div ref={ref} className="settings-row" style={{ opacity: isDragging ? 0.5 : 1 }}>
-            <div className="settings-col col-icon">
-                <IconComponent name={item.icon} />
-            </div>
-            <div className="settings-col col-name">{item.name}</div>
-            <div className="settings-col col-description">{item.description}</div>
-            <div className="settings-col col-project">
-                {item.projectId ? item.projectId.name : 'Default'}
-            </div>
-            <div className="settings-col col-actions">
-                <button className="btn-action-menu"><FaIcons.FaEllipsisH /></button>
-            </div>
-        </div>
-    );
-};
-
-
-const DraggableList = ({ items, onRefresh, currentTab }) => {
-    // Tạm thời chưa xử lý logic kéo thả, chỉ dựng giao diện
-    const moveItem = (fromIndex, toIndex) => {
-        console.log(`Move item from ${fromIndex} to ${toIndex}`);
-    };
-
-    return (
-        <div className="settings-container">
-            <div className="settings-header">
-                <div className="settings-col col-icon">Icon</div>
-                <div className="settings-col col-name">Name</div>
-                <div className="settings-col col-description">Description</div>
-                <div className="settings-col col-project">Project</div>
-                <div className="settings-col col-actions"></div>
-            </div>
-            <div className="settings-body">
-                {items.map((item, index) => (
-                    <DraggableItem
-                        key={item._id}
-                        item={item}
-                        index={index}
-                        moveItem={moveItem}
-                    />
-                ))}
-            </div>
-        </div>
-    );
+  return (
+    <div className="settings-table-container">
+      <table className="settings-table">
+        <thead>
+          <tr className="settings-table-header">
+            <th className="col-drag"></th>
+            <th className="col-icon">Icon</th>
+            <th className="col-name">Name</th>
+            {hasPriority && <th className="col-level">Level</th>}
+            {hasDescription && <th className="col-description">Description</th>}
+            <th className="col-status">Status</th>
+            <th className="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.length === 0 ? (
+            <tr>
+              <td colSpan="7" className="empty-state">
+                <div className="empty-state-content">
+                  <span className="material-symbols-outlined">inbox</span>
+                  <p>No items found</p>
+                  <span className="empty-state-subtitle">Add a new item to get started</span>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            items.map((item, index) => (
+              <DraggableItem
+                key={item._id || index}
+                item={item}
+                index={index}
+                moveItem={moveItem}
+                onRefresh={onRefresh}
+                currentTab={currentTab}
+                asTableRow={true}
+              />
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
 };
 
 export default DraggableList;

@@ -10,6 +10,16 @@ class WorkflowController {
     }
   }
 
+  async getWorkflowByProject(req, res) {
+    try {
+      const { projectKey } = req.params;
+      const workflow = await workflowService.getWorkflowByProject(projectKey);
+      res.status(200).json(workflow);
+    } catch (error) {
+      res.status(error.statusCode || 500).json({ message: error.message });
+    }
+  }
+
   async getWorkflowById(req, res) {
     try {
       const { workflowId } = req.params;
@@ -27,7 +37,6 @@ class WorkflowController {
       res.status(500).json({ message: error.message });
     }
   }
-  
 }
 
 module.exports = new WorkflowController();

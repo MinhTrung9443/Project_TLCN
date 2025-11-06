@@ -1,13 +1,10 @@
 const priorityService = require("../services/PriorityService.js");
 
 class PriorityController {
-  
   async getAllPriorities(req, res) {
     try {
       const { projectKey } = req.query;
-      const priorities = await priorityService.getPrioritiesByProjectKey(
-        projectKey
-      );
+      const priorities = await priorityService.getPrioritiesByProjectKey(projectKey);
       return res.status(200).json(priorities);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -16,7 +13,8 @@ class PriorityController {
 
   async createPriority(req, res) {
     try {
-      const priority = await priorityService.createPriority(req.body);
+      const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const priority = await priorityService.createPriority(req.body, userId);
       res.status(200).json(priority);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -25,10 +23,8 @@ class PriorityController {
 
   async updatePriority(req, res) {
     try {
-      const priority = await priorityService.updatePriority(
-        req.params.id,
-        req.body
-      );
+      const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const priority = await priorityService.updatePriority(req.params.id, req.body, userId);
       res.status(200).json(priority);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -57,11 +53,11 @@ class PriorityController {
 
   async updatePriorityLevels(req, res) {
     try {
-      const { projectKey } = req.params; 
+      const { projectKey } = req.params;
       const { items } = req.body;
-      
-      await priorityService.updatePriorityLevels(projectKey, items); 
-      
+
+      await priorityService.updatePriorityLevels(projectKey, items);
+
       console.log(`Priority levels updated for project ${projectKey}:`, items);
       res.status(200).json({ message: "Priority levels updated successfully" });
     } catch (error) {
@@ -77,7 +73,6 @@ class PriorityController {
       res.status(500).json({ message: error.message });
     }
   }
-
 }
 
 module.exports = new PriorityController();

@@ -1,0 +1,26 @@
+/* GlobalSettingsPage.css */
+
+.global-settings-container {
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+.settings-content-area {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  min-height: 500px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .global-settings-container {
+    padding: 16px;
+  }
+
+  .settings-content-area {
+    padding: 20px;
+  }
+}

@@ -13,8 +13,8 @@ const SprintController = {
   handleCreateSprint: async (req, res) => {
     try {
       const { projectKey } = req.params;
-
-      const newSprint = await sprintService.createSprint(projectKey);
+      const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const newSprint = await sprintService.createSprint(projectKey, userId);
       res.status(201).json(newSprint);
     } catch (error) {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
@@ -24,7 +24,8 @@ const SprintController = {
     try {
       const { sprintId } = req.params;
       const sprintData = req.body;
-      const updatedSprint = await sprintService.updateSprint(sprintId, sprintData);
+      const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const updatedSprint = await sprintService.updateSprint(sprintId, sprintData, userId);
       res.status(200).json(updatedSprint);
     } catch (error) {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });

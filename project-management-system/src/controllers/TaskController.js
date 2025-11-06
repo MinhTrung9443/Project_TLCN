@@ -21,15 +21,17 @@ const handleCreateTask = async (req, res) => {
     const taskData = { ...req.body, reporterId: userId, createdById: userId };
 
     if (!taskData.statusId) {
-      const defaultWorkflow = await Workflow.findOne({ isDefault: true });
-      if (defaultWorkflow) {
-        const defaultStatus = defaultWorkflow.statuses.find((s) => s.category === "To Do");
-        if (defaultStatus) {
-          taskData.statusId = defaultStatus._id;
-        }
+      const defaultWorkflow = await Workflow.findOne({ projectId: taskData.projectId });
+      if (!defaultWorkflow) {
+        return res.status(400).json({ message: "No default workflow found" });
       }
+      const defaultStatus = defaultWorkflow.statuses.find((s) => s.category === "To Do");
+      if (!defaultStatus) {
+        return res.status(400).json({ message: "No default 'To Do' status found in workflow" });
+      }
+      taskData.statusId = defaultStatus._id;
     }
-    const newTask = await taskService.createTask(taskData, userId); // Truyền userId cho history
+    const newTask = await taskService.createTask(taskData, userId);
     res.status(201).json(newTask);
   } catch (error) {
     console.error("Error in handleCreateTask:", error);

@@ -1,6 +1,7 @@
 const Task = require("../models/Task");
 const Project = require("../models/Project");
 const mongoose = require("mongoose");
+const { logAction } = require("./AuditLogHelper");
 const { logHistory } = require("./HistoryService"); 
 const TaskHistory = require('../models/TaskHistory');
 // Hàm lấy task theo projectId
@@ -66,6 +67,15 @@ const createTask = async (taskData, userId) => {
     .populate("sprintId", "name")
     .populate("statusId", "name color")
     .populate("platformId", "name icon");
+
+  await logAction({
+    userId,
+    action: "create_task",
+    tableName: "Task",
+    recordId: savedTask._id,
+    newData: savedTask,
+  });
+
   return populatedTask;
 };
 
@@ -98,10 +108,10 @@ const searchTasks = async (queryParams) => {
     query.dueDate = {};
     if (dueDate_gte) query.dueDate.$gte = new Date(dueDate_gte);
     if (dueDate_lte) {
-        // Thêm 1 ngày để bao gồm cả ngày kết thúc
-        const endDate = new Date(dueDate_lte);
-        endDate.setDate(endDate.getDate() + 1);
-        query.dueDate.$lt = endDate;
+      // Thêm 1 ngày để bao gồm cả ngày kết thúc
+      const endDate = new Date(dueDate_lte);
+      endDate.setDate(endDate.getDate() + 1);
+      query.dueDate.$lt = endDate;
     }
   }
 
@@ -145,6 +155,7 @@ const updateTask = async (taskId, updateData, userId) => {
   }
 
   // 2. Cập nhật task (Chức năng cốt lõi)
+  const oldTask = await Task.findById(taskId).lean();
   const updatedTask = await Task.findByIdAndUpdate(taskId, updateData, { new: true });
 
   if (!updatedTask) {
@@ -192,6 +203,15 @@ const updateTask = async (taskId, updateData, userId) => {
     { path: "platformId", select: "name icon" },
   ]);
 
+  await logAction({
+    userId,
+    action: "update_task",
+    tableName: "Task",
+    recordId: updatedTask._id,
+    oldData: oldTask,
+    newData: updatedTask,
+  });
+
   return updatedTask;
 };
 
@@ -203,7 +223,7 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
     return updateTask(taskId, { statusId }, userId);
 }
 
-const deleteTask = async (taskId) => {
+const deleteTask = async (taskId, userId) => {
   if (!mongoose.Types.ObjectId.isValid(taskId)) {
     const error = new Error("Invalid Task ID");
     error.statusCode = 400;
@@ -217,6 +237,17 @@ const deleteTask = async (taskId) => {
     error.statusCode = 404;
     throw error;
   }
+
+  await logAction({
+    userId,
+    action: "delete_task",
+    tableName: "Task",
+    recordId: deletedTask._id,
+    oldData: deletedTask,
+  });
+
+  // TODO: Xử lý các logic phụ thuộc nếu cần
+  // Ví dụ: xóa các task con, xóa comment, xóa attachment...
 
   return { message: "Task deleted successfully" };
 };
@@ -237,4 +268,3 @@ module.exports = {
   getTaskHistory,
 
 };
-

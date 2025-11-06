@@ -1,6 +1,7 @@
 const Group = require("../models/Group");
 const User = require("../models/User");
 const createError = require("http-errors");
+const { logAction } = require("./AuditLogHelper");
 
 class GroupService {
   async getAllGroupsWithCounts() {
@@ -46,14 +47,21 @@ class GroupService {
     return groups;
   }
 
-  async createGroup(groupData) {
+  async createGroup(groupData, userId) {
     const { name, description, status } = groupData;
     const newGroup = new Group({ name, description, status });
     await newGroup.save();
+    await logAction({
+      userId,
+      action: "create_group",
+      tableName: "Group",
+      recordId: newGroup._id,
+      newData: newGroup,
+    });
     return newGroup;
   }
 
-  async updateGroup(groupId, updateData) {
+  async updateGroup(groupId, updateData, userId) {
     const allowedUpdates = ["name", "description", "status"];
     const updates = {};
     Object.keys(updateData).forEach((key) => {
@@ -62,15 +70,20 @@ class GroupService {
       }
     });
 
-    const updatedGroup = await Group.findByIdAndUpdate(groupId, updates, {
-      new: true,
+    const group = await Group.findById(groupId);
+    if (!group) throw new Error("Group not found");
+    const oldGroup = group.toObject();
+    Object.assign(group, updates);
+    await group.save();
+    await logAction({
+      userId,
+      action: "update_group",
+      tableName: "Group",
+      recordId: group._id,
+      oldData: oldGroup,
+      newData: group,
     });
-
-    if (!updatedGroup) {
-      throw createError(404, "Group not found");
-    }
-
-    return updatedGroup;
+    return group;
   }
 
   async deleteGroup(groupId) {
@@ -88,11 +101,7 @@ class GroupService {
     if (userToAdd.status !== "active") {
       throw createError(400, "Only active users can be added to a group");
     }
-    const group = await Group.findByIdAndUpdate(
-      groupId,
-      { $addToSet: { members: userId } },
-      { new: true }
-    );
+    const group = await Group.findByIdAndUpdate(groupId, { $addToSet: { members: userId } }, { new: true });
 
     await User.findByIdAndUpdate(userId, { $addToSet: { group: groupId } });
 
@@ -117,9 +126,7 @@ class GroupService {
     return group.members;
   }
   async getGroupById(groupId) {
-    const group = await Group.findById(groupId).select(
-      "name description status"
-    );
+    const group = await Group.findById(groupId).select("name description status");
     if (!group) {
       throw createError(404, "Group not found");
     }

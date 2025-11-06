@@ -17,6 +17,11 @@ const workflowSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    projectId: {
+      type: Schema.Types.ObjectId,
+      ref: "Project",
+      default: null,
+    },
     statuses: [
       {
         _id: {

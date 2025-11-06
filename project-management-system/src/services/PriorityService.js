@@ -1,5 +1,6 @@
 const Priority = require("../models/Priority");
 const Project = require("../models/Project");
+const { logAction } = require("./AuditLogHelper");
 class PriorityService {
   async getPrioritiesByProjectKey(projectKey) {
     try {
@@ -23,7 +24,7 @@ class PriorityService {
     }
   }
 
-  async createPriority(data) {
+  async createPriority(data, userId) {
     try {
       const project = await Project.findOne({ key: data.projectKey });
       const existingPriority = await Priority.findOne({
@@ -46,19 +47,28 @@ class PriorityService {
         level: nextLevel,
         projectId: project ? project._id : null,
       });
-      return await priority.save();
+      await priority.save();
+      await logAction({
+        userId,
+        action: "create_priority",
+        tableName: "Priority",
+        recordId: priority._id,
+        newData: priority,
+      });
+      return priority;
     } catch (error) {
       throw error;
     }
   }
 
-  async updatePriority(id, data) {
+  async updatePriority(id, data, userId) {
     try {
       // 1. Lấy document gốc để biết projectId của nó là gì
       const priorityToUpdate = await Priority.findById(id);
       if (!priorityToUpdate) {
         throw new Error("Priority not found.");
       }
+      const oldPriority = priorityToUpdate.toObject();
 
       // 2. Kiểm tra xem có document NÀO KHÁC trong CÙNG SCOPE (cùng projectId)
       // đã có tên mới này chưa.
@@ -73,7 +83,17 @@ class PriorityService {
       }
 
       // 3. Nếu không trùng, tiến hành cập nhật
-      return await Priority.findByIdAndUpdate(id, data, { new: true });
+      Object.assign(priorityToUpdate, data);
+      await priorityToUpdate.save();
+      await logAction({
+        userId,
+        action: "update_priority",
+        tableName: "Priority",
+        recordId: priorityToUpdate._id,
+        oldData: oldPriority,
+        newData: priorityToUpdate,
+      });
+      return priorityToUpdate;
     } catch (error) {
       // Ném lỗi ra để Controller và Frontend có thể bắt được
       throw error;

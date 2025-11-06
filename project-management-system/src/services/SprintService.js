@@ -2,6 +2,7 @@ const Sprint = require("../models/Sprint");
 const Task = require("../models/Task.js");
 const Project = require("../models/Project.js");
 const Workflow = require("../models/Workflow.js");
+const { logAction } = require("./AuditLogHelper");
 const sprintService = {
   getSprintsByProjectKey: async (projectKey) => {
     try {
@@ -18,7 +19,7 @@ const sprintService = {
       // Hàm xử lý status cho task
       const enrichTaskStatus = async (t) => {
         if (t.statusId) {
-          const wf = await Workflow.findOne({ "statuses._id": t.statusId });
+          const wf = await Workflow.findOne({ projectId: project._id });
           if (wf) {
             const status = wf.statuses.find((s) => s._id.toString() === t.statusId.toString());
             t.statusId = status || null;
@@ -49,7 +50,7 @@ const sprintService = {
     }
   },
 
-  createSprint: async (projectKey) => {
+  createSprint: async (projectKey, userId) => {
     try {
       const project = await Project.findOne({ key: projectKey, status: "active" });
       if (!project) throw { statusCode: 404, message: "Project not found or inactive" };
@@ -68,13 +69,21 @@ const sprintService = {
         projectId: project._id,
       };
       const newSprint = new Sprint(sprintData);
-      return await newSprint.save();
+      const savedSprint = await newSprint.save();
+      await logAction({
+        userId,
+        action: "create_sprint",
+        tableName: "Sprint",
+        recordId: savedSprint._id,
+        newData: savedSprint,
+      });
+      return savedSprint;
     } catch (error) {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" + error.message };
     }
   },
-  updateSprint: async (sprintId, sprintData) => {
+  updateSprint: async (sprintId, sprintData, userId) => {
     try {
       const sprint = await Sprint.findById(sprintId);
       if (!sprint) throw { statusCode: 404, message: "Sprint not found" };
@@ -84,25 +93,24 @@ const sprintService = {
           throw { statusCode: 400, message: "Invalid sprint status" };
         }
       }
-      // if (sprintData.status === "Started") {
-      //   //update task cua sprint tu To Do sang In Progress
-      //   await Task.updateMany(
-      //     { sprintId: sprintId, statusId: { $ne: null } },
-      //     {
-      //       $set: {
-      //         statusId: (await Workflow.findOne({ isDefault: true })).statuses.find((s) => s.name === "In Progress")._id,
-      //       },
-      //     }
-      //   );
-      // }
     } catch (error) {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" };
     }
 
-    return await Sprint.findByIdAndUpdate(sprintId, sprintData, { new: true });
+    const oldSprint = await Sprint.findById(sprintId).lean();
+    const updatedSprint = await Sprint.findByIdAndUpdate(sprintId, sprintData, { new: true });
+    await logAction({
+      userId,
+      action: "update_sprint",
+      tableName: "Sprint",
+      recordId: updatedSprint._id,
+      oldData: oldSprint,
+      newData: updatedSprint,
+    });
+    return updatedSprint;
   },
-  deleteSprint: async (sprintId) => {
+  deleteSprint: async (sprintId, userId) => {
     try {
       const sprint = await Sprint.findById(sprintId);
       if (!sprint) throw { statusCode: 404, message: "Sprint not found" };
@@ -112,7 +120,15 @@ const sprintService = {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" };
     }
-    return await Sprint.findByIdAndDelete(sprintId);
+    const deletedSprint = await Sprint.findByIdAndDelete(sprintId);
+    await logAction({
+      userId,
+      action: "delete_sprint",
+      tableName: "Sprint",
+      recordId: deletedSprint._id,
+      oldData: deletedSprint,
+    });
+    return { message: "Sprint deleted successfully" };
   },
 
   // Get started sprints by project key
@@ -153,7 +169,7 @@ const sprintService = {
       const enrichedTasks = await Promise.all(
         tasks.map(async (task) => {
           if (task.statusId) {
-            const workflow = await Workflow.findOne({ "statuses._id": task.statusId });
+            const workflow = await Workflow.findOne({ projectId: sprint.projectId });
             if (workflow) {
               const status = workflow.statuses.find((s) => s._id.toString() === task.statusId.toString());
               task.statusId = status || null;
