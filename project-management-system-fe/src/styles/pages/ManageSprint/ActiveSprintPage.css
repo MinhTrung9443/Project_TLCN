@@ -174,14 +174,52 @@
 .board-column-body {
   flex: 1;
   min-height: 400px;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
   border-radius: 8px;
   padding: 8px;
+  position: relative;
 }
 
 .board-column-body.drop-over {
   background: #e0e7ff;
   border: 2px dashed #6366f1;
+  box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+.board-column-body.drop-not-allowed {
+  background: #fee2e2;
+  border: 2px dashed #ef4444;
+  box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.1);
+  cursor: not-allowed;
+}
+
+.drop-blocked-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #dc2626;
+  font-weight: 600;
+  z-index: 100;
+  background: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  pointer-events: none;
+}
+
+.drop-blocked-indicator .material-symbols-outlined {
+  font-size: 48px;
+  color: #ef4444;
+}
+
+.drop-blocked-indicator span:last-child {
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .board-column-empty {

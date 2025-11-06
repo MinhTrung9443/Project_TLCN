@@ -18,7 +18,7 @@ const handleCreateTask = async (req, res) => {
     const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
     const taskData = { ...req.body, reporterId, createdById };
     if (!taskData.statusId) {
-      const defaultWorkflow = await Workflow.findOne({ isDefault: true });
+      const defaultWorkflow = await Workflow.findOne({ projectId: taskData.projectId });
       if (!defaultWorkflow) {
         return res.status(400).json({ message: "No default workflow found" });
       }

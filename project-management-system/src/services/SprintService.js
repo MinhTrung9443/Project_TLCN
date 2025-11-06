@@ -19,7 +19,7 @@ const sprintService = {
       // Hàm xử lý status cho task
       const enrichTaskStatus = async (t) => {
         if (t.statusId) {
-          const wf = await Workflow.findOne({ "statuses._id": t.statusId });
+          const wf = await Workflow.findOne({ projectId: project._id });
           if (wf) {
             const status = wf.statuses.find((s) => s._id.toString() === t.statusId.toString());
             t.statusId = status || null;
@@ -93,17 +93,6 @@ const sprintService = {
           throw { statusCode: 400, message: "Invalid sprint status" };
         }
       }
-      // if (sprintData.status === "Started") {
-      //   //update task cua sprint tu To Do sang In Progress
-      //   await Task.updateMany(
-      //     { sprintId: sprintId, statusId: { $ne: null } },
-      //     {
-      //       $set: {
-      //         statusId: (await Workflow.findOne({ isDefault: true })).statuses.find((s) => s.name === "In Progress")._id,
-      //       },
-      //     }
-      //   );
-      // }
     } catch (error) {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" };
@@ -180,7 +169,7 @@ const sprintService = {
       const enrichedTasks = await Promise.all(
         tasks.map(async (task) => {
           if (task.statusId) {
-            const workflow = await Workflow.findOne({ "statuses._id": task.statusId });
+            const workflow = await Workflow.findOne({ projectId: sprint.projectId });
             if (workflow) {
               const status = workflow.statuses.find((s) => s._id.toString() === task.statusId.toString());
               task.statusId = status || null;

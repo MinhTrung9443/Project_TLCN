@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { useSearchParams, useParams } from "react-router-dom";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { useSprintData } from "../../hooks/useSprintData";
 import BoardColumn from "../../components/sprint/BoardColumn";
 import SprintSelector from "../../components/sprint/SprintSelector";
+import { isTransitionAllowed, getTransitionErrorMessage } from "../../utils/workflowTransitions";
 import "../../styles/pages/ManageSprint/ActiveSprintPage.css";
 
 const ActiveSprintPage = () => {
@@ -18,10 +19,18 @@ const ActiveSprintPage = () => {
   const effectiveProjectKey = projectKey || selectedProjectKey;
 
   // Use custom hook for sprint data management
-  const { currentSprint, setCurrentSprint, availableSprints, tasks, setTasks, workflowStatuses, loading, fetchSprintTasks } = useSprintData(
+  const { currentSprint, setCurrentSprint, availableSprints, tasks, setTasks, workflowStatuses, workflow, loading, fetchSprintTasks } = useSprintData(
     effectiveProjectKey,
     searchParams
   );
+
+  // Debug: Log workflow when it changes
+  useEffect(() => {
+    console.log("=== Workflow Loaded ===");
+    console.log("Project Key:", effectiveProjectKey);
+    console.log("Workflow:", workflow);
+    console.log("Workflow Statuses:", workflowStatuses);
+  }, [workflow, workflowStatuses, effectiveProjectKey]);
 
   // Handle sprint change
   const handleSprintChange = (sprint) => {
@@ -40,6 +49,17 @@ const ActiveSprintPage = () => {
 
     if (task.statusId?._id === targetStatus._id) {
       return; // No change needed
+    }
+
+    // Validate transition using workflow rules
+    const fromStatusId = task.statusId?._id;
+    const toStatusId = targetStatus._id;
+
+    if (!isTransitionAllowed(workflow, fromStatusId, toStatusId)) {
+      const fromStatusName = task.statusId?.name || "Unknown";
+      const toStatusName = targetStatus.name || "Unknown";
+      toast.error(getTransitionErrorMessage(fromStatusName, toStatusName));
+      return;
     }
 
     try {
@@ -90,7 +110,7 @@ const ActiveSprintPage = () => {
 
         <div className="active-sprint-board">
           {workflowStatuses.map((status) => (
-            <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} />
+            <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
           ))}
         </div>
       </div>

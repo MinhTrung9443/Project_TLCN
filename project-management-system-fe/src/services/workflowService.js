@@ -10,6 +10,15 @@ const workflowService = {
     }
   },
 
+  getWorkflowByProject: async (projectKey) => {
+    try {
+      const response = await apiClient.get(`/workflows/project/${projectKey}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   getWorkflowById: async (workflowId) => {
     try {
       const response = await apiClient.get(`/workflows/${workflowId}`);
@@ -19,13 +28,13 @@ const workflowService = {
     }
   },
   getStatusList: async () => {
-  try {
-    const response = await apiClient.get("/workflows/list"); 
-    return response;
-  } catch (error) {
-    console.error("Error fetching statuses:", error);
-    throw error;
-  }
+    try {
+      const response = await apiClient.get("/workflows/list");
+      return response;
+    } catch (error) {
+      console.error("Error fetching statuses:", error);
+      throw error;
+    }
   },
 };
 

@@ -14,6 +14,7 @@ export const useSprintData = (effectiveProjectKey, searchParams) => {
   const [availableSprints, setAvailableSprints] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [workflowStatuses, setWorkflowStatuses] = useState([]);
+  const [workflow, setWorkflow] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch started sprints
@@ -50,13 +51,21 @@ export const useSprintData = (effectiveProjectKey, searchParams) => {
   // Fetch workflow statuses
   const fetchWorkflow = useCallback(async () => {
     try {
-      const workflow = await workflowService.getDefaultWorkflow();
-      setWorkflowStatuses(workflow.statuses || []);
+      let workflowData;
+      if (effectiveProjectKey) {
+        // Get workflow specific to this project
+        workflowData = await workflowService.getWorkflowByProject(effectiveProjectKey);
+      } else {
+        // Fallback to default workflow
+        workflowData = await workflowService.getDefaultWorkflow();
+      }
+      setWorkflow(workflowData);
+      setWorkflowStatuses(workflowData.statuses || []);
     } catch (error) {
       console.error("Error fetching workflow:", error);
       toast.error("Failed to load workflow");
     }
-  }, []);
+  }, [effectiveProjectKey]);
 
   // Fetch tasks for current sprint
   const fetchSprintTasks = useCallback(async (sprint) => {
@@ -98,6 +107,7 @@ export const useSprintData = (effectiveProjectKey, searchParams) => {
     tasks,
     setTasks,
     workflowStatuses,
+    workflow,
     loading,
     fetchSprintTasks,
   };
