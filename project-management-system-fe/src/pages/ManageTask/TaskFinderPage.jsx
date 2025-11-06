@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { toast } from 'react-toastify';
-import _ from 'lodash';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { toast } from "react-toastify";
+import _ from "lodash";
 
 import { getProjects } from '../../services/projectService';
 import { searchTasks, deleteTask } from '../../services/taskService';
 import userService from '../../services/userService'; // Import default object
 import statusService from '../../services/workflowService'; 
 
-import CreateTaskModal from '../../components/task/CreateTaskModal';
-import TaskRow from './TaskRow';
-import TaskDetailPanel from '../../components/task/TaskDetailPanel';
-import '../../styles/pages/ManageTask/TaskFinderPage.css';
+import CreateTaskModal from "../../components/task/CreateTaskModal";
+import TaskRow from "./TaskRow";
+import TaskDetailPanel from "../../components/task/TaskDetailPanel";
+import "../../styles/pages/ManageTask/TaskFinderPage.css";
 
 const TaskFinderPage = () => {
     const [tasks, setTasks] = useState([]);
@@ -60,39 +60,42 @@ const TaskFinderPage = () => {
         fetchFilterData();
     }, []);
 
-    const selectOptions = useMemo(() => ({
-        projects: filterData.projects.map(p => ({ value: p._id, label: p.name })),
-        users: filterData.users.map(u => ({ value: u._id, label: u.fullname })),
-        statuses: filterData.statuses.map(s => ({ value: s._id, label: s.name })),
-        priorities: filterData.priorities.map(p => ({ value: p._id, label: p.name })),
-        taskTypes: filterData.taskTypes.map(t => ({ value: t._id, label: t.name })),
-        sprints: filterData.sprints.map(sp => ({ value: sp._id, label: sp.name })),
-    }), [filterData]);
+  const selectOptions = useMemo(
+    () => ({
+      projects: filterData.projects.map((p) => ({ value: p._id, label: p.name })),
+      users: filterData.users.map((u) => ({ value: u._id, label: u.fullname })),
+      statuses: filterData.statuses.map((s) => ({ value: s._id, label: s.name })),
+      priorities: filterData.priorities.map((p) => ({ value: p._id, label: p.name })),
+      taskTypes: filterData.taskTypes.map((t) => ({ value: t._id, label: t.name })),
+      sprints: filterData.sprints.map((sp) => ({ value: sp._id, label: sp.name })),
+    }),
+    [filterData]
+  );
 
-    const fetchTasks = async (filters, currentKeyword) => {
-        setLoading(true);
-        try {
-            const params = { ...filters, keyword: currentKeyword };
-            const response = await searchTasks(_.pickBy(params, _.identity));
-            setTasks(response.data);
-        } catch (error) {
-            toast.error('Could not fetch tasks.');
-            setTasks([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchTasks = async (filters, currentKeyword) => {
+    setLoading(true);
+    try {
+      const params = { ...filters, keyword: currentKeyword };
+      const response = await searchTasks(_.pickBy(params, _.identity));
+      setTasks(response.data);
+    } catch (error) {
+      toast.error("Could not fetch tasks.");
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), []);
+  const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), []);
 
-    useEffect(() => {
-        // Chỉ fetch khi keyword thay đổi
-        debouncedFetch(activeFilters, keyword);
-    }, [keyword, debouncedFetch, activeFilters]); // Thêm activeFilters vào dependency array
+  useEffect(() => {
+    // Chỉ fetch khi keyword thay đổi
+    debouncedFetch(activeFilters, keyword);
+  }, [keyword, debouncedFetch, activeFilters]); // Thêm activeFilters vào dependency array
 
-    const handleTaskCreated = (newTask) => {
-        fetchTasks(activeFilters, keyword);
-    };
+  const handleTaskCreated = (newTask) => {
+    fetchTasks(activeFilters, keyword);
+  };
 
     const handleTaskUpdate = (updatedTask) => {
         // Cập nhật danh sách task chính
@@ -130,27 +133,29 @@ const TaskFinderPage = () => {
         console.log("Cloning task with ID:", taskId);
     };
 
-    return (
-        <>
-            <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
-            <div className={`task-finder-wrapper ${selectedTask ? 'panel-open' : ''}`}>
-                <div className="task-finder-main-content">
-                    <header className="task-finder-header">
-                        <h1>Task Finder</h1>
-                        <button className="create-task-btn" onClick={() => setIsModalOpen(true)}>CREATE TASK</button>
-                    </header>
+  return (
+    <>
+      <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
+      <div className={`task-finder-wrapper ${selectedTask ? "panel-open" : ""}`}>
+        <div className="task-finder-main-content">
+          <header className="task-finder-header">
+            <h1>Task Finder</h1>
+            <button className="create-task-btn" onClick={() => setIsModalOpen(true)}>
+              CREATE TASK
+            </button>
+          </header>
 
-                    <div className="filters-container">
-                        <div className="right-side-filters">
-                            <input
-                                type="text"
-                                placeholder="Search by name, key..."
-                                value={keyword}
-                                onChange={(e) => setKeyword(e.target.value)}
-                                className="keyword-search-input"
-                            />
-                        </div>
-                    </div>
+          <div className="filters-container">
+            <div className="right-side-filters">
+              <input
+                type="text"
+                placeholder="Search by name, key..."
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                className="keyword-search-input"
+              />
+            </div>
+          </div>
 
                     <div className="task-list-container">
                         {!loading && (
