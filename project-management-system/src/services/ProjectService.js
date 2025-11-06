@@ -2,17 +2,20 @@ const Project = require("../models/Project");
 const TaskType = require("../models/TaskType");
 const Priority = require("../models/Priority");
 const Platform = require("../models/Platform");
+const Workflow = require("../models/Workflow");
 const { logAction } = require("./AuditLogHelper");
 
 const copyDefaultSettingsForProject = async (projectId) => {
   const findDefaultTaskTypes = TaskType.find({ projectId: null });
   const findDefaultPriorities = Priority.find({ projectId: null });
   const findDefaultPlatforms = Platform.find({ projectId: null });
+  const findDefaultWorkflows = Workflow.find({ isDefault: true });
 
-  const [defaultTaskTypes, defaultPriorities, defaultPlatforms] = await Promise.all([
+  const [defaultTaskTypes, defaultPriorities, defaultPlatforms, defaultWorkflows] = await Promise.all([
     findDefaultTaskTypes,
     findDefaultPriorities,
     findDefaultPlatforms,
+    findDefaultWorkflows,
   ]);
 
   const newTaskTypes = defaultTaskTypes.map((item) => {
@@ -36,11 +39,22 @@ const copyDefaultSettingsForProject = async (projectId) => {
     return newItem;
   });
 
+  const newWorkflows = defaultWorkflows.map((item) => {
+    const newItem = item.toObject();
+    delete newItem._id;
+    newItem.projectId = projectId;
+    newItem.isDefault = false;
+    newItem.name = "Workflow of " + projectId;
+    newItem.description = "Workflow of " + projectId;
+    return newItem;
+  });
+
   const insertTaskTypes = newTaskTypes.length > 0 ? TaskType.insertMany(newTaskTypes) : Promise.resolve();
   const insertPriorities = newPriorities.length > 0 ? Priority.insertMany(newPriorities) : Promise.resolve();
   const insertPlatforms = newPlatforms.length > 0 ? Platform.insertMany(newPlatforms) : Promise.resolve();
+  const insertWorkflows = newWorkflows.length > 0 ? Workflow.insertMany(newWorkflows) : Promise.resolve();
 
-  await Promise.all([insertTaskTypes, insertPriorities, insertPlatforms]);
+  await Promise.all([insertTaskTypes, insertPriorities, insertPlatforms, insertWorkflows]);
 };
 
 const copySettingsFromSourceProject = async (sourceProjectId, newProjectId) => {

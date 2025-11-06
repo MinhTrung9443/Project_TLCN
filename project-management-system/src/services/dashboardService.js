@@ -12,8 +12,8 @@ const dashboardService = {
     };
 
     // Đếm số task theo trạng thái
-    const [doing, done, overdue] = await Promise.all([
-      Task.countDocuments({ assigneeId: userId, statusId: STATUS.IN_PROGRESS }),
+    const [total, done, overdue] = await Promise.all([
+      Task.countDocuments({ assigneeId: userId }),
       Task.countDocuments({ assigneeId: userId, statusId: STATUS.DONE }),
       Task.countDocuments({
         assigneeId: userId,
@@ -84,7 +84,7 @@ const dashboardService = {
     });
 
     return {
-      doing,
+      total,
       done,
       overdue,
       upcomingTasks,

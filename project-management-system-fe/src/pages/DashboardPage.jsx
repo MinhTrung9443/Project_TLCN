@@ -55,12 +55,12 @@ const DashboardPage = () => {
       <div className="stats-grid">
         <div className="stat-card primary">
           <div className="stat-icon">
-            <span className="material-symbols-outlined">pending_actions</span>
+            <span className="material-symbols-outlined">assignment</span>
           </div>
           <div className="stat-content">
-            <div className="stat-value">{overview?.doing ?? 0}</div>
-            <div className="stat-label">In Progress</div>
-            <div className="stat-description">Tasks currently being worked on</div>
+            <div className="stat-value">{overview?.total ?? 0}</div>
+            <div className="stat-label">Total Tasks</div>
+            <div className="stat-description">All tasks assigned to you</div>
           </div>
         </div>
 
