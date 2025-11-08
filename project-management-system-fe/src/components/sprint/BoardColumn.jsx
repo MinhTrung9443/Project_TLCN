@@ -51,8 +51,11 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
   return (
     <div className="board-column" ref={drop}>
       <div className={`board-column-header board-column-header-${getCategoryClass()}`}>
-        {getCategoryLabel()}
-        <span className="board-column-count">({tasks.length})</span>
+        <div className="header-content">
+          <span className="status-name">{status.name}</span>
+          <span className="status-category">({status.category})</span>
+        </div>
+        <span className="board-column-count">{tasks.length}</span>
       </div>
       <div
         className={`board-column-body ${isOver && canDrop ? "drop-over" : ""} ${isOver && !canDrop ? "drop-not-allowed" : ""}`}

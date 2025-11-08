@@ -60,7 +60,16 @@ export const useSprintData = (effectiveProjectKey, searchParams) => {
         workflowData = await workflowService.getDefaultWorkflow();
       }
       setWorkflow(workflowData);
-      setWorkflowStatuses(workflowData.statuses || []);
+
+      // Sort statuses by category order: To Do -> In Progress -> Done
+      const categoryOrder = { "To Do": 1, "In Progress": 2, Done: 3 };
+      const sortedStatuses = (workflowData.statuses || []).sort((a, b) => {
+        const orderA = categoryOrder[a.category] || 999;
+        const orderB = categoryOrder[b.category] || 999;
+        return orderA - orderB;
+      });
+
+      setWorkflowStatuses(sortedStatuses);
     } catch (error) {
       console.error("Error fetching workflow:", error);
       toast.error("Failed to load workflow");

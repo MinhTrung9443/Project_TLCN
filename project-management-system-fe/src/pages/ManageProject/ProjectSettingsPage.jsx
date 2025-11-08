@@ -5,6 +5,7 @@ import ProjectSettingMembers from "./ProjectSettingMembers";
 import ProjectSettingTaskType from "./ProjectSettingTasktype";
 import ProjectSettingPriority from "./ProjectSettingPriority";
 import ProjectSettingPlatform from "./ProjectSettingPlatform";
+import ProjectSettingsWorkflow from "./ProjectSettingsWorkflow";
 
 // Import Menu Tab
 import ProjectSettingMenu from "../../components/project/ProjectSettingMenu";
@@ -24,6 +25,8 @@ const ProjectSettingsPage = () => {
         return <ProjectSettingTaskType />;
       case "platform":
         return <ProjectSettingPlatform />;
+      case "workflow":
+        return <ProjectSettingsWorkflow />;
       case "general":
       default:
         return <ProjectSettingsGeneral />;

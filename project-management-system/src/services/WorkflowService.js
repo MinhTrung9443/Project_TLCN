@@ -289,8 +289,8 @@ class WorkflowService {
       const newTransition = {
         _id: new mongoose.Types.ObjectId(),
         name: transitionName,
-        from: mongoose.Types.ObjectId(from),
-        to: mongoose.Types.ObjectId(to),
+        from: from,
+        to: to,
       };
 
       workflow.transitions.push(newTransition);
@@ -298,7 +298,7 @@ class WorkflowService {
 
       // Return transition with populated status info
       const transitionWithInfo = {
-        ...newTransition.toObject(),
+        ...newTransition,
         fromStatus: {
           _id: fromStatus._id,
           name: fromStatus.name,
@@ -382,8 +382,8 @@ class WorkflowService {
 
       // Update transition
       if (name) workflow.transitions[transitionIndex].name = name;
-      if (from) workflow.transitions[transitionIndex].from = mongoose.Types.ObjectId(from);
-      if (to) workflow.transitions[transitionIndex].to = mongoose.Types.ObjectId(to);
+      if (from) workflow.transitions[transitionIndex].from = from; // Auto-convert to ObjectId
+      if (to) workflow.transitions[transitionIndex].to = to; // Auto-convert to ObjectId
 
       await workflow.save();
 
