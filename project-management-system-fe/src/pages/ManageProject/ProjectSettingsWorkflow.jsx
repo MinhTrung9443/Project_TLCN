@@ -272,53 +272,143 @@ const ProjectSettingsWorkflow = () => {
         <div className="workflow-diagram">
           <svg width="100%" height="400" className="diagram-svg">
             <defs>
-              <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                <polygon points="0 0, 10 3, 0 6" fill="#94a3b8" />
+              {/* Arrow marker - improved shape */}
+              <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" opacity="0.8" />
               </marker>
+
+              {/* Gradient for arrow */}
+              <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style={{ stopColor: '#94a3b8', stopOpacity: 0.5 }} />
+                <stop offset="100%" style={{ stopColor: '#64748b', stopOpacity: 0.9 }} />
+              </linearGradient>
+
+              {/* Shadow filter */}
+              <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2" />
+              </filter>
             </defs>
 
-            {/* Render statuses as nodes */}
-            {workflow.statuses?.map((status, index) => {
-              const x = 100 + (index % 4) * 200;
-              const y = 80 + Math.floor(index / 4) * 120;
+            {/* Group statuses by category and render horizontally */}
+            {(() => {
+              const categoryOrder = ["To Do", "In Progress", "Done"];
+              const groupedStatuses = categoryOrder
+                .map((category) => ({
+                  category,
+                  statuses: (workflow.statuses || []).filter((s) => s.category === category),
+                }))
+                .filter((group) => group.statuses.length > 0);
+
+              let currentX = 80;
+              const spacing = 180;
+              const categorySpacing = 100;
+              const baseY = 200;
 
               return (
-                <g key={status._id}>
-                  <rect x={x - 60} y={y - 25} width="120" height="50" rx="8" fill={getCategoryColor(status.category)} opacity="0.9" />
-                  <text x={x} y={y + 5} textAnchor="middle" fill="white" fontSize="14" fontWeight="500">
-                    {status.name}
-                  </text>
-                </g>
+                <>
+                  {/* Render category groups */}
+                  {groupedStatuses.map((group, groupIndex) => {
+                    const groupStartX = currentX;
+
+                    return (
+                      <g key={group.category}>
+                        {/* Category label */}
+                        <text
+                          x={groupStartX + (group.statuses.length * spacing) / 2}
+                          y={80}
+                          textAnchor="middle"
+                          fill="#64748b"
+                          fontSize="13"
+                          fontWeight="600"
+                          letterSpacing="1"
+                        >
+                          {group.category.toUpperCase()}
+                        </text>
+
+                        {/* Render statuses in this category */}
+                        {group.statuses.map((status, statusIndex) => {
+                          const x = currentX + statusIndex * spacing;
+                          const y = baseY;
+
+                          // Store position for transitions
+                          status._renderX = x;
+                          status._renderY = y;
+
+                          return (
+                            <g key={status._id}>
+                              {/* Status box with shadow */}
+                              <rect
+                                x={x - 70}
+                                y={y - 30}
+                                width="140"
+                                height="60"
+                                rx="12"
+                                fill={getCategoryColor(status.category)}
+                                opacity="0.95"
+                                filter="url(#shadow)"
+                              />
+
+                              {/* Status name */}
+                              <text x={x} y={y} textAnchor="middle" fill="white" fontSize="15" fontWeight="600">
+                                {status.name}
+                              </text>
+
+                              {/* Category badge */}
+                              <rect x={x - 35} y={y + 12} width="70" height="18" rx="9" fill="rgba(255, 255, 255, 0.3)" />
+                              <text x={x} y={y + 24} textAnchor="middle" fill="white" fontSize="10" fontWeight="500">
+                                {status.category}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Update currentX for next group */}
+                        {(() => {
+                          currentX += group.statuses.length * spacing + categorySpacing;
+                          return null;
+                        })()}
+                      </g>
+                    );
+                  })}
+
+                  {/* Render transitions after all statuses positioned */}
+                  {workflow.transitions?.map((transition) => {
+                    const fromStatus = workflow.statuses?.find((s) => s._id === transition.from);
+                    const toStatus = workflow.statuses?.find((s) => s._id === transition.to);
+
+                    if (!fromStatus?._renderX || !toStatus?._renderX) return null;
+
+                    const x1 = fromStatus._renderX + 70;
+                    const y1 = fromStatus._renderY;
+                    const x2 = toStatus._renderX - 70;
+                    const y2 = toStatus._renderY;
+
+                    // Calculate control points for smooth curve
+                    const dx = x2 - x1;
+                    const dy = y2 - y1;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // Curve more if going backwards or vertically
+                    const curveFactor = dx < 0 ? 0.6 : 0.3;
+                    const controlY = (y1 + y2) / 2 - distance * curveFactor;
+
+                    return (
+                      <g key={transition._id}>
+                        {/* Smooth curved arrow */}
+                        <path
+                          d={`M ${x1} ${y1} Q ${(x1 + x2) / 2} ${controlY}, ${x2} ${y2}`}
+                          stroke="url(#arrowGradient)"
+                          strokeWidth="2.5"
+                          fill="none"
+                          markerEnd="url(#arrowhead)"
+                          opacity="0.7"
+                        />
+                      </g>
+                    );
+                  })}
+                </>
               );
-            })}
-
-            {/* Render transitions as arrows */}
-            {workflow.transitions?.map((transition, index) => {
-              const fromIndex = workflow.statuses?.findIndex((s) => s._id === transition.from);
-              const toIndex = workflow.statuses?.findIndex((s) => s._id === transition.to);
-
-              if (fromIndex === -1 || toIndex === -1) return null;
-
-              const x1 = 100 + (fromIndex % 4) * 200 + 60;
-              const y1 = 80 + Math.floor(fromIndex / 4) * 120;
-              const x2 = 100 + (toIndex % 4) * 200 - 60;
-              const y2 = 80 + Math.floor(toIndex / 4) * 120;
-
-              // Curved path for better visualization
-              const midX = (x1 + x2) / 2;
-              const midY = (y1 + y2) / 2 - 30;
-
-              return (
-                <path
-                  key={transition._id}
-                  d={`M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`}
-                  stroke="#94a3b8"
-                  strokeWidth="2"
-                  fill="none"
-                  markerEnd="url(#arrowhead)"
-                />
-              );
-            })}
+            })()}
           </svg>
         </div>
       </div>
