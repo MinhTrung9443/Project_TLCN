@@ -42,17 +42,20 @@ const workflowSchema = new Schema(
     ],
     transitions: [
       {
+        _id: {
+          type: Schema.Types.ObjectId,
+          default: () => new mongoose.Types.ObjectId(),
+        },
         name: {
           type: String,
           required: true,
           trim: true,
         },
-        from: [
+        from:
           {
             type: Schema.Types.ObjectId,
             required: true,
           },
-        ],
         to: {
           type: Schema.Types.ObjectId,
           required: true,
