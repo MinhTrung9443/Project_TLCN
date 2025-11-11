@@ -102,9 +102,15 @@ class PriorityService {
 
   async deletePriority(id) {
     try {
-      return await Priority.findByIdAndDelete(id);
+      const result = await Priority.findByIdAndDelete(id);
+      if (!result) {
+        const error = new Error("Priority not found");
+        error.statusCode = 404;
+        throw error;
+      }
+      return result;
     } catch (error) {
-      throw new Error("Error deleting priority");
+      throw error;
     }
   }
   async getPriorityById(id) {

@@ -96,7 +96,13 @@ class TaskTypeService {
   // Delete a task type by ID
   async deleteTaskType(id) {
     try {
-      await TaskType.findByIdAndDelete({ _id: id });
+      const result = await TaskType.findByIdAndDelete(id);
+      if (!result) {
+        const error = new Error("Task type not found");
+        error.statusCode = 404;
+        throw error;
+      }
+      return { message: "Task type deleted successfully" };
     } catch (error) {
       console.error("Error deleting task type:", error);
       throw error;

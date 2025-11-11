@@ -121,6 +121,11 @@ const sprintService = {
       throw { statusCode: 500, message: "Server Error" };
     }
     const deletedSprint = await Sprint.findByIdAndDelete(sprintId);
+
+    if (!deletedSprint) {
+      throw { statusCode: 404, message: "Sprint not found" };
+    }
+
     await logAction({
       userId,
       action: "delete_sprint",

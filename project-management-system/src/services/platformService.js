@@ -84,9 +84,15 @@ class PlatformService {
 
   async deletePlatform(platformId) {
     try {
-      return await Platform.findByIdAndDelete(platformId);
+      const result = await Platform.findByIdAndDelete(platformId);
+      if (!result) {
+        const error = new Error("Platform not found");
+        error.statusCode = 404;
+        throw error;
+      }
+      return result;
     } catch (error) {
-      throw new Error("Error deleting platform");
+      throw error;
     }
   }
 
