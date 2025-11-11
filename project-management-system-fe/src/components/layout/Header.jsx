@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import NotificationBell from "../common/NotificationBell";
 import "../../styles/layout/Header.css";
 
 const Header = () => {
@@ -19,13 +20,13 @@ const Header = () => {
   };
 
   function getAvatarInitial(name) {
-  // Kiểm tra xem 'name' có phải là một chuỗi ký tự và có độ dài > 0 không
-  if (typeof name === 'string' && name.length > 0) {
-    return name.charAt(0).toUpperCase();
+    // Kiểm tra xem 'name' có phải là một chuỗi ký tự và có độ dài > 0 không
+    if (typeof name === "string" && name.length > 0) {
+      return name.charAt(0).toUpperCase();
+    }
+    // Nếu không, trả về một giá trị mặc định để không bị crash
+    return "?"; // hoặc return một icon mặc định
   }
-  // Nếu không, trả về một giá trị mặc định để không bị crash
-  return '?'; // hoặc return một icon mặc định
-}
 
   const getAvatarUrl = () => {
     if (user && user.avatar) {
@@ -57,10 +58,8 @@ const Header = () => {
         <nav>
           {isAuthenticated ? (
             <div className="profile-menu" ref={dropdownRef}>
-              <div
-                className="avatar"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
+              <NotificationBell />
+              <div className="avatar" onClick={() => setDropdownOpen(!dropdownOpen)}>
                 {getAvatarUrl() ? (
                   <img
                     src={getAvatarUrl()}
