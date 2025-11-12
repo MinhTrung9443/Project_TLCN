@@ -10,7 +10,7 @@ router.use(protect);
 router.get("/", notificationController.getNotifications);
 
 // Get unread count
-router.get("/unread-count", notificationController.getUnreadCount);
+router.get("/unread/count", notificationController.getUnreadCount);
 
 // Mark as read
 router.put("/:id/read", notificationController.markAsRead);

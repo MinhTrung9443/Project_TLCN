@@ -20,12 +20,14 @@ class NotificationController {
         .lean();
 
       const total = await Notification.countDocuments(query);
+      const hasMore = page * limit < total;
 
       res.status(200).json({
         notifications,
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
         total,
+        hasMore,
       });
     } catch (error) {
       console.error("Error getting notifications:", error);

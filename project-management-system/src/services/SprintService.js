@@ -3,6 +3,7 @@ const Task = require("../models/Task.js");
 const Project = require("../models/Project.js");
 const Workflow = require("../models/Workflow.js");
 const { logAction } = require("./AuditLogHelper");
+const notificationService = require("./NotificationService");
 const sprintService = {
   getSprintsByProjectKey: async (projectKey) => {
     try {
@@ -108,6 +109,49 @@ const sprintService = {
       oldData: oldSprint,
       newData: updatedSprint,
     });
+
+    // Gửi thông báo khi sprint status thay đổi
+    try {
+      if (sprintData.status && oldSprint.status !== sprintData.status) {
+        // Lấy tất cả tasks trong sprint
+        const tasks = await Task.find({ sprintId }).populate("assigneeId", "_id");
+
+        // Lấy danh sách unique assignees
+        const memberIds = [...new Set(tasks.map((t) => t.assigneeId?._id.toString()).filter(Boolean))];
+
+        if (sprintData.status === "Started") {
+          // Đếm số task của mỗi member
+          const taskCount = {};
+          tasks.forEach((t) => {
+            if (t.assigneeId) {
+              const id = t.assigneeId._id.toString();
+              taskCount[id] = (taskCount[id] || 0) + 1;
+            }
+          });
+
+          await notificationService.notifySprintStarted({
+            sprintId: updatedSprint._id,
+            sprintName: updatedSprint.name,
+            memberIds,
+            taskCount,
+          });
+        } else if (sprintData.status === "Completed") {
+          // Tính stats
+          const completed = tasks.filter((t) => t.statusId && t.statusId.category === "Done").length;
+          const stats = { completed, total: tasks.length };
+
+          await notificationService.notifySprintCompleted({
+            sprintId: updatedSprint._id,
+            sprintName: updatedSprint.name,
+            memberIds,
+            stats,
+          });
+        }
+      }
+    } catch (notificationError) {
+      console.error("Failed to send sprint notification:", notificationError);
+    }
+
     return updatedSprint;
   },
   deleteSprint: async (sprintId, userId) => {

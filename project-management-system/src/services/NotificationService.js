@@ -17,6 +17,8 @@ class NotificationService {
   static TYPES = {
     // Task notifications
     TASK_ASSIGNED: "task_assigned",
+    TASK_UPDATED: "task_updated",
+    TASK_DELETED: "task_deleted",
     TASK_COMMENTED: "task_commented",
     TASK_STATUS_CHANGED: "task_status_changed",
     TASK_PRIORITY_CHANGED: "task_priority_changed",
@@ -42,18 +44,31 @@ class NotificationService {
   };
 
   static PRIORITIES = {
-    CRITICAL: ["task_overdue", "task_deadline_soon"],
+    CRITICAL: ["task_overdue", "task_deadline_soon", "task_deleted"],
     HIGH: ["task_assigned", "task_priority_changed"],
-    MEDIUM: ["task_status_changed", "task_commented", "sprint_ending_soon"],
+    MEDIUM: ["task_status_changed", "task_commented", "sprint_ending_soon", "task_deadline_changed", "task_updated"],
     LOW: ["project_member_added", "group_member_added", "sprint_started", "sprint_completed"],
   };
+
+  // Get priority level for notification type
+  getPriority(type) {
+    for (const [priority, types] of Object.entries(NotificationService.PRIORITIES)) {
+      if (types.includes(type)) {
+        return priority;
+      }
+    }
+    return "LOW";
+  }
 
   // ============================================
   // CREATE & SEND NOTIFICATION
   // ============================================
 
-  async createAndSend({ userId, title, message, type, relatedId = null, relatedType = null, sendRealtime = true }) {
+  async createAndSend({ userId, title, message, type, relatedId = null, relatedType = null, priority = null, sendRealtime = true }) {
     try {
+      // Auto-calculate priority if not provided
+      const notificationPriority = priority || this.getPriority(type);
+
       // Save to database
       const notification = await Notification.create({
         userId,
@@ -76,8 +91,16 @@ class NotificationService {
           relatedType: notification.relatedType,
           isRead: notification.isRead,
           createdAt: notification.createdAt,
-          priority: this.getPriority(type),
+          priority: notificationPriority,
         });
+
+        // Also update unread count
+        const unreadCount = await Notification.countDocuments({
+          userId,
+          isRead: false,
+        });
+
+        this.io.to(`user:${userId}`).emit("notification:unreadCount", unreadCount);
       }
 
       return notification;
@@ -109,6 +132,23 @@ class NotificationService {
         title: "New Comment on Task",
         message: `${commenterName} commented on "${taskName}": ${commentPreview}`,
         type: NotificationService.TYPES.TASK_COMMENTED,
+        relatedId: taskId,
+        relatedType: "Task",
+      })
+    );
+
+    return Promise.all(notifications);
+  }
+
+  async notifyTaskUpdated({ taskId, taskName, changedBy, recipientIds, changeSummary = null }) {
+    const message = changeSummary ? `${changedBy} updated "${taskName}": ${changeSummary}` : `${changedBy} updated "${taskName}"`;
+
+    const notifications = recipientIds.map((userId) =>
+      this.createAndSend({
+        userId,
+        title: "Task Updated",
+        message,
+        type: NotificationService.TYPES.TASK_UPDATED,
         relatedId: taskId,
         relatedType: "Task",
       })

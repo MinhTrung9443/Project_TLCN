@@ -2,8 +2,10 @@ const Task = require("../models/Task");
 const Project = require("../models/Project");
 const mongoose = require("mongoose");
 const { logAction } = require("./AuditLogHelper");
-const { logHistory } = require("./HistoryService"); 
-const TaskHistory = require('../models/TaskHistory');
+const { logHistory } = require("./HistoryService");
+const TaskHistory = require("../models/TaskHistory");
+const notificationService = require("./NotificationService");
+const User = require("../models/User");
 // Hàm lấy task theo projectId
 const getTasksByProjectKey = async (projectKey) => {
   // 1. Tìm project để lấy projectId
@@ -52,7 +54,7 @@ const createTask = async (taskData, userId) => {
     ...taskData,
     key: taskKey,
     createdById: userId, // Đảm bảo gán người tạo
-    reporterId: userId,  // Thường người tạo cũng là reporter
+    reporterId: userId, // Thường người tạo cũng là reporter
   });
 
   const savedTask = await newTask.save();
@@ -75,6 +77,22 @@ const createTask = async (taskData, userId) => {
     recordId: savedTask._id,
     newData: savedTask,
   });
+
+  // Gửi thông báo cho assignee nếu có và khác người tạo
+  try {
+    if (populatedTask.assigneeId && populatedTask.assigneeId._id.toString() !== userId.toString()) {
+      const creator = await User.findById(userId);
+      await notificationService.notifyTaskAssigned({
+        taskId: populatedTask._id,
+        taskName: populatedTask.name,
+        assigneeId: populatedTask.assigneeId._id,
+        assignerName: creator?.fullname || "Someone",
+        projectKey: project.key,
+      });
+    }
+  } catch (notificationError) {
+    console.error("Failed to send task created notification:", notificationError);
+  }
 
   return populatedTask;
 };
@@ -173,14 +191,7 @@ const updateTask = async (taskId, updateData, userId) => {
 
       // Chỉ ghi log nếu giá trị thực sự thay đổi
       if (String(oldValue) !== String(newValue)) {
-        await logHistory(
-          taskId,
-          userId,
-          key,
-          oldValue,
-          newValue,
-          "UPDATE"
-        );
+        await logHistory(taskId, userId, key, oldValue, newValue, "UPDATE");
       }
     }
   } catch (historyError) {
@@ -212,16 +223,58 @@ const updateTask = async (taskId, updateData, userId) => {
     newData: updatedTask,
   });
 
+  // Gửi thông báo cho assignee khi có thay đổi
+  try {
+    if (originalTask.assigneeId && originalTask.assigneeId.toString() !== userId.toString()) {
+      const changer = await User.findById(userId);
+      const changerName = changer?.fullname || "Someone";
+
+      // Tạo danh sách các field đã thay đổi
+      const changedFields = [];
+      const fieldNames = {
+        name: "name",
+        description: "description",
+        assigneeId: "assignee",
+        priorityId: "priority",
+        statusId: "status",
+        dueDate: "due date",
+        taskTypeId: "type",
+        platformId: "platform",
+        sprintId: "sprint",
+      };
+
+      for (const key in updateData) {
+        if (String(originalTask[key]) !== String(updateData[key])) {
+          changedFields.push(fieldNames[key] || key);
+        }
+      }
+
+      if (changedFields.length > 0) {
+        const changesText = changedFields.join(", ");
+        await notificationService.createAndSend({
+          userId: originalTask.assigneeId,
+          title: "Task Updated",
+          message: `${changerName} updated ${changesText} of "${updatedTask.name}"`,
+          type: "task_updated",
+          relatedId: updatedTask._id,
+          relatedType: "Task",
+        });
+      }
+    }
+  } catch (notificationError) {
+    console.error("Failed to send task update notification:", notificationError);
+  }
+
   return updatedTask;
 };
 
 const changeTaskSprint = async (taskId, sprintId, userId) => {
-    return updateTask(taskId, { sprintId: sprintId || null }, userId);
-}
+  return updateTask(taskId, { sprintId: sprintId || null }, userId);
+};
 
 const updateTaskStatus = async (taskId, statusId, userId) => {
-    return updateTask(taskId, { statusId }, userId);
-}
+  return updateTask(taskId, { statusId }, userId);
+};
 
 const deleteTask = async (taskId, userId) => {
   if (!mongoose.Types.ObjectId.isValid(taskId)) {
@@ -230,13 +283,16 @@ const deleteTask = async (taskId, userId) => {
     throw error;
   }
 
-  const deletedTask = await Task.findByIdAndDelete(taskId);
+  const deletedTask = await Task.findById(taskId).populate("assigneeId", "fullname").lean();
 
   if (!deletedTask) {
     const error = new Error("Task not found");
     error.statusCode = 404;
     throw error;
   }
+
+  // Xóa task
+  await Task.findByIdAndDelete(taskId);
 
   await logAction({
     userId,
@@ -246,13 +302,32 @@ const deleteTask = async (taskId, userId) => {
     oldData: deletedTask,
   });
 
+  // Gửi thông báo cho assignee nếu có và khác người xóa
+  try {
+    if (deletedTask.assigneeId && deletedTask.assigneeId._id.toString() !== userId.toString()) {
+      const deleter = await User.findById(userId);
+      const deleterName = deleter?.fullname || "Someone";
+
+      await notificationService.createAndSend({
+        userId: deletedTask.assigneeId._id,
+        title: "Task Deleted",
+        message: `${deleterName} deleted the task "${deletedTask.name}"`,
+        type: "task_deleted",
+        relatedId: null, // Task đã bị xóa nên không có relatedId
+        relatedType: "Task",
+      });
+    }
+  } catch (notificationError) {
+    console.error("Failed to send task deleted notification:", notificationError);
+  }
+
   // TODO: Xử lý các logic phụ thuộc nếu cần
   // Ví dụ: xóa các task con, xóa comment, xóa attachment...
 
   return { message: "Task deleted successfully" };
 };
 const getTaskHistory = async (taskId) => {
-    return TaskHistory.find({ taskId: taskId, userId: { $exists: true, $ne: null } })
+  return TaskHistory.find({ taskId: taskId, userId: { $exists: true, $ne: null } })
     .populate("userId", "fullname avatar")
     .sort({ createdAt: -1 });
 };
@@ -266,5 +341,4 @@ module.exports = {
   updateTask,
   deleteTask,
   getTaskHistory,
-
 };

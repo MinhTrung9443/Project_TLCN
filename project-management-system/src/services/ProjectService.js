@@ -4,6 +4,8 @@ const Priority = require("../models/Priority");
 const Platform = require("../models/Platform");
 const Workflow = require("../models/Workflow");
 const { logAction } = require("./AuditLogHelper");
+const notificationService = require("./NotificationService");
+const User = require("../models/User");
 
 const copyDefaultSettingsForProject = async (projectId) => {
   const findDefaultTaskTypes = TaskType.find({ projectId: null });
@@ -336,6 +338,21 @@ const addMemberToProject = async (projectKey, { userId, role }) => {
 
   project.members.push({ userId, role });
   await project.save();
+
+  // Gửi thông báo cho member mới
+  try {
+    // Lấy thông tin người thêm (có thể từ request context)
+    await notificationService.notifyProjectMemberAdded({
+      projectId: project._id,
+      projectName: project.name,
+      newMemberId: userId,
+      addedByName: "Project Admin", // Cần truyền từ controller
+      role: role,
+    });
+  } catch (notificationError) {
+    console.error("Failed to send project member added notification:", notificationError);
+  }
+
   return { message: "Member added successfully" };
 };
 

@@ -2,6 +2,7 @@ const Group = require("../models/Group");
 const User = require("../models/User");
 const createError = require("http-errors");
 const { logAction } = require("./AuditLogHelper");
+const notificationService = require("./NotificationService");
 
 class GroupService {
   async getAllGroupsWithCounts() {
@@ -93,7 +94,7 @@ class GroupService {
     }
   }
 
-  async addMember(groupId, userId) {
+  async addMember(groupId, userId, addedBy = null) {
     const userToAdd = await User.findById(userId);
     if (!userToAdd) {
       throw createError(404, "User to add not found");
@@ -107,6 +108,24 @@ class GroupService {
 
     if (!group) {
       throw createError(404, "Group not found");
+    }
+
+    // Gửi thông báo cho member mới
+    try {
+      let addedByName = "Group Admin";
+      if (addedBy) {
+        const adder = await User.findById(addedBy);
+        addedByName = adder?.fullname || "Group Admin";
+      }
+
+      await notificationService.notifyGroupMemberAdded({
+        groupId: group._id,
+        groupName: group.name,
+        newMemberId: userId,
+        addedByName,
+      });
+    } catch (notificationError) {
+      console.error("Failed to send group member added notification:", notificationError);
     }
 
     return group;
