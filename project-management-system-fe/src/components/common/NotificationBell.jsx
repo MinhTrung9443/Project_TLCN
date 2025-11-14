@@ -30,12 +30,53 @@ const NotificationBell = () => {
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
 
-      // Show toast for high priority notifications
-      if (["CRITICAL", "HIGH"].includes(notification.priority)) {
-        toast.info(notification.title, {
-          position: "top-right",
-          autoClose: 5000,
-        });
+      // Show toast with full information
+      const toastOptions = {
+        position: "top-right",
+        autoClose: 8000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      };
+
+      // Format message with full details
+      const fullMessage = `${notification.message}`;
+
+      // Use different toast types based on priority
+      if (notification.priority === "CRITICAL") {
+        toast.error(
+          <div>
+            <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
+            <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
+          </div>,
+          toastOptions
+        );
+      } else if (notification.priority === "HIGH") {
+        toast.warning(
+          <div>
+            <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
+            <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
+          </div>,
+          toastOptions
+        );
+      } else if (notification.priority === "MEDIUM") {
+        toast.info(
+          <div>
+            <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
+            <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
+          </div>,
+          toastOptions
+        );
+      } else {
+        // LOW priority - use success type
+        toast.success(
+          <div>
+            <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
+            <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
+          </div>,
+          toastOptions
+        );
       }
     };
 
@@ -88,7 +129,7 @@ const NotificationBell = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const data = await notificationService.getNotifications(1, 20);
+      const data = await notificationService.getNotifications(1, 10);
       setNotifications(data.notifications || []);
       setHasMore(data.hasMore || false);
       setPage(1);
@@ -109,10 +150,12 @@ const NotificationBell = () => {
   };
 
   const loadMoreNotifications = async () => {
+    if (loading || !hasMore) return;
+
     try {
       setLoading(true);
       const nextPage = page + 1;
-      const data = await notificationService.getNotifications(nextPage, 20);
+      const data = await notificationService.getNotifications(nextPage, 10);
       setNotifications((prev) => [...prev, ...(data.notifications || [])]);
       setHasMore(data.hasMore || false);
       setPage(nextPage);
@@ -243,6 +286,23 @@ const NotificationBell = () => {
                 {loading && (
                   <div className="notification-loading">
                     <div className="spinner"></div>
+                    <p>Loading more...</p>
+                  </div>
+                )}
+
+                {!loading && hasMore && (
+                  <div className="notification-load-more">
+                    <button className="load-more-btn" onClick={loadMoreNotifications}>
+                      <span className="material-symbols-outlined">expand_more</span>
+                      Load More Notifications
+                    </button>
+                  </div>
+                )}
+
+                {!loading && !hasMore && notifications.length > 0 && (
+                  <div className="notification-end">
+                    <span className="material-symbols-outlined">check_circle</span>
+                    <p>You've reached the end</p>
                   </div>
                 )}
               </>

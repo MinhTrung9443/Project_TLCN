@@ -267,8 +267,18 @@
 /* Loading */
 .notification-loading {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   padding: 20px;
+  gap: 12px;
+}
+
+.notification-loading p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
 }
 
 .spinner {
@@ -284,6 +294,85 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Load More Button */
+.notification-load-more {
+  padding: 12px 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.load-more-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+.load-more-btn:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+.load-more-btn:active {
+  transform: translateY(0);
+}
+
+.load-more-btn .material-symbols-outlined {
+  font-size: 20px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
+}
+
+/* End State */
+.notification-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  color: #94a3b8;
+  border-top: 1px solid #f1f5f9;
+}
+
+.notification-end .material-symbols-outlined {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+  color: #10b981;
+}
+
+.notification-end p {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
 }
 
 /* Responsive */
