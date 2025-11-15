@@ -1,7 +1,7 @@
 import React from "react";
 import SprintItem from "./SprintItem";
 
-export const SprintList = ({ sprintList, onDrop, onEdit, onStart, onComplete, onDelete, onSprintNameClick }) => (
+export const SprintList = ({ sprintList, onDrop, onEdit, onStart, onComplete, onDelete, onSprintNameClick, projectType }) => (
   <>
     {sprintList &&
       sprintList.length > 0 &&
@@ -15,6 +15,7 @@ export const SprintList = ({ sprintList, onDrop, onEdit, onStart, onComplete, on
           onComplete={onComplete}
           onDelete={onDelete}
           onSprintNameClick={onSprintNameClick}
+          projectType={projectType}
         />
       ))}
   </>

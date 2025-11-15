@@ -11,6 +11,26 @@ const sprintService = {
       const project = await Project.findOne({ key: projectKey, status: "active" });
       if (!project) throw { statusCode: 404, message: "Project not found or inactive" };
 
+      // Nếu là project Kanban, kiểm tra và tạo Kanban Board sprint nếu chưa có
+      if (project.type === "Kanban") {
+        const existingKanbanSprint = await Sprint.findOne({
+          projectId: project._id,
+          name: "Kanban Board",
+        });
+
+        if (!existingKanbanSprint) {
+          const kanbanSprint = new Sprint({
+            name: "Kanban Board",
+            description: "Default Kanban board for this project",
+            projectId: project._id,
+            status: "Started",
+            startDate: new Date(),
+          });
+          await kanbanSprint.save();
+          console.log(`✅ Auto-created Kanban Board sprint for project ${projectKey}`);
+        }
+      }
+
       // Lấy sprint
       const sprints = await Sprint.find({ projectId: project._id }).sort({ createdAt: 1 }).lean();
 

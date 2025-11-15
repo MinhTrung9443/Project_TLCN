@@ -4,11 +4,15 @@ import "../../styles/pages/ManageSprint/SprintList.css";
 import { useDrop } from "react-dnd";
 import CreateTaskModal from "../../components/task/CreateTaskModal";
 
-const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete, onSprintNameClick }) => {
+const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete, onSprintNameClick, projectType }) => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
+
+  // Check if this is a Kanban Board sprint
+  const isKanbanBoard = projectType === "Kanban" && sprint.name === "Kanban Board";
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -54,60 +58,62 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete, onS
               {sprint.name}
             </span>
             <span className="sprint-task-badge">{sprint.tasks?.length || 0} Tasks</span>
-            <div className="sprint-header-menu" ref={openMenuId === sprint._id ? menuRef : null}>
-              <button onClick={() => handleMenuToggle(sprint._id)} className="sprint-menu-btn">
-                <span className="material-symbols-outlined">more_horiz</span>
-              </button>
-              {openMenuId === sprint._id && (
-                <ul className="sprint-menu-list">
-                  <li>
-                    <button
-                      onClick={() => {
-                        onEdit(sprint);
-                        setOpenMenuId(null);
-                      }}
-                    >
-                      Edit
-                    </button>
-                  </li>
-                  {sprint.status === "Not Start" && (
+            {!isKanbanBoard && (
+              <div className="sprint-header-menu" ref={openMenuId === sprint._id ? menuRef : null}>
+                <button onClick={() => handleMenuToggle(sprint._id)} className="sprint-menu-btn">
+                  <span className="material-symbols-outlined">more_horiz</span>
+                </button>
+                {openMenuId === sprint._id && (
+                  <ul className="sprint-menu-list">
                     <li>
                       <button
                         onClick={() => {
-                          onStart(sprint);
+                          onEdit(sprint);
                           setOpenMenuId(null);
                         }}
                       >
-                        Start Sprint
+                        Edit
                       </button>
                     </li>
-                  )}
-                  {sprint.status === "Started" && (
+                    {sprint.status === "Not Start" && (
+                      <li>
+                        <button
+                          onClick={() => {
+                            onStart(sprint);
+                            setOpenMenuId(null);
+                          }}
+                        >
+                          Start Sprint
+                        </button>
+                      </li>
+                    )}
+                    {sprint.status === "Started" && (
+                      <li>
+                        <button
+                          onClick={() => {
+                            onComplete(sprint);
+                            setOpenMenuId(null);
+                          }}
+                        >
+                          Complete Sprint
+                        </button>
+                      </li>
+                    )}
                     <li>
                       <button
+                        className="sprint-menu-delete"
                         onClick={() => {
-                          onComplete(sprint);
+                          onDelete(sprint);
                           setOpenMenuId(null);
                         }}
                       >
-                        Complete Sprint
+                        Delete
                       </button>
                     </li>
-                  )}
-                  <li>
-                    <button
-                      className="sprint-menu-delete"
-                      onClick={() => {
-                        onDelete(sprint);
-                        setOpenMenuId(null);
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </li>
-                </ul>
-              )}
-            </div>
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
           {expanded && (
             <>

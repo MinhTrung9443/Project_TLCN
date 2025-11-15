@@ -3,6 +3,7 @@ const TaskType = require("../models/TaskType");
 const Priority = require("../models/Priority");
 const Platform = require("../models/Platform");
 const Workflow = require("../models/Workflow");
+const Sprint = require("../models/Sprint");
 const { logAction } = require("./AuditLogHelper");
 const notificationService = require("./NotificationService");
 const User = require("../models/User");
@@ -115,6 +116,23 @@ const createProject = async (projectData, userId) => {
     await copyDefaultSettingsForProject(savedProject._id);
   } catch (copyError) {
     console.error(`Failed to copy default settings for project ${savedProject._id}:`, copyError);
+  }
+
+  // Tự động tạo Kanban Board sprint cho project Kanban
+  if (savedProject.type === "Kanban") {
+    try {
+      const kanbanSprint = new Sprint({
+        name: "Kanban Board",
+        description: "Default Kanban board for this project",
+        projectId: savedProject._id,
+        status: "Started",
+        startDate: new Date(),
+      });
+      await kanbanSprint.save();
+      console.log(`✅ Created Kanban Board sprint for project ${savedProject.key}`);
+    } catch (sprintError) {
+      console.error(`Failed to create Kanban Board sprint for project ${savedProject._id}:`, sprintError);
+    }
   }
 
   await logAction({

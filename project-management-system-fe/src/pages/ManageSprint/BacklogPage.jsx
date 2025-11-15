@@ -9,6 +9,7 @@ import { updateTaskSprint } from "../../services/taskService";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import SprintEditModal from "../../components/sprint/SprintEditModal";
+import { getProjectByKey } from "../../services/projectService";
 import "../../styles/pages/ManageSprint/BacklogPage.css";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
@@ -21,8 +22,20 @@ const BacklogPage = () => {
   const [sprintToDelete, setSprintToDelete] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [sprintToEdit, setSprintToEdit] = useState(null);
+  const [projectType, setProjectType] = useState(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch project details to get type
+  const fetchProjectDetails = async () => {
+    try {
+      const response = await getProjectByKey(selectedProjectKey);
+      setProjectType(response.data.type);
+    } catch (error) {
+      console.error("Error fetching project details:", error);
+    }
+  };
+
   const fetchSprintList = async () => {
     try {
       const data = await sprintService.getSprints(selectedProjectKey);
@@ -120,6 +133,7 @@ const BacklogPage = () => {
 
   useEffect(() => {
     if (selectedProjectKey) {
+      fetchProjectDetails();
       fetchSprintList();
     }
   }, [selectedProjectKey]);
@@ -129,7 +143,7 @@ const BacklogPage = () => {
       <div className="backlogpage-container">
         <div className="backlogpage-header">
           <h2 className="backlogpage-title">Backlog & Sprints</h2>
-          {user.role === "admin" && (
+          {user.role === "admin" && projectType !== "Kanban" && (
             <button className="backlogpage-create-btn" onClick={handleCreateSprint}>
               + Create Sprint
             </button>
@@ -145,6 +159,7 @@ const BacklogPage = () => {
               onComplete={handleCompleteSprint}
               onDelete={handleDeleteSprint}
               onSprintNameClick={handleSprintNameClick}
+              projectType={projectType}
             />
           </div>
           {/* Backlog section moved below */}
