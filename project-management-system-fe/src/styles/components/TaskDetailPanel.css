@@ -1,36 +1,43 @@
 /* src/styles/components/TaskDetailPanel.css */
 
-/* --- TỔNG THỂ PANEL --- */
 .task-detail-panel {
-  /* Thêm một chút đổ bóng để panel nổi bật */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
+  display: flex; /* Bật Flexbox cho layout dọc */
   flex-direction: column;
-  height: 100%;
+  height: 100%; /* Chiếm toàn bộ chiều cao của cột grid */
+  background-color: #ffffff;
+  border-left: 1px solid #dfe1e6;
+  overflow: hidden; /* Rất quan trọng: Ngăn panel tự tạo thanh cuộn */
 }
 
 .panel-header {
-  padding: 12px 20px;
+  flex-shrink: 0; /* Ngăn header bị co lại khi nội dung dài */
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 24px;
   border-bottom: 1px solid #dfe1e6;
+  gap: 16px;
 }
-
 .panel-body {
-  padding: 0 20px 20px 20px;
-  overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
-  flex-grow: 1;
+  flex-grow: 1; /* Cho phép thân panel chiếm hết không gian còn lại */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* <<< DÒNG QUAN TRỌNG NHẤT >>> */
 }
-
-/* --- TABS --- */
 .panel-tabs {
+  flex-shrink: 0; /* Ngăn thanh tabs bị co lại */
   display: flex;
   border-bottom: 1px solid #dfe1e6;
-  margin: 0 -20px 16px -20px; /* Kéo dài border ra sát mép panel */
-  padding: 0 20px;
-  position: sticky; /* Giữ tabs cố định khi cuộn */
+  padding: 0 24px;
+  position: sticky; /* Giữ tabs cố định ở trên cùng khi cuộn */
   top: 0;
   background-color: white;
   z-index: 10;
 }
+.panel-tab-content {
+  padding: 24px; /* Thêm padding ở đây thay vì ở .panel-body */
+}
+
 
 .tab-btn {
   padding: 10px 4px;
@@ -41,23 +48,14 @@
   font-size: 14px;
   font-weight: 500;
   color: #5e6c84;
-  margin-bottom: -1px;
+  margin-bottom: -1px; /* Để border-bottom đè lên border của panel-tabs */
   border-bottom: 3px solid transparent;
   transition: all 0.2s ease-in-out;
 }
 
-.tab-btn:first-child {
-  margin-left: 0;
-}
-
-.tab-btn:hover {
-  color: #0052cc;
-}
-
-.tab-btn.active {
-  color: #0052cc;
-  border-bottom: 3px solid #0052cc;
-}
+.tab-btn:first-child { margin-left: 0; }
+.tab-btn:hover { color: #0052cc; }
+.tab-btn.active { color: #0052cc; border-bottom-color: #0052cc; }
 
 
 /* --- CÁC KHU VỰC NỘI DUNG (SECTION) --- */
@@ -73,14 +71,12 @@
   text-transform: uppercase;
 }
 
-/* --- LƯỚI CHI TIẾT (GRID) --- */
 .detail-grid-editable {
   display: grid;
   grid-template-columns: 1fr 1fr; /* Chia thành 2 cột đều nhau */
   gap: 20px; /* Khoảng cách giữa các item trong lưới */
 }
 
-/* --- ITEM TRONG LƯỚI --- */
 .detail-item-editable {
   display: flex;
   flex-direction: column;
@@ -93,7 +89,6 @@
   margin-bottom: 6px;
 }
 
-/* --- STYLE CHUNG CHO CÁC INPUT VÀ DROPDOWN --- */
 .editable-input,
 .Select__control {
   border: 1px solid #dfe1e6 !important;
@@ -122,7 +117,6 @@
   box-sizing: border-box;
 }
 
-/* --- THANH PROGRESS --- */
 .progress-bar-container {
   display: flex;
   align-items: center;

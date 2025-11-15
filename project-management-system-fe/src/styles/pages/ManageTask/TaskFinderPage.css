@@ -40,11 +40,9 @@
 
 
 .task-list-container {
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  overflow: hidden; /* Important for rounded corners */
-  flex-grow: 1;
+  flex-grow: 1; /* Cho phép nó chiếm hết không gian còn lại */
+  overflow: auto; /* Tự động thêm thanh cuộn DỌC và NGANG nếu cần */
+  padding: 0 24px 24px 24px;
 }
 
 /* Base styles for rows and headers */
@@ -190,8 +188,14 @@
 }
 
 .task-finder-wrapper {
-  display: flex;
-  transition: all 0.3s ease-in-out;
+  display: grid;
+  /* Định nghĩa 2 cột: Cột nội dung chính và Cột panel */
+  /* Ban đầu, cột panel có chiều rộng là 0 */
+  grid-template-columns: 1fr 0px; 
+  /* Chiều cao 100% của viewport trừ đi chiều cao của header (nếu có) */
+  height: calc(100vh - 64px); /* Giả sử header cao 64px, bạn hãy điều chỉnh */
+  overflow: hidden; /* Ngăn cuộn ở cấp độ cao nhất */
+  transition: grid-template-columns 0.3s ease-in-out;
 }
 
 .task-finder-main-content {
@@ -200,8 +204,16 @@
   transition: width 0.3s ease-in-out;
 }
 
-.task-finder-wrapper.panel-open .task-finder-main-content {
-  width: calc(100% - 450px); /* Giảm chiều rộng khi panel mở */
+.task-finder-wrapper.panel-open {
+  /* Cột nội dung chính chiếm không gian còn lại, cột panel rộng 600px */
+  grid-template-columns: 1fr 500px; /* Tăng chiều rộng panel để dễ nhìn hơn */
+}
+
+.task-finder-main-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Ngăn cuộn nội bộ không cần thiết */
+  width: 100%; /* Đảm bảo nó chiếm toàn bộ cột grid */
 }
 
 .filters-bar {
@@ -224,7 +236,6 @@
 }
 
 .task-row {
-    /* ... (css cũ) ... */
     cursor: pointer;
     transition: background-color 0.2s;
 }
@@ -385,7 +396,6 @@
 }
 
 .close-btn {
-  /* ... (style cũ của nút close) ... */
   background: none;
   border: none;
   font-size: 24px;
