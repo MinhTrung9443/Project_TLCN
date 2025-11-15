@@ -27,3 +27,20 @@ export const updateTask = (taskId, updateData) => {
 export const deleteTask = (taskId) => {
   return apiClient.delete(`/tasks/${taskId}`);
 };
+export const addAttachment = async (taskId, file) => {
+    const formData = new FormData();
+    formData.append('attachment', file); // 'attachment' phải khớp với tên field trong upload.single() ở backend
+
+    const config = {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    };
+
+    const response = await apiClient.post(`/tasks/${taskId}/attachments`, formData, config);
+    return response.data;
+};
+export const deleteAttachment = async (taskId, attachmentId) => {
+    const response = await apiClient.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
+    return response.data;
+};

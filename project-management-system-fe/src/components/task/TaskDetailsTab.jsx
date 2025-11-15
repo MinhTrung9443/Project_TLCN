@@ -3,6 +3,7 @@
 import React from "react";
 import Select from "react-select";
 import RichTextEditor from "../common/RichTextEditor";
+import AttachmentsTab from './AttachmentsTab'; // <<< IMPORT COMPONENT HIỂN THỊ
 
 const TaskDetailsTab = ({
   editableTask,
@@ -13,6 +14,8 @@ const TaskDetailsTab = ({
   projectTaskTypes,
   projectPriorities,
   projectSprints,
+  onAddAttachment,
+  onDeleteAttachment
 }) => {
 
   const handleDescriptionUpdate = (content) => {
@@ -138,6 +141,14 @@ const TaskDetailsTab = ({
       <div className="panel-section">
         <h4>Description</h4>
         <RichTextEditor value={editableTask.description || ""} onChange={handleDescriptionUpdate} />
+      </div>
+
+      <div className="panel-section">
+        <AttachmentsTab 
+          attachments={editableTask.attachments} 
+          onAdd={onAddAttachment} 
+          onDelete={onDeleteAttachment} // <<< TRUYỀN XUỐNG AttachmentsTab
+        />
       </div>
 
       {/* Footer */}

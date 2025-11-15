@@ -117,6 +117,34 @@ const handleGetTaskHistory = async (req, res) => {
   }
 };
 
+const handleAddAttachment = async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        const userId = req.user.id;
+        
+        const updatedTask = await taskService.addAttachment(taskId, req.file, userId);
+        
+        res.status(200).json(updatedTask);
+    } catch (error) {
+        console.error("Error adding attachment:", error);
+        res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+};
+
+const handleDeleteAttachment = async (req, res) => {
+    try {
+        const { taskId, attachmentId } = req.params;
+        const userId = req.user.id;
+        
+        const updatedTask = await taskService.deleteAttachment(taskId, attachmentId, userId);
+        
+        res.status(200).json(updatedTask);
+    } catch (error) {
+        console.error("Error deleting attachment:", error);
+        res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+};
+
 module.exports = {
   handleGetTasksByProjectKey,
   handleCreateTask,
@@ -126,4 +154,6 @@ module.exports = {
   handleUpdateTask,
   handleDeleteTask,
   handleGetTaskHistory,
+  handleAddAttachment, // <<< XUẤT HANDLER MỚI
+  handleDeleteAttachment,
 };
