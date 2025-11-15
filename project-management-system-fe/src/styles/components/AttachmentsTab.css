@@ -1,0 +1,133 @@
+/* src/styles/components/AttachmentsTab.css */
+
+.attachments-section {
+  width: 100%;
+}
+
+.attachments-header {
+  margin-bottom: 12px;
+}
+
+.attachments-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #172b4d;
+}
+
+.attachments-scroll-container {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto; /* Cho phép cuộn ngang */
+  overflow-y: hidden;
+  gap: 16px;
+  padding-bottom: 16px; /* Tạo khoảng trống cho thanh cuộn */
+  min-height: 150px; /* Đảm bảo container có chiều cao tối thiểu */
+  overscroll-behavior: contain; /* <<< THÊM DÒNG NÀY VÀO */
+
+}
+
+/* Tùy chỉnh thanh cuộn cho đẹp hơn */
+.attachments-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.attachments-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.attachments-scroll-container::-webkit-scrollbar-thumb {
+  background: #c1c7d0;
+  border-radius: 4px;
+}
+
+.attachments-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #8993a4;
+}
+
+.attachment-item, .add-attachment-button {
+  flex-shrink: 0; /* Ngăn các item bị co lại */
+  width: 180px; /* Chiều rộng cố định cho mỗi item */
+  border: 1px solid #dfe1e6;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  transition: box-shadow 0.2s ease;
+}
+
+.attachment-item:hover {
+  box-shadow: 0 4px 8px rgba(9, 30, 66, 0.15);
+}
+
+.attachment-thumbnail-link {
+  display: block;
+}
+
+.attachment-thumbnail {
+  width: 100%;
+  height: 110px;
+  background-color: #f4f5f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attachment-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.attachment-thumbnail .file-icon {
+  font-size: 40px;
+  color: #42526e;
+}
+
+.attachment-details {
+  padding: 8px 12px;
+  border-top: 1px solid #dfe1e6;
+}
+
+.attachment-filename {
+  display: block;
+  font-weight: 500;
+  font-size: 14px;
+  color: #091e42;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.attachment-filename:hover {
+  text-decoration: underline;
+}
+
+.attachment-date {
+  font-size: 12px;
+  color: #5e6c84;
+}
+
+/* Kiểu cho nút thêm mới */
+.add-attachment-button {
+  height: 175px; /* Chiều cao khớp với item */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #5e6c84;
+  background-color: #f4f5f7;
+  cursor: pointer;
+  border: 1px dashed #c1c7d0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.add-attachment-button:hover {
+  background-color: #e2e4e9;
+  color: #172b4d;
+  border-color: #8993a4;
+}
