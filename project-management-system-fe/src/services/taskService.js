@@ -44,3 +44,12 @@ export const deleteAttachment = async (taskId, attachmentId) => {
     const response = await apiClient.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
     return response.data;
 };
+export const linkTask = async (taskId, targetTaskId, linkType) => {
+    const response = await apiClient.post(`/tasks/${taskId}/links`, { targetTaskId, linkType });
+    return response.data;
+};
+
+export const unlinkTask = async (taskId, linkId) => {
+    const response = await apiClient.delete(`/tasks/${taskId}/links/${linkId}`);
+    return response.data;
+};

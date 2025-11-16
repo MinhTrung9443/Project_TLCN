@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef  } from "react";
 import { toast } from "react-toastify";
-import { updateTask } from "../../services/taskService";
+import { updateTask, linkTask, unlinkTask, searchTasks } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import sprintService from "../../services/sprintService";
 import ActionsMenu from "../common/ActionsMenu";
-import TaskDetailsTab from './TaskDetailsTab'; 
 import CommentsTab from './CommentsTab';       
 import HistoryTab from './HistoryTab';         
 import "../../styles/components/TaskDetailPanel.css";
 import { IconComponent } from "../common/IconPicker"; 
+import TaskDetailsTab from './TaskDetailsTab'; 
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
   { name: "FaStar", color: "#2ECC71" },
@@ -29,7 +29,7 @@ const PREDEFINED_TASKTYPE_ICONS = [
 const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClone, statuses = [] }) => {
   const [editableTask, setEditableTask] = useState(task);
   const [activeTab, setActiveTab] = useState('Details');
-
+  const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
   const nameTextAreaRef = useRef(null);
   useEffect(() => {
     if (nameTextAreaRef.current) {
@@ -48,9 +48,11 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     setProjectTaskTypes([]);
     setProjectPriorities([]);
     setProjectSprints([]);
+    setAllProjectTasks([]); // Reset
 
     if (task && task.projectId && task.projectId.key) {
       const projectKey = task.projectId.key;
+      const projectId = task.projectId._id;
 
       const fetchTaskTypesForProject = async () => {
         try {
@@ -112,12 +114,24 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
           setProjectSprints([]);
         }
       };
+      const fetchAllTasksInProject = async () => {
+    try {
+        const response = await searchTasks({ projectId: projectId });
+        
+        setAllProjectTasks(response.data); 
+        
+    } catch (error) {
+        toast.error("Could not load tasks for linking.");
+        setAllProjectTasks([]); 
+    }
+};
 
       Promise.all([
         fetchTaskTypesForProject(),
         fetchMembers(),
         fetchPrioritiesForProject(),
         fetchSprintsForProject(),
+        fetchAllTasksInProject(), 
       ]);
 
     }
@@ -161,6 +175,36 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     const idToFind = typeof field === "object" ? field._id : field;
     return options.find((opt) => opt.value === idToFind);
   };
+
+   const handleLinkTask = async (targetTaskId, linkType) => {
+    try {
+      const updatedTasks = await linkTask(editableTask._id, targetTaskId, linkType);
+      
+      onTaskUpdate(updatedTasks); 
+
+      setEditableTask(updatedTasks[0]); // Task đầu tiên luôn là task hiện tại
+      
+      toast.success("Task linked successfully!");
+    } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to link task.");
+        throw error;
+    }
+};
+
+const handleUnlinkTask = async (linkId) => {
+    if (!window.confirm("Are you sure you want to remove this link?")) return;
+    try {
+      const updatedTasks = await unlinkTask(editableTask._id, linkId);
+      
+      onTaskUpdate(updatedTasks);
+      
+      setEditableTask(updatedTasks[0]);
+      
+      toast.success("Link removed successfully!");
+    } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to remove link.");
+    }
+};
   const handleDelete = () => {
     if (window.confirm(`Are you sure you want to delete task ${editableTask.key}?`)) {
       onTaskDelete(editableTask._id);
@@ -253,6 +297,9 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
               projectTaskTypes={projectTaskTypes}
               projectPriorities={projectPriorities}
               projectSprints={projectSprints}
+              allProjectTasks={allProjectTasks} 
+              onLinkTask={handleLinkTask}
+              onUnlinkTask={handleUnlinkTask}
             />
           )}
           {activeTab === 'Comments' && <CommentsTab taskId={editableTask._id} />}

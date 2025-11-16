@@ -12,10 +12,12 @@ const {
   handleGetTaskHistory,
   handleAddAttachment,
   handleDeleteAttachment,
+  handleLinkTask,
+  handleUnlinkTask,
 } = require("../controllers/TaskController");
 const { handleGetComments, handleCreateComment} = require("../controllers/CommentController");
 const { protect, isAdmin } = require("../middleware/authMiddleware"); 
-const upload = require('../middleware/uploadMiddleware'); // <<< IMPORT MIDDLEWARE UPLOAD
+const upload = require('../middleware/uploadMiddleware'); 
 
 router.get("/search", protect, handleSearchTasks);
 router.get("/project/:projectKey", protect, handleGetTasksByProjectKey);
@@ -32,5 +34,8 @@ router.post("/:taskId/comments", protect, handleCreateComment);
 
 router.post("/:taskId/attachments", protect, upload.single('attachment'), handleAddAttachment);
 router.delete("/:taskId/attachments/:attachmentId", protect, handleDeleteAttachment);
+
+router.post('/:taskId/links', protect, handleLinkTask);
+router.delete('/:taskId/links/:linkId', protect, handleUnlinkTask);
 
 module.exports = router;

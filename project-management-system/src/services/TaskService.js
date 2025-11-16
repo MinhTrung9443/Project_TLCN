@@ -152,6 +152,14 @@ const searchTasks = async (queryParams) => {
     .populate("sprintId", "name")
     .populate("platformId", "name icon")
     .populate("createdById", "fullname avatar")
+    .populate({
+        path: 'linkedTasks.taskId',
+        select: 'key name taskTypeId', // Lấy các trường cần thiết
+        populate: { // Populate lồng để lấy icon
+            path: 'taskTypeId',
+            select: 'name icon'
+        }
+    })
     .sort({ createdAt: -1 });
 
   return tasks;
@@ -182,26 +190,21 @@ const updateTask = async (taskId, updateData, userId) => {
     throw error;
   }
 
-  // 3. Ghi log History (Tính năng phụ, được bảo vệ)
-  // Dùng try...catch để nếu phần này lỗi, nó sẽ không làm sập server
   try {
     for (const key in updateData) {
       const oldValue = originalTask[key];
       const newValue = updateData[key];
 
-      // Chỉ ghi log nếu giá trị thực sự thay đổi
       if (String(oldValue) !== String(newValue)) {
         await logHistory(taskId, userId, key, oldValue, newValue, "UPDATE");
       }
     }
   } catch (historyError) {
-    // Nếu có lỗi khi ghi history, chúng ta chỉ ghi log ra console
-    // và KHÔNG làm ảnh hưởng đến kết quả trả về cho người dùng.
+
     console.error("--- CRITICAL: Failed to log task history but update was successful ---");
     console.error(historyError);
   }
 
-  // 4. Populate và trả về kết quả
   await updatedTask.populate([
     { path: "projectId", select: "name key" },
     { path: "taskTypeId", select: "name icon" },
@@ -212,6 +215,11 @@ const updateTask = async (taskId, updateData, userId) => {
     { path: "statusId", select: "name color" },
     { path: "sprintId", select: "name" },
     { path: "platformId", select: "name icon" },
+    { 
+        path: 'linkedTasks.taskId',
+        select: 'key name taskTypeId',
+        populate: { path: 'taskTypeId', select: 'name icon' }
+    },
   ]);
 
   await logAction({
@@ -223,13 +231,11 @@ const updateTask = async (taskId, updateData, userId) => {
     newData: updatedTask,
   });
 
-  // Gửi thông báo cho assignee khi có thay đổi
   try {
     if (originalTask.assigneeId && originalTask.assigneeId.toString() !== userId.toString()) {
       const changer = await User.findById(userId);
       const changerName = changer?.fullname || "Someone";
 
-      // Tạo danh sách các field đã thay đổi
       const changedFields = [];
       const fieldNames = {
         name: "name",
@@ -453,7 +459,129 @@ const deleteAttachment = async (taskId, attachmentId, userId) => {
   return updatedTask;
 };
 
+const getOppositeLinkType = (type) => {
+  const opposites = {
+    "blocks": "is blocked by",
+    "is blocked by": "blocks",
+    "clones": "is cloned by",
+    "is cloned by": "clones",
+    "duplicates": "is duplicated by",
+    "is duplicated by": "duplicates",
+    "relates to": "relates to",
+  };
+  return opposites[type];
+};
 
+
+const populateFullTask = (taskQuery) => {
+  return taskQuery.populate([
+    { path: "projectId", select: "name key" },
+    { path: "taskTypeId", select: "name icon" },
+    { path: "priorityId", select: "name icon" },
+    { path: "assigneeId", select: "fullname avatar" }, 
+    { path: "reporterId", select: "fullname avatar" }, 
+    { path: "createdById", select: "fullname avatar" },
+    { path: "statusId", select: "name color" },
+    { path: "sprintId", select: "name" },
+    { path: "platformId", select: "name icon" },
+    {
+      path: 'linkedTasks.taskId',
+      select: 'key name taskTypeId',
+      populate: { path: 'taskTypeId', select: 'name icon' }
+    }
+  ]);
+};
+
+
+const linkTask = async (currentTaskId, targetTaskId, linkType, userId) => {
+  if (currentTaskId === targetTaskId) {
+    const error = new Error("Cannot link a task to itself.");
+    error.statusCode = 400;
+    throw error;
+  }
+  
+  const [currentTask, targetTask] = await Promise.all([
+    Task.findById(currentTaskId),
+    Task.findById(targetTaskId),
+  ]);
+
+  if (!currentTask || !targetTask) {
+    const error = new Error("One or both tasks not found.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const existingLink = currentTask.linkedTasks.find(link => link.taskId.toString() === targetTaskId);
+  if (existingLink) {
+     const error = new Error("Tasks are already linked.");
+     error.statusCode = 409;
+     throw error;
+  }
+
+  const oppositeType = getOppositeLinkType(linkType);
+  if (!oppositeType) {
+    const error = new Error("Invalid link type.");
+    error.statusCode = 400;
+    throw error;
+  }
+  
+  currentTask.linkedTasks.push({ type: linkType, taskId: targetTaskId });
+  targetTask.linkedTasks.push({ type: oppositeType, taskId: currentTaskId });
+
+  await Promise.all([currentTask.save(), targetTask.save()]);
+
+  await logHistory(currentTaskId, userId, "Link", null, `Linked as '${linkType}' ${targetTask.key}`, "UPDATE");
+  await logHistory(targetTaskId, userId, "Link", null, `Linked as '${oppositeType}' ${currentTask.key}`, "UPDATE");
+  
+  const [updatedCurrentTask, updatedTargetTask] = await Promise.all([
+    populateFullTask(Task.findById(currentTaskId)),
+    populateFullTask(Task.findById(targetTaskId))
+  ]);
+
+  return [updatedCurrentTask, updatedTargetTask]; 
+};
+
+
+const unlinkTask = async (currentTaskId, linkId, userId) => {
+    const currentTask = await Task.findById(currentTaskId);
+    if (!currentTask) {
+        const error = new Error("Task not found.");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const linkToRemove = currentTask.linkedTasks.id(linkId);
+    if (!linkToRemove) {
+        const error = new Error("Link not found.");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const targetTaskId = linkToRemove.taskId;
+    const targetTask = await Task.findById(targetTaskId);
+
+    currentTask.linkedTasks.pull(linkId);
+
+    if (targetTask) {
+        targetTask.linkedTasks.pull({ taskId: currentTaskId });
+        await targetTask.save();
+    }
+    
+    await currentTask.save();
+
+    const targetTaskKey = targetTask?.key || 'unknown task';
+    await logHistory(currentTaskId, userId, "Link", null, `Unlinked from ${targetTaskKey}`, "UPDATE");
+    if(targetTask) {
+      await logHistory(targetTaskId, userId, "Link", null, `Unlinked from ${currentTask.key}`, "UPDATE");
+    }
+
+    const [updatedCurrentTask, updatedTargetTask] = await Promise.all([
+        populateFullTask(Task.findById(currentTaskId)),
+        targetTask ? populateFullTask(Task.findById(targetTaskId)) : Promise.resolve(null)
+    ]);
+    
+    return [updatedCurrentTask, updatedTargetTask].filter(Boolean); 
+};
 module.exports = {
   getTasksByProjectKey,
   createTask,
@@ -463,6 +591,8 @@ module.exports = {
   updateTask,
   deleteTask,
   getTaskHistory,
-  addAttachment, // <<< XUẤT HÀM MỚI
+  addAttachment, 
   deleteAttachment,
+  linkTask,    
+  unlinkTask, 
 };

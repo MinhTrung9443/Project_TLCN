@@ -1,9 +1,9 @@
-// components/task/TaskDetailsTab.jsx
 
 import React from "react";
 import Select from "react-select";
 import RichTextEditor from "../common/RichTextEditor";
-import AttachmentsTab from './AttachmentsTab'; // <<< IMPORT COMPONENT HIỂN THỊ
+import AttachmentsTab from './AttachmentsTab'; 
+import LinkedTasksTab from './LinkedTasksTab'; 
 
 const TaskDetailsTab = ({
   editableTask,
@@ -15,7 +15,10 @@ const TaskDetailsTab = ({
   projectPriorities,
   projectSprints,
   onAddAttachment,
-  onDeleteAttachment
+  onDeleteAttachment,
+  allProjectTasks, 
+  onLinkTask,
+  onUnlinkTask
 }) => {
 
   const handleDescriptionUpdate = (content) => {
@@ -31,7 +34,6 @@ const TaskDetailsTab = ({
   return (
     <>
       <div className="panel-section">
-        {/* Progress bar */}
         <div className="detail-item-editable">
           <strong>Progress</strong>
           <div className="progress-bar-container">
@@ -49,7 +51,6 @@ const TaskDetailsTab = ({
         </div>
       </div>
 
-      {/* Grid chi tiết */}
       <div className="panel-section detail-grid-editable">
           <div className="detail-item-editable">
             <strong>Status</strong>
@@ -142,16 +143,23 @@ const TaskDetailsTab = ({
         <h4>Description</h4>
         <RichTextEditor value={editableTask.description || ""} onChange={handleDescriptionUpdate} />
       </div>
+       <div className="panel-section">
+        <LinkedTasksTab 
+            task={editableTask}
+            allProjectTasks={allProjectTasks}
+            onLink={onLinkTask}
+            onUnlink={onUnlinkTask}
+        />
+      </div>
 
       <div className="panel-section">
         <AttachmentsTab 
           attachments={editableTask.attachments} 
           onAdd={onAddAttachment} 
-          onDelete={onDeleteAttachment} // <<< TRUYỀN XUỐNG AttachmentsTab
+          onDelete={onDeleteAttachment} 
         />
       </div>
 
-      {/* Footer */}
       <footer className="panel-footer">
         <span>Created By: {editableTask.createdById?.fullname || "N/A"}</span>
       </footer>
