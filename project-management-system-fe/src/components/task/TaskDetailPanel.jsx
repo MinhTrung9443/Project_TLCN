@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef  } from "react";
 import { toast } from "react-toastify";
-import { updateTask, addAttachment as addAttachmentService, deleteAttachment as deleteAttachmentService  } from "../../services/taskService";
+import { updateTask } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
@@ -10,8 +10,6 @@ import TaskDetailsTab from './TaskDetailsTab';
 import CommentsTab from './CommentsTab';       
 import HistoryTab from './HistoryTab';         
 import "../../styles/components/TaskDetailPanel.css";
-import AttachmentsTab from './AttachmentsTab'; // <<< IMPORT COMPONENT MỚI
-
 import { IconComponent } from "../common/IconPicker"; 
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
@@ -31,9 +29,6 @@ const PREDEFINED_TASKTYPE_ICONS = [
 const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClone, statuses = [] }) => {
   const [editableTask, setEditableTask] = useState(task);
   const [activeTab, setActiveTab] = useState('Details');
-
-  const fileInputRef = useRef(null);
-  const [isUploading, setIsUploading] = useState(false);
 
   const nameTextAreaRef = useRef(null);
   useEffect(() => {
@@ -176,47 +171,8 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     toast.info("Clone function not implemented yet.");
   };
   const handleAddAttachment = () => {
-    // Kích hoạt input file ẩn
-    fileInputRef.current.click();
+    toast.info("Add attachment function not implemented yet.");
   };
-
-  // *** THÊM HÀM MỚI NÀY ĐỂ XỬ LÝ KHI USER CHỌN FILE ***
-  const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    toast.info(`Uploading ${file.name}...`);
-
-    try {
-        const updatedTask = await addAttachmentService(editableTask._id, file);
-        onTaskUpdate(updatedTask); // Cập nhật task ở component cha (quan trọng)
-        setEditableTask(updatedTask); // Cập nhật task ở panel này để UI thay đổi ngay lập tức
-        toast.success("Attachment uploaded successfully!");
-    } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to upload attachment.");
-    } finally {
-        setIsUploading(false);
-        // Reset file input để có thể chọn lại cùng file
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    }
-  };
-
-  const handleDeleteAttachment = async (attachmentId) => {
-      // Hỏi xác nhận trước khi xóa
-      if (window.confirm("Are you sure you want to delete this attachment?")) {
-        try {
-          const updatedTask = await deleteAttachmentService(editableTask._id, attachmentId);
-          onTaskUpdate(updatedTask);
-          setEditableTask(updatedTask);
-          toast.success("Attachment deleted successfully!");
-        } catch (error) {
-          toast.error(error.response?.data?.message || "Failed to delete attachment.");
-        }
-      }
-    };
 
   const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find(
     i => i.name === editableTask.taskTypeId?.icon
@@ -224,13 +180,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
 
     return (
     <div className="task-detail-panel">
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
-        style={{ display: 'none' }}
-        disabled={isUploading}
-      />
       <header className="panel-header">
         <div className="panel-header-left">
           <div className="task-key-container">
@@ -246,25 +195,26 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
             <span className="task-key-text">{editableTask.key}</span>
           </div>
 
-          <textarea
-            ref={nameTextAreaRef} // Gán ref vào đây
-            className="editable-task-name"
-            value={editableTask.name}
-            onChange={(e) => setEditableTask(prev => ({ ...prev, name: e.target.value }))}
-            onBlur={() => handleUpdate("name", editableTask.name)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) { // Chỉ lưu khi nhấn Enter (không phải Shift+Enter)
-                e.preventDefault();
-                e.target.blur();
-              }
-            }}
-            rows="1"
-            spellCheck="false"
-            placeholder="Enter a task name..."
-          />
-        </div>
+          <div className="editable-task-name-wrapper" data-replicated-value={editableTask.name}>
+                        <textarea
+                            className="editable-task-name"
+                            value={editableTask.name}
+                            onChange={(e) => setEditableTask(prev => ({ ...prev, name: e.target.value }))}
+                            onBlur={() => handleUpdate("name", editableTask.name)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    e.target.blur();
+                                }
+                            }}
+                            rows="1"
+                            spellCheck="false"
+                            placeholder="Enter a task name..."
+                        />
+                    </div>
+                    </div>
         <div className="panel-header-right">
-        <ActionsMenu onDelete={handleDelete} onClone={handleClone} onAddAttachment={handleAddAttachment} />
+          <ActionsMenu onDelete={handleDelete} onClone={handleClone} onAddAttachment={handleAddAttachment} />
           <button onClick={onClose} className="close-btn">
             &times;
           </button>
@@ -293,7 +243,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
         </div>
 
         <div className="panel-tab-content">
-          {/* TRUYỀN TOÀN BỘ editableTask XUỐNG CHO TaskDetailsTab */}
           {activeTab === 'Details' && (
             <TaskDetailsTab
               editableTask={editableTask}
@@ -304,11 +253,8 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
               projectTaskTypes={projectTaskTypes}
               projectPriorities={projectPriorities}
               projectSprints={projectSprints}
-              onAddAttachment={handleAddAttachment}
-              onDeleteAttachment={handleDeleteAttachment}
             />
           )}
-          {/* BỎ HIỂN THỊ ATTACHMENT Ở ĐÂY */}
           {activeTab === 'Comments' && <CommentsTab taskId={editableTask._id} />}
           {activeTab === 'History' && <HistoryTab taskId={editableTask._id} />}
         </div>
