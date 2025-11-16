@@ -1,23 +1,34 @@
 // src/components/layout/Layout.jsx
 
-import React from "react";
+import React, { useState } from "react"; // 1. Thêm useState
 import { Outlet } from "react-router-dom";
 import Header from "./Header.jsx";
 import Footer from "./Footer.jsx";
-import Sidebar from "./Sidebar.jsx"; // 1. Import Sidebar
-import "../../styles/layout/Layout.css"; // Import file CSS cho Layout
-import { useAuth } from "../../contexts/AuthContext"; // Import useAuth
+import Sidebar from "./Sidebar.jsx";
+import "../../styles/layout/Layout.css";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Layout = () => {
   const { user } = useAuth();
+  // 2. Tạo state để quản lý trạng thái đóng/mở của sidebar
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // 3. Tạo hàm để bật/tắt trạng thái
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!isSidebarCollapsed);
+  };
 
   return (
     <div className="app-container">
       <Header />
       <div className="layout-body">
-        {" "}
-        {/* 2. Bọc Sidebar và Outlet trong một div */}
-        {user && <Sidebar />} {/* 3. Hiển thị Sidebar nếu user tồn tại */}
+        {user && (
+          // 4. Truyền state và hàm toggle xuống cho Sidebar
+          <Sidebar
+            isCollapsed={isSidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+          />
+        )}
         <main className="main-content">
           <Outlet />
           {!user && <Footer />}
