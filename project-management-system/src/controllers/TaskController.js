@@ -145,6 +145,35 @@ const handleDeleteAttachment = async (req, res) => {
     }
 };
 
+const handleLinkTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { targetTaskId, linkType } = req.body;
+    const userId = req.user.id;
+
+    if (!targetTaskId || !linkType) {
+      return res.status(400).json({ message: "targetTaskId and linkType are required." });
+    }
+
+    const updatedTask = await taskService.linkTask(taskId, targetTaskId, linkType, userId);
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
+};
+
+const handleUnlinkTask = async (req, res) => {
+  try {
+    const { taskId, linkId } = req.params;
+    const userId = req.user.id;
+
+    const updatedTask = await taskService.unlinkTask(taskId, linkId, userId);
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
+};
+
 module.exports = {
   handleGetTasksByProjectKey,
   handleCreateTask,
@@ -154,6 +183,8 @@ module.exports = {
   handleUpdateTask,
   handleDeleteTask,
   handleGetTaskHistory,
-  handleAddAttachment, // <<< XUẤT HANDLER MỚI
+  handleAddAttachment, 
   handleDeleteAttachment,
+  handleLinkTask,    
+  handleUnlinkTask, 
 };

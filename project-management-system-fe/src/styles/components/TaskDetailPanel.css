@@ -22,7 +22,7 @@
   flex-grow: 1; /* Cho phép thân panel chiếm hết không gian còn lại */
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* <<< DÒNG QUAN TRỌNG NHẤT >>> */
+  overflow-y: auto; 
 }
 .panel-tabs {
   flex-shrink: 0; /* Ngăn thanh tabs bị co lại */
@@ -57,10 +57,8 @@
 .tab-btn:hover { color: #0052cc; }
 .tab-btn.active { color: #0052cc; border-bottom-color: #0052cc; }
 
-
-/* --- CÁC KHU VỰC NỘI DUNG (SECTION) --- */
 .panel-section {
-  margin-bottom: 24px; /* TẠO KHOẢNG CÁCH GIỮA CÁC KHU VỰC */
+  margin-bottom: 24px;
 }
 
 .panel-section h4 {
@@ -291,4 +289,96 @@
 .reply-form {
     margin-left: 44px;
     margin-top: 8px;
+}
+.linked-tasks-section {
+    margin-top: 20px;
+}
+
+.add-link-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.link-type-select {
+    flex: 1;
+}
+
+.link-task-select {
+    flex: 3;
+}
+
+.link-btn {
+    padding: 8px 15px;
+    border: none;
+    background-color: #0052cc;
+    color: white;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.link-btn:hover {
+    background-color: #0065ff;
+}
+
+.link-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+
+.linked-tasks-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.linked-task-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 5px;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+.linked-task-item:last-child {
+    border-bottom: none;
+}
+
+.link-relation {
+    color: #5e6c84;
+    font-size: 0.9em;
+    min-width: 100px;
+}
+
+.linked-task-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-grow: 1;
+}
+
+.linked-task-key {
+    font-weight: 500;
+    color: #42526e;
+}
+
+.linked-task-name {
+    color: #172b4d;
+}
+
+.unlink-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #5e6c84;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.unlink-btn:hover {
+    color: #de350b;
+    background-color: #f4f5f7;
 }

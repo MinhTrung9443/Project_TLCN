@@ -49,8 +49,7 @@ const TaskFinderPage = () => {
           sprints: [],
         });
       } catch (error) {
-        // toast.error("Could not load initial data.");
-        // console.error("!!!!!!!!!! [DEBUG] FAILED to fetch initial data. Error:", error); // <-- LOG LỖI
+
       }
     };
     fetchFilterData();
@@ -85,7 +84,6 @@ const TaskFinderPage = () => {
   const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), []);
 
   useEffect(() => {
-    // Chỉ fetch khi keyword thay đổi
     debouncedFetch(activeFilters, keyword);
   }, [keyword, debouncedFetch, activeFilters]); // Thêm activeFilters vào dependency array
 
@@ -93,13 +91,36 @@ const TaskFinderPage = () => {
     fetchTasks(activeFilters, keyword);
   };
 
-  const handleTaskUpdate = (updatedTask) => {
-    // Cập nhật danh sách task chính
-    setTasks((prevTasks) => prevTasks.map((task) => (task._id === updatedTask._id ? updatedTask : task)));
-    if (selectedTask && selectedTask._id === updatedTask._id) {
-      setSelectedTask(updatedTask);
+const handleTaskUpdate = (updatedData) => {
+
+  setTasks((prevTasks) => {
+    if (Array.isArray(updatedData)) {
+
+      const updatesMap = new Map(updatedData.map(task => [task._id, task]));
+
+      return prevTasks.map(task => updatesMap.get(task._id) || task);
     }
-  };
+    
+    else if (updatedData && updatedData._id) {
+      return prevTasks.map((task) => 
+        task._id === updatedData._id ? updatedData : task
+      );
+    }
+    
+    return prevTasks;
+  });
+
+  if (selectedTask) {
+    if (Array.isArray(updatedData)) {
+      const newlySelectedTask = updatedData.find(t => t._id === selectedTask._id);
+      if (newlySelectedTask) {
+        setSelectedTask(newlySelectedTask);
+      }
+    } else if (updatedData && selectedTask._id === updatedData._id) {
+      setSelectedTask(updatedData);
+    }
+  }
+};
 
   const handleTaskClick = (task) => {
     setSelectedTask(task);
@@ -112,7 +133,6 @@ const TaskFinderPage = () => {
   const handleTaskDelete = async (taskId) => {
     try {
       await deleteTask(taskId); // Giả sử bạn có hàm này trong service
-      // Xóa task khỏi state để UI cập nhật ngay lập tức
       setTasks((prevTasks) => prevTasks.filter((t) => t._id !== taskId));
       setSelectedTask(null); // Đóng panel sau khi xóa
       toast.success("Task deleted successfully!");

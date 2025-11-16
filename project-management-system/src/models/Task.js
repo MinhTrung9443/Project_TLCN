@@ -97,11 +97,12 @@ const taskSchema = new Schema(
         },
       },
     ],
-    linkedTasks: [
+    linkedTasks: { 
+    type: [ 
       {
         type: {
           type: String,
-          enum: ["blocks", "is blocked by", "relates to"],
+          enum: ["relates to", "blocks", "is blocked by", "clones", "is cloned by", "duplicates", "is duplicated by"],
           required: true,
         },
         taskId: {
@@ -111,6 +112,8 @@ const taskSchema = new Schema(
         },
       },
     ],
+    default: [] 
+},
   },
   {
     timestamps: true,
