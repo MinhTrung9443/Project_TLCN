@@ -47,16 +47,6 @@ app.use((req, res, next) => {
 app.use(express.json()); // Để parse body của request dạng JSON
 const uploadsPath = path.join(__dirname, 'public', 'uploads');
 
-app.use(express.static(path.join(__dirname, 'public'), {
-  setHeaders: function (res, filePath) {
-    // Chỉ thêm header cho các file nằm trong thư mục 'uploads'
-    if (filePath.startsWith(uploadsPath)) {
-      res.setHeader('Content-Disposition', 'attachment');
-    }
-  }
-}));
-
-
 // --- Đăng ký các routes ---
 app.use("/api", appRoute);
 app.use("/api/users", userRoute);

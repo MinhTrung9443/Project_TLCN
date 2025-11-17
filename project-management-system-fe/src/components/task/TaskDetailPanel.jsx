@@ -4,6 +4,7 @@ import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAtt
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
+import platformService from "../../services/platformService";
 import sprintService from "../../services/sprintService";
 import ActionsMenu from "../common/ActionsMenu";
 import CommentsTab from './CommentsTab';
@@ -41,6 +42,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
   const [projectMembers, setProjectMembers] = useState([]);
   const [projectTaskTypes, setProjectTaskTypes] = useState([]);
   const [projectPriorities, setProjectPriorities] = useState([]);
+  const [projectPlatforms, setProjectPlatforms] = useState([]);
   const [projectSprints, setProjectSprints] = useState([]);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     setProjectTaskTypes([]);
     setProjectPriorities([]);
     setProjectSprints([]);
+    setProjectPlatforms([]);
     setAllProjectTasks([]); // Reset
 
     if (task && task.projectId && task.projectId.key) {
@@ -91,6 +94,16 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
         }
       };
 
+      const fetchPlatformsForProject = async () => {
+        try {
+          const res = await platformService.getAllPlatforms(projectKey);
+          const formattedPlatforms = res.data.map(p => ({ value: p._id, label: p.name }));
+          setProjectPlatforms(formattedPlatforms);
+        } catch (error) {
+          toast.error(`Could not load platforms for project ${projectKey}.`);
+          setProjectPlatforms([]);
+        }
+      };
       const fetchSprintsForProject = async () => {
         try {
           const responseData = await sprintService.getSprints(projectKey);
@@ -131,6 +144,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
         fetchTaskTypesForProject(),
         fetchMembers(),
         fetchPrioritiesForProject(),
+        fetchPlatformsForProject(),
         fetchSprintsForProject(),
         fetchAllTasksInProject(),
       ]);
@@ -165,16 +179,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       toast.error("Update failed. Reverting changes.");
       setEditableTask(originalTask); // Hoàn tác nếu lỗi
     }
-  };
-
-  const handleDescriptionUpdate = (content) => {
-    handleUpdate("description", content);
-  };
-
-  const findOption = (options, field) => {
-    if (!field) return null;
-    const idToFind = typeof field === "object" ? field._id : field;
-    return options.find((opt) => opt.value === idToFind);
   };
 
   const handleLinkTask = async (targetTaskId, linkType) => {
@@ -347,6 +351,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
               projectMembers={projectMembers}
               projectTaskTypes={projectTaskTypes}
               projectPriorities={projectPriorities}
+              projectPlatforms={projectPlatforms}
               projectSprints={projectSprints}
               allProjectTasks={allProjectTasks}
               onLinkTask={handleLinkTask}

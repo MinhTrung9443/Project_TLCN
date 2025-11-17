@@ -13,6 +13,7 @@ const TaskDetailsTab = ({
   projectMembers,
   projectTaskTypes,
   projectPriorities,
+  projectPlatforms,
   projectSprints,
   onAddAttachment,
   onDeleteAttachment,
@@ -108,14 +109,12 @@ const TaskDetailsTab = ({
             />
           </div>
           <div className="detail-item-editable">
-            <strong>Story Point</strong>
-            <input
-              type="number"
-              value={editableTask.storyPoints || ""}
-              onChange={(e) => setEditableTask((prev) => ({ ...prev, storyPoints: e.target.value }))}
-              onBlur={(e) => handleUpdate("storyPoints", parseInt(e.target.value, 10) || 0)}
-              className="editable-input"
-              min="0"
+            <strong>Platform</strong>
+            <Select
+              value={findOption(projectPlatforms, editableTask.platformId?._id)}
+              options={projectPlatforms}
+              onChange={(option) => handleUpdate("platformId", option.value)}
+              placeholder={projectPlatforms.length === 0 ? "Loading..." : "Select..."}
             />
           </div>
           <div className="detail-item-editable">
