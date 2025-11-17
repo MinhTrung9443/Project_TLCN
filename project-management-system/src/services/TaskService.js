@@ -6,6 +6,9 @@ const { logHistory } = require("./HistoryService");
 const TaskHistory = require("../models/TaskHistory");
 const notificationService = require("./NotificationService");
 const User = require("../models/User");
+const cloudinary = require('../config/cloudinary'); // BẠN CẦN IMPORT CLOUDINARY VÀO ĐÂY
+const path = require('path');
+const fs = require('fs');
 // Hàm lấy task theo projectId
 const getTasksByProjectKey = async (projectKey) => {
   // 1. Tìm project để lấy projectId
@@ -340,123 +343,84 @@ const getTaskHistory = async (taskId) => {
 
 const addAttachment = async (taskId, file, userId) => {
   if (!file) {
-    const error = new Error("No file uploaded.");
+    const error = new Error("Không có file nào được tải lên.");
     error.statusCode = 400;
     throw error;
   }
 
   const task = await Task.findById(taskId);
   if (!task) {
-    const error = new Error("Task not found");
+    // Nếu task không tồn tại, chúng ta nên xóa file vừa upload lên Cloudinary để tránh rác
+    await cloudinary.uploader.destroy(file.filename); // file.filename là public_id
+    const error = new Error("Không tìm thấy công việc");
     error.statusCode = 404;
     throw error;
   }
-
-  // URL để truy cập file từ client
-  // Hãy chắc chắn rằng domain và port là chính xác
-  // Ví dụ: http://localhost:5000/uploads/filename.ext
-  // process.env.SERVER_URL nên được định nghĩa trong file .env
-  const fileUrl = `${process.env.SERVER_URL || 'http://localhost:5000'}/uploads/${file.filename}`;
   
+  // Logic mới: Sử dụng thông tin từ Cloudinary (req.file)
   const newAttachment = {
-    filename: file.originalname, // Lưu tên file gốc để hiển thị
-    url: fileUrl,
-    // uploadedAt sẽ tự động được thêm bởi default value trong schema
+    filename: file.originalname,      // Tên file gốc
+    url: file.path,                   // URL từ Cloudinary
+    public_id: file.filename,         // public_id từ Cloudinary
   };
   
-  // Thêm attachment mới vào mảng
   task.attachments.push(newAttachment);
   
   const updatedTask = await task.save();
 
-  // Ghi lại lịch sử
   await logHistory(
     taskId,
     userId,
     "Attachment",
     null,
-    `Added attachment: ${file.originalname}`,
+    `Đã thêm tệp đính kèm: ${file.originalname}`,
     "UPDATE"
   );
   
-  // Populate lại để trả về dữ liệu đầy đủ cho client
-  await updatedTask.populate([
-    { path: "projectId", select: "name key" },
-    { path: "taskTypeId", select: "name icon" },
-    { path: "priorityId", select: "name icon" },
-    { path: "assigneeId", select: "fullname avatar" },
-    { path: "reporterId", select: "fullname avatar" },
-    { path: "createdById", select: "fullname avatar" },
-    { path: "statusId", select: "name color" },
-    { path: "sprintId", select: "name" },
-    { path: "platformId", select: "name icon" },
-  ]);
-
-  return updatedTask;
+  // Dùng lại hàm populate của bạn để trả về dữ liệu đầy đủ
+  return populateFullTask(Task.findById(updatedTask._id));
 };
+
 const deleteAttachment = async (taskId, attachmentId, userId) => {
   if (!mongoose.Types.ObjectId.isValid(taskId) || !mongoose.Types.ObjectId.isValid(attachmentId)) {
-    const error = new Error("Invalid ID");
+    const error = new Error("ID không hợp lệ");
     error.statusCode = 400;
     throw error;
   }
 
   const task = await Task.findById(taskId);
   if (!task) {
-    const error = new Error("Task not found");
+    const error = new Error("Không tìm thấy công việc");
     error.statusCode = 404;
     throw error;
   }
 
-  // Tìm attachment trong mảng
   const attachment = task.attachments.id(attachmentId);
   if (!attachment) {
-    const error = new Error("Attachment not found");
+    const error = new Error("Không tìm thấy tệp đính kèm");
     error.statusCode = 404;
     throw error;
   }
   
-  // 1. Xóa file vật lý khỏi server
   try {
-    const url = new URL(attachment.url);
-    const filename = path.basename(url.pathname); // Lấy tên file từ URL
-    const filePath = path.join(__dirname, '..', 'public', 'uploads', filename);
-
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath); // Xóa file
-    }
-  } catch (fileError) {
-    // Ghi log lỗi nhưng không dừng tiến trình, vì việc xóa trong DB quan trọng hơn
-    console.error(`Failed to delete physical file for attachment ${attachmentId}:`, fileError);
+    await cloudinary.uploader.destroy(attachment.public_id);
+  } catch (cloudinaryError) {
+    console.error(`Lỗi khi xóa file trên Cloudinary (public_id: ${attachment.public_id}):`, cloudinaryError);
   }
 
-  task.attachments.pull(attachmentId); // <<< Sửa thành phương thức .pull()
+  task.attachments.pull(attachmentId);
   const updatedTask = await task.save();
 
-  // 3. Ghi lại lịch sử
   await logHistory(
     taskId,
     userId,
     "Attachment",
     null,
-    `Removed attachment: ${attachment.filename}`,
+    `Đã xóa tệp đính kèm: ${attachment.filename}`,
     "UPDATE"
   );
   
-  // 4. Populate lại và trả về
-  await updatedTask.populate([
-    { path: "projectId", select: "name key" },
-    { path: "taskTypeId", select: "name icon" },
-    { path: "priorityId", select: "name icon" },
-    { path: "assigneeId", select: "fullname avatar" },
-    { path: "reporterId", select: "fullname avatar" },
-    { path: "createdById", select: "fullname avatar" },
-    { path: "statusId", select: "name color" },
-    { path: "sprintId", select: "name" },
-    { path: "platformId", select: "name icon" },
-  ]);
-
-  return updatedTask;
+  return populateFullTask(Task.findById(updatedTask._id));
 };
 
 const getOppositeLinkType = (type) => {

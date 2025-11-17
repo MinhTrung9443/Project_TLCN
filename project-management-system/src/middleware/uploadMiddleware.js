@@ -1,29 +1,69 @@
-const multer = require('multer');
-const path = require('path'); // <<< SỬA LẠI THÀNH require('path')
-const fs = require('fs');     // <<< SỬA LẠI THÀNH require('fs')
 
-// Đảm bảo thư mục 'uploads' tồn tại
-const uploadDir = path.join(__dirname, '../public/uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
+const path = require('path');
+
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+    this.isOperational = true;
+    Error.captureStackTrace(this, this.constructor);
+  }
 }
 
-// Cấu hình lưu trữ cho multer
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir); // Thư mục lưu file
-    },
-    filename: function (req, file, cb) {
-        // Giữ lại tên gốc nhưng thêm timestamp để tránh trùng lặp
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + '-' + file.originalname.replace(/\s+/g, '_')); // Thay thế khoảng trắng bằng gạch dưới
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: (req, file) => {
+    if (!file || !file.mimetype) {
+      throw new AppError('No file provided!', 400);
     }
+
+    let folder, resource_type;
+
+    if (file.mimetype.startsWith('image')) {
+      folder = 'specialty-foods/images';
+      resource_type = 'image';
+    } else if (file.mimetype.startsWith('video')) {
+      folder = 'specialty-foods/videos';
+      resource_type = 'video';
+    } else {
+      folder = 'specialty-foods/raw_files';
+      resource_type = 'raw';
+    }
+
+    const originalName = path.parse(file.originalname).name;
+    const public_id = `${Date.now()}-${originalName}`;
+
+    return {
+      folder: folder,
+      resource_type: resource_type,
+      public_id: public_id,
+
+    };
+  },
 });
 
-// Không lọc file, cho phép mọi loại file
+
+const fileFilter = (req, file, cb) => {
+  // Thêm lại các định dạng video
+  const allowedFileTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|txt|mp4|mov|avi|wmv|mkv/;
+  const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
+
+  if (extname) {
+    return cb(null, true);
+  }
+  cb(new AppError('Định dạng file không được hỗ trợ!', 400));
+};
+
 const upload = multer({
-    storage: storage,
-    limits: { fileSize: 1024 * 1024 * 100 } // Tăng giới hạn lên 100MB
+  storage,
+  limits: {
+    fileSize: 1024 * 1024 * 200, // Tăng giới hạn lên 500MB cho video
+  },
+  fileFilter,
 });
 
 module.exports = upload;
