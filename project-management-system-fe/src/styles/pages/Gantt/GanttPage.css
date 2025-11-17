@@ -38,11 +38,18 @@
   gap: 8px;
   padding: 8px 16px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #fff;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  color: #374151;
   transition: all 0.2s;
+}
+
+.gantt-filter-btn .material-symbols-outlined,
+.gantt-groupby-btn .material-symbols-outlined {
+  font-size: 20px;
 }
 
 .gantt-filter-btn:hover,
@@ -52,9 +59,13 @@
 }
 
 .gantt-filter-btn.active {
-  background: #dbeafe;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   border-color: #3b82f6;
   color: #1e40af;
+}
+
+.gantt-filter-btn.active .material-symbols-outlined {
+  color: #2563eb;
 }
 
 .gantt-timeview-select {

@@ -108,6 +108,7 @@ const GanttPage = () => {
       {/* Header */}
       <GanttHeader
         filter={filter}
+        setFilter={setFilter}
         showFilterPanel={showFilterPanel}
         setShowFilterPanel={setShowFilterPanel}
         groupBy={groupBy}

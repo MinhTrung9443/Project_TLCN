@@ -36,10 +36,7 @@ const userService = {
   // Cập nhật thông tin user bất kỳ (admin)
   updateUserInfo: async (id, updateData) => {
     try {
-      const response = await apiClient.post(
-        `/users/update-user/${id}`,
-        updateData
-      );
+      const response = await apiClient.post(`/users/update-user/${id}`, updateData);
       return response.data;
     } catch (error) {
       throw error;
@@ -67,7 +64,17 @@ const userService = {
 
   fetchAllUsers: async () => {
     try {
-      const response = await apiClient.get("/users/get-all-users"); 
+      const response = await apiClient.get("/users/get-all-users");
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Lấy users với params (cho filter)
+  getUsers: async (params) => {
+    try {
+      const response = await apiClient.get("/users/get-all-users", { params });
       return response.data;
     } catch (error) {
       throw error;

@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from "react";
+import GanttFilterPanel from "./GanttFilterPanel";
 
 const GanttHeader = ({
   filter,
+  setFilter,
   showFilterPanel,
   setShowFilterPanel,
   groupBy,
@@ -13,6 +15,9 @@ const GanttHeader = ({
 }) => {
   const groupByRef = useRef(null);
   const filterRef = useRef(null);
+
+  // Calculate total filter count
+  const filterCount = filter.projectIds.length + filter.groupIds.length + filter.assigneeIds.length + (filter.includeUnassigned ? 1 : 0);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -30,21 +35,23 @@ const GanttHeader = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [setShowGroupByPanel, setShowFilterPanel]);
+
   return (
     <div className="gantt-header">
       <div className="gantt-header-left">
-        <button
-          className={`gantt-filter-btn ${Object.keys(filter).some((k) => filter[k]?.length > 0) ? "active" : ""}`}
-          onClick={() => setShowFilterPanel(!showFilterPanel)}
-          ref={filterRef}
-        >
-          <span className="material-symbols-outlined">filter_alt</span>
-          Filter (0)
-        </button>
+        <div style={{ position: "relative" }}>
+          <button className={`gantt-filter-btn ${filterCount > 0 ? "active" : ""}`} onClick={() => setShowFilterPanel(!showFilterPanel)}>
+            <span className="material-symbols-outlined">filter_alt</span>
+            Filter ({filterCount})
+          </button>
+
+          <GanttFilterPanel filter={filter} setFilter={setFilter} showFilterPanel={showFilterPanel} filterRef={filterRef} />
+        </div>
 
         <div ref={groupByRef} style={{ position: "relative" }}>
           <button className="gantt-groupby-btn" onClick={() => setShowGroupByPanel(!showGroupByPanel)}>
-            Group by {groupBy.length} Project
+            <span className="material-symbols-outlined">view_list</span>
+            Group by ({groupBy.length})
           </button>
 
           {/* Group By Dropdown */}
