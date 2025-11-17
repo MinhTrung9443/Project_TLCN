@@ -15,14 +15,31 @@ const GanttFilterPanel = ({ filter, setFilter, showFilterPanel, filterRef }) => 
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [projectsRes, groupsRes, usersRes] = await Promise.all([getProjects(), groupService.getGroups(), userService.getUsers()]);
+        const [projectsRes, groupsRes, usersRes] = await Promise.all([getProjects(), groupService.getGroups(), userService.fetchAllUsers()]);
 
         // Handle different response formats
         const projectsData = projectsRes.data?.data || projectsRes.data || [];
         const groupsData = groupsRes.data?.data || groupsRes.data || [];
-        const usersData = usersRes.data?.data || usersRes.data?.users || usersRes.data || [];
 
-        console.log("Filter data fetched:", { projectsData, groupsData, usersData });
+        // Users API returns array directly or in data property
+        let usersData = [];
+        if (Array.isArray(usersRes)) {
+          usersData = usersRes;
+        } else if (Array.isArray(usersRes.data)) {
+          usersData = usersRes.data;
+        } else if (usersRes.data?.users) {
+          usersData = usersRes.data.users;
+        } else if (usersRes.data?.data) {
+          usersData = usersRes.data.data;
+        }
+
+        console.log("Filter data fetched:", {
+          projectsData,
+          groupsData,
+          usersData,
+          usersResType: typeof usersRes,
+          usersResIsArray: Array.isArray(usersRes),
+        });
 
         setProjects(Array.isArray(projectsData) ? projectsData : []);
         setGroups(Array.isArray(groupsData) ? groupsData : []);
