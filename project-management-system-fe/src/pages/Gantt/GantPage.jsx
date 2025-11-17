@@ -103,6 +103,100 @@ const GanttPage = () => {
     return calculateBarPosition(startDate, endDate, timelineColumns);
   };
 
+  // Calculate task statistics
+  const calculateStatistics = () => {
+    const stats = {
+      atRisk: 0,
+      done: 0,
+      delay: 0,
+      inProgress: 0,
+      unplanned: 0,
+      total: 0,
+    };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Helper function to count tasks recursively
+    const countTasks = (items) => {
+      items.forEach((item) => {
+        // Count tasks at different levels
+        if (item.tasks) {
+          item.tasks.forEach((task) => {
+            stats.total++;
+
+            // Check status
+            const statusName = task.statusId?.name?.toLowerCase() || "";
+            const statusCategory = task.statusId?.category?.toLowerCase() || "";
+            const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+
+            // Done: status category is 'done'
+            if (statusCategory === "done") {
+              stats.done++;
+            }
+            // In Progress: status category is 'in progress'
+            else if (statusCategory === "in progress") {
+              stats.inProgress++;
+            }
+            // Delay: past due date and not done
+            else if (dueDate && dueDate < today && statusCategory !== "done") {
+              stats.delay++;
+            }
+            // At Risk: due soon (within 3 days) and not done
+            else if (dueDate) {
+              const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+              if (daysUntilDue >= 0 && daysUntilDue <= 3 && statusCategory !== "done") {
+                stats.atRisk++;
+              }
+            }
+            // Unplanned: no start date or end date
+            if (!task.startDate && !task.endDate) {
+              stats.unplanned++;
+            }
+          });
+        }
+
+        // Recursively count in sprints
+        if (item.sprints) {
+          countTasks(item.sprints);
+        }
+      });
+    };
+
+    // Count tasks in ganttData
+    countTasks(ganttData);
+
+    // Count backlog tasks
+    backlogTasks.forEach((task) => {
+      stats.total++;
+
+      const statusName = task.statusId?.name?.toLowerCase() || "";
+      const statusCategory = task.statusId?.category?.toLowerCase() || "";
+      const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+
+      if (statusCategory === "done") {
+        stats.done++;
+      } else if (statusCategory === "in progress") {
+        stats.inProgress++;
+      } else if (dueDate && dueDate < today && statusCategory !== "done") {
+        stats.delay++;
+      } else if (dueDate) {
+        const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        if (daysUntilDue >= 0 && daysUntilDue <= 3 && statusCategory !== "done") {
+          stats.atRisk++;
+        }
+      }
+
+      if (!task.startDate && !task.endDate) {
+        stats.unplanned++;
+      }
+    });
+
+    return stats;
+  };
+
+  const statistics = calculateStatistics();
+
   return (
     <div className="gantt-page" data-timeview={timeView}>
       {/* Header */}
@@ -117,6 +211,7 @@ const GanttPage = () => {
         handleGroupByChange={handleGroupByChange}
         timeView={timeView}
         setTimeView={setTimeView}
+        statistics={statistics}
       />
 
       {/* Gantt Chart */}

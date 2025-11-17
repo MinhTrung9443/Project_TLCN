@@ -123,6 +123,12 @@
   color: #6b7280;
 }
 
+.status-empty {
+  background: #f8fafc;
+  color: #94a3b8;
+  font-style: italic;
+}
+
 /* Dropdown */
 .gantt-dropdown {
   position: absolute;
