@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from "react";
+import GanttFilterPanel from "./GanttFilterPanel";
 
 const GanttHeader = ({
   filter,
+  setFilter,
   showFilterPanel,
   setShowFilterPanel,
   groupBy,
@@ -10,9 +12,13 @@ const GanttHeader = ({
   handleGroupByChange,
   timeView,
   setTimeView,
+  statistics = { atRisk: 0, done: 0, delay: 0, inProgress: 0, unplanned: 0, total: 0 },
 }) => {
   const groupByRef = useRef(null);
   const filterRef = useRef(null);
+
+  // Calculate total filter count
+  const filterCount = filter.projectIds.length + filter.groupIds.length + filter.assigneeIds.length + (filter.includeUnassigned ? 1 : 0);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -30,21 +36,23 @@ const GanttHeader = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [setShowGroupByPanel, setShowFilterPanel]);
+
   return (
     <div className="gantt-header">
       <div className="gantt-header-left">
-        <button
-          className={`gantt-filter-btn ${Object.keys(filter).some((k) => filter[k]?.length > 0) ? "active" : ""}`}
-          onClick={() => setShowFilterPanel(!showFilterPanel)}
-          ref={filterRef}
-        >
-          <span className="material-symbols-outlined">filter_alt</span>
-          Filter (0)
-        </button>
+        <div style={{ position: "relative" }}>
+          <button className={`gantt-filter-btn ${filterCount > 0 ? "active" : ""}`} onClick={() => setShowFilterPanel(!showFilterPanel)}>
+            <span className="material-symbols-outlined">filter_alt</span>
+            Filter ({filterCount})
+          </button>
+
+          <GanttFilterPanel filter={filter} setFilter={setFilter} showFilterPanel={showFilterPanel} filterRef={filterRef} />
+        </div>
 
         <div ref={groupByRef} style={{ position: "relative" }}>
           <button className="gantt-groupby-btn" onClick={() => setShowGroupByPanel(!showGroupByPanel)}>
-            Group by {groupBy.length} Project
+            <span className="material-symbols-outlined">view_list</span>
+            Group by ({groupBy.length})
           </button>
 
           {/* Group By Dropdown */}
@@ -78,11 +86,12 @@ const GanttHeader = ({
 
       <div className="gantt-header-right">
         <div className="gantt-status-badges">
-          <span className="status-badge status-at-risk">1 At Risk</span>
-          <span className="status-badge status-done">1 Done</span>
-          <span className="status-badge status-delay">20 Delay</span>
-          <span className="status-badge status-in-progress">1 In Progress</span>
-          <span className="status-badge status-unplanned">38 Unplanned</span>
+          {statistics.atRisk > 0 && <span className="status-badge status-at-risk">{statistics.atRisk} At Risk</span>}
+          {statistics.done > 0 && <span className="status-badge status-done">{statistics.done} Done</span>}
+          {statistics.delay > 0 && <span className="status-badge status-delay">{statistics.delay} Delay</span>}
+          {statistics.inProgress > 0 && <span className="status-badge status-in-progress">{statistics.inProgress} In Progress</span>}
+          {statistics.unplanned > 0 && <span className="status-badge status-unplanned">{statistics.unplanned} Unplanned</span>}
+          {statistics.total === 0 && <span className="status-badge status-empty">No tasks</span>}
         </div>
         <input type="text" className="gantt-search" placeholder="Search" />
       </div>
