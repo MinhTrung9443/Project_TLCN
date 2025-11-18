@@ -68,6 +68,7 @@ const auditLogService = {
       const uid = log.userId?._id?.toString() || "unknown";
       if (!userStats[uid]) {
         userStats[uid] = {
+          userId: uid, // Thêm userId vào đây
           name: log.userId?.fullname || "Unknown",
           avatar: log.userId?.avatar || null,
           count: 0,

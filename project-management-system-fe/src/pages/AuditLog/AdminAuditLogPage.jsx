@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getProjectAuditOverview, getProjectAuditLogs } from "../../services/auditLogService";
 import { getProjects } from "../../services/projectService";
+import PerformancePanel from "../../components/common/PerformancePanel";
 import "../../styles/AdminAuditLog.css";
 
 const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
@@ -11,6 +12,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
+  const [selectedUser, setSelectedUser] = useState(null); // For performance panel
 
   // Lấy danh sách project
   useEffect(() => {
@@ -205,22 +207,41 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
           Team Member Activity
         </h3>
         <div className="user-stats-grid">
-          {Object.values(overview.userStats || {}).map((user, idx) => (
-            <div key={idx} className="user-stat-item">
-              <div className="user-avatar">
-                {user.avatar ? <img src={user.avatar} alt={user.name} /> : <div className="avatar-placeholder">{user.name?.[0] || "?"}</div>}
-              </div>
-              <div className="user-info">
-                <div className="user-name">{user.name}</div>
-                <div className="user-actions">
-                  <span className="badge create">{user.actions?.create || 0} Created</span>
-                  <span className="badge update">{user.actions?.update || 0} Updated</span>
-                  <span className="badge delete">{user.actions?.delete || 0} Deleted</span>
+          {Object.values(overview.userStats || {}).map((user, idx) => {
+            // Skip nếu userId không hợp lệ
+            if (!user.userId || user.userId === "unknown" || user.userId === "undefined") {
+              return null;
+            }
+
+            return (
+              <div
+                key={idx}
+                className="user-stat-item clickable-user"
+                onClick={() => {
+                  console.log("Clicked user:", user);
+                  setSelectedUser({
+                    userId: user.userId,
+                    name: user.name,
+                    avatar: user.avatar,
+                  });
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="user-avatar">
+                  {user.avatar ? <img src={user.avatar} alt={user.name} /> : <div className="avatar-placeholder">{user.name?.[0] || "?"}</div>}
                 </div>
-                <div className="total-actions">{user.count} total actions</div>
+                <div className="user-info">
+                  <div className="user-name">{user.name}</div>
+                  <div className="user-actions">
+                    <span className="badge create">{user.actions?.create || 0} Created</span>
+                    <span className="badge update">{user.actions?.update || 0} Updated</span>
+                    <span className="badge delete">{user.actions?.delete || 0} Deleted</span>
+                  </div>
+                  <div className="total-actions">{user.count} total actions</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -315,6 +336,17 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
           </button>
         </div>
       </div>
+
+      {/* Performance Panel */}
+      {selectedUser && (
+        <PerformancePanel
+          userId={selectedUser.userId}
+          userName={selectedUser.name}
+          userAvatar={selectedUser.avatar}
+          projectId={selectedProjectId}
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
     </div>
   );
 };

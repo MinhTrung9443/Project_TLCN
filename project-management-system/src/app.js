@@ -24,6 +24,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const timeLogRoutes = require("./routes/timeLogRoutes");
+const performanceRoutes = require("./routes/performanceRoutes");
 
 const corsOptions = {
   origin: "http://localhost:3000", // Cho phép origin này
@@ -78,5 +79,6 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/timelogs", timeLogRoutes);
+app.use("/api/performance", performanceRoutes);
 
 module.exports = app;

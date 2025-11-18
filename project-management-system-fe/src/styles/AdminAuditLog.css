@@ -335,6 +335,17 @@
   transition: all 0.2s;
 }
 
+.user-stat-item.clickable-user {
+  cursor: pointer;
+}
+
+.user-stat-item.clickable-user:hover {
+  background: #ede9fe;
+  border-color: #8b5cf6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
 .user-stat-item:hover {
   background: #f3f4f6;
   border-color: #d1d5db;
