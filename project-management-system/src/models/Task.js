@@ -25,6 +25,16 @@ const taskSchema = new Schema(
       max: 100,
       default: 0,
     },
+    estimatedTime: {
+      type: Number, // Thời gian ước tính (giờ)
+      min: 0,
+      default: 0,
+    },
+    actualTime: {
+      type: Number, // Thời gian thực tế đã log (giờ)
+      min: 0,
+      default: 0,
+    },
     projectId: {
       type: Schema.Types.ObjectId,
       ref: "Project",
@@ -70,11 +80,6 @@ const taskSchema = new Schema(
       ref: "User",
       required: true,
     },
-    storyPoints: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
     startDate: {
       type: Date,
     },
@@ -97,23 +102,23 @@ const taskSchema = new Schema(
         },
       },
     ],
-    linkedTasks: { 
-    type: [ 
-      {
-        type: {
-          type: String,
-          enum: ["relates to", "blocks", "is blocked by", "clones", "is cloned by", "duplicates", "is duplicated by"],
-          required: true,
+    linkedTasks: {
+      type: [
+        {
+          type: {
+            type: String,
+            enum: ["relates to", "blocks", "is blocked by", "clones", "is cloned by", "duplicates", "is duplicated by"],
+            required: true,
+          },
+          taskId: {
+            type: Schema.Types.ObjectId,
+            ref: "Task",
+            required: true,
+          },
         },
-        taskId: {
-          type: Schema.Types.ObjectId,
-          ref: "Task",
-          required: true,
-        },
-      },
-    ],
-    default: [] 
-},
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,

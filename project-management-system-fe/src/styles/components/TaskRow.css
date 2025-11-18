@@ -1,103 +1,109 @@
 /* src/components/task/TaskRow.css */
 .task-row {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    border-bottom: 1px solid #e9ecef;
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
 }
 
 .task-row:hover {
-    background-color: #f8f9fa;
+  background-color: #f8f9fa;
 }
 
 .task-cell {
-    display: flex;
-    align-items: center;
-    padding: 0 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 14px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
 }
 
 .task-key {
-    flex: 0 0 150px;
-    gap: 8px;
-    font-weight: 500;
-    color: #495057;
+  flex: 0 0 150px;
+  gap: 8px;
+  font-weight: 500;
+  color: #495057;
 }
 
 .task-name {
-    flex: 1 1 300px;
-    min-width: 200px;
-    font-weight: 500;
+  flex: 1 1 300px;
+  min-width: 200px;
+  font-weight: 500;
 }
 
-.task-sprint, .task-platform, .task-priority, .task-story-points, .task-status, .task-due-date {
-    flex: 0 0 120px;
-    justify-content: center;
+.task-sprint,
+.task-platform,
+.task-priority,
+.task-status,
+.task-due-date {
+  flex: 0 0 120px;
+  justify-content: center;
 }
 
-.task-assignee, .task-reporter {
-    flex: 0 0 80px;
-    justify-content: center;
+.task-assignee,
+.task-reporter {
+  flex: 0 0 80px;
+  justify-content: center;
 }
 
 .sprint-pill {
-    background-color: #e7e7e7;
-    color: #333;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 12px;
+  background-color: #e7e7e7;
+  color: #333;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
 }
 
-.icon-wrapper-list, .icon-wrapper-list-small {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    border-radius: 4px;
+.icon-wrapper-list,
+.icon-wrapper-list-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border-radius: 4px;
 }
 .icon-wrapper-list {
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
 }
 .icon-wrapper-list-small {
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
 }
 
 .avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    object-fit: cover;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
 }
 .default-avatar {
-    background-color: #aeb8c3;
+  background-color: #aeb8c3;
 }
 
 .status-pill {
-    padding: 4px 10px;
-    border-radius: 4px;
-    color: white;
-    font-size: 12px;
-    font-weight: bold;
-    text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 .description-content img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
 }

@@ -23,6 +23,7 @@ const commentRoutes = require("./routes/commentRoute.js");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const timeLogRoutes = require("./routes/timeLogRoutes");
 
 const corsOptions = {
   origin: "http://localhost:3000", // Cho phép origin này
@@ -45,17 +46,18 @@ app.use((req, res, next) => {
   }
 });
 app.use(express.json()); // Để parse body của request dạng JSON
-const uploadsPath = path.join(__dirname, 'public', 'uploads');
+const uploadsPath = path.join(__dirname, "public", "uploads");
 
-app.use(express.static(path.join(__dirname, 'public'), {
-  setHeaders: function (res, filePath) {
-    // Chỉ thêm header cho các file nằm trong thư mục 'uploads'
-    if (filePath.startsWith(uploadsPath)) {
-      res.setHeader('Content-Disposition', 'attachment');
-    }
-  }
-}));
-
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    setHeaders: function (res, filePath) {
+      // Chỉ thêm header cho các file nằm trong thư mục 'uploads'
+      if (filePath.startsWith(uploadsPath)) {
+        res.setHeader("Content-Disposition", "attachment");
+      }
+    },
+  })
+);
 
 // --- Đăng ký các routes ---
 app.use("/api", appRoute);
@@ -75,5 +77,6 @@ app.use("/api/gantt", ganttRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/timelogs", timeLogRoutes);
 
 module.exports = app;

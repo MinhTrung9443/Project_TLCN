@@ -1,7 +1,7 @@
-import React from 'react';
-import { FaUserCircle } from 'react-icons/fa';
-import { IconComponent } from '../../components/common/IconPicker';
-import '../../styles/components/TaskRow.css';
+import React from "react";
+import { FaUserCircle } from "react-icons/fa";
+import { IconComponent } from "../../components/common/IconPicker";
+import "../../styles/components/TaskRow.css";
 
 // Các hằng số này thuộc về TaskRow, nên để ở đây
 const PREDEFINED_TASKTYPE_ICONS = [
@@ -44,16 +44,25 @@ const PREDEFINED_PRIORITY_ICONS = [
 
 const TaskRow = ({ task, onTaskClick }) => {
   const renderAvatar = (user) => {
-    if (!user) return <div className="avatar default-avatar"><FaUserCircle /></div>;
+    if (!user)
+      return (
+        <div className="avatar default-avatar">
+          <FaUserCircle />
+        </div>
+      );
     if (user.avatar) {
       return <img src={user.avatar} alt={user.fullname} className="avatar" title={user.fullname} />;
     }
-    return <div className="avatar default-avatar" title={user.fullname}>{user.fullname.charAt(0).toUpperCase()}</div>;
+    return (
+      <div className="avatar default-avatar" title={user.fullname}>
+        {user.fullname.charAt(0).toUpperCase()}
+      </div>
+    );
   };
 
-  const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find(i => i.name === task.taskTypeId?.icon);
-  const platformIconInfo = PREDEFINED_PLATFORM_ICONS.find(i => i.name === task.platformId?.icon);
-  const priorityIconInfo = PREDEFINED_PRIORITY_ICONS.find(i => i.name === task.priorityId?.icon);
+  const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find((i) => i.name === task.taskTypeId?.icon);
+  const platformIconInfo = PREDEFINED_PLATFORM_ICONS.find((i) => i.name === task.platformId?.icon);
+  const priorityIconInfo = PREDEFINED_PRIORITY_ICONS.find((i) => i.name === task.priorityId?.icon);
 
   return (
     <div className="task-row" onClick={() => onTaskClick(task)}>
@@ -67,7 +76,7 @@ const TaskRow = ({ task, onTaskClick }) => {
       </div>
       <div className="task-cell task-name">{task.name}</div>
       <div className="task-cell task-sprint">
-        <span className='sprint-pill'>{task.sprintId?.name || 'Backlog'}</span>
+        <span className="sprint-pill">{task.sprintId?.name || "Backlog"}</span>
       </div>
       <div className="task-cell task-platform">
         {platformIconInfo && (
@@ -85,15 +94,12 @@ const TaskRow = ({ task, onTaskClick }) => {
           </span>
         )}
       </div>
-      <div className="task-cell task-story-points">{task.storyPoints || 0}</div>
       <div className="task-cell task-status">
-        <span className="status-pill" style={{ backgroundColor: task.statusId?.color || '#ccc' }}>
+        <span className="status-pill" style={{ backgroundColor: task.statusId?.color || "#ccc" }}>
           {task.statusId?.name}
         </span>
       </div>
-      <div className="task-cell task-due-date">
-        {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Due'}
-      </div>
+      <div className="task-cell task-due-date">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "Due"}</div>
     </div>
   );
 };

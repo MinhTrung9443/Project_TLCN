@@ -1,9 +1,10 @@
-
-import React from "react";
+import React, { useState } from "react";
 import Select from "react-select";
 import RichTextEditor from "../common/RichTextEditor";
-import AttachmentsTab from './AttachmentsTab'; 
-import LinkedTasksTab from './LinkedTasksTab'; 
+import AttachmentsTab from "./AttachmentsTab";
+import LinkedTasksTab from "./LinkedTasksTab";
+import LogTimeModal from "./LogTimeModal";
+import TimeLogList from "./TimeLogList";
 
 const TaskDetailsTab = ({
   editableTask,
@@ -16,13 +17,25 @@ const TaskDetailsTab = ({
   projectSprints,
   onAddAttachment,
   onDeleteAttachment,
-  allProjectTasks, 
+  allProjectTasks,
   onLinkTask,
-  onUnlinkTask
+  onUnlinkTask,
 }) => {
+  const [showLogTimeModal, setShowLogTimeModal] = useState(false);
+  const [timeLogsKey, setTimeLogsKey] = useState(0);
 
   const handleDescriptionUpdate = (content) => {
     handleUpdate("description", content);
+  };
+
+  const handleTimeLogged = () => {
+    setShowLogTimeModal(false);
+    setTimeLogsKey((prev) => prev + 1); // Refresh time logs
+  };
+
+  const handleTimeLogsUpdate = (totalTime) => {
+    // Update actualTime in editableTask
+    setEditableTask((prev) => ({ ...prev, actualTime: totalTime }));
   };
 
   const findOption = (options, field) => {
@@ -30,7 +43,7 @@ const TaskDetailsTab = ({
     const idToFind = typeof field === "object" ? field._id : field;
     return options.find((opt) => opt.value === idToFind);
   };
-  
+
   return (
     <>
       <div className="panel-section">
@@ -52,117 +65,140 @@ const TaskDetailsTab = ({
       </div>
 
       <div className="panel-section detail-grid-editable">
+        <div className="detail-item-editable">
+          <strong>Status</strong>
+          <Select
+            value={findOption(statuses, editableTask.statusId?._id)}
+            options={statuses}
+            onChange={(option) => handleUpdate("statusId", option.value)}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Assignee</strong>
+          <Select
+            value={findOption(projectMembers, editableTask.assigneeId)}
+            options={projectMembers} // Sử dụng danh sách members
+            onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
+            isClearable
+            placeholder="Select..."
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Reporter</strong>
+          <Select
+            value={findOption(projectMembers, editableTask.reporterId)}
+            options={projectMembers} // Sử dụng danh sách members
+            onChange={(option) => handleUpdate("reporterId", option.value)}
+            placeholder="Select..."
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Type</strong>
+          <Select
+            value={findOption(projectTaskTypes, editableTask.taskTypeId)}
+            options={projectTaskTypes}
+            onChange={(option) => handleUpdate("taskTypeId", option.value)}
+            placeholder={projectTaskTypes.length === 0 ? "Loading..." : "Select..."}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Priority</strong>
+          <Select
+            value={findOption(projectPriorities, editableTask.priorityId?._id)}
+            options={projectPriorities}
+            onChange={(option) => handleUpdate("priorityId", option.value)}
+            placeholder={projectPriorities.length === 0 ? "Loading..." : "Select..."}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Sprint</strong>
+          <Select
+            value={findOption(projectSprints, editableTask.sprintId?._id)}
+            options={projectSprints}
+            onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
+            isClearable
+            placeholder={!editableTask ? "" : projectSprints.length === 0 && editableTask.projectId ? "Loading..." : "Backlog"}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Start Date</strong>
+          <input
+            type="date"
+            value={editableTask.startDate ? new Date(editableTask.startDate).toISOString().split("T")[0] : ""}
+            onChange={(e) => handleUpdate("startDate", e.target.value)}
+            className="editable-input"
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Due Date</strong>
+          <input
+            type="date"
+            value={editableTask.dueDate ? new Date(editableTask.dueDate).toISOString().split("T")[0] : ""}
+            onChange={(e) => handleUpdate("dueDate", e.target.value)}
+            className="editable-input"
+          />
+        </div>
+      </div>
+
+      {/* Time Tracking Section */}
+      <div className="panel-section">
+        <div className="section-header">
+          <h4>Time Tracking</h4>
+          <button className="log-time-btn" onClick={() => setShowLogTimeModal(true)}>
+            <span className="material-symbols-outlined">schedule</span>
+            Log Time
+          </button>
+        </div>
+
+        <div className="detail-grid-editable">
           <div className="detail-item-editable">
-            <strong>Status</strong>
-            <Select
-              value={findOption(statuses, editableTask.statusId?._id)}
-              options={statuses}
-              onChange={(option) => handleUpdate("statusId", option.value)}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Assignee</strong>
-            <Select
-              value={findOption(projectMembers, editableTask.assigneeId)}
-              options={projectMembers} // Sử dụng danh sách members
-              onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
-              isClearable
-              placeholder="Select..."
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Reporter</strong>
-            <Select
-              value={findOption(projectMembers, editableTask.reporterId)}
-              options={projectMembers} // Sử dụng danh sách members
-              onChange={(option) => handleUpdate("reporterId", option.value)}
-              placeholder="Select..."
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Type</strong>
-            <Select
-              value={findOption(projectTaskTypes, editableTask.taskTypeId)}
-              options={projectTaskTypes}
-              onChange={(option) => handleUpdate("taskTypeId", option.value)}
-              placeholder={projectTaskTypes.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Priority</strong>
-            <Select
-              value={findOption(projectPriorities, editableTask.priorityId?._id)}
-              options={projectPriorities}
-              onChange={(option) => handleUpdate("priorityId", option.value)}
-              placeholder={projectPriorities.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Sprint</strong>
-            <Select
-              value={findOption(projectSprints, editableTask.sprintId?._id)}
-              options={projectSprints}
-              onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
-              isClearable
-              placeholder={!editableTask ? "" : (projectSprints.length === 0 && editableTask.projectId) ? "Loading..." : "Backlog"}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Story Point</strong>
+            <strong>Estimated Time (hours)</strong>
             <input
               type="number"
-              value={editableTask.storyPoints || ""}
-              onChange={(e) => setEditableTask((prev) => ({ ...prev, storyPoints: e.target.value }))}
-              onBlur={(e) => handleUpdate("storyPoints", parseInt(e.target.value, 10) || 0)}
-              className="editable-input"
               min="0"
+              step="0.5"
+              value={editableTask.estimatedTime || 0}
+              onChange={(e) => setEditableTask((prev) => ({ ...prev, estimatedTime: parseFloat(e.target.value) || 0 }))}
+              onBlur={(e) => handleUpdate("estimatedTime", parseFloat(e.target.value) || 0)}
+              className="editable-input"
+              placeholder="0"
             />
           </div>
           <div className="detail-item-editable">
-            <strong>Start Date</strong>
+            <strong>Actual Time (hours)</strong>
             <input
-              type="date"
-              value={editableTask.startDate ? new Date(editableTask.startDate).toISOString().split("T")[0] : ""}
-              onChange={(e) => handleUpdate("startDate", e.target.value)}
+              type="number"
+              value={editableTask.actualTime || 0}
               className="editable-input"
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Due Date</strong>
-            <input
-              type="date"
-              value={editableTask.dueDate ? new Date(editableTask.dueDate).toISOString().split("T")[0] : ""}
-              onChange={(e) => handleUpdate("dueDate", e.target.value)}
-              className="editable-input"
+              disabled
+              style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
             />
           </div>
         </div>
+
+        {/* Time Logs List */}
+        <TimeLogList key={timeLogsKey} taskId={editableTask._id} onTimeLogsUpdate={handleTimeLogsUpdate} />
+      </div>
 
       {/* Description */}
       <div className="panel-section">
         <h4>Description</h4>
         <RichTextEditor value={editableTask.description || ""} onChange={handleDescriptionUpdate} />
       </div>
-       <div className="panel-section">
-        <LinkedTasksTab 
-            task={editableTask}
-            allProjectTasks={allProjectTasks}
-            onLink={onLinkTask}
-            onUnlink={onUnlinkTask}
-        />
+      <div className="panel-section">
+        <LinkedTasksTab task={editableTask} allProjectTasks={allProjectTasks} onLink={onLinkTask} onUnlink={onUnlinkTask} />
       </div>
 
       <div className="panel-section">
-        <AttachmentsTab 
-          attachments={editableTask.attachments} 
-          onAdd={onAddAttachment} 
-          onDelete={onDeleteAttachment} 
-        />
+        <AttachmentsTab attachments={editableTask.attachments} onAdd={onAddAttachment} onDelete={onDeleteAttachment} />
       </div>
 
       <footer className="panel-footer">
         <span>Created By: {editableTask.createdById?.fullname || "N/A"}</span>
       </footer>
+
+      {/* Log Time Modal */}
+      <LogTimeModal isOpen={showLogTimeModal} taskId={editableTask._id} onClose={() => setShowLogTimeModal(false)} onTimeLogged={handleTimeLogged} />
     </>
   );
 };

@@ -62,10 +62,6 @@ const DraggableTask = ({ task, source }) => {
           {task.statusId?.name === "In Progress" && <span className="material-symbols-outlined task-status-inprogress">schedule</span>}
           {task.statusId?.name === "Done" && <span className="material-symbols-outlined task-status-done">check_circle</span>}
         </div>
-        {/* Story Point */}
-        <div className="task-storypoint" title="Story Points">
-          <span className="task-storypoint-circle">{task.storyPoints ?? "-"}</span>
-        </div>
         {/* Assignee Avatar */}
         <div className="task-assignee" title="Assignee">
           {task.assigneeId && task.assigneeId.avatar ? (

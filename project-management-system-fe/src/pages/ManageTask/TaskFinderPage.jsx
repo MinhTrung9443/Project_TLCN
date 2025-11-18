@@ -48,9 +48,7 @@ const TaskFinderPage = () => {
           taskTypes: [],
           sprints: [],
         });
-      } catch (error) {
-
-      }
+      } catch (error) {}
     };
     fetchFilterData();
   }, []);
@@ -91,36 +89,30 @@ const TaskFinderPage = () => {
     fetchTasks(activeFilters, keyword);
   };
 
-const handleTaskUpdate = (updatedData) => {
+  const handleTaskUpdate = (updatedData) => {
+    setTasks((prevTasks) => {
+      if (Array.isArray(updatedData)) {
+        const updatesMap = new Map(updatedData.map((task) => [task._id, task]));
 
-  setTasks((prevTasks) => {
-    if (Array.isArray(updatedData)) {
-
-      const updatesMap = new Map(updatedData.map(task => [task._id, task]));
-
-      return prevTasks.map(task => updatesMap.get(task._id) || task);
-    }
-    
-    else if (updatedData && updatedData._id) {
-      return prevTasks.map((task) => 
-        task._id === updatedData._id ? updatedData : task
-      );
-    }
-    
-    return prevTasks;
-  });
-
-  if (selectedTask) {
-    if (Array.isArray(updatedData)) {
-      const newlySelectedTask = updatedData.find(t => t._id === selectedTask._id);
-      if (newlySelectedTask) {
-        setSelectedTask(newlySelectedTask);
+        return prevTasks.map((task) => updatesMap.get(task._id) || task);
+      } else if (updatedData && updatedData._id) {
+        return prevTasks.map((task) => (task._id === updatedData._id ? updatedData : task));
       }
-    } else if (updatedData && selectedTask._id === updatedData._id) {
-      setSelectedTask(updatedData);
+
+      return prevTasks;
+    });
+
+    if (selectedTask) {
+      if (Array.isArray(updatedData)) {
+        const newlySelectedTask = updatedData.find((t) => t._id === selectedTask._id);
+        if (newlySelectedTask) {
+          setSelectedTask(newlySelectedTask);
+        }
+      } else if (updatedData && selectedTask._id === updatedData._id) {
+        setSelectedTask(updatedData);
+      }
     }
-  }
-};
+  };
 
   const handleTaskClick = (task) => {
     setSelectedTask(task);
@@ -183,7 +175,6 @@ const handleTaskUpdate = (updatedData) => {
               <div className="task-cell task-assignee">Assignee</div>
               <div className="task-cell task-reporter">Reporter</div>
               <div className="task-cell task-priority">Priority</div>
-              <div className="task-cell task-story-points">Story Point</div>
               <div className="task-cell task-status">Status</div>
               <div className="task-cell task-due-date">Due Date</div>
             </div>

@@ -15,7 +15,7 @@ const INITIAL_FORM_STATE = {
   priorityId: "",
   assigneeId: "",
   reporterId: "",
-  storyPoints: "",
+
   startDate: "",
   dueDate: "",
   platformId: "",
@@ -65,7 +65,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
         setSettings({ taskTypes: [], priorities: [], members: [], platforms: [] });
         return;
       }
-      
+
       const selectedProject = projects.find((p) => p._id === formData.projectId);
       if (!selectedProject) return;
 
@@ -95,7 +95,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
         projectId: value, // Cập nhật projectId mới
         name: prev.name, // Giữ lại tên và mô tả đã gõ
         description: prev.description,
-        sprintId: sprint ? sprint._id : "", 
+        sprintId: sprint ? sprint._id : "",
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -152,7 +152,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
         <form onSubmit={handleSubmit} className="modal-body">
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="projectId" className="required">Project</label>
+              <label htmlFor="projectId" className="required">
+                Project
+              </label>
               <select id="projectId" name="projectId" value={formData.projectId} onChange={handleInputChange}>
                 <option value="">Select Project</option>
                 {projects.map((p) => (
@@ -164,7 +166,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
               {errors.projectId && <p className="error-text">{errors.projectId}</p>}
             </div>
             <div className="form-group">
-              <label htmlFor="taskTypeId" className="required">Type</label>
+              <label htmlFor="taskTypeId" className="required">
+                Type
+              </label>
               <select id="taskTypeId" name="taskTypeId" value={formData.taskTypeId} onChange={handleInputChange} disabled={!formData.projectId}>
                 <option value="">Select Type</option>
                 {settings.taskTypes.map((t) => (
@@ -178,7 +182,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="name" className="required">Task Name</label>
+            <label htmlFor="name" className="required">
+              Task Name
+            </label>
             <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} />
             {errors.name && <p className="error-text">{errors.name}</p>}
           </div>
@@ -191,7 +197,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="priorityId" className="required">Priority</label>
+              <label htmlFor="priorityId" className="required">
+                Priority
+              </label>
               <select id="priorityId" name="priorityId" value={formData.priorityId} onChange={handleInputChange} disabled={!formData.projectId}>
                 <option value="">Select Priority</option>
                 {settings.priorities.map((p) => (
@@ -232,10 +240,6 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
 
           {showMore && (
             <div className="more-fields">
-              <div className="form-group">
-                <label htmlFor="storyPoints">Story Point</label>
-                <input type="number" id="storyPoints" name="storyPoints" value={formData.storyPoints} onChange={handleInputChange} min="0" />
-              </div>
               <div className="form-group">
                 <label htmlFor="platformId">Platform</label>
                 <select id="platformId" name="platformId" value={formData.platformId} onChange={handleInputChange} disabled={!formData.projectId}>
