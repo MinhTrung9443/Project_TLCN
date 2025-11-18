@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useRef  } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { updateTask, linkTask, unlinkTask, searchTasks } from "../../services/taskService";
+import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
+import platformService from "../../services/platformService";
 import sprintService from "../../services/sprintService";
 import ActionsMenu from "../common/ActionsMenu";
-import CommentsTab from './CommentsTab';       
-import HistoryTab from './HistoryTab';         
+import CommentsTab from './CommentsTab';
+import HistoryTab from './HistoryTab';
 import "../../styles/components/TaskDetailPanel.css";
-import { IconComponent } from "../common/IconPicker"; 
-import TaskDetailsTab from './TaskDetailsTab'; 
+import { IconComponent } from "../common/IconPicker";
+import TaskDetailsTab from './TaskDetailsTab';
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
   { name: "FaStar", color: "#2ECC71" },
@@ -31,15 +32,17 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
   const [activeTab, setActiveTab] = useState('Details');
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
   const nameTextAreaRef = useRef(null);
+  const fileInputRef = useRef(null);
   useEffect(() => {
     if (nameTextAreaRef.current) {
       nameTextAreaRef.current.style.height = "auto";
       nameTextAreaRef.current.style.height = `${nameTextAreaRef.current.scrollHeight}px`;
     }
-  }, [editableTask?.name, task]); 
+  }, [editableTask?.name, task]);
   const [projectMembers, setProjectMembers] = useState([]);
   const [projectTaskTypes, setProjectTaskTypes] = useState([]);
   const [projectPriorities, setProjectPriorities] = useState([]);
+  const [projectPlatforms, setProjectPlatforms] = useState([]);
   const [projectSprints, setProjectSprints] = useState([]);
 
   useEffect(() => {
@@ -48,6 +51,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     setProjectTaskTypes([]);
     setProjectPriorities([]);
     setProjectSprints([]);
+    setProjectPlatforms([]);
     setAllProjectTasks([]); // Reset
 
     if (task && task.projectId && task.projectId.key) {
@@ -90,6 +94,16 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
         }
       };
 
+      const fetchPlatformsForProject = async () => {
+        try {
+          const res = await platformService.getAllPlatforms(projectKey);
+          const formattedPlatforms = res.data.map(p => ({ value: p._id, label: p.name }));
+          setProjectPlatforms(formattedPlatforms);
+        } catch (error) {
+          toast.error(`Could not load platforms for project ${projectKey}.`);
+          setProjectPlatforms([]);
+        }
+      };
       const fetchSprintsForProject = async () => {
         try {
           const responseData = await sprintService.getSprints(projectKey);
@@ -115,23 +129,24 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
         }
       };
       const fetchAllTasksInProject = async () => {
-    try {
-        const response = await searchTasks({ projectId: projectId });
-        
-        setAllProjectTasks(response.data); 
-        
-    } catch (error) {
-        toast.error("Could not load tasks for linking.");
-        setAllProjectTasks([]); 
-    }
-};
+        try {
+          const response = await searchTasks({ projectId: projectId });
+
+          setAllProjectTasks(response.data);
+
+        } catch (error) {
+          toast.error("Could not load tasks for linking.");
+          setAllProjectTasks([]);
+        }
+      };
 
       Promise.all([
         fetchTaskTypesForProject(),
         fetchMembers(),
         fetchPrioritiesForProject(),
+        fetchPlatformsForProject(),
         fetchSprintsForProject(),
-        fetchAllTasksInProject(), 
+        fetchAllTasksInProject(),
       ]);
 
     }
@@ -166,71 +181,111 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     }
   };
 
-  const handleDescriptionUpdate = (content) => {
-    handleUpdate("description", content);
-  };
-
-  const findOption = (options, field) => {
-    if (!field) return null;
-    const idToFind = typeof field === "object" ? field._id : field;
-    return options.find((opt) => opt.value === idToFind);
-  };
-
-   const handleLinkTask = async (targetTaskId, linkType) => {
+  const handleLinkTask = async (targetTaskId, linkType) => {
     try {
       const updatedTasks = await linkTask(editableTask._id, targetTaskId, linkType);
-      
-      onTaskUpdate(updatedTasks); 
+
+      onTaskUpdate(updatedTasks);
 
       setEditableTask(updatedTasks[0]); // Task đầu tiên luôn là task hiện tại
-      
+
       toast.success("Task linked successfully!");
     } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to link task.");
-        throw error;
+      toast.error(error.response?.data?.message || "Failed to link task.");
+      throw error;
     }
-};
+  };
 
-const handleUnlinkTask = async (linkId) => {
+  const handleUnlinkTask = async (linkId) => {
     if (!window.confirm("Are you sure you want to remove this link?")) return;
     try {
       const updatedTasks = await unlinkTask(editableTask._id, linkId);
-      
+
       onTaskUpdate(updatedTasks);
-      
+
       setEditableTask(updatedTasks[0]);
-      
+
       toast.success("Link removed successfully!");
     } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to remove link.");
+      toast.error(error.response?.data?.message || "Failed to remove link.");
     }
-};
+  };
   const handleDelete = () => {
     if (window.confirm(`Are you sure you want to delete task ${editableTask.key}?`)) {
       onTaskDelete(editableTask._id);
     }
   };
+
   const handleClone = () => {
     onTaskClone(editableTask._id);
     toast.info("Clone function not implemented yet.");
   };
   const handleAddAttachment = () => {
-    toast.info("Add attachment function not implemented yet.");
+    fileInputRef.current.click();
+  };
+
+  // 2. THÊM HÀM MỚI: Xử lý khi người dùng đã chọn file
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    toast.info("Uploading attachment...");
+
+    try {
+      // Gọi API để tải file lên
+      const updatedTaskWithAttachment = await addAttachment(editableTask._id, file);
+
+      // Cập nhật state để giao diện hiển thị file mới ngay lập tức
+      setEditableTask(updatedTaskWithAttachment);
+      onTaskUpdate(updatedTaskWithAttachment); // Thông báo cho component cha
+
+      toast.success("Attachment added successfully!");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to add attachment.");
+    } finally {
+      // Reset input để có thể chọn lại cùng một file
+      event.target.value = null;
+    }
+  };
+
+  // 3. THÊM HÀM MỚI: Xử lý xóa attachment
+  const handleDeleteAttachment = async (attachmentId) => {
+    if (!window.confirm("Are you sure you want to delete this attachment?")) {
+      return;
+    }
+
+    try {
+      const updatedTaskAfterDelete = await deleteAttachment(editableTask._id, attachmentId);
+
+      // Cập nhật lại state
+      setEditableTask(updatedTaskAfterDelete);
+      onTaskUpdate(updatedTaskAfterDelete);
+
+      toast.success("Attachment deleted successfully!");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete attachment.");
+    }
   };
 
   const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find(
     i => i.name === editableTask.taskTypeId?.icon
   );
 
-    return (
+  return (
     <div className="task-detail-panel">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
       <header className="panel-header">
         <div className="panel-header-left">
           <div className="task-key-container">
             {typeIconInfo && (
-              <span 
-                className="icon-wrapper-list-small" 
-                style={{ backgroundColor: typeIconInfo.color }} 
+              <span
+                className="icon-wrapper-list-small"
+                style={{ backgroundColor: typeIconInfo.color }}
                 title={editableTask.taskTypeId.name}
               >
                 <IconComponent name={editableTask.taskTypeId.icon} />
@@ -240,23 +295,23 @@ const handleUnlinkTask = async (linkId) => {
           </div>
 
           <div className="editable-task-name-wrapper" data-replicated-value={editableTask.name}>
-                        <textarea
-                            className="editable-task-name"
-                            value={editableTask.name}
-                            onChange={(e) => setEditableTask(prev => ({ ...prev, name: e.target.value }))}
-                            onBlur={() => handleUpdate("name", editableTask.name)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    e.target.blur();
-                                }
-                            }}
-                            rows="1"
-                            spellCheck="false"
-                            placeholder="Enter a task name..."
-                        />
-                    </div>
-                    </div>
+            <textarea
+              className="editable-task-name"
+              value={editableTask.name}
+              onChange={(e) => setEditableTask(prev => ({ ...prev, name: e.target.value }))}
+              onBlur={() => handleUpdate("name", editableTask.name)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  e.target.blur();
+                }
+              }}
+              rows="1"
+              spellCheck="false"
+              placeholder="Enter a task name..."
+            />
+          </div>
+        </div>
         <div className="panel-header-right">
           <ActionsMenu onDelete={handleDelete} onClone={handleClone} onAddAttachment={handleAddAttachment} />
           <button onClick={onClose} className="close-btn">
@@ -264,21 +319,21 @@ const handleUnlinkTask = async (linkId) => {
           </button>
         </div>
       </header>
-        <main className="panel-body">
+      <main className="panel-body">
         <div className="panel-tabs">
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'Details' ? 'active' : ''}`}
             onClick={() => setActiveTab('Details')}
           >
             Details
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'Comments' ? 'active' : ''}`}
             onClick={() => setActiveTab('Comments')}
           >
             Comments
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'History' ? 'active' : ''}`}
             onClick={() => setActiveTab('History')}
           >
@@ -296,10 +351,13 @@ const handleUnlinkTask = async (linkId) => {
               projectMembers={projectMembers}
               projectTaskTypes={projectTaskTypes}
               projectPriorities={projectPriorities}
+              projectPlatforms={projectPlatforms}
               projectSprints={projectSprints}
-              allProjectTasks={allProjectTasks} 
+              allProjectTasks={allProjectTasks}
               onLinkTask={handleLinkTask}
               onUnlinkTask={handleUnlinkTask}
+              onAddAttachment={handleAddAttachment}
+              onDeleteAttachment={handleDeleteAttachment}
             />
           )}
           {activeTab === 'Comments' && <CommentsTab taskId={editableTask._id} />}

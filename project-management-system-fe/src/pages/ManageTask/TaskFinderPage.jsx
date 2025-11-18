@@ -27,6 +27,7 @@ const TaskFinderPage = () => {
     users: [],
     statuses: [],
     priorities: [],
+    platforms:[],
     taskTypes: [],
     sprints: [],
   });
@@ -45,6 +46,7 @@ const TaskFinderPage = () => {
           users: usersRes.data || [],
           statuses: statusesRes.data || [],
           priorities: [],
+          platforms: [],
           taskTypes: [],
           sprints: [],
         });
@@ -59,6 +61,7 @@ const TaskFinderPage = () => {
       users: filterData.users.map((u) => ({ value: u._id, label: u.fullname })),
       statuses: filterData.statuses.map((s) => ({ value: s._id, label: s.name })),
       priorities: filterData.priorities.map((p) => ({ value: p._id, label: p.name })),
+      platforms: filterData.platforms.map((p) => ({ value: p._id, label: p.name })),
       taskTypes: filterData.taskTypes.map((t) => ({ value: t._id, label: t.name })),
       sprints: filterData.sprints.map((sp) => ({ value: sp._id, label: sp.name })),
     }),
@@ -197,6 +200,7 @@ const TaskFinderPage = () => {
           onTaskDelete={handleTaskDelete}
           onTaskClone={handleTaskClone}
           statuses={selectOptions.statuses}
+          platforms={selectOptions.platforms}
           priorities={selectOptions.priorities}
           taskTypes={selectOptions.taskTypes}
           sprints={selectOptions.sprints}

@@ -32,8 +32,8 @@ router.get("/:taskId/history", protect, handleGetTaskHistory);
 router.get("/:taskId/comments", protect, handleGetComments);
 router.post("/:taskId/comments", protect, handleCreateComment);
 
-router.post("/:taskId/attachments", protect, upload.single('attachment'), handleAddAttachment);
-router.delete("/:taskId/attachments/:attachmentId", protect, handleDeleteAttachment);
+router.post('/:taskId/attachments', protect, upload.single('attachmentFile'), handleAddAttachment);
+router.delete('/:taskId/attachments/:attachmentId',protect,handleDeleteAttachment);
 
 router.post('/:taskId/links', protect, handleLinkTask);
 router.delete('/:taskId/links/:linkId', protect, handleUnlinkTask);

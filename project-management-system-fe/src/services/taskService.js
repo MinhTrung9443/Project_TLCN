@@ -29,7 +29,7 @@ export const deleteTask = (taskId) => {
 };
 export const addAttachment = async (taskId, file) => {
     const formData = new FormData();
-    formData.append('attachment', file); // 'attachment' phải khớp với tên field trong upload.single() ở backend
+    formData.append('attachmentFile', file); // 'attachment' phải khớp với tên field trong upload.single() ở backend
 
     const config = {
         headers: {
