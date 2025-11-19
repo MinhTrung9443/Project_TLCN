@@ -14,7 +14,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
     type: "Scrum",
     startDate: "",
     endDate: "",
-    projectLeaderId: currentUser?._id || "",
+    projectManagerId: currentUser?._id || "",
   });
 
   const [formData, setFormData] = useState(getInitialFormData());
@@ -95,7 +95,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
       !formData.name ||
       !formData.key ||
       !formData.type ||
-      !formData.projectLeaderId
+      !formData.projectManagerId
     ) {
       toast.error("Please fill in all required fields.");
       return;
@@ -171,13 +171,13 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
               </select>
             </div>
             <div className="form-group form-group-span-2">
-              <label htmlFor="projectLeaderId" className="form-label">
+              <label htmlFor="projectManagerId" className="form-label">
                 Project Manager <span className="required-star">*</span>
               </label>
               <select
-                name="projectLeaderId"
-                id="projectLeaderId"
-                value={formData.projectLeaderId}
+                name="projectManagerId"
+                id="projectManagerId"
+                value={formData.projectManagerId}
                 onChange={handleInputChange}
                 className="form-select"
                 required

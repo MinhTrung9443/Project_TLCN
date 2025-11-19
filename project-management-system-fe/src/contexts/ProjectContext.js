@@ -1,18 +1,64 @@
-import React from 'react';
+// contexts/ProjectContext.js
 
-// 1. Tạo Context với một giá trị mặc định
-// Nó sẽ chứa key của project được chọn và một hàm để cập nhật key đó.
+import React, { useState, useMemo } from 'react';
+import { getProjectByKey } from '../services/projectService';
+import { useAuth } from './AuthContext';
+
 export const ProjectContext = React.createContext({
+  projectData: null,
+  userProjectRole: null,
   selectedProjectKey: null,
-  setSelectedProjectKey: () => {},
+  setProjectKey: () => {}, // <--- Hàm sẽ có tên này
+  loadingProject: true,
 });
 
-// 2. Tạo một "Provider" component
-// Component này sẽ bao bọc ứng dụng của bạn và cung cấp state cho các component con.
 export const ProjectProvider = ({ children }) => {
-  const [selectedProjectKey, setSelectedProjectKey] = React.useState(null);
+  const { user } = useAuth();
+  const [projectData, setProjectData] = useState(null);
+  const [userProjectRole, setUserProjectRole] = useState(null);
+  // State lưu trữ key hiện tại
+  const [currentProjectKey, setCurrentProjectKey] = useState(null); // <--- Đổi tên state để tránh nhầm lẫn
+  const [loadingProject, setLoadingProject] = useState(true);
 
-  const value = { selectedProjectKey, setSelectedProjectKey };
+  // Hàm để thay đổi project key
+  const setProjectKey = async (key) => {
+    if (!key) {
+      setProjectData(null);
+      setUserProjectRole(null);
+      setCurrentProjectKey(null); // <--- Cập nhật state này
+      setLoadingProject(false);
+      return;
+    }
+    
+    setLoadingProject(true);
+    setCurrentProjectKey(key); // <--- Cập nhật state này
+    try {
+      const response = await getProjectByKey(key);
+      const project = response.data;
+      setProjectData(project);
+
+      if (user && project.members) {
+        const currentUserAsMember = project.members.find(
+          (member) => member.userId._id === user._id
+        );
+        setUserProjectRole(currentUserAsMember ? currentUserAsMember.role : null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch project data:", error);
+      setProjectData(null);
+      setUserProjectRole(null);
+    } finally {
+      setLoadingProject(false);
+    }
+  };
+  
+  const value = useMemo(() => ({
+    projectData,
+    userProjectRole,
+    selectedProjectKey: currentProjectKey, // <--- Export state ra với tên 'selectedProjectKey'
+    setProjectKey,                          // <--- Export hàm ra với tên 'setProjectKey'
+    loadingProject,
+  }), [projectData, userProjectRole, currentProjectKey, loadingProject]);
 
   return (
     <ProjectContext.Provider value={value}>

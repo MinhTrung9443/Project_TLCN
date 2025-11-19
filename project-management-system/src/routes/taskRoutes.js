@@ -16,14 +16,14 @@ const {
   handleUnlinkTask,
 } = require("../controllers/TaskController");
 const { handleGetComments, handleCreateComment} = require("../controllers/CommentController");
-const { protect, isAdmin } = require("../middleware/authMiddleware"); 
+const { protect, admin } = require("../middleware/authMiddleware"); 
 const upload = require('../middleware/uploadMiddleware'); 
 
 router.get("/search", protect, handleSearchTasks);
 router.get("/project/:projectKey", protect, handleGetTasksByProjectKey);
 router.post("/", protect, handleCreateTask);
 
-router.put("/change-sprint/:taskId", protect, isAdmin, changeSprint);
+router.put("/change-sprint/:taskId", protect, admin, changeSprint);
 router.put("/update-status/:taskId", protect, handleUpdateTaskStatus);
 
 router.patch("/:taskId", protect, handleUpdateTask);

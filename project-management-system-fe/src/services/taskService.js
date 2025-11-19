@@ -4,29 +4,31 @@ export const getTasksByProject = (projectKey) => {
   return apiClient.get(`/tasks/project/${projectKey}`);
 };
 
-export const createTask = (taskData) => {
-  return apiClient.post("/tasks", taskData);
+
+export const createTask = (projectKey, taskData) => {
+  return apiClient.post(`/tasks/project/${projectKey}`, taskData);
 };
 
-export const updateTaskSprint = (taskId, sprintId) => {
-  return apiClient.put(`/tasks/change-sprint/${taskId}`, { sprintId });
+export const updateTaskSprint = (projectKey, taskId, sprintId) => {
+  return apiClient.put(`/tasks/project/${projectKey}/tasks/${taskId}/change-sprint`, { sprintId });
 };
 
-export const updateTaskStatus = (taskId, statusId) => {
-  return apiClient.put(`/tasks/update-status/${taskId}`, { statusId });
+export const updateTaskStatus = (projectKey, taskId, statusId) => {
+  return apiClient.put(`/tasks/project/${projectKey}/tasks/${taskId}/update-status`, { statusId });
 };
 
+export const updateTask = (projectKey, taskId, updateData) => {
+  return apiClient.patch(`/tasks/project/${projectKey}/tasks/${taskId}`, updateData);
+};
+
+export const deleteTask = (projectKey, taskId) => {
+  return apiClient.delete(`/tasks/project/${projectKey}/tasks/${taskId}`);
+};
 export const searchTasks = (params) => {
   const query = new URLSearchParams(JSON.parse(JSON.stringify(params))).toString();
   return apiClient.get(`/tasks/search?${query}`);
 };
 
-export const updateTask = (taskId, updateData) => {
-  return apiClient.patch(`/tasks/${taskId}`, updateData);
-};
-export const deleteTask = (taskId) => {
-  return apiClient.delete(`/tasks/${taskId}`);
-};
 export const addAttachment = async (taskId, file) => {
     const formData = new FormData();
     formData.append('attachmentFile', file); // 'attachment' phải khớp với tên field trong upload.single() ở backend

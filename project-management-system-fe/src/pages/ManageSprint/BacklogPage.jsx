@@ -15,7 +15,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
 
 const BacklogPage = () => {
-  const { selectedProjectKey, setSelectedProjectKey } = useContext(ProjectContext);
+  const { selectedProjectKey, setProjectKey } = useContext(ProjectContext);
   const [sprintList, setSprintList] = useState([]);
   const [taskList, setTaskList] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);

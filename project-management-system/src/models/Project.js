@@ -30,15 +30,6 @@ const projectSchema = new Schema(
     endDate: {
       type: Date,
     },
-    parentProjectId: {
-      type: Schema.Types.ObjectId,
-      ref: "Project",
-    },
-    projectLeaderId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     workflowId: {
       type: Schema.Types.ObjectId,
       ref: "Workflow",
@@ -49,37 +40,14 @@ const projectSchema = new Schema(
       default: "active",
       required: true,
     },
-    members: [
+    members: [ // Đây là nguồn chân lý duy nhất cho quyền trong dự án
       {
-        userId: {
-          type: Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
+        _id: false,
+        userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
         role: {
           type: String,
+          enum: ["PROJECT_MANAGER", "LEADER", "MEMBER"],
           required: true,
-        },
-        addedOn: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
-    groups: [
-      {
-        groupId: {
-          type: Schema.Types.ObjectId,
-          ref: "Group",
-          required: true,
-        },
-        role: {
-          type: String,
-          required: true,
-        },
-        addedOn: {
-          type: Date,
-          default: Date.now,
         },
       },
     ],

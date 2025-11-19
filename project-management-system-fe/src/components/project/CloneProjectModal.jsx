@@ -23,7 +23,7 @@ const CloneProjectModal = ({ isOpen, onClose, sourceProject, onProjectCloned }) 
             const cloneData = {
                 name,
                 key,
-                projectLeaderId: user._id,
+                projectManagerId: user._id,
             };
             const response = await cloneProject(sourceProject._id, cloneData);
             toast.success('Project cloned successfully!');

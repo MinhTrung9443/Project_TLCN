@@ -1,15 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const platformController = require("../controllers/PlatformController.js");
-const { protect, isAdmin } = require("../middleware/authMiddleware");
+const { protect, admin } = require("../middleware/authMiddleware");
 
 router.get("/", protect, platformController.getAllPlatforms);
 
-router.post("/", protect, isAdmin, platformController.createPlatform);
+router.post("/", protect, admin, platformController.createPlatform);
 
-router.put("/:id", protect, isAdmin, platformController.updatePlatform);
+router.put("/:id", protect, admin, platformController.updatePlatform);
 
-router.delete("/:id", protect, isAdmin, platformController.deletePlatform);
+router.delete("/:id", protect, admin, platformController.deletePlatform);
 
 router.get("/:id", protect, platformController.getPlatformById);
 

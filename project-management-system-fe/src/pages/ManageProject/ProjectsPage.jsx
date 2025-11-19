@@ -15,7 +15,7 @@ import '../../styles/pages/ManageProject/ProjectsPage.css';
 
 const ProjectsPage = () => {
   const { user } = useAuth();
-  const { selectedProjectKey, setSelectedProjectKey } = useContext(ProjectContext); // <--- CẬP NHẬT DÒNG NÀY
+  const { selectedProjectKey, setProjectKey } = useContext(ProjectContext); // <--- CẬP NHẬT DÒNG NÀY
   const navigate = useNavigate();
   
   const [projects, setProjects] = useState([]);
@@ -76,31 +76,19 @@ const ProjectsPage = () => {
     setIsCloneModalOpen(true);
   };
 
-  // Xử lý cả Archive và Permanent Delete
-  const handleConfirmDelete = async () => {
+ const handleConfirmDelete = async () => {
     if (!selectedProject || !deleteAction) return;
     
     try {
       if (deleteAction === 'archive') {
         await archiveProject(selectedProject._id);
-        
-        // Tạo danh sách project còn lại
         const remainingProjects = projects.filter(p => p._id !== selectedProject._id);
         setProjects(remainingProjects);
         
-        // *** LOGIC MỚI ĐỂ CẬP NHẬT CONTEXT ***
-        // Kiểm tra xem project bị xóa có phải là project đang được chọn không
-        if (selectedProject.key.toUpperCase() === selectedProjectKey) {
-          if (remainingProjects.length > 0) {
-            // Nếu vẫn còn project, chọn project đầu tiên làm project mới
-            setSelectedProjectKey(remainingProjects[0].key.toUpperCase());
-          } else {
-            // Nếu không còn project nào, xóa key đã chọn
-            setSelectedProjectKey(null);
-          }
+        // Dùng selectedProjectKey từ context để so sánh
+        if (selectedProject.key.toUpperCase() === selectedProjectKey?.toUpperCase()) {
+          setProjectKey(remainingProjects.length > 0 ? remainingProjects[0].key.toUpperCase() : null);
         }
-        // *** KẾT THÚC LOGIC MỚI ***
-
         toast.success('Project archived successfully!');
 
       } else if (deleteAction === 'permanent') {
@@ -136,7 +124,7 @@ const ProjectsPage = () => {
 
   const handleProjectSelect = (project) => {
     if(view === 'active') {
-       setSelectedProjectKey(project.key.toUpperCase());
+       setProjectKey(project.key.toUpperCase());
        navigate(`/task-mgmt/projects/${project.key}/settings/general`);
     }
     // Không làm gì khi click vào project đã archived
@@ -145,20 +133,25 @@ const ProjectsPage = () => {
   const renderProjects = () => {
     const projectList = view === 'active' ? projects : archivedProjects;
     
-    return projectList.map((project) => (
-      <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{cursor: view === 'active' ? 'pointer' : 'default'}}>
-        <td><a href="#" className="project-name-link">{project.name}</a></td>
-        <td>{project.key}</td>
-        <td>{project.type}</td>
-        <td>{project.projectLeaderId?.fullname || 'N/A'}</td>
-        <td>{project.members.length}</td>
-        <td>{formatDate(view === 'active' ? project.createdAt : project.deletedAt)}</td>
-        <td>
-          <span className={`status-badge ${view === 'active' ? 'status-active' : 'status-archived'}`}>
-            {view === 'active' ? project.status : 'Archived'}
-          </span>
-        </td>
-        <td>
+    return projectList.map((project) => {
+      // Tìm PM từ mảng members
+      const projectManager = project.members.find(m => m.role === 'PROJECT_MANAGER');
+
+      return (
+        <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{cursor: view === 'active' ? 'pointer' : 'default'}}>
+          <td><a href="#" onClick={(e) => { e.preventDefault(); handleProjectSelect(project); }} className="project-name-link">{project.name}</a></td>
+          <td>{project.key}</td>
+          <td>{project.type}</td>
+          {/* Hiển thị tên PM đã tìm được */}
+          <td>{projectManager?.userId?.fullname || 'N/A'}</td>
+          <td>{project.members.length}</td>
+          <td>{formatDate(view === 'active' ? project.createdAt : project.deletedAt)}</td>
+          <td>
+            <span className={`status-badge ${view === 'active' ? 'status-active' : 'status-archived'}`}>
+              {view === 'active' ? project.status : 'Archived'}
+            </span>
+          </td>
+          <td>
           {view === 'active' ? (
             <ProjectActionsMenu
               project={project}
@@ -174,9 +167,9 @@ const ProjectsPage = () => {
           )}
         </td>
       </tr>
-    ));
+      );
+    });
   };
-  
   return (
     <>
       <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onProjectCreated={handleProjectCreated} />

@@ -5,7 +5,9 @@ import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import "./App.css";
-
+import ProjectLayout from './components/layout/ProjectLayout'; 
+import PrivateRoute from "./routes/PrivateRoute"; // Đảm bảo đường dẫn này đúng
+import AdminRoute from "./routes/AdminRoute"; // Chúng ta sẽ tạo file này sau
 import LoginPage from "./pages/Login"; // Giả sử đường dẫn này đúng
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/LandingPage";
@@ -23,37 +25,69 @@ import BacklogPage from "./pages/ManageSprint/BacklogPage";
 import ActiveSprintPage from "./pages/ManageSprint/ActiveSprintPage";
 import GanttPage from "./pages/Gantt/GantPage.jsx";
 import AdminAuditLogPage from "./pages/AuditLog/AdminAuditLogPage.jsx";
-
+import ProjectSettingsGeneral from "./pages/ManageProject/ProjectSettingsGeneral";
+import ProjectSettingMembers from "./pages/ManageProject/ProjectSettingMembers";
+import ProjectSettingsWorkflow from "./pages/ManageProject/ProjectSettingsWorkflow";
+import ProjectSettingPlatform from "./pages/ManageProject/ProjectSettingPlatform";
+import ProjectSettingPriority from "./pages/ManageProject/ProjectSettingPriority";
+import ProjectSettingTasktype from "./pages/ManageProject/ProjectSettingTasktype";
 function App() {
   return (
-    <ProjectProvider>
-      <BrowserRouter>
-        <AuthProvider>
+    <AuthProvider>
+      <ProjectProvider>
+        <BrowserRouter>
           <Routes>
+            {/* === CÁC ROUTE CÔNG KHAI === */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ForgotPassword />} />
-            {/* Các route còn lại - NẰM BÊN TRONG LAYOUT */}
-            <Route element={<Layout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/my-profile" element={<MyProfilePage />} />
-              <Route path="/Organization/User" element={<ManageUser />} />
-              <Route path="/Organization/User/:userId" element={<UserProfile />} />
-              <Route path="/organization/group" element={<GroupListPage />} />
 
-              <Route path="/settings/:tabName" element={<GlobalSettingsPage />} />
-              <Route path="/settings" element={<GlobalSettingsPage />} />
+            {/* === CÁC ROUTE CẦN ĐĂNG NHẬP === */}
+            <Route path="/" element={<PrivateRoute />}>
+              <Route element={<Layout />}>
+                
+                {/* --- Các Route chung cho mọi User --- */}
+                <Route index element={<Dashboard />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="my-profile" element={<MyProfilePage />} />
+                <Route path="projects" element={<ProjectsPage />} />
+                <Route path="task-finder" element={<TaskFinderPage />} />
+                <Route path="gantt" element={<GanttPage />} />
 
-              <Route path="/organization/group/:groupId" element={<GroupMembersPage />} />
+                              {/* === TẤT CẢ CÁC ROUTE TRONG PHẠM VI MỘT PROJECT SẼ NẰM TRONG NÀY === */}
+                <Route path="task-mgmt/projects/:projectKey" element={<ProjectLayout />}>
+                  
+                  {/* Route cho trang Settings và các tab con của nó */}
+                  <Route path="settings" element={<ProjectSettingsPage />}>
+                    <Route index element={<ProjectSettingsGeneral />} />
+                    <Route path="general" element={<ProjectSettingsGeneral />} />
+                    <Route path="members" element={<ProjectSettingMembers />} />
+                    <Route path="tasktype" element={<ProjectSettingTasktype />} />
+                    <Route path="priority" element={<ProjectSettingPriority />} />
+                    <Route path="platform" element={<ProjectSettingPlatform />} />
+                    <Route path="workflow" element={<ProjectSettingsWorkflow />} />
+                  </Route>
 
-              <Route path="/projects" element={<ProjectsPage />} />
-              <Route path="/task-mgmt/projects/:projectKey/settings/:tabName" element={<ProjectSettingsPage />} />
-              <Route path="/task-finder" element={<TaskFinderPage />} />
-              <Route path="/task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
-              <Route path="/task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
-              <Route path="/gantt" element={<GanttPage />} />
-              <Route path="/audit-log" element={<AdminAuditLogPage />} />
+                  {/* Các route khác thuộc một project */}
+                  <Route path="backlog" element={<BacklogPage />} />
+                  <Route path="active-sprint" element={<ActiveSprintPage />} />
+
+                  {/* Nếu Gantt Chart cũng thuộc một project, nó nên nằm ở đây */}
+                  {/* <Route path="gantt" element={<GanttPage />} /> */}
+                </Route>
+                {/* --- CÁC ROUTE CHỈ DÀNH CHO ADMIN --- */}
+                <Route path="organization">
+                  <Route path="user" element={<AdminRoute><ManageUser /></AdminRoute>} />
+                  <Route path="user/:userId" element={<AdminRoute><UserProfile /></AdminRoute>} />
+                  <Route path="group" element={<AdminRoute><GroupListPage /></AdminRoute>} />
+                  <Route path="group/:groupId" element={<AdminRoute><GroupMembersPage /></AdminRoute>} />
+                </Route>
+                <Route path="settings" element={<AdminRoute><GlobalSettingsPage /></AdminRoute>}>
+                  {/* Route con cho các tab setting nếu có */}
+                  <Route path=":tabName" element={<AdminRoute><GlobalSettingsPage /></AdminRoute>} />
+                </Route>
+                <Route path="audit-log" element={<AdminRoute><AdminAuditLogPage /></AdminRoute>} />
+
+              </Route>
             </Route>
           </Routes>
 
@@ -69,9 +103,9 @@ function App() {
             pauseOnHover
             theme="light"
           />
-        </AuthProvider>
-      </BrowserRouter>
-    </ProjectProvider>
+        </BrowserRouter>
+      </ProjectProvider>
+    </AuthProvider>
   );
 }
 

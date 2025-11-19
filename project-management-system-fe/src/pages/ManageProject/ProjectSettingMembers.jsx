@@ -1,77 +1,51 @@
+// src/pages/ManageProject/ProjectSettingMembers.jsx
+// [PHIÊN BẢN HOÀN THIỆN]
 
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ProjectContext } from '../../contexts/ProjectContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { getProjectMembers } from '../../services/projectService';
 import AddMemberModal from '../../components/project/AddMemberModal';
+import { getProjectMembers } from '../../services/projectService'; // Vẫn cần để fetch lại
 import '../../styles/pages/ManageProject/ProjectMembersTab.css';
 
 const ProjectSettingMembers = () => {
-    const { user } = useAuth();
-    const isAdmin = user?.role === 'admin';
+    // Lấy dữ liệu và quyền từ Context
+    const { projectData, userProjectRole, setProjectKey } = useContext(ProjectContext);
     const { projectKey } = useParams();
-    const { setSelectedProjectKey } = useContext(ProjectContext);
-    const [directMembers, setDirectMembers] = useState([]);
-    const [groupMembers, setGroupMembers] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const canManageMembers = userProjectRole === 'PROJECT_MANAGER';
+
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const formatDate = (dateString) => {
-    if (!dateString) {
-        return 'N/A'; // Trả về N/A nếu không có ngày
-    }
-    const date = new Date(dateString);
-    // Kiểm tra xem date có hợp lệ không
-    if (isNaN(date.getTime())) {
-        return 'Invalid Date';
-    }
-    return date.toLocaleDateString('en-US', { // Dùng định dạng US hoặc en-CA tùy bạn
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-};
+    // Hàm để tải lại dữ liệu cho context khi có thay đổi (thêm/xóa member)
+    const refreshProjectData = useCallback(() => {
+        // Gọi lại setProjectKey sẽ kích hoạt việc fetch lại dữ liệu trong ProjectProvider
+        setProjectKey(projectKey); 
+    }, [projectKey, setProjectKey]);
 
-    const fetchMembers = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await getProjectMembers(projectKey);
-            setDirectMembers(response.data.members || []);
-            setGroupMembers(response.data.groups || []);
-        } catch (error) {
-            toast.error("Could not fetch project members.");
-        } finally {
-            setLoading(false);
-        }
-    }, [projectKey]);
-
-    useEffect(() => {
-        if (projectKey) {
-            setSelectedProjectKey(projectKey.toUpperCase());
-        }
-    }, [projectKey, setSelectedProjectKey]);
-
-    useEffect(() => {
-        fetchMembers();
-    }, [fetchMembers]);
-    
     const handleMemberAdded = () => {
-        // Sau khi thêm thành công, đóng modal và tải lại danh sách
         setIsModalOpen(false);
-        fetchMembers();
+        refreshProjectData(); // Tải lại dữ liệu sau khi thêm thành công
+        toast.success('Member added successfully!');
     };
 
-    if (loading) return <div>Loading members...</div>;
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        return date.toLocaleDateString('en-CA');
+    };
 
-    const existingMemberIds = directMembers.map(m => m.userId?._id).filter(Boolean);
-    const existingGroupIds = groupMembers.map(g => g.groupId?._id).filter(Boolean);
+    if (!projectData) {
+        return <div>Loading members...</div>;
+    }
 
+    const members = projectData.members || [];
+    const existingMemberIds = members.map(m => m.userId?._id).filter(Boolean);
 
     return (
         <div className="project-members-container">
-            {isAdmin && (
+            {canManageMembers && (
                 <div className="members-actions-header">
                     <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">Add Member</button>
                 </div>
@@ -82,22 +56,9 @@ const ProjectSettingMembers = () => {
                     <div>Project Member</div>
                     <div>Role</div>
                     <div>Added On</div>
-                    <div></div>
+                    <div></div> {/* Cột cho Actions Menu */}
                 </div>
-                 {groupMembers.map(groupRelation => (
-                    groupRelation.groupId && (
-                        <div className="table-row" key={groupRelation.groupId._id}>
-                            <div className="member-info">
-                                <span className="material-symbols-outlined group-icon">group</span>
-                                <span>{groupRelation.groupId.name} ({groupRelation.groupId.members?.length || 0} members)</span>
-                            </div>
-                            <div>{groupRelation.role}</div>
-                            <div>{formatDate(groupRelation.addedOn)}</div>
-                            <div>⋮</div>
-                        </div>
-                    )
-                ))}
-                {directMembers.map(member => (
+                {members.map(member => (
                     member.userId && ( 
                         <div className="table-row" key={member.userId._id}>
                             <div className="member-info">
@@ -106,20 +67,25 @@ const ProjectSettingMembers = () => {
                             </div>
                             <div>{member.role}</div>
                             <div>{formatDate(member.addedOn)}</div>
-                            <div>⋮</div>
+                            <div>
+                                {/* Placeholder cho Actions Menu (xóa, đổi vai trò) */}
+                                {/* Bạn sẽ cần tạo một component ActionsMenu ở đây */}
+                                <button className="actions-btn">⋮</button>
+                            </div>
                         </div>
                     )
                 ))}
             </div>
 
-            <AddMemberModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                projectKey={projectKey}
-                onMemberAdded={handleMemberAdded}
-                existingMemberIds={existingMemberIds}
-                existingGroupIds={existingGroupIds}
-            />
+            {isModalOpen && (
+                <AddMemberModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    projectKey={projectKey}
+                    onMemberAdded={handleMemberAdded}
+                    existingMemberIds={existingMemberIds}
+                />
+            )}
         </div>
     );
 };

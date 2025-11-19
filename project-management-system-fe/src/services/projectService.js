@@ -49,3 +49,18 @@ export const addMemberToProject = (projectKey, data) => {
 export const addGroupToProject = (projectKey, data) => {
   return apiClient.post(`/projects/key/${projectKey}/groups`, data);
 };
+
+export const updateProjectByKey = (projectKey, projectData) => {
+  return apiClient.put(`/projects/key/${projectKey}`, projectData);
+};
+
+// [SỬA] Hàm này giờ sẽ do PM thực hiện và dùng projectKey
+export const archiveProjectByKey = (projectKey) => {
+  return apiClient.delete(`/projects/key/${projectKey}/archive`);
+};
+
+// [SỬA] Đổi tên cho rõ nghĩa
+export const addMembersFromGroupToProject = (projectKey, data) => {
+  // Route mới của bạn là .../add-from-group
+  return apiClient.post(`/projects/key/${projectKey}/add-from-group`, data);
+};
