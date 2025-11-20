@@ -94,31 +94,34 @@ const getProjectRole = async (userId, projectKey) => {
 };
 
 const isProjectMember = async (req, res, next) => {
+    // KIỂM TRA ĐẦU TIÊN: Nếu là Admin, cho qua ngay lập tức
+    if (req.user && req.user.role === 'admin') {
+        return next();
+    }
+
+    // Nếu không phải Admin, kiểm tra như bình thường
     try {
-        // Lấy đúng tên biến từ URL. Trong App.js, bạn đã định nghĩa là ':projectKey'
-        const role = await getProjectRole(req.user._id, req.params.projectKey); 
+        const role = await getProjectRole(req.user._id, req.params.key);
         if (role) {
             req.projectRole = role; 
             return next();
         }
         return res.status(403).json({ message: "Forbidden: You are not a member of this project." });
     } catch (error) {
-    console.error("[DEBUG] FATAL ERROR in 'isProjectMember':", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
-    return next();
-  }
-  return res.status(403).json({ message: "Forbidden: Admin access required" });
+        console.error("Error in isProjectMember middleware:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
 };
 
-// Kiểm tra có phải Leader hoặc PM không
 const isManagerOrLeader = async (req, res, next) => {
+    // KIỂM TRA ĐẦU TIÊN: Nếu là Admin, cho qua ngay lập tức
+    if (req.user && req.user.role === 'admin') {
+        return next();
+    }
+
+    // Nếu không phải Admin, kiểm tra như bình thường
     try {
-        // SỬA Ở ĐÂY: Dùng req.params.key
-        const role = await getProjectRole(req.user._id, req.params.projectKey); 
+        const role = await getProjectRole(req.user._id, req.params.key);
         if (role === 'PROJECT_MANAGER' || role === 'LEADER') {
             req.projectRole = role;
             return next();
@@ -130,12 +133,15 @@ const isManagerOrLeader = async (req, res, next) => {
     }
 };
 
-// Kiểm tra có phải PM không
 const isProjectManager = async (req, res, next) => {
-    try {
-        // SỬA Ở ĐÂY: Dùng req.params.key
-                const role = await getProjectRole(req.user._id, req.params.projectKey); 
+    // KIỂM TRA ĐẦU TIÊN: Nếu là Admin, cho qua ngay lập tức
+    if (req.user && req.user.role === 'admin') {
+        return next();
+    }
 
+    // Nếu không phải Admin, kiểm tra như bình thường
+    try {
+        const role = await getProjectRole(req.user._id, req.params.key);
         if (role === 'PROJECT_MANAGER') {
             req.projectRole = role;
             return next();
@@ -145,6 +151,14 @@ const isProjectManager = async (req, res, next) => {
         console.error("Error in isProjectManager middleware:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
+};
+
+const admin = (req, res, next) => {
+  // Sử dụng 'role' như bạn đã xác nhận
+  if (req.user && req.user.role === 'admin') {
+    return next();
+  }
+  return res.status(403).json({ message: "Forbidden: Admin access required" });
 };
 
 module.exports = { protect, admin, isProjectMember,canAssignTask , isManagerOrLeader, isProjectManager };

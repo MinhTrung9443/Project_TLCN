@@ -64,12 +64,10 @@ function App() {
                   </Route>
 
                   {/* Các route khác thuộc một project */}
-                  <Route path="backlog" element={<BacklogPage />} />
-                  <Route path="active-sprint" element={<ActiveSprintPage />} />
+                  <Route path="task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
+                  <Route path="task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
 
-                  {/* Nếu Gantt Chart cũng thuộc một project, nó nên nằm ở đây */}
-                  {/* <Route path="gantt" element={<GanttPage />} /> */}
-                </Route>
+            
                 {/* --- CÁC ROUTE CHỈ DÀNH CHO ADMIN --- */}
                 <Route path="organization">
                   <Route path="user" element={<AdminRoute><ManageUser /></AdminRoute>} />
@@ -83,6 +81,7 @@ function App() {
                 </Route>
                 <Route path="audit-log" element={<AdminRoute><AdminAuditLogPage /></AdminRoute>} />
 
+    </Route>
               </Route>
           </Routes>
 

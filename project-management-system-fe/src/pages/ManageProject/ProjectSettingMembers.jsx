@@ -1,80 +1,145 @@
-// src/pages/ManageProject/ProjectSettingMembers.jsx
-// [PHIÊN BẢN HOÀN THIỆN]
-
-import React, { useState, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ProjectContext } from '../../contexts/ProjectContext';
+import { getProjectMembers } from '../../services/projectService';
 import AddMemberModal from '../../components/project/AddMemberModal';
-import { getProjectMembers } from '../../services/projectService'; // Vẫn cần để fetch lại
-import '../../styles/pages/ManageProject/ProjectMembersTab.css';
+import '../../styles/pages/ManageProject/ProjectMembersTab.css'; // Cần thêm CSS cho thụt lề
 
 const ProjectSettingMembers = () => {
-    // Lấy dữ liệu và quyền từ Context
-    const { projectData, userProjectRole, setProjectKey } = useContext(ProjectContext);
+    const { userProjectRole } = useContext(ProjectContext);
     const { projectKey } = useParams();
     const canManageMembers = userProjectRole === 'PROJECT_MANAGER';
 
+    const [displayList, setDisplayList] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    // State để lưu dữ liệu gốc
+    const [rawMembers, setRawMembers] = useState([]);
+    const [rawTeams, setRawTeams] = useState([]);
 
-    // Hàm để tải lại dữ liệu cho context khi có thay đổi (thêm/xóa member)
-    const refreshProjectData = useCallback(() => {
-        // Gọi lại setProjectKey sẽ kích hoạt việc fetch lại dữ liệu trong ProjectProvider
-        setProjectKey(projectKey); 
-    }, [projectKey, setProjectKey]);
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await getProjectMembers(projectKey);
+            // API trả về { data: { members, teams } }
+            setRawMembers(response.data.members || []);
+            setRawTeams(response.data.teams || []);
+        } catch (error) {
+            toast.error("Could not fetch project structure.");
+        } finally {
+            setLoading(false);
+        }
+    }, [projectKey]);
 
-    const handleMemberAdded = () => {
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    // useEffect để xử lý dữ liệu và tạo danh sách hiển thị
+    useEffect(() => {
+        if (!loading) {
+            const memberMap = new Map(rawMembers.map(m => [m.userId._id.toString(), m]));
+            const memberIdsInTeams = new Set();
+
+            const teamsWithMembers = rawTeams.map(team => {
+                const leader = memberMap.get(team.leaderId._id.toString());
+                
+                // Lấy các member của team từ danh sách member tổng
+                const membersOfTeam = (team.teamId.members || [])
+                    .map(memberId => memberMap.get(memberId.toString()))
+                    .filter(Boolean) // Lọc ra các member thực sự có trong dự án
+                    .filter(member => member.userId._id.toString() !== team.leaderId._id.toString()); // Loại bỏ leader
+
+                // Đánh dấu các member đã thuộc team
+                if (leader) memberIdsInTeams.add(leader.userId._id.toString());
+                membersOfTeam.forEach(m => memberIdsInTeams.add(m.userId._id.toString()));
+
+                return { isTeam: true, team, leader, members: membersOfTeam };
+            });
+
+            const individualMembers = rawMembers.filter(m => !memberIdsInTeams.has(m.userId._id.toString()));
+
+            setDisplayList([...teamsWithMembers, ...individualMembers]);
+        }
+    }, [rawMembers, rawTeams, loading]);
+
+    const handleDataChanged = () => {
         setIsModalOpen(false);
-        refreshProjectData(); // Tải lại dữ liệu sau khi thêm thành công
-        toast.success('Member added successfully!');
+        fetchData();
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'Invalid Date';
-        return date.toLocaleDateString('en-CA');
-    };
+    if (loading) return <div>Loading members...</div>;
 
-    if (!projectData) {
-        return <div>Loading members...</div>;
-    }
-
-    const members = projectData.members || [];
-    const existingMemberIds = members.map(m => m.userId?._id).filter(Boolean);
+    const existingMemberIds = rawMembers.map(m => m.userId._id);
+    const existingTeamIds = rawTeams.map(t => t.teamId._id);
 
     return (
         <div className="project-members-container">
             {canManageMembers && (
                 <div className="members-actions-header">
-                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">Add Member</button>
+                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">Add People / Team</button>
                 </div>
             )}
             
             <div className="members-list-table">
                 <div className="table-header">
-                    <div>Project Member</div>
+                    <div>Member / Team</div>
                     <div>Role</div>
-                    <div>Added On</div>
-                    <div></div> {/* Cột cho Actions Menu */}
+                    <div>Source</div>
+                    <div></div>
                 </div>
-                {members.map(member => (
-                    member.userId && ( 
-                        <div className="table-row" key={member.userId._id}>
-                            <div className="member-info">
-                                <img src={member.userId.avatar || '/default-avatar.png'} alt={member.userId.fullname} className="member-avatar" />
-                                <span>{member.userId.fullname}</span>
-                            </div>
-                            <div>{member.role}</div>
-                            <div>{formatDate(member.addedOn)}</div>
-                            <div>
-                                {/* Placeholder cho Actions Menu (xóa, đổi vai trò) */}
-                                {/* Bạn sẽ cần tạo một component ActionsMenu ở đây */}
+                
+                {displayList.map((item, index) => {
+                    if (item.isTeam) {
+                        return (
+                            <React.Fragment key={item.team.teamId._id}>
+                                <div className="table-row team-row">
+                                    <strong>{item.team.teamId.name} ({item.team.teamId.members.length} members)</strong>
+                                    <span>TEAM</span>
+                                    <span></span>
+                                    <button className="actions-btn">⋮</button>
+                                </div>
+                                {item.leader && (
+                                    <div className="table-row member-row indented">
+                                        <div className="member-info">
+                                            <img src={item.leader.userId.avatar || '/default-avatar.png'} alt="" className="member-avatar" />
+                                            <span>{item.leader.userId.fullname}</span>
+                                        </div>
+                                        <div>{item.leader.role}</div>
+                                        <div>Added via {item.team.teamId.name}</div>
+                                        <button className="actions-btn">⋮</button>
+                                    </div>
+                                )}
+                                {item.members.map(member => (
+                                    <div className="table-row member-row indented" key={member.userId._id}>
+                                        <div className="member-info">
+                                            <img src={member.userId.avatar || '/default-avatar.png'} alt="" className="member-avatar" />
+                                            <span>{member.userId.fullname}</span>
+                                        </div>
+                                        <div>{member.role}</div>
+                                        <div>Added via {item.team.teamId.name}</div>
+                                        <button className="actions-btn">⋮</button>
+                                    </div>
+                                ))}
+                            </React.Fragment>
+                        );
+                    } else {
+                        return (
+                            <div className="table-row member-row" key={item.userId._id}>
+                                <div className="member-info">
+                                    <img src={item.userId.avatar || '/default-avatar.png'} alt="" className="member-avatar" />
+                                    <span>{item.userId.fullname}</span>
+                                </div>
+                                <div>{item.role}</div>
+                                <div>Added individually</div>
                                 <button className="actions-btn">⋮</button>
                             </div>
-                        </div>
-                    )
-                ))}
+                        );
+                    }
+                })}
+                 {displayList.length === 0 && <div className="no-data-message">No members in this project yet.</div>}
             </div>
 
             {isModalOpen && (
@@ -82,7 +147,7 @@ const ProjectSettingMembers = () => {
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     projectKey={projectKey}
-                    onMemberAdded={handleMemberAdded}
+                    onMemberAdded={handleDataChanged}
                     existingMemberIds={existingMemberIds}
                 />
             )}

@@ -22,6 +22,7 @@ class GroupService {
           description: 1,
           status: 1,
           createdAt: 1,
+          members: 1,
           totalActives: {
             $size: {
               $filter: {

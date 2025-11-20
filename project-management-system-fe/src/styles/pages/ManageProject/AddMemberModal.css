@@ -1,102 +1,67 @@
 /* src/styles/components/AddMemberModal.css */
 
-/* Lớp phủ mờ toàn màn hình */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(17, 24, 39, 0.6); /* Màu đen mờ */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px); /* Hiệu ứng blur nền */
+.add-member-modal .modal-content {
+  /* Có thể tùy chỉnh kích thước modal */
+  width: 500px;
 }
 
-/* Khung nội dung của modal */
-.modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  width: 90%;
-  max-width: 550px; /* Giới hạn chiều rộng tối đa */
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* Tiêu đề modal */
-.modal-content h2 {
+.add-member-modal h2 {
   margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.25rem; /* 20px */
-  font-weight: 600;
-  color: #111827;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #dfe1e6;
 }
 
-/* Form bên trong modal */
-.modal-form {
+/* --- Style cho thanh chuyển đổi chế độ --- */
+.add-mode-toggle {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem; /* Khoảng cách giữa các ô input */
+  margin-bottom: 24px;
+  border-bottom: 2px solid #dfe1e6;
 }
 
-/* Kiểu cho form-group bên trong modal để ghi đè nếu cần */
-.modal-content .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.modal-content .form-group label {
+.toggle-button {
+  background: none;
+  border: none;
+  padding: 8px 4px;
+  margin-right: 16px;
+  cursor: pointer;
   font-size: 14px;
+  color: #5e6c84;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px; /* Để border nằm đè lên border của container */
+}
+
+.toggle-button.active {
+  color: #0052cc;
+  border-bottom-color: #0052cc;
   font-weight: 500;
-  color: #374151;
 }
 
-/* Style cho select dropdown trong modal */
-.modal-content .form-group select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  background-color: #fff;
-  /* Thêm mũi tên dropdown tùy chỉnh */
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7281' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.75rem center;
-  background-repeat: no-repeat;
-  background-size: 1.25em;
-  padding-right: 2.5rem;
+/* --- Style cho nội dung form --- */
+.form-content {
+  padding: 0; /* Hoặc padding: 8px 0; nếu muốn có khoảng cách */
 }
 
-.modal-content .form-group select:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-  outline: none;
+.form-group {
+  margin-bottom: 20px;
 }
 
-/* Khu vực nút Save, Cancel */
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5e6c84;
+  margin-bottom: 6px;
+}
+
+/* --- Style cho phần chân modal --- */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  padding-top: 24px;
+  border-top: 1px solid #dfe1e6;
+  margin-top: 16px;
 }
 
-/* Animation cho modal hiện ra */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.modal-actions .btn {
+  margin-left: 8px;
 }

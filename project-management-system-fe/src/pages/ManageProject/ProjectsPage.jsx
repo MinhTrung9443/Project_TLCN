@@ -4,7 +4,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProjectContext } from '../../contexts/ProjectContext';
-import { getProjects, getArchivedProjects, archiveProject, restoreProject, permanentlyDeleteProject } from '../../services/projectService';
+import { getProjects, getArchivedProjects, archiveProjectByKey, restoreProject, permanentlyDeleteProject } from '../../services/projectService';
 import { toast } from 'react-toastify';
 import CreateProjectModal from '../../components/project/CreateProjectModal';
 import ProjectActionsMenu from '../../components/project/ProjectActionsMenu';
@@ -87,7 +87,7 @@ const { clearProject } = useContext(ProjectContext);
     
     try {
       if (deleteAction === 'archive') {
-        await archiveProject(selectedProject._id);
+        await archiveProjectByKey(selectedProject.key); 
         const remainingProjects = projects.filter(p => p._id !== selectedProject._id);
         setProjects(remainingProjects);
         
@@ -146,7 +146,7 @@ const { clearProject } = useContext(ProjectContext);
           <td>{project.key}</td>
           <td>{project.type}</td>
           {/* Hiển thị tên PM đã tìm được */}
-          <td>{projectManager?.userId?.fullname || 'N/A'}</td>
+          <td>{project.projectManager?.fullname || 'N/A'}</td>
           <td>{project.members.length}</td>
           <td>{formatDate(view === 'active' ? project.createdAt : project.deletedAt)}</td>
           <td>

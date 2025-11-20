@@ -16,12 +16,12 @@ const {
   handleUnlinkTask,
 } = require("../controllers/TaskController");
 const { handleGetComments, handleCreateComment} = require("../controllers/CommentController");
-const { protect, admin } = require("../middleware/authMiddleware"); 
+const { protect, admin , isProjectMember} = require("../middleware/authMiddleware"); 
 const upload = require('../middleware/uploadMiddleware'); 
 
 router.get("/search", protect, handleSearchTasks);
 router.get("/project/:projectKey", protect, handleGetTasksByProjectKey);
-router.post("/", protect, handleCreateTask);
+router.post("/project/:projectKey", protect, isProjectMember, handleCreateTask);
 
 router.put("/change-sprint/:taskId", protect, admin, changeSprint);
 router.put("/update-status/:taskId", protect, handleUpdateTaskStatus);

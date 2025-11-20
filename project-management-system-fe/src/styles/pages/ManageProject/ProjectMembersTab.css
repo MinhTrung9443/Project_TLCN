@@ -47,7 +47,26 @@
 .table-row:hover {
   background-color: #f9fafb;
 }
+.team-row {
+  background-color: #f7f8fa; /* Màu nền cho dòng team */
+  font-weight: bold;
+}
 
+.indented {
+  padding-left: 30px; /* Thụt lề cho các thành viên trong team */
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+}
+
+.member-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
 /* Style cho header của bảng */
 .table-header {
   color: #6b7281; /* Màu xám */

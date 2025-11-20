@@ -6,10 +6,12 @@ const auditLogService = {
   async getProjectAuditOverview(projectId) {
     console.log("Getting audit overview for projectId:", projectId);
 
-    // Lấy thông tin project và danh sách members + groups
-    const project = await Project.findById(projectId).select("members groups").populate("groups.groupId", "members").lean();
+    // [SỬA 1] - Lấy thông tin project theo schema mới
+    // Không cần lấy members ở đây nữa, vì log được query theo projectId
+    const project = await Project.findById(projectId).select("_id").lean();
     if (!project) {
       console.log("Project not found");
+      // Trả về cấu trúc dữ liệu rỗng để frontend không bị lỗi
       return {
         userStats: {},
         actionStats: { create: 0, update: 0, delete: 0, total: 0 },
@@ -20,47 +22,26 @@ const auditLogService = {
       };
     }
 
-    // Lấy danh sách userId từ members trực tiếp
-    const directMemberIds = project.members.map((m) => m.userId);
+    // --- Logic query và thống kê log của bạn đã rất tốt, giữ nguyên ---
 
-    // Lấy danh sách userId từ các groups
-    const groupMemberIds = [];
-    if (project.groups && project.groups.length > 0) {
-      project.groups.forEach((g) => {
-        if (g.groupId && g.groupId.members) {
-          g.groupId.members.forEach((member) => {
-            if (member.userId) {
-              groupMemberIds.push(member.userId);
-            }
-          });
-        }
-      });
-    }
-
-    // Gộp tất cả memberIds và loại bỏ duplicate
-    const allMemberIds = [...new Set([...directMemberIds, ...groupMemberIds].map((id) => id.toString()))];
-    console.log("Project direct members:", directMemberIds.length, ", Group members:", groupMemberIds.length, ", Total unique:", allMemberIds.length);
-
-    // Chuẩn hóa projectId thành ObjectId
     const projectObjectId = mongoose.Types.ObjectId.isValid(projectId) ? new mongoose.Types.ObjectId(projectId) : projectId;
     const projectIdString = projectId.toString();
 
-    // Query logs: CHỈ lấy logs liên quan đến PROJECT NÀY
-    // Phải có projectId trong newData hoặc oldData (hỗ trợ cả ObjectId và String)
+    // Query logs liên quan đến project này
     const logs = await AuditLog.find({
       $or: [
-        { "newData.projectId": projectObjectId }, // projectId dạng ObjectId
+        { "newData.projectId": projectObjectId },
         { "oldData.projectId": projectObjectId },
-        { "newData.projectId": projectIdString }, // projectId dạng String
+        { "newData.projectId": projectIdString },
         { "oldData.projectId": projectIdString },
       ],
     })
       .sort({ createdAt: -1 })
-      .limit(100)
+      .limit(100) // Giới hạn 100 logs cho overview
       .populate("userId", "fullname avatar")
       .lean();
 
-    console.log("Found logs for project:", projectIdString, "- Total:", logs.length);
+    console.log("Found logs for project overview:", logs.length);
 
     // Thống kê số lượng action theo user
     const userStats = {};
@@ -68,7 +49,7 @@ const auditLogService = {
       const uid = log.userId?._id?.toString() || "unknown";
       if (!userStats[uid]) {
         userStats[uid] = {
-          userId: uid, // Thêm userId vào đây
+          userId: uid,
           name: log.userId?.fullname || "Unknown",
           avatar: log.userId?.avatar || null,
           count: 0,
@@ -76,13 +57,12 @@ const auditLogService = {
         };
       }
       userStats[uid].count++;
-      // Đếm theo loại action
       if (log.action?.includes("create")) userStats[uid].actions.create++;
       else if (log.action?.includes("update")) userStats[uid].actions.update++;
       else if (log.action?.includes("delete")) userStats[uid].actions.delete++;
     });
 
-    // Thống kê số lượng action theo loại (create/update/delete)
+    // Thống kê số lượng action theo loại
     const actionStats = { create: 0, update: 0, delete: 0, total: logs.length };
     logs.forEach((log) => {
       if (log.action?.includes("create")) actionStats.create++;
@@ -90,7 +70,7 @@ const auditLogService = {
       else if (log.action?.includes("delete")) actionStats.delete++;
     });
 
-    // Thống kê theo loại entity (Task, Project, Sprint, etc.)
+    // Thống kê theo loại entity
     const entityStats = {};
     logs.forEach((log) => {
       const entity = log.tableName || "Other";
@@ -98,14 +78,12 @@ const auditLogService = {
       entityStats[entity]++;
     });
 
-    // Thống kê số lượng log theo ngày (7 ngày gần nhất)
+    // Thống kê theo ngày (7 ngày gần nhất)
     const dayStats = {};
-    const last7Days = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dayStr = d.toISOString().slice(0, 10);
-      last7Days.push(dayStr);
       dayStats[dayStr] = 0;
     }
     logs.forEach((log) => {
@@ -147,42 +125,22 @@ const auditLogService = {
     };
   },
 
-  async getProjectAuditLogs(projectId, page = 1, limit = 20) {
+   async getProjectAuditLogs(projectId, page = 1, limit = 20) {
     console.log("Getting audit logs for projectId:", projectId, "page:", page);
 
-    // Lấy thông tin project và danh sách members + groups
-    const project = await Project.findById(projectId).select("members groups").populate("groups.groupId", "members").lean();
-    if (!project) {
+    // [SỬA 2] - Chỉ cần kiểm tra project có tồn tại không
+    const projectExists = await Project.findById(projectId).select("_id").lean();
+    if (!projectExists) {
       console.log("Project not found");
-      return [];
+      return []; // Trả về mảng rỗng nếu project không tồn tại
     }
 
-    // Lấy danh sách userId từ members trực tiếp
-    const directMemberIds = project.members.map((m) => m.userId);
-
-    // Lấy danh sách userId từ các groups
-    const groupMemberIds = [];
-    if (project.groups && project.groups.length > 0) {
-      project.groups.forEach((g) => {
-        if (g.groupId && g.groupId.members) {
-          g.groupId.members.forEach((member) => {
-            if (member.userId) {
-              groupMemberIds.push(member.userId);
-            }
-          });
-        }
-      });
-    }
-
-    // Gộp tất cả memberIds và loại bỏ duplicate
-    const allMemberIds = [...new Set([...directMemberIds, ...groupMemberIds].map((id) => id.toString()))];
-
-    // Chuẩn hóa projectId thành ObjectId
+    // --- Logic query và phân trang của bạn đã tốt, giữ nguyên ---
+    
     const projectObjectId = mongoose.Types.ObjectId.isValid(projectId) ? new mongoose.Types.ObjectId(projectId) : projectId;
     const projectIdString = projectId.toString();
-
     const skip = (Number(page) - 1) * Number(limit);
-    // Query logs: CHỈ lấy logs liên quan đến PROJECT NÀY (hỗ trợ cả ObjectId và String)
+
     const logs = await AuditLog.find({
       $or: [
         { "newData.projectId": projectObjectId },
@@ -196,6 +154,7 @@ const auditLogService = {
       .limit(Number(limit))
       .populate("userId", "fullname avatar")
       .lean();
+      
     console.log("Found detailed logs for page", page, ":", logs.length);
     return logs;
   },

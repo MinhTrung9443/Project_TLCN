@@ -86,31 +86,42 @@ const handleAddMemberToProject = async (req, res) => {
     res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
+// controllers/ProjectController.js (BACKEND)
 
 const handleAddGroupToProject = async (req, res) => {
+  // THÊM CONSOLE.LOG NGAY TẠI ĐÂY
+  console.log("--- RECEIVED REQUEST BODY ---");
+  console.log(req.body);
+  console.log("---------------------------");
+
   try {
     const { projectKey } = req.params;
-    const { groupId, role } = req.body;
+    const { groupId, leaderId, roleForOthers } = req.body;
 
-    if (!groupId || !role) {
-      return res.status(400).json({ message: "groupId and role are required." });
+    if (!groupId || !leaderId || !roleForOthers) {
+      // Thêm log để biết tại sao nó thất bại
+      console.log("Validation failed:", { groupId, leaderId, roleForOthers });
+      return res.status(400).json({ message: "Group ID, Leader ID, and Role for other members are required." });
     }
 
-    const result = await projectService.addMembersFromGroupToProject(projectKey, { groupId, role }, req.user);
+    const result = await projectService.addMembersFromGroupToProject(
+        projectKey, 
+        { groupId, leaderId, roleForOthers }, 
+        req.user
+    );
 
     res.status(200).json(result);
   } catch (error) {
+    // Thêm log để thấy lỗi crash
+    console.error("--- ERROR IN handleAddGroupToProject ---", error);
     res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
   }
 };
 
-
-// === 3. HÀNH ĐỘNG CỦA MỌI THÀNH VIÊN DỰ ÁN ===
-
 const handleGetAllProjects = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const projects = await projectService.getAllProjects(userId);
+    const projects = await projectService.getAllProjects(req.user); 
+    
     res.status(200).json(projects);
   } catch (error) {
     res.status(500).json({ message: error.message || "Server Error" });

@@ -122,21 +122,37 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
 
     setLoading(true);
     try {
-      Object.keys(formData).forEach((key) => {
-        if (formData[key] === "") {
-          delete formData[key];
+        // [SỬA LẠI Ở ĐÂY]
+        // 1. Tìm project đã chọn từ danh sách projects
+        const selectedProject = projects.find(p => p._id === formData.projectId);
+
+        // 2. Kiểm tra xem có tìm thấy project không
+        if (!selectedProject) {
+            toast.error("Invalid project selected.");
+            setLoading(false);
+            return;
         }
-      });
-      const res = await createTask(formData);
-      toast.success("Task created successfully!");
-      onTaskCreated(res.data);
-      onClose();
+
+        // 3. Chuẩn bị payload, loại bỏ các trường rỗng
+        const payload = { ...formData };
+        Object.keys(payload).forEach((key) => {
+            if (payload[key] === "") {
+                delete payload[key];
+            }
+        });
+
+        // 4. Gọi hàm createTask với 2 tham số: projectKey và payload
+        const res = await createTask(selectedProject.key, payload);
+        
+        toast.success("Task created successfully!");
+        onTaskCreated(res.data);
+        onClose();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create task.");
+        toast.error(error.response?.data?.message || "Failed to create task.");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   if (!isOpen) return null;
 

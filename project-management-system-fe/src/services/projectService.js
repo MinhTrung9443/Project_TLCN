@@ -54,7 +54,6 @@ export const updateProjectByKey = (projectKey, projectData) => {
   return apiClient.put(`/projects/key/${projectKey}`, projectData);
 };
 
-// [SỬA] Hàm này giờ sẽ do PM thực hiện và dùng projectKey
 export const archiveProjectByKey = (projectKey) => {
   return apiClient.delete(`/projects/key/${projectKey}/archive`);
 };

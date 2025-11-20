@@ -172,10 +172,10 @@ const Component = () => {
                     : ""}
                 </td>
                 <td>
-                  {eachUser.group && eachUser.group.length > 0
-                    ? eachUser.group.join(", ")
-                    : ""}
-                </td>
+  {Array.isArray(eachUser.group) && eachUser.group.length > 0
+    ? eachUser.group.map(g => g.name).join(', ') // <-- ĐÃ SỬA
+    : ""}
+</td>
                 {user.role === "admin" && (
                   <td>
                     <button
