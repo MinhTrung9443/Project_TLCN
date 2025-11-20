@@ -1,64 +1,43 @@
-// contexts/ProjectContext.js
+// src/contexts/ProjectContext.js
+// [PHIÊN BẢN MỚI - TỐI GIẢN]
 
-import React, { useState, useMemo } from 'react';
-import { getProjectByKey } from '../services/projectService';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
-export const ProjectContext = React.createContext({
-  projectData: null,
-  userProjectRole: null,
-  selectedProjectKey: null,
-  setProjectKey: () => {}, // <--- Hàm sẽ có tên này
-  loadingProject: true,
-});
+export const ProjectContext = React.createContext(null);
 
 export const ProjectProvider = ({ children }) => {
   const { user } = useAuth();
   const [projectData, setProjectData] = useState(null);
   const [userProjectRole, setUserProjectRole] = useState(null);
-  // State lưu trữ key hiện tại
-  const [currentProjectKey, setCurrentProjectKey] = useState(null); // <--- Đổi tên state để tránh nhầm lẫn
-  const [loadingProject, setLoadingProject] = useState(true);
+  const [loadingProject, setLoadingProject] = useState(false); // Thêm state loading
 
-  // Hàm để thay đổi project key
-  const setProjectKey = async (key) => {
-    if (!key) {
-      setProjectData(null);
+  // Hàm để các component con gọi để CẬP NHẬT context
+  const setProject = useCallback((project) => {
+    setProjectData(project);
+    if (user && project && project.members) {
+      const member = project.members.find(m => m.userId?._id === user?._id);
+      setUserProjectRole(member ? member.role : null);
+    } else {
       setUserProjectRole(null);
-      setCurrentProjectKey(null); // <--- Cập nhật state này
-      setLoadingProject(false);
-      return;
     }
-    
-    setLoadingProject(true);
-    setCurrentProjectKey(key); // <--- Cập nhật state này
-    try {
-      const response = await getProjectByKey(key);
-      const project = response.data;
-      setProjectData(project);
+  }, [user]);
 
-      if (user && project.members) {
-        const currentUserAsMember = project.members.find(
-          (member) => member.userId._id === user._id
-        );
-        setUserProjectRole(currentUserAsMember ? currentUserAsMember.role : null);
-      }
-    } catch (error) {
-      console.error("Failed to fetch project data:", error);
-      setProjectData(null);
-      setUserProjectRole(null);
-    } finally {
-      setLoadingProject(false);
-    }
-  };
-  
+  // Hàm để các component con gọi để DỌN DẸP context
+  const clearProject = useCallback(() => {
+    setProjectData(null);
+    setUserProjectRole(null);
+  }, []);
+
   const value = useMemo(() => ({
     projectData,
     userProjectRole,
-    selectedProjectKey: currentProjectKey, // <--- Export state ra với tên 'selectedProjectKey'
-    setProjectKey,                          // <--- Export hàm ra với tên 'setProjectKey'
     loadingProject,
-  }), [projectData, userProjectRole, currentProjectKey, loadingProject]);
+    setLoadingProject, // Export hàm set loading
+    setProject,       // Export hàm set data
+    clearProject,     // Export hàm dọn dẹp
+    selectedProjectKey: projectData?.key || null, // Vẫn giữ để sidebar có thể dùng
+  }), [projectData, userProjectRole, loadingProject, setProject, clearProject]);
 
   return (
     <ProjectContext.Provider value={value}>

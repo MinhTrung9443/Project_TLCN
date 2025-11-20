@@ -28,7 +28,13 @@ const ProjectsPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteAction, setDeleteAction] = useState(null); // 'archive' or 'permanent' **NEW**
   const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+const { clearProject } = useContext(ProjectContext);
 
+    // useEffect này sẽ chạy MỘT LẦN DUY NHẤT khi vào trang
+    useEffect(() => {
+        // Dọn dẹp mọi dữ liệu của dự án cũ đang được chọn
+        clearProject();
+    }, [clearProject]);
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
@@ -123,12 +129,9 @@ const ProjectsPage = () => {
   };
 
   const handleProjectSelect = (project) => {
-    if(view === 'active') {
-       setProjectKey(project.key.toUpperCase());
-       navigate(`/task-mgmt/projects/${project.key}/settings/general`);
-    }
-    // Không làm gì khi click vào project đã archived
-  };
+        navigate(`/task-mgmt/projects/${project.key}/settings/general`);
+    };
+
 
   const renderProjects = () => {
     const projectList = view === 'active' ? projects : archivedProjects;

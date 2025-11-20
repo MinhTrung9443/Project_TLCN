@@ -5,7 +5,6 @@ import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import "./App.css";
-import ProjectLayout from './components/layout/ProjectLayout'; 
 import PrivateRoute from "./routes/PrivateRoute"; // Đảm bảo đường dẫn này đúng
 import AdminRoute from "./routes/AdminRoute"; // Chúng ta sẽ tạo file này sau
 import LoginPage from "./pages/Login"; // Giả sử đường dẫn này đúng
@@ -52,12 +51,9 @@ function App() {
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="task-finder" element={<TaskFinderPage />} />
                 <Route path="gantt" element={<GanttPage />} />
-
-                              {/* === TẤT CẢ CÁC ROUTE TRONG PHẠM VI MỘT PROJECT SẼ NẰM TRONG NÀY === */}
-                <Route path="task-mgmt/projects/:projectKey" element={<ProjectLayout />}>
                   
                   {/* Route cho trang Settings và các tab con của nó */}
-                  <Route path="settings" element={<ProjectSettingsPage />}>
+                <Route path="task-mgmt/projects/:projectKey/settings" element={<ProjectSettingsPage />}>
                     <Route index element={<ProjectSettingsGeneral />} />
                     <Route path="general" element={<ProjectSettingsGeneral />} />
                     <Route path="members" element={<ProjectSettingMembers />} />
@@ -88,7 +84,6 @@ function App() {
                 <Route path="audit-log" element={<AdminRoute><AdminAuditLogPage /></AdminRoute>} />
 
               </Route>
-            </Route>
           </Routes>
 
           <ToastContainer

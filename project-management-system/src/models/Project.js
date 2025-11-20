@@ -51,6 +51,13 @@ const projectSchema = new Schema(
         },
       },
     ],
+    teams: [
+      {
+          _id: false,
+          teamId: { type: Schema.Types.ObjectId, ref: "Group", required: true }, // Tham chiếu đến Group model
+          leaderId: { type: Schema.Types.ObjectId, ref: "User", required: true } // Ai là Leader của team này TRONG DỰ ÁN NÀY
+      }
+  ],
     isDeleted: {
       type: Boolean,
       default: false,

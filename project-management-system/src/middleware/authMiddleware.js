@@ -30,6 +30,46 @@ const protect = async (req, res, next) => {
   }
 };
 
+const canAssignTask = async (req, res, next) => {
+    try {
+        const actor = req.user; // Người thực hiện hành động (đã được 'protect' lấy ra)
+        const { assigneeId } = req.body; // Người sẽ được gán task
+        const { projectKey } = req.params;
+
+        const project = await Project.findOne({ key: projectKey.toUpperCase() }).populate('teams');
+        if (!project) return res.status(404).json({ message: "Project not found" });
+
+        const actorAsMember = project.members.find(m => m.userId.equals(actor._id));
+
+        // TRƯỜNG HỢP 1: Nếu người thực hiện là PM, họ có toàn quyền
+        if (actorAsMember && actorAsMember.role === 'PROJECT_MANAGER') {
+            return next();
+        }
+
+        // TRƯỜNG HỢP 2: Nếu người thực hiện là Leader
+        if (actorAsMember && actorAsMember.role === 'LEADER') {
+            // Tìm tất cả các team mà người này làm Leader
+            const ledTeams = project.teams.filter(t => t.leaderId.equals(actor._id));
+            const ledTeamIds = ledTeams.map(t => t.teamId);
+
+            // Lấy danh sách tất cả member thuộc các team mà người này lead
+            const manageableMembers = await User.find({ group: { $in: ledTeamIds } }).select('_id');
+            const manageableMemberIds = manageableMembers.map(m => m._id.toString());
+            
+            // Kiểm tra xem người được gán task có nằm trong danh sách quản lý được không
+            if (manageableMemberIds.includes(assigneeId)) {
+                return next();
+            }
+        }
+        
+        // Nếu không thuộc 2 trường hợp trên, từ chối
+        return res.status(403).json({ message: "Forbidden: You do not have permission to assign this task." });
+
+    } catch (error) {
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
 const getProjectRole = async (userId, projectKey) => {
   console.log(`[DEBUG] 3.1. ENTERING 'getProjectRole' for project key: ${projectKey}`);
   if (!userId || !projectKey) {
@@ -107,4 +147,4 @@ const isProjectManager = async (req, res, next) => {
     }
 };
 
-module.exports = { protect, admin, isProjectMember, isManagerOrLeader, isProjectManager };
+module.exports = { protect, admin, isProjectMember,canAssignTask , isManagerOrLeader, isProjectManager };

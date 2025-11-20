@@ -34,15 +34,26 @@ class UserService {
     }
   }
 
-  async getAllUsers(page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
-    const users = await User.find().skip(skip).limit(limit).populate("group", "name -_id").lean();
+   async getAllUsers(page = 1, limit = 20) {
+    // Nếu không có page và limit, chúng ta muốn lấy hết
+    // Kiểm tra xem req.query có rỗng không
+    const hasPagination = page && limit && !isNaN(page) && !isNaN(limit);
 
-    const result = users.map((u) => ({
-      ...u,
-      group: u.group.map((g) => g.name), // chỉ giữ lại tên
-    }));
-    return result;
+    if (hasPagination) {
+        const skip = (page - 1) * limit;
+        const users = await User.find()
+            .select('-password')
+            .skip(skip)
+            .limit(limit)
+            .populate("group", "name -_id")
+            .lean();
+        // ... (trả về kết quả phân trang)
+        return users; // Giả sử trả về mảng
+    } else {
+        // Nếu không có tham số phân trang, lấy TẤT CẢ user
+        const users = await User.find().select('-password').lean();
+        return users;
+    }
   }
 
   async deleteUser(userId, actorId) {
