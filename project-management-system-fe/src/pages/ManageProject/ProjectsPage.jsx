@@ -1,6 +1,5 @@
-// src/pages/ManageProject/ProjectsPage.jsx
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProjectContext } from '../../contexts/ProjectContext';
@@ -14,165 +13,148 @@ import CloneProjectModal from '../../components/project/CloneProjectModal';
 import '../../styles/pages/ManageProject/ProjectsPage.css';
 
 const ProjectsPage = () => {
-  const { user } = useAuth();
-  const { selectedProjectKey, setProjectKey } = useContext(ProjectContext); // <--- CẬP NHẬT DÒNG NÀY
-  const navigate = useNavigate();
-  
-  const [projects, setProjects] = useState([]);
-  const [archivedProjects, setArchivedProjects] = useState([]); // **NEW**
-  const [view, setView] = useState('active'); // 'active' or 'archived' **NEW**
+    const { user } = useAuth();
+    const { selectedProjectKey, setProjectKey, clearProject } = useContext(ProjectContext);
+    const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleteAction, setDeleteAction] = useState(null); // 'archive' or 'permanent' **NEW**
-  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
-const { clearProject } = useContext(ProjectContext);
+    const [projects, setProjects] = useState([]);
+    const [archivedProjects, setArchivedProjects] = useState([]);
+    const [view, setView] = useState('active');
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteAction, setDeleteAction] = useState(null);
+    const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
 
-    // useEffect này sẽ chạy MỘT LẦN DUY NHẤT khi vào trang
+    // Dọn dẹp context khi vào trang
     useEffect(() => {
-        // Dọn dẹp mọi dữ liệu của dự án cũ đang được chọn
         clearProject();
     }, [clearProject]);
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoading(true);
-      try {
+
+    // --- TÁI CẤU TRÚC LOGIC FETCH ---
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            if (view === 'active') {
+                const response = await getProjects();
+                setProjects(response.data);
+            } else { // view === 'archived'
+                const response = await getArchivedProjects();
+                setArchivedProjects(response.data);
+            }
+        } catch (error) {
+            toast.error(`Could not fetch ${view} projects.`);
+        } finally {
+            setLoading(false);
+        }
+    }, [view]); // Hàm này sẽ được tạo lại mỗi khi 'view' thay đổi
+
+    // useEffect chính để gọi hàm fetch
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]); // Chạy lại mỗi khi 'view' thay đổi
+
+    // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
+    const handleProjectCreated = () => {
+        // Sau khi tạo, chỉ cần gọi lại fetchData. 
+        // Vì 'view' đang là 'active', nó sẽ tự động fetch đúng danh sách.
+        fetchData();
+    };
+
+    const handleProjectCloned = () => {
+        fetchData();
+    };
+
+    const openArchiveModal = (project) => {
+        setSelectedProject(project);
+        setDeleteAction('archive');
+        setIsDeleteModalOpen(true);
+    };
+
+    const openPermanentDeleteModal = (project) => {
+        setSelectedProject(project);
+        setDeleteAction('permanent');
+        setIsDeleteModalOpen(true);
+    };
+
+    const openCloneModal = (project) => {
+        setSelectedProject(project);
+        setIsCloneModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!selectedProject || !deleteAction) return;
+
+        try {
+            if (deleteAction === 'archive') {
+                await archiveProjectByKey(selectedProject.key);
+                // Sau khi archive thành công, gọi lại fetchData để cập nhật cả 2 danh sách
+                fetchData(); 
+                toast.success('Project archived successfully!');
+            } else if (deleteAction === 'permanent') {
+                await permanentlyDeleteProject(selectedProject._id);
+                // Tải lại danh sách archived projects
+                fetchData();
+                toast.success('Project permanently deleted!');
+            }
+        } catch (error) {
+            toast.error(`Failed to ${deleteAction} project.`);
+        } finally {
+            setIsDeleteModalOpen(false);
+            setSelectedProject(null);
+            setDeleteAction(null);
+        }
+    };
+
+    const handleRestore = async (project) => {
+        try {
+            await restoreProject(project._id);
+            // Tải lại danh sách archived projects
+            fetchData();
+            toast.success('Project restored successfully!');
+        } catch (error) {
+            toast.error('Failed to restore project.');
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-CA');
+    };
+
+    const handleProjectSelect = (project) => {
         if (view === 'active') {
-          const response = await getProjects();
-          setProjects(response.data);
-        } else {
-          const response = await getArchivedProjects();
-          setArchivedProjects(response.data);
+            navigate(`/task-mgmt/projects/${project.key}/settings/general`);
         }
-      } catch (error) {
-        toast.error(`Could not fetch ${view} projects.`);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProjects();
-  }, [view]); // Re-fetch khi view thay đổi
-
-  const handleProjectCreated = (newProject) => {
-    setProjects([newProject, ...projects]);
-  };
-
-  const handleProjectCloned = (clonedProject) => {
-    setProjects([clonedProject, ...projects]);
-  };
-
-  // Mở modal cho việc Archive
-  const openArchiveModal = (project) => {
-    setSelectedProject(project);
-    setDeleteAction('archive');
-    setIsDeleteModalOpen(true);
-  };
-  
-  // Mở modal cho việc Xóa vĩnh viễn
-  const openPermanentDeleteModal = (project) => {
-    setSelectedProject(project);
-    setDeleteAction('permanent');
-    setIsDeleteModalOpen(true);
-  };
-
-  const openCloneModal = (project) => {
-    setSelectedProject(project);
-    setIsCloneModalOpen(true);
-  };
-
- const handleConfirmDelete = async () => {
-    if (!selectedProject || !deleteAction) return;
-    
-    try {
-      if (deleteAction === 'archive') {
-        await archiveProjectByKey(selectedProject.key); 
-        const remainingProjects = projects.filter(p => p._id !== selectedProject._id);
-        setProjects(remainingProjects);
-        
-        // Dùng selectedProjectKey từ context để so sánh
-        if (selectedProject.key.toUpperCase() === selectedProjectKey?.toUpperCase()) {
-          setProjectKey(remainingProjects.length > 0 ? remainingProjects[0].key.toUpperCase() : null);
-        }
-        toast.success('Project archived successfully!');
-
-      } else if (deleteAction === 'permanent') {
-        await permanentlyDeleteProject(selectedProject._id);
-        setArchivedProjects(archivedProjects.filter(p => p._id !== selectedProject._id));
-        toast.success('Project permanently deleted!');
-      }
-    } catch (error) {
-      toast.error(`Failed to ${deleteAction} project.`);
-    } finally {
-      setIsDeleteModalOpen(false);
-      setSelectedProject(null);
-      setDeleteAction(null);
-    }
-  };
-
-
-  // **NEW**: Xử lý Restore
-  const handleRestore = async (project) => {
-    try {
-      await restoreProject(project._id);
-      setArchivedProjects(archivedProjects.filter(p => p._id !== project._id));
-      toast.success('Project restored successfully!');
-    } catch (error) {
-      toast.error('Failed to restore project.');
-    }
-  }
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-CA');
-  };
-
-  const handleProjectSelect = (project) => {
-        navigate(`/task-mgmt/projects/${project.key}/settings/general`);
     };
 
+    const renderProjects = () => {
+        const projectList = view === 'active' ? projects : archivedProjects;
 
-  const renderProjects = () => {
-    const projectList = view === 'active' ? projects : archivedProjects;
-    
-    return projectList.map((project) => {
-      // Tìm PM từ mảng members
-      const projectManager = project.members.find(m => m.role === 'PROJECT_MANAGER');
-
-      return (
-        <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{cursor: view === 'active' ? 'pointer' : 'default'}}>
-          <td><a href="#" onClick={(e) => { e.preventDefault(); handleProjectSelect(project); }} className="project-name-link">{project.name}</a></td>
-          <td>{project.key}</td>
-          <td>{project.type}</td>
-          {/* Hiển thị tên PM đã tìm được */}
-          <td>{project.projectManager?.fullname || 'N/A'}</td>
-          <td>{project.members.length}</td>
-          <td>{formatDate(view === 'active' ? project.createdAt : project.deletedAt)}</td>
-          <td>
-            <span className={`status-badge ${view === 'active' ? 'status-active' : 'status-archived'}`}>
-              {view === 'active' ? project.status : 'Archived'}
-            </span>
-          </td>
-          <td>
-          {view === 'active' ? (
-            <ProjectActionsMenu
-              project={project}
-              onDelete={openArchiveModal}
-              onClone={openCloneModal}
-            />
-          ) : (
-            <ArchivedProjectActionsMenu 
-              project={project}
-              onRestore={handleRestore}
-              onDelete={openPermanentDeleteModal}
-            />
-          )}
-        </td>
-      </tr>
-      );
-    });
-  };
+        return projectList.map((project) => (
+            <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{ cursor: view === 'active' ? 'pointer' : 'default' }}>
+                <td><a href="#" onClick={(e) => { e.preventDefault(); handleProjectSelect(project); }} className="project-name-link">{project.name}</a></td>
+                <td>{project.key}</td>
+                <td>{project.type}</td>
+                <td>{project.projectManager?.fullname || 'N/A'}</td>
+                <td>{project.members.length}</td>
+                <td>{formatDate(view === 'active' ? project.createdAt : project.deletedAt)}</td>
+                <td>
+                    <span className={`status-badge ${view === 'active' ? 'status-active' : 'status-archived'}`}>
+                        {view === 'active' ? project.status : 'Archived'}
+                    </span>
+                </td>
+                <td>
+                    {view === 'active' ? (
+                        <ProjectActionsMenu project={project} onDelete={openArchiveModal} onClone={openCloneModal} />
+                    ) : (
+                        <ArchivedProjectActionsMenu project={project} onRestore={handleRestore} onDelete={openPermanentDeleteModal} />
+                    )}
+                </td>
+            </tr>
+        ));
+    };
   return (
     <>
       <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onProjectCreated={handleProjectCreated} />
