@@ -146,3 +146,15 @@
 .form-group textarea.error {
     border-color: #d9534f;
 }
+.form-group label.required::after {
+  content: " *";
+  color: #de350b; /* Màu đỏ */
+  margin-left: 2px;
+}
+
+/* CSS cho thông báo lỗi */
+.error-text {
+  color: #de350b; /* Màu đỏ */
+  font-size: 12px;
+  margin-top: 4px;
+}

@@ -25,6 +25,7 @@ const ProjectSettingsGeneral = () => {
     const { projectData, userProjectRole } = useContext(ProjectContext);
     const { projectKey } = useParams(); // Vẫn cần để gọi API update
     const [allUsers, setAllUsers] = useState([]);
+    const [errors, setErrors] = useState({});
 
     // Quyền chỉnh sửa được quyết định bởi vai trò trong dự án
     const isSystemAdmin = user && user.role === 'admin';
@@ -34,7 +35,7 @@ const ProjectSettingsGeneral = () => {
     
     // Quyền đổi PM, Key, Type: Chỉ dành cho Admin hệ thống
     const canEditSensitiveInfo = isSystemAdmin;
-const canChangeManager = isSystemAdmin;
+    const canChangeManager = isSystemAdmin;
     // Nút "Save" sẽ hiển thị nếu user có quyền sửa
     const canSaveChanges = canEditGeneralInfo;
 
@@ -47,6 +48,33 @@ const canChangeManager = isSystemAdmin;
         startDate: '',
         endDate: '',
     });
+     const validateForm = () => {
+        const newErrors = {};
+
+        // 1. Kiểm tra các trường bắt buộc (có dấu hoa thị)
+        if (!formData.name.trim()) {
+            newErrors.name = "Project Name is required.";
+        }
+        if (!formData.key.trim()) {
+            newErrors.key = "Key is required.";
+        }
+        if (!formData.projectManagerId) {
+            newErrors.projectManagerId = "Project Manager is required.";
+        }
+
+        // 2. Kiểm tra ngày kết thúc không được nhỏ hơn ngày bắt đầu
+        if (formData.startDate && formData.endDate) {
+            const start = new Date(formData.startDate);
+            const end = new Date(formData.endDate);
+            if (end < start) {
+                newErrors.endDate = "End Date cannot be earlier than Start Date.";
+            }
+        }
+
+        setErrors(newErrors); // Cập nhật state lỗi
+        return Object.keys(newErrors).length === 0; // Trả về true nếu không có lỗi
+    };
+
     const [isSaving, setIsSaving] = useState(false);
 useEffect(() => {
          if (canChangeManager) {
@@ -85,6 +113,9 @@ useEffect(() => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!canSaveChanges) return; // Chặn submit nếu không có quyền
+if (!validateForm()) {
+        return; // Dừng lại nếu có lỗi
+    }
 
         setIsSaving(true);
         try {
@@ -124,13 +155,15 @@ useEffect(() => {
     return (
         <form onSubmit={handleSubmit} className="settings-content-form">
             <div className="form-group">
-                <label>Project Name*</label>
+            <label className="required">Project Name</label>
                 <input name="name" value={formData.name} onChange={handleChange} required disabled={!canEditGeneralInfo} />
+                {errors.name && <p className="error-text">{errors.name}</p>}
             </div>
             <div className="form-group">
-                <label>Key*</label>
+                <label className="required">Key</label>
                 {/* Key là trường nhạy cảm, chỉ Admin được sửa */}
                 <input name="key" value={formData.key} onChange={handleChange} required disabled={!canEditSensitiveInfo} />
+                {errors.key && <p className="error-text">{errors.key}</p>}
             </div>
             <div className="form-group">
                 <label>Type</label>
@@ -148,6 +181,7 @@ useEffect(() => {
                 <div className="form-group">
                     <label htmlFor="endDate">End Date</label>
                     <input id="endDate" name="endDate" type="date" value={formData.endDate} onChange={handleChange} disabled={!canEditGeneralInfo} />
+                    {errors.endDate && <p className="error-text">{errors.endDate}</p>}
                 </div>
             </div>
             <div className="form-group">
@@ -155,7 +189,7 @@ useEffect(() => {
                 <textarea name="description" value={formData.description} onChange={handleChange} rows="4" disabled={!canEditGeneralInfo} />
             </div>
             <div className="form-group">
-                <label htmlFor="projectManagerId">Project Manager</label>
+                <label htmlFor="projectManagerId" className="required">Project Manager</label>
                 <select 
                     id="projectManagerId" 
                     name="projectManagerId" 
@@ -171,6 +205,7 @@ useEffect(() => {
                         </option>
                     ))}
                 </select>
+                {errors.projectManagerId && <p className="error-text">{errors.projectManagerId}</p>}
             </div>
             {canSaveChanges && (
                 <div className="form-actions">

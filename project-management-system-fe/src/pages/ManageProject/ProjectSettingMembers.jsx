@@ -9,7 +9,7 @@ import '../../styles/pages/ManageProject/ProjectMembersTab.css'; // Cần thêm 
 const ProjectSettingMembers = () => {
     const { userProjectRole } = useContext(ProjectContext);
     const { projectKey } = useParams();
-    const canManageMembers = userProjectRole === 'PROJECT_MANAGER';
+    const canManageMembers = userProjectRole === 'PROJECT_MANAGER'|| 'admin' ;
 
     const [displayList, setDisplayList] = useState([]);
     const [loading, setLoading] = useState(true);
