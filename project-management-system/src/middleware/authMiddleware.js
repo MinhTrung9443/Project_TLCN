@@ -154,7 +154,6 @@ const isProjectManager = async (req, res, next) => {
 };
 
 const admin = (req, res, next) => {
-  // Sử dụng 'role' như bạn đã xác nhận
   if (req.user && req.user.role === 'admin') {
     return next();
   }

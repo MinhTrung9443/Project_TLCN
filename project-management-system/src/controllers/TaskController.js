@@ -54,12 +54,17 @@ const changeSprint = async (req, res) => {
 
 const handleUpdateTaskStatus = async (req, res) => {
   try {
-    const { taskId } = req.params;
+    // Lấy cả hai tham số từ URL
+    const { projectKey, taskId } = req.params; 
     const { statusId } = req.body;
+
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+
+    // Gọi service, có thể không cần truyền projectKey nếu service không dùng
     const updatedTask = await taskService.updateTaskStatus(taskId, statusId, req.user.id);
+    
     res.status(200).json(updatedTask);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });

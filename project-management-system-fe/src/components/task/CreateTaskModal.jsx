@@ -23,7 +23,7 @@ const INITIAL_FORM_STATE = {
 };
 
 // FIX 1: Đặt giá trị mặc định cho sprint là null để an toàn hơn
-const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
+const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaultProjectId = null }) => {
   const { user } = useAuth();
 
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
@@ -39,13 +39,19 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
         try {
           const res = await getProjects();
           setProjects(res.data);
-          // FIX 2: Luôn set reporterId và sprintId (nếu có) khi modal mở
-          // Không tự động chọn project nữa, để người dùng tự quyết định
-          setFormData((prev) => ({
-            ...prev,
-            reporterId: user.id,
-            sprintId: sprint ? sprint._id : "", // Chỉ set sprintId nếu prop sprint tồn tại
-          }));
+          if (defaultProjectId) {
+            setFormData(prev => ({
+              ...prev,
+              projectId: defaultProjectId, // <-- TỰ ĐỘNG CHỌN PROJECT
+              reporterId: user.id,
+            }));
+          } else {
+            // Nếu không, chỉ set reporterId như cũ
+            setFormData(prev => ({
+              ...prev,
+              reporterId: user.id,
+            }));
+          }
         } catch (error) {
           toast.error("Could not fetch projects.");
         }
@@ -57,7 +63,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
       setErrors({});
       setShowMore(false);
     }
-  }, [isOpen, user.id, sprint]); // Bỏ phụ thuộc vào selectedProjectKey
+  }, [isOpen, user.id, sprint, defaultProjectId]); // Bỏ phụ thuộc vào selectedProjectKey
 
   useEffect(() => {
     const fetchSettingsForProject = async () => {
@@ -171,7 +177,13 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated }) => {
               <label htmlFor="projectId" className="required">
                 Project
               </label>
-              <select id="projectId" name="projectId" value={formData.projectId} onChange={handleInputChange}>
+              <select 
+      id="projectId" 
+      name="projectId" 
+      value={formData.projectId} 
+      onChange={handleInputChange}
+      disabled={!!defaultProjectId} 
+    >
                 <option value="">Select Project</option>
                 {projects.map((p) => (
                   <option key={p._id} value={p._id}>

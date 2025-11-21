@@ -24,7 +24,12 @@ router.get("/project/:projectKey", protect, handleGetTasksByProjectKey);
 router.post("/project/:projectKey", protect, isProjectMember, handleCreateTask);
 
 router.put("/change-sprint/:taskId", protect, admin, changeSprint);
-router.put("/update-status/:taskId", protect, handleUpdateTaskStatus);
+router.put(
+  "/project/:projectKey/tasks/:taskId/update-status", 
+  protect, 
+  isProjectMember, 
+  handleUpdateTaskStatus
+);
 
 router.patch("/:taskId", protect, handleUpdateTask);
 router.delete("/:taskId", protect, handleDeleteTask);

@@ -182,11 +182,23 @@ const getAllProjects = async (actor) => { // 'actor' là req.user
 
 const getArchivedProjects = async () => {
   const projects = await Project.find({ isDeleted: true })
-    .populate("members.userId", "fullname email avatar") // Populate tất cả members
-    .sort({ deletedAt: -1 });
-  return projects;
-};
+    .populate({
+        path: 'members.userId',
+        select: 'fullname email avatar'
+    })
+    .sort({ deletedAt: -1 })
+    .lean(); // Dùng lean() để có thể thêm trường ảo
 
+  const projectsWithPM = projects.map(project => {
+      const pm = project.members.find(m => m.role === 'PROJECT_MANAGER');
+      return {
+          ...project,
+          projectManager: pm ? pm.userId : null 
+      };
+  });
+
+  return projectsWithPM;
+};
 
 const updateProjectByKey = async (projectKey, projectData, userId) => {
     const project = await Project.findOne({ key: projectKey.toUpperCase() });

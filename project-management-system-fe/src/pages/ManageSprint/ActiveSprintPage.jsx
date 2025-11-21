@@ -63,7 +63,7 @@ const ActiveSprintPage = () => {
     }
 
     try {
-      await updateTaskStatus(task._id, targetStatus._id);
+      await updateTaskStatus(projectKey, task._id, targetStatus._id);
 
       // Update local state
       setTasks((prevTasks) => prevTasks.map((t) => (t._id === task._id ? { ...t, statusId: targetStatus } : t)));
