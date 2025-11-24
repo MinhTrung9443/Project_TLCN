@@ -8,14 +8,6 @@ export const createProject = (projectData) => {
   return apiClient.post('/projects', projectData);
 };
 
-export const updateProject = (projectId, projectData) => {
-  return apiClient.put(`/projects/${projectId}`, projectData);
-};
-
-export const archiveProject = (projectId) => {
-  return apiClient.delete(`/projects/${projectId}`);
-};
-
 export const getArchivedProjects = () => {
   return apiClient.get('/projects/archived');
 };
@@ -62,4 +54,24 @@ export const archiveProjectByKey = (projectKey) => {
 export const addMembersFromGroupToProject = (projectKey, data) => {
   // Route mới của bạn là .../add-from-group
   return apiClient.post(`/projects/key/${projectKey}/add-from-group`, data);
+};
+export const removeMemberFromProject = (projectKey, userId) => {
+  return apiClient.delete(`/projects/key/${projectKey}/members/${userId}`);
+};
+
+// 2. Xóa cả một team khỏi dự án
+export const removeTeamFromProject = (projectKey, teamId) => {
+  return apiClient.delete(`/projects/key/${projectKey}/teams/${teamId}`);
+};
+
+// 3. Thay đổi vai trò của một thành viên
+export const changeMemberRole = (projectKey, userId, data) => {
+  // data: { newRole: 'LEADER' | 'MEMBER' }
+  return apiClient.put(`/projects/key/${projectKey}/members/${userId}/role`, data);
+};
+
+// 4. Thay đổi leader của một team
+export const changeTeamLeader = (projectKey, teamId, data) => {
+  // data: { newLeaderId: '...' }
+  return apiClient.put(`/projects/key/${projectKey}/teams/${teamId}/leader`, data);
 };

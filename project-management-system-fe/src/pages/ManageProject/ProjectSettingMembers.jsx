@@ -2,15 +2,17 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ProjectContext } from '../../contexts/ProjectContext';
-import { getProjectMembers } from '../../services/projectService';
+import { getProjectMembers, removeMemberFromProject, removeTeamFromProject, changeMemberRole, changeTeamLeader } from '../../services/projectService';
 import AddMemberModal from '../../components/project/AddMemberModal';
+import { useAuth } from '../../contexts/AuthContext';
 import '../../styles/pages/ManageProject/ProjectMembersTab.css'; // Cần thêm CSS cho thụt lề
+import MemberActionsMenu from '../../components/project/MemberActionsMenu';
 
 const ProjectSettingMembers = () => {
     const { userProjectRole } = useContext(ProjectContext);
     const { projectKey } = useParams();
-    const canManageMembers = userProjectRole === 'PROJECT_MANAGER'|| 'admin' ;
-
+    const { user } = useAuth();
+    const canManageMembers = userProjectRole === 'PROJECT_MANAGER' || (user && user.role === 'admin');
     const [displayList, setDisplayList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,6 +77,48 @@ const ProjectSettingMembers = () => {
     const existingMemberIds = rawMembers.map(m => m.userId._id);
     const existingTeamIds = rawTeams.map(t => t.teamId._id);
 
+     const handleRemoveMember = async (member) => {
+        if (window.confirm(`Are you sure you want to remove ${member.userId.fullname}?`)) {
+            try {
+                await removeMemberFromProject(projectKey, member.userId._id);
+                toast.success("Member removed.");
+                fetchData();
+            } catch (error) {
+                toast.error(error.response?.data?.message || "Failed to remove member.");
+            }
+        }
+    };
+
+    const handleRemoveTeam = async (team) => {
+        if (window.confirm(`Are you sure you want to remove the team "${team.teamId.name}"?`)) {
+            try {
+                await removeTeamFromProject(projectKey, team.teamId._id);
+                toast.success("Team removed.");
+                fetchData();
+            } catch (error) {
+                toast.error(error.response?.data?.message || "Failed to remove team.");
+            }
+        }
+    };
+
+    const handleChangeRole = async (member, newRole) => {
+        try {
+            await changeMemberRole(projectKey, member.userId._id, { newRole });
+            toast.success("Role updated.");
+            fetchData();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to change role.");
+        }
+    };
+    
+    const handleChangeLeader = (team) => {
+        // Logic này phức tạp hơn, cần mở một modal mới để chọn leader mới
+        // Tạm thời chỉ log ra console
+        console.log("Change leader for team:", team.teamId.name);
+        toast.info("Change Leader function is not implemented yet.");
+    };
+
+
     return (
         <div className="project-members-container">
             {canManageMembers && (
@@ -84,14 +128,14 @@ const ProjectSettingMembers = () => {
             )}
             
             <div className="members-list-table">
-                <div className="table-header">
+                 <div className="table-header">
                     <div>Member / Team</div>
                     <div>Role</div>
                     <div>Source</div>
-                    <div></div>
+                    <div>Actions</div> {/* Đổi tên cột */}
                 </div>
                 
-                {displayList.map((item, index) => {
+                {displayList.map((item) => {
                     if (item.isTeam) {
                         return (
                             <React.Fragment key={item.team.teamId._id}>
@@ -99,7 +143,13 @@ const ProjectSettingMembers = () => {
                                     <strong>{item.team.teamId.name} ({item.team.teamId.members.length} members)</strong>
                                     <span>TEAM</span>
                                     <span></span>
-                                    <button className="actions-btn">⋮</button>
+                                    <div>
+                                        <MemberActionsMenu 
+                                            item={item}
+                                            onRemoveTeam={handleRemoveTeam}
+                                            onChangeLeader={handleChangeLeader}
+                                        />
+                                    </div>
                                 </div>
                                 {item.leader && (
                                     <div className="table-row member-row indented">
@@ -134,7 +184,13 @@ const ProjectSettingMembers = () => {
                                 </div>
                                 <div>{item.role}</div>
                                 <div>Added individually</div>
-                                <button className="actions-btn">⋮</button>
+                                 <div>
+                                    <MemberActionsMenu 
+                                        item={item}
+                                        onRemoveMember={handleRemoveMember}
+                                        onChangeRole={handleChangeRole}
+                                    />
+                                </div>
                             </div>
                         );
                     }
@@ -149,6 +205,7 @@ const ProjectSettingMembers = () => {
                     projectKey={projectKey}
                     onMemberAdded={handleDataChanged}
                     existingMemberIds={existingMemberIds}
+                    existingTeamIds={existingTeamIds}
                 />
             )}
         </div>
