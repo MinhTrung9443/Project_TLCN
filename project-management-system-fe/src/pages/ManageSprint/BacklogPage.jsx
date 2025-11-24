@@ -15,7 +15,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
 
 const BacklogPage = () => {
-  const { selectedProjectKey, setProjectKey } = useContext(ProjectContext);
+  const { selectedProjectKey } = useContext(ProjectContext);
   const [sprintList, setSprintList] = useState([]);
   const [taskList, setTaskList] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -59,7 +59,7 @@ const BacklogPage = () => {
     const { task, source } = draggedItem;
     console.log(`Dropped task: ${task.name} from ${source} to ${target}`);
     try {
-      await updateTaskSprint(task._id, target === "backlog" ? null : target);
+      await updateTaskSprint(selectedProjectKey, task._id, target === "backlog" ? null : target);
       fetchSprintList();
     } catch (error) {
       console.error("Error updating task sprint:", error);
