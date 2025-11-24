@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ProjectContext } from '../../contexts/ProjectContext';
 import { getProjectMembers, removeMemberFromProject, removeTeamFromProject, changeMemberRole, addMemberToTeamInProject, removeMemberFromTeamInProject } from '../../services/projectService';
-import AddMemberModal from '../../components/project/AddMemberToTeamModal';
+import AddMemberModal from '../../components/project/AddMemberModal';
 import { useAuth } from '../../contexts/AuthContext';
 import '../../styles/pages/ManageProject/ProjectMembersTab.css'; // Cần thêm CSS cho thụt lề
 import MemberActionsMenu from '../../components/project/MemberActionsMenu';
@@ -16,7 +16,7 @@ const ProjectSettingMembers = () => {
     const canManageMembers = userProjectRole === 'PROJECT_MANAGER' || (user && user.role === 'admin');
     const [displayList, setDisplayList] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isAddMemberToTeamModalOpen, setAddMemberToTeamModalOpen] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
     // State để lưu dữ liệu gốc
@@ -69,11 +69,11 @@ const ProjectSettingMembers = () => {
         }
     }, [rawMembers, rawTeams, loading]);
 
-    const handleDataChanged = () => {
-        setIsModalOpen(false);
+     const handleDataChanged = () => {
+        setIsAddModalOpen(false);
+        setAddMemberToTeamModalOpen(false);
         fetchData();
     };
-
     if (loading) return <div>Loading members...</div>;
 
     const existingMemberIds = rawMembers.map(m => m.userId._id);
@@ -113,22 +113,16 @@ const ProjectSettingMembers = () => {
         }
     };
     
-    const handleChangeLeader = (team) => {
-        // Logic này phức tạp hơn, cần mở một modal mới để chọn leader mới
-        // Tạm thời chỉ log ra console
-        console.log("Change leader for team:", team.teamId.name);
-        toast.info("Change Leader function is not implemented yet.");
-    };
- const handleAddMemberToTeam = (team) => {
-        setSelectedTeam(team); // Lưu lại team đang được chọn
-        setAddMemberToTeamModalOpen(true); // Mở modal mới
+const handleAddMemberToTeam = (team) => {
+        setSelectedTeam(team);
+        setAddMemberToTeamModalOpen(true);
     };
 
     return (
         <div className="project-members-container">
             {canManageMembers && (
                 <div className="members-actions-header">
-                    <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">Add People / Team</button>
+                    <button onClick={() => setIsAddModalOpen(true)} className="btn btn-primary">Add People / Team</button>
                 </div>
             )}
             
@@ -153,8 +147,7 @@ const ProjectSettingMembers = () => {
                                         <MemberActionsMenu 
                                             item={item}
                                             onRemoveTeam={handleRemoveTeam}
-                                            onChangeLeader={handleChangeLeader}
-                                            onAddMemberToTeam={handleAddMemberToTeam} // <-- THÊM PROP CÒN THIẾU
+                                            onAddMemberToTeam={handleAddMemberToTeam}
                                         />
                                     </div>
                                 </div>
@@ -217,7 +210,19 @@ const ProjectSettingMembers = () => {
                  {displayList.length === 0 && <div className="no-data-message">No members in this project yet.</div>}
             </div>
 
-           {isAddMemberToTeamModalOpen && (
+            {isAddModalOpen && (
+                <AddMemberModal
+                    isOpen={isAddModalOpen}
+                    onClose={() => setIsAddModalOpen(false)}
+                    projectKey={projectKey}
+                    onMemberAdded={handleDataChanged}
+                    existingMemberIds={existingMemberIds}
+                    existingTeamIds={existingTeamIds}
+                />
+            )}
+            
+            {/* Modal phụ để thêm người vào một team đã có */}
+            {isAddMemberToTeamModalOpen && (
                 <AddMemberToTeamModal
                     isOpen={isAddMemberToTeamModalOpen}
                     onClose={() => setAddMemberToTeamModalOpen(false)}

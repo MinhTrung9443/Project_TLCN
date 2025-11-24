@@ -70,38 +70,37 @@ const canAssignTask = async (req, res, next) => {
     }
 };
 
-const getProjectRole = async (userId, projectKey) => {
-  console.log(`[DEBUG] 3.1. ENTERING 'getProjectRole' for project key: ${projectKey}`);
-  if (!userId || !projectKey) {
-    console.log("[DEBUG] ERROR: userId or projectKey is missing in getProjectRole.");
-    return null;
+const admin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    return next();
   }
+  return res.status(403).json({ message: "Forbidden: Admin access required" });
+};
+
+const getProjectRole = async (userId, projectKey) => {
+  if (!userId || !projectKey) return null;
   
   try {
-    console.log(`[DEBUG] 3.2. AWAITING Project.findOne for key: ${projectKey.toUpperCase()}`);
     const project = await Project.findOne({ key: projectKey.toUpperCase() });
-    console.log("[DEBUG] 3.3. COMPLETED Project.findOne. Found project:", project ? project.name : "Not Found");
-
     if (!project) return null;
 
-    const member = project.members.find(m => m.userId.equals(userId));
-    console.log("[DEBUG] 3.4. User role in project is:", member ? member.role : "Not a member");
+    const member = project.members.find(m => m.userId && m.userId.equals(userId));
     return member ? member.role : null;
   } catch (dbError) {
-    console.error("[DEBUG] FATAL DATABASE ERROR in getProjectRole:", dbError);
-    return null; // Trả về null để middleware cha xử lý
+    console.error("DATABASE ERROR in getProjectRole:", dbError);
+    return null;
   }
 };
 
+
 const isProjectMember = async (req, res, next) => {
-    // KIỂM TRA ĐẦU TIÊN: Nếu là Admin, cho qua ngay lập tức
     if (req.user && req.user.role === 'admin') {
         return next();
     }
 
-    // Nếu không phải Admin, kiểm tra như bình thường
+    // 2. Nếu không phải Admin, kiểm tra vai trò trong dự án
     try {
-        const role = await getProjectRole(req.user._id, req.params.key);
+        const role = await getProjectRole(req.user._id, req.params.projectKey);
         if (role) {
             req.projectRole = role; 
             return next();
@@ -114,14 +113,11 @@ const isProjectMember = async (req, res, next) => {
 };
 
 const isManagerOrLeader = async (req, res, next) => {
-    // KIỂM TRA ĐẦU TIÊN: Nếu là Admin, cho qua ngay lập tức
     if (req.user && req.user.role === 'admin') {
         return next();
     }
-
-    // Nếu không phải Admin, kiểm tra như bình thường
     try {
-        const role = await getProjectRole(req.user._id, req.params.key);
+        const role = await getProjectRole(req.user._id, req.params.projectKey);
         if (role === 'PROJECT_MANAGER' || role === 'LEADER') {
             req.projectRole = role;
             return next();
@@ -134,14 +130,12 @@ const isManagerOrLeader = async (req, res, next) => {
 };
 
 const isProjectManager = async (req, res, next) => {
-    // KIỂM TRA ĐẦU TIÊN: Nếu là Admin, cho qua ngay lập tức
     if (req.user && req.user.role === 'admin') {
         return next();
     }
 
-    // Nếu không phải Admin, kiểm tra như bình thường
     try {
-        const role = await getProjectRole(req.user._id, req.params.key);
+        const role = await getProjectRole(req.user._id, req.params.projectKey);
         if (role === 'PROJECT_MANAGER') {
             req.projectRole = role;
             return next();
@@ -151,13 +145,6 @@ const isProjectManager = async (req, res, next) => {
         console.error("Error in isProjectManager middleware:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
-};
-
-const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
-    return next();
-  }
-  return res.status(403).json({ message: "Forbidden: Admin access required" });
 };
 
 module.exports = { protect, admin, isProjectMember,canAssignTask , isManagerOrLeader, isProjectManager };
