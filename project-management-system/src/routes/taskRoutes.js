@@ -16,14 +16,14 @@ const {
   handleUnlinkTask,
 } = require("../controllers/TaskController");
 const { handleGetComments, handleCreateComment} = require("../controllers/CommentController");
-const { protect, admin , isProjectMember} = require("../middleware/authMiddleware"); 
+const { protect , isProjectMember, isManagerOrLeader} = require("../middleware/authMiddleware"); 
 const upload = require('../middleware/uploadMiddleware'); 
 
 router.get("/search", protect, handleSearchTasks);
 router.get("/project/:projectKey", protect, handleGetTasksByProjectKey);
 router.post("/project/:projectKey", protect, isProjectMember, handleCreateTask);
 
-router.put("/change-sprint/:taskId", protect, admin, changeSprint);
+router.put("/project/:projectKey/tasks/:taskId/change-sprint", protect, isManagerOrLeader, changeSprint);
 router.put(
   "/project/:projectKey/tasks/:taskId/update-status", 
   protect, 
@@ -31,8 +31,8 @@ router.put(
   handleUpdateTaskStatus
 );
 
-router.patch("/:taskId", protect, handleUpdateTask);
-router.delete("/:taskId", protect, handleDeleteTask);
+router.patch("/project/:projectKey/tasks/:taskId", protect, isProjectMember, handleUpdateTask);
+router.delete("/project/:projectKey/tasks/:taskId", protect, isManagerOrLeader, handleDeleteTask);
 router.get("/:taskId/history", protect, handleGetTaskHistory);
 router.get("/:taskId/comments", protect, handleGetComments);
 router.post("/:taskId/comments", protect, handleCreateComment);

@@ -156,7 +156,8 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
 
   const handleUpdate = async (fieldName, value) => {
     const updateValue = value === "" ? null : value;
-
+    const projectKey = editableTask?.projectId?.key;
+    const taskId = editableTask?._id;
     const newStartDate = fieldName === "startDate" ? updateValue : editableTask.startDate;
     const newDueDate = fieldName === "dueDate" ? updateValue : editableTask.dueDate;
 
@@ -170,7 +171,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     setEditableTask(updatedTask); // Cập nhật state ngay lập tức
 
     try {
-      const res = await updateTask(editableTask._id, { [fieldName]: updateValue });
+      const res = await updateTask(projectKey, taskId, { [fieldName]: updateValue });
       onTaskUpdate(res.data);
       if (fieldName !== 'name') {
         toast.success(`${fieldName.replace(/([A-Z])/g, " $1")} updated successfully!`);

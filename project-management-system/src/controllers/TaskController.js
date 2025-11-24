@@ -40,7 +40,7 @@ const handleCreateTask = async (req, res) => {
 
 const changeSprint = async (req, res) => {
   try {
-    const { taskId } = req.params;
+    const { projectKey, taskId } = req.params;
     const { sprintId } = req.body;
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -82,7 +82,7 @@ const handleSearchTasks = async (req, res) => {
 
 const handleUpdateTask = async (req, res) => {
   try {
-    const { taskId } = req.params;
+    const { projectKey, taskId } = req.params; 
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized: User not found." });
     }
@@ -97,7 +97,7 @@ const handleUpdateTask = async (req, res) => {
 
 const handleDeleteTask = async (req, res) => {
   try {
-    const { taskId } = req.params;
+    const { projectKey, taskId } = req.params;
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized" });
     }
