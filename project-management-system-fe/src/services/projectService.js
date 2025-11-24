@@ -75,3 +75,10 @@ export const changeTeamLeader = (projectKey, teamId, data) => {
   // data: { newLeaderId: '...' }
   return apiClient.put(`/projects/key/${projectKey}/teams/${teamId}/leader`, data);
 };
+export const addMemberToTeamInProject = (projectKey, teamId, data) => {
+    return apiClient.post(`/projects/key/${projectKey}/teams/${teamId}/members`, data);
+};
+
+export const removeMemberFromTeamInProject = (projectKey, teamId, userId) => {
+    return apiClient.delete(`/projects/key/${projectKey}/teams/${teamId}/members/${userId}`);
+};

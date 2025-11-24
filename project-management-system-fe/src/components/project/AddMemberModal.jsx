@@ -6,7 +6,7 @@ import { groupService } from '../../services/groupService';
 import { addMemberToProject, addMembersFromGroupToProject } from '../../services/projectService';
 import '../../styles/pages/ManageProject/AddMemberModal.css';
 
-const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMemberIds = [] }) => {
+const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMemberIds = [], existingTeamIds = [] }) => {
     const [addMode, setAddMode] = useState('individual');
     const [allUsers, setAllUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -20,7 +20,6 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
     const [isSaving, setIsSaving] = useState(false);
 
 
-    // Hàm fetch dữ liệu ban đầu (users và groups)
     const fetchData = useCallback(async () => {
         setIsLoadingData(true);
         try {
@@ -51,7 +50,7 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
         }
     }, [isOpen, fetchData]);
 
-    useEffect(() => {
+     useEffect(() => {
         if (selectedGroup) {
             const group = allGroups.find(g => g._id === selectedGroup.value);
             if (group && group.members) {
@@ -76,7 +75,12 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
         setSelectedTeamMemberIds(newSelection);
     };
 
-    // [SỬA LẠI] - Hàm handleSubmit cho đúng với logic mới
+    useEffect(() => {
+        if (selectedLeader && !selectedTeamMemberIds.has(selectedLeader.value)) {
+            setSelectedLeader(null);
+        }
+    }, [selectedTeamMemberIds, selectedLeader]);
+
     const handleSubmit = async () => {
         setIsSaving(true);
         try {
@@ -116,22 +120,28 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
     };
 
 
-    // Hàm reset state khi đóng modal
     const handleClose = () => {
         setAddMode('individual');
         setSelectedUser(null);
         setSelectedRole('MEMBER');
         setSelectedGroup(null);
         setSelectedLeader(null);
+        setTeamMembers([]);
+        setSelectedTeamMemberIds(new Set()); 
         onClose();
     };
 
-    if (!isOpen) return null;
+
+     if (!isOpen) return null;
 
     const userOptions = allUsers
         .filter(u => !existingMemberIds.includes(u._id))
         .map(u => ({ value: u._id, label: u.fullname || u.username }));
-    const groupOptions = allGroups.map(g => ({ value: g._id, label: g.name }));
+
+    const groupOptions = allGroups
+        .filter(g => !existingTeamIds.includes(g._id)) // Lọc ra các team đã có trong dự án
+        .map(g => ({ value: g._id, label: g.name }));
+
     const leaderOptions = teamMembers
         .filter(m => selectedTeamMemberIds.has(m._id))
         .map(u => ({ value: u._id, label: u.fullname || u.username }));
@@ -163,10 +173,8 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                         </>
                     )}
 
-                    {/* [SỬA LẠI] - Bọc lại toàn bộ bằng thẻ Fragment <> */}
                     {addMode === 'team' && (
                         <>
-                            {/* Thêm lại dropdown chọn team */}
                             <div className="form-group">
                                 <label>Select a Team</label>
                                 <Select options={groupOptions} value={selectedGroup} onChange={setSelectedGroup} isLoading={isLoadingData} />
@@ -176,23 +184,23 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                                 <div className="form-group member-selection-list">
                                     <label>Select members to add</label>
                                     <div className="checkbox-list-container">
-                                    {teamMembers.map(member => (
-                                        <div key={member._id} className="checkbox-item">
-                                            <input
-                                                type="checkbox"
-                                                id={`member-${member._id}`}
-                                                checked={selectedTeamMemberIds.has(member._id)}
-                                                onChange={() => handleTeamMemberToggle(member._id)}
-                                            />
-                                               <label htmlFor={`member-${member._id}`}>
-                                                <img src={member.avatar || '/default-avatar.png'} alt={member.fullname} className="item-avatar" />
-                                                <span>{member.fullname || member.username}</span>
-                                            </label>
-                                        </div>
-                                    ))}
+                                        {teamMembers.map(member => (
+                                            <div key={member._id} className="checkbox-item">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`member-${member._id}`}
+                                                    checked={selectedTeamMemberIds.has(member._id)}
+                                                    onChange={() => handleTeamMemberToggle(member._id)}
+                                                />
+                                                <label htmlFor={`member-${member._id}`}>
+                                                    <img src={member.avatar || '/default-avatar.png'} alt={member.fullname} className="item-avatar" />
+                                                    <span>{member.fullname || member.username}</span>
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
                             {selectedGroup && (
                                 <div className="form-group">
@@ -213,5 +221,6 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
             </div>
         </div>
     );
-}
+};
+
 export default AddMemberModal;

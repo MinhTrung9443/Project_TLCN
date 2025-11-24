@@ -3,11 +3,11 @@ import { ProjectContext } from '../../contexts/ProjectContext';
 import { useAuth } from '../../contexts/AuthContext';
 import "../../styles/pages/ManageProject/MemberActionsMenu.css";
 
-const MemberActionsMenu = ({ item, onRemoveMember, onRemoveTeam, onChangeRole, onChangeLeader }) => {
+const MemberActionsMenu = ({ item, onRemoveMember, onRemoveTeam, onChangeRole, onChangeLeader, onAddMemberToTeam, onRemoveMemberFromTeam }) => {
     const [isOpen, setIsOpen] = useState(false);
     const { user } = useAuth();
     const { userProjectRole } = useContext(ProjectContext);
-    const menuRef = useRef(null); // Ref để xử lý click ra ngoài
+    const menuRef = useRef(null);
 
     // Kiểm tra quyền quản lý
     const canManage = userProjectRole === 'PROJECT_MANAGER' || (user && user.role === 'admin');
@@ -23,7 +23,8 @@ const MemberActionsMenu = ({ item, onRemoveMember, onRemoveTeam, onChangeRole, o
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [menuRef]);
 
-    if (!canManage) return <div className="actions-placeholder"></div>; // Trả về một div trống để giữ layout
+    if (!canManage) return <div className="actions-placeholder"></div>;
+    if (!item) return <div className="actions-placeholder"></div>;
 
     // Không hiển thị menu cho chính PM
     if (!item.isTeam && item.role === 'PROJECT_MANAGER') {
@@ -31,26 +32,41 @@ const MemberActionsMenu = ({ item, onRemoveMember, onRemoveTeam, onChangeRole, o
     }
 
     const renderMenu = () => {
-        if (item.isTeam) { // Nếu là một Team
+        if (item.isTeam && item.team) {
             return (
                 <ul className="dropdown-menu">
-                    <li onClick={() => { onChangeLeader(item.team); setIsOpen(false); }}>Change Leader</li>
+                    <li onClick={() => { onAddMemberToTeam(item.team); setIsOpen(false); }}>Add Member to Team</li>
                     <li className="danger" onClick={() => { onRemoveTeam(item.team); setIsOpen(false); }}>Remove Team</li>
                 </ul>
             );
-        } else { // Nếu là một Member hoặc Leader
+        } 
+        else if (!item.isTeam) {
+            const source = item.source || ''; 
+            const isInTeam = source.startsWith('Added via');
+
             return (
                 <ul className="dropdown-menu">
                     {item.role !== 'LEADER' && <li onClick={() => { onChangeRole(item, 'LEADER'); setIsOpen(false); }}>Set as Leader</li>}
                     {item.role !== 'MEMBER' && <li onClick={() => { onChangeRole(item, 'MEMBER'); setIsOpen(false); }}>Set as Member</li>}
-                    <li className="danger" onClick={() => { onRemoveMember(item); setIsOpen(false); }}>Remove from Project</li>
+                    
+                    <hr className="menu-divider" /> 
+
+                    {isInTeam && item.role !== 'LEADER' && (
+                        <li className="danger" onClick={() => { onRemoveMemberFromTeam(item); setIsOpen(false); }}>
+                            Remove from Team
+                        </li>
+                    )}
+
+                    <li className="danger" onClick={() => { onRemoveMember(item); setIsOpen(false); }}>
+                        Remove from Project
+                    </li>
                 </ul>
             );
         }
+        return null;
     };
 
     return (
-        // [QUAN TRỌNG] Bọc toàn bộ bằng một div có ref và class
         <div className="actions-menu-container" ref={menuRef}>
             <button onClick={() => setIsOpen(!isOpen)} className="actions-btn">⋮</button>
             {isOpen && renderMenu()}

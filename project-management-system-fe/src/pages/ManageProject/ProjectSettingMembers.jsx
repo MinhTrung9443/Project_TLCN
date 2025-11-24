@@ -2,11 +2,12 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ProjectContext } from '../../contexts/ProjectContext';
-import { getProjectMembers, removeMemberFromProject, removeTeamFromProject, changeMemberRole, changeTeamLeader } from '../../services/projectService';
-import AddMemberModal from '../../components/project/AddMemberModal';
+import { getProjectMembers, removeMemberFromProject, removeTeamFromProject, changeMemberRole, addMemberToTeamInProject, removeMemberFromTeamInProject } from '../../services/projectService';
+import AddMemberModal from '../../components/project/AddMemberToTeamModal';
 import { useAuth } from '../../contexts/AuthContext';
 import '../../styles/pages/ManageProject/ProjectMembersTab.css'; // Cần thêm CSS cho thụt lề
 import MemberActionsMenu from '../../components/project/MemberActionsMenu';
+import AddMemberToTeamModal from '../../components/project/AddMemberToTeamModal'; // <-- Import modal mới
 
 const ProjectSettingMembers = () => {
     const { userProjectRole } = useContext(ProjectContext);
@@ -16,7 +17,8 @@ const ProjectSettingMembers = () => {
     const [displayList, setDisplayList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
+    const [isAddMemberToTeamModalOpen, setAddMemberToTeamModalOpen] = useState(false);
+    const [selectedTeam, setSelectedTeam] = useState(null);
     // State để lưu dữ liệu gốc
     const [rawMembers, setRawMembers] = useState([]);
     const [rawTeams, setRawTeams] = useState([]);
@@ -117,7 +119,10 @@ const ProjectSettingMembers = () => {
         console.log("Change leader for team:", team.teamId.name);
         toast.info("Change Leader function is not implemented yet.");
     };
-
+ const handleAddMemberToTeam = (team) => {
+        setSelectedTeam(team); // Lưu lại team đang được chọn
+        setAddMemberToTeamModalOpen(true); // Mở modal mới
+    };
 
     return (
         <div className="project-members-container">
@@ -128,11 +133,12 @@ const ProjectSettingMembers = () => {
             )}
             
             <div className="members-list-table">
-                 <div className="table-header">
+                <div className="table-header">
                     <div>Member / Team</div>
                     <div>Role</div>
                     <div>Source</div>
-                    <div>Actions</div> {/* Đổi tên cột */}
+                    <div>Actions</div>
+                    {/* [SỬA] - Xóa MemberActionsMenu khỏi header */}
                 </div>
                 
                 {displayList.map((item) => {
@@ -148,6 +154,7 @@ const ProjectSettingMembers = () => {
                                             item={item}
                                             onRemoveTeam={handleRemoveTeam}
                                             onChangeLeader={handleChangeLeader}
+                                            onAddMemberToTeam={handleAddMemberToTeam} // <-- THÊM PROP CÒN THIẾU
                                         />
                                     </div>
                                 </div>
@@ -159,7 +166,13 @@ const ProjectSettingMembers = () => {
                                         </div>
                                         <div>{item.leader.role}</div>
                                         <div>Added via {item.team.teamId.name}</div>
-                                        <button className="actions-btn">⋮</button>
+                                        <div>
+                                            <MemberActionsMenu 
+                                                item={item.leader}
+                                                onRemoveMember={handleRemoveMember}
+                                                onChangeRole={handleChangeRole}
+                                            />
+                                        </div>
                                     </div>
                                 )}
                                 {item.members.map(member => (
@@ -170,7 +183,13 @@ const ProjectSettingMembers = () => {
                                         </div>
                                         <div>{member.role}</div>
                                         <div>Added via {item.team.teamId.name}</div>
-                                        <button className="actions-btn">⋮</button>
+                                        <div>
+                                            <MemberActionsMenu 
+                                                item={member}
+                                                onRemoveMember={handleRemoveMember}
+                                                onChangeRole={handleChangeRole}
+                                            />
+                                        </div>
                                     </div>
                                 ))}
                             </React.Fragment>
@@ -184,7 +203,7 @@ const ProjectSettingMembers = () => {
                                 </div>
                                 <div>{item.role}</div>
                                 <div>Added individually</div>
-                                 <div>
+                                <div>
                                     <MemberActionsMenu 
                                         item={item}
                                         onRemoveMember={handleRemoveMember}
@@ -198,14 +217,14 @@ const ProjectSettingMembers = () => {
                  {displayList.length === 0 && <div className="no-data-message">No members in this project yet.</div>}
             </div>
 
-            {isModalOpen && (
-                <AddMemberModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
+           {isAddMemberToTeamModalOpen && (
+                <AddMemberToTeamModal
+                    isOpen={isAddMemberToTeamModalOpen}
+                    onClose={() => setAddMemberToTeamModalOpen(false)}
                     projectKey={projectKey}
+                    team={selectedTeam}
                     onMemberAdded={handleDataChanged}
                     existingMemberIds={existingMemberIds}
-                    existingTeamIds={existingTeamIds}
                 />
             )}
         </div>

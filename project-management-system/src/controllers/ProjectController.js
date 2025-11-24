@@ -86,22 +86,19 @@ const handleAddMemberToProject = async (req, res) => {
     res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
-// controllers/ProjectController.js (BACKEND)
 
 const handleAddGroupToProject = async (req, res) => {
   try {
     const { projectKey } = req.params;
-    // [SỬA] - Nhận 'memberIds' thay vì 'roleForOthers'
     const { groupId, leaderId, memberIds } = req.body;
 
-    // [SỬA] - Cập nhật lại validation
     if (!groupId || !leaderId || !memberIds || !Array.isArray(memberIds)) {
       return res.status(400).json({ message: "Group ID, Leader ID, and a list of Member IDs are required." });
     }
 
     const result = await projectService.addMembersFromGroupToProject(
         projectKey, 
-        { groupId, leaderId, memberIds }, // Truyền dữ liệu mới
+        { groupId, leaderId, memberIds }, 
         req.user
     );
 
@@ -152,7 +149,6 @@ const handleRemoveMember = async (req, res) => {
     }
 };
 
-// 2. Xóa Team khỏi Dự án
 const handleRemoveTeam = async (req, res) => {
     try {
         const { projectKey, teamId } = req.params;
@@ -163,7 +159,6 @@ const handleRemoveTeam = async (req, res) => {
     }
 };
 
-// 3. Thay đổi Vai trò của Member
 const handleChangeMemberRole = async (req, res) => {
     try {
         const { projectKey, userId } = req.params;
@@ -178,7 +173,6 @@ const handleChangeMemberRole = async (req, res) => {
     }
 };
 
-// 4. Thay đổi Leader của một Team
 const handleChangeTeamLeader = async (req, res) => {
     try {
         const { projectKey, teamId } = req.params;
@@ -187,6 +181,30 @@ const handleChangeTeamLeader = async (req, res) => {
             return res.status(400).json({ message: "newLeaderId is required." });
         }
         const updatedProject = await projectService.changeTeamLeader(projectKey, teamId, newLeaderId);
+        res.status(200).json(updatedProject);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ message: error.message });
+    }
+};
+const handleAddMemberToTeam = async (req, res) => {
+    try {
+        const { projectKey, teamId } = req.params;
+        const { userId } = req.body; // userId của người cần thêm
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required." });
+        }
+        const updatedProject = await projectService.addMemberToTeamInProject(projectKey, teamId, userId);
+        res.status(200).json(updatedProject);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ message: error.message });
+    }
+};
+
+// Xóa thành viên khỏi một team cụ thể trong dự án
+const handleRemoveMemberFromTeam = async (req, res) => {
+    try {
+        const { projectKey, teamId, userId } = req.params;
+        const updatedProject = await projectService.removeMemberFromTeamInProject(projectKey, teamId, userId);
         res.status(200).json(updatedProject);
     } catch (error) {
         res.status(error.statusCode || 500).json({ message: error.message });
@@ -214,4 +232,6 @@ module.exports = {
   handleRemoveTeam,
   handleChangeMemberRole,
   handleChangeTeamLeader,
+  handleAddMemberToTeam,
+  handleRemoveMemberFromTeam,
 };

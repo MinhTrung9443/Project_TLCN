@@ -22,6 +22,8 @@ const {
   handleRemoveTeam,
   handleChangeMemberRole,
   handleChangeTeamLeader,
+  handleAddMemberToTeam,
+  handleRemoveMemberFromTeam
 } = require('../controllers/ProjectController');
 
 const {
@@ -52,21 +54,19 @@ router.delete('/key/:projectKey/archive', protect, isProjectManager, handleArchi
 router.post('/key/:projectKey/members', protect, isProjectManager, handleAddMemberToProject);
 router.post('/key/:projectKey/add-from-group', protect, isProjectManager, handleAddGroupToProject);
 
-
+// Xem danh sách thành viên của dự án (phải là thành viên)
+router.get('/key/:projectKey/members', protect, isProjectMember, handleGetProjectMembers);
 router.get('/', protect, handleGetAllProjects);
 
 router.get('/key/:projectKey', protect, isProjectMember, handleGetProjectByKey);
-// Xem danh sách thành viên của dự án (phải là thành viên)
-router.get('/key/:projectKey/members', protect, isProjectMember, handleGetProjectMembers);
 
 router.put('/key/:projectKey/members/:userId/role', protect, isProjectManager, handleChangeMemberRole);
 
-// 4. Thay đổi Leader của một Team
 router.put('/key/:projectKey/teams/:teamId/leader', protect, isProjectManager, handleChangeTeamLeader);
 
 router.delete('/key/:projectKey/members/:userId', protect, isProjectManager, handleRemoveMember);
-
-// 2. Xóa Team khỏi Dự án
 router.delete('/key/:projectKey/teams/:teamId', protect, isProjectManager, handleRemoveTeam);
+router.post('/key/:projectKey/teams/:teamId/members', protect, isProjectManager, handleAddMemberToTeam);
+router.delete('/key/:projectKey/teams/:teamId/members/:userId', protect, isProjectManager, handleRemoveMemberFromTeam);
 
 module.exports = router;
