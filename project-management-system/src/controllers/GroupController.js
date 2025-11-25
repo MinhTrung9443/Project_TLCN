@@ -96,6 +96,23 @@ class GroupController {
       res.status(error.statusCode || 500).json({ message: error.message });
     }
   }
+
+  async removeMember(req, res) {
+    try {
+      const { id: groupId, userId } = req.params;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      const removedBy = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const updatedGroup = await groupService.removeMember(groupId, userId, removedBy);
+      res.status(200).json({
+        message: "Member removed successfully",
+        data: updatedGroup,
+      });
+    } catch (error) {
+      res.status(error.statusCode || 500).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = new GroupController();

@@ -57,7 +57,7 @@
 .members-table th,
 .members-table td {
   padding: 12px 15px;
-  border-bottom: 1px solid #ddd; 
+  border-bottom: 1px solid #ddd;
   text-align: left;
 }
 
@@ -75,4 +75,32 @@
   padding: 30px;
   font-size: 16px;
   color: #777;
+}
+
+.remove-member-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.remove-member-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.remove-member-btn:active {
+  transform: translateY(0);
+}
+
+.remove-member-btn .material-symbols-outlined {
+  font-size: 20px;
 }

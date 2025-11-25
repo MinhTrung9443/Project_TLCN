@@ -1,15 +1,15 @@
-import apiClient from './apiClient'; 
+import apiClient from "./apiClient";
 
 const getUsers = (params) => {
-    return apiClient.get('/users', { params });
+  return apiClient.get("/users", { params });
 };
 
 const getGroups = (params) => {
-  return apiClient.get('/groups', { params }); 
+  return apiClient.get("/groups", { params });
 };
 
 const createGroup = (groupData) => {
-  return apiClient.post('/groups', groupData);
+  return apiClient.post("/groups", groupData);
 };
 
 const updateGroup = (groupId, updateData) => {
@@ -21,14 +21,19 @@ const deleteGroup = (groupId) => {
 };
 
 const getGroupMembers = (groupId, params) => {
-    return apiClient.get(`/groups/${groupId}/members`, { params });
+  return apiClient.get(`/groups/${groupId}/members`, { params });
 };
 
 const addMemberToGroup = (groupId, userId) => {
-    return apiClient.post(`/groups/${groupId}/members`, { userId });
+  return apiClient.post(`/groups/${groupId}/members`, { userId });
 };
+
+const removeMemberFromGroup = (groupId, userId) => {
+  return apiClient.delete(`/groups/${groupId}/members/${userId}`);
+};
+
 const getGroupById = (groupId) => {
-    return apiClient.get(`/groups/${groupId}`);
+  return apiClient.get(`/groups/${groupId}`);
 };
 
 export const groupService = {
@@ -38,9 +43,10 @@ export const groupService = {
   deleteGroup,
   getGroupMembers,
   addMemberToGroup,
-  getGroupById
+  removeMemberFromGroup,
+  getGroupById,
 };
 
-export const userService = { 
-    getUsers,
-}
+export const userService = {
+  getUsers,
+};
