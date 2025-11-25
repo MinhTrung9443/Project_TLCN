@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const { getProjectAuditOverview, getProjectAuditLogs } = require("../controllers/auditLogController");
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, adminOrPM } = require("../middleware/authMiddleware");
 
-// Admin xem tổng quan auditlog của 1 project
-router.get("/overview", protect, admin, getProjectAuditOverview);
-// Admin xem chi tiết log của 1 project (phân trang)
-router.get("/logs", protect, admin, getProjectAuditLogs);
+// Admin hoặc PM xem tổng quan auditlog của 1 project
+router.get("/overview", protect, adminOrPM, getProjectAuditOverview);
+// Admin hoặc PM xem chi tiết log của 1 project (phân trang)
+router.get("/logs", protect, adminOrPM, getProjectAuditLogs);
 
 module.exports = router;

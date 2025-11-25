@@ -2,12 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import workflowService from "../../services/workflowService";
+import { getProjectByKey } from "../../services/projectService";
+import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/pages/ManageProject/ProjectSettings_Workflow.css";
 
 const ProjectSettingsWorkflow = () => {
   const { projectKey } = useParams();
+  const { user } = useAuth();
   const [workflow, setWorkflow] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userProjectRole, setUserProjectRole] = useState(null);
 
   // Modals state
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -26,6 +30,21 @@ const ProjectSettingsWorkflow = () => {
   useEffect(() => {
     fetchWorkflow();
   }, [projectKey]);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!projectKey || !user) return;
+      try {
+        const response = await getProjectByKey(projectKey);
+        const project = response.data;
+        const member = project.members?.find((m) => m.userId._id === user._id);
+        setUserProjectRole(member?.role || null);
+      } catch (error) {
+        console.error("Failed to fetch user role:", error);
+      }
+    };
+    fetchUserRole();
+  }, [projectKey, user]);
 
   const fetchWorkflow = async () => {
     try {
@@ -143,6 +162,12 @@ const ProjectSettingsWorkflow = () => {
   };
 
   // ============================================
+  // PERMISSION CHECK
+  // ============================================
+
+  const canEdit = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
+
+  // ============================================
   // DIAGRAM HELPERS
   // ============================================
 
@@ -181,10 +206,12 @@ const ProjectSettingsWorkflow = () => {
         <div className="workflow-section">
           <div className="section-header">
             <h3>Statuses</h3>
-            <button className="btn-add" onClick={openAddStatusModal}>
-              <span className="material-symbols-outlined">add</span>
-              Add Status
-            </button>
+            {canEdit && (
+              <button className="btn-add" onClick={openAddStatusModal}>
+                <span className="material-symbols-outlined">add</span>
+                Add Status
+              </button>
+            )}
           </div>
 
           <div className="statuses-list">
@@ -197,21 +224,23 @@ const ProjectSettingsWorkflow = () => {
                     <div className="status-category">{status.category}</div>
                   </div>
                 </div>
-                <div className="status-actions">
-                  <button className="btn-icon" onClick={() => openEditStatusModal(status)} title="Edit">
-                    <span className="material-symbols-outlined">edit</span>
-                  </button>
-                  <button
-                    className="btn-icon btn-danger"
-                    onClick={() => {
-                      setDeleteTarget({ type: "status", id: status._id, name: status.name });
-                      setShowDeleteConfirm(true);
-                    }}
-                    title="Delete"
-                  >
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
+                {canEdit && (
+                  <div className="status-actions">
+                    <button className="btn-icon" onClick={() => openEditStatusModal(status)} title="Edit">
+                      <span className="material-symbols-outlined">edit</span>
+                    </button>
+                    <button
+                      className="btn-icon btn-danger"
+                      onClick={() => {
+                        setDeleteTarget({ type: "status", id: status._id, name: status.name });
+                        setShowDeleteConfirm(true);
+                      }}
+                      title="Delete"
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -221,10 +250,12 @@ const ProjectSettingsWorkflow = () => {
         <div className="workflow-section">
           <div className="section-header">
             <h3>Transition Rules</h3>
-            <button className="btn-add" onClick={openAddTransitionModal}>
-              <span className="material-symbols-outlined">add</span>
-              Add Rule
-            </button>
+            {canEdit && (
+              <button className="btn-add" onClick={openAddTransitionModal}>
+                <span className="material-symbols-outlined">add</span>
+                Add Rule
+              </button>
+            )}
           </div>
 
           <div className="transitions-list">
@@ -241,21 +272,23 @@ const ProjectSettingsWorkflow = () => {
                     <span>{transition.toStatus?.name || "Unknown"}</span>
                   </div>
                 </div>
-                <div className="transition-actions">
-                  <button className="btn-icon" onClick={() => openEditTransitionModal(transition)} title="Edit">
-                    <span className="material-symbols-outlined">edit</span>
-                  </button>
-                  <button
-                    className="btn-icon btn-danger"
-                    onClick={() => {
-                      setDeleteTarget({ type: "transition", id: transition._id, name: transition.name });
-                      setShowDeleteConfirm(true);
-                    }}
-                    title="Delete"
-                  >
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
+                {canEdit && (
+                  <div className="transition-actions">
+                    <button className="btn-icon" onClick={() => openEditTransitionModal(transition)} title="Edit">
+                      <span className="material-symbols-outlined">edit</span>
+                    </button>
+                    <button
+                      className="btn-icon btn-danger"
+                      onClick={() => {
+                        setDeleteTarget({ type: "transition", id: transition._id, name: transition.name });
+                        setShowDeleteConfirm(true);
+                      }}
+                      title="Delete"
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -279,8 +312,8 @@ const ProjectSettingsWorkflow = () => {
 
               {/* Gradient for arrow */}
               <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style={{ stopColor: '#94a3b8', stopOpacity: 0.5 }} />
-                <stop offset="100%" style={{ stopColor: '#64748b', stopOpacity: 0.9 }} />
+                <stop offset="0%" style={{ stopColor: "#94a3b8", stopOpacity: 0.5 }} />
+                <stop offset="100%" style={{ stopColor: "#64748b", stopOpacity: 0.9 }} />
               </linearGradient>
 
               {/* Shadow filter */}

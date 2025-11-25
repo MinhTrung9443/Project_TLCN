@@ -2,8 +2,8 @@ const projectService = require("../services/ProjectService");
 
 const handleCreateProject = async (req, res) => {
   try {
-    const projectData = req.body; 
-    const userId = req.user._id; 
+    const projectData = req.body;
+    const userId = req.user._id;
     const newProject = await projectService.createProject(projectData, userId);
     res.status(201).json(newProject);
   } catch (error) {
@@ -12,8 +12,8 @@ const handleCreateProject = async (req, res) => {
 };
 const handleCloneProject = async (req, res) => {
   try {
-    const { id } = req.params; 
-    const cloneData = req.body; 
+    const { id } = req.params;
+    const cloneData = req.body;
     const userId = req.user._id;
     const clonedProject = await projectService.cloneProject(id, cloneData, userId);
     res.status(201).json(clonedProject);
@@ -50,7 +50,6 @@ const handlePermanentlyDeleteProject = async (req, res) => {
   }
 };
 
-
 // === 2. HÀNH ĐỘNG CỦA PROJECT MANAGER ===
 
 const handleUpdateProjectByKey = async (req, res) => {
@@ -79,8 +78,8 @@ const handleArchiveProjectByKey = async (req, res) => {
 const handleAddMemberToProject = async (req, res) => {
   try {
     const { projectKey } = req.params;
-    const { userId, role } = req.body;
-    const result = await projectService.addMemberToProject(projectKey, { userId, role }, req.user);
+    const { userId, role, teamId } = req.body;
+    const result = await projectService.addMemberToProject(projectKey, { userId, role, teamId }, req.user);
     res.status(200).json(result);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });
@@ -96,11 +95,7 @@ const handleAddGroupToProject = async (req, res) => {
       return res.status(400).json({ message: "Group ID, Leader ID, and a list of Member IDs are required." });
     }
 
-    const result = await projectService.addMembersFromGroupToProject(
-        projectKey, 
-        { groupId, leaderId, memberIds }, 
-        req.user
-    );
+    const result = await projectService.addMembersFromGroupToProject(projectKey, { groupId, leaderId, memberIds }, req.user);
 
     res.status(200).json(result);
   } catch (error) {
@@ -111,8 +106,8 @@ const handleAddGroupToProject = async (req, res) => {
 
 const handleGetAllProjects = async (req, res) => {
   try {
-    const projects = await projectService.getAllProjects(req.user); 
-    
+    const projects = await projectService.getAllProjects(req.user);
+
     res.status(200).json(projects);
   } catch (error) {
     res.status(500).json({ message: error.message || "Server Error" });
@@ -140,75 +135,75 @@ const handleGetProjectMembers = async (req, res) => {
 };
 
 const handleRemoveMember = async (req, res) => {
-    try {
-        const { projectKey, userId } = req.params;
-        const updatedProject = await projectService.removeMemberFromProject(projectKey, userId);
-        res.status(200).json(updatedProject);
-    } catch (error) {
-        res.status(error.statusCode || 500).json({ message: error.message });
-    }
+  try {
+    const { projectKey, userId } = req.params;
+    const updatedProject = await projectService.removeMemberFromProject(projectKey, userId);
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
 };
 
 const handleRemoveTeam = async (req, res) => {
-    try {
-        const { projectKey, teamId } = req.params;
-        const updatedProject = await projectService.removeTeamFromProject(projectKey, teamId);
-        res.status(200).json(updatedProject);
-    } catch (error) {
-        res.status(error.statusCode || 500).json({ message: error.message });
-    }
+  try {
+    const { projectKey, teamId } = req.params;
+    const updatedProject = await projectService.removeTeamFromProject(projectKey, teamId);
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
 };
 
 const handleChangeMemberRole = async (req, res) => {
-    try {
-        const { projectKey, userId } = req.params;
-        const { newRole } = req.body;
-        if (!newRole) {
-            return res.status(400).json({ message: "newRole is required." });
-        }
-        const updatedProject = await projectService.changeMemberRole(projectKey, userId, newRole);
-        res.status(200).json(updatedProject);
-    } catch (error) {
-        res.status(error.statusCode || 500).json({ message: error.message });
+  try {
+    const { projectKey, userId } = req.params;
+    const { newRole } = req.body;
+    if (!newRole) {
+      return res.status(400).json({ message: "newRole is required." });
     }
+    const updatedProject = await projectService.changeMemberRole(projectKey, userId, newRole);
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
 };
 
 const handleChangeTeamLeader = async (req, res) => {
-    try {
-        const { projectKey, teamId } = req.params;
-        const { newLeaderId } = req.body;
-        if (!newLeaderId) {
-            return res.status(400).json({ message: "newLeaderId is required." });
-        }
-        const updatedProject = await projectService.changeTeamLeader(projectKey, teamId, newLeaderId);
-        res.status(200).json(updatedProject);
-    } catch (error) {
-        res.status(error.statusCode || 500).json({ message: error.message });
+  try {
+    const { projectKey, teamId } = req.params;
+    const { newLeaderId } = req.body;
+    if (!newLeaderId) {
+      return res.status(400).json({ message: "newLeaderId is required." });
     }
+    const updatedProject = await projectService.changeTeamLeader(projectKey, teamId, newLeaderId);
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
 };
 const handleAddMemberToTeam = async (req, res) => {
-    try {
-        const { projectKey, teamId } = req.params;
-        const { userId } = req.body; // userId của người cần thêm
-        if (!userId) {
-            return res.status(400).json({ message: "User ID is required." });
-        }
-        const updatedProject = await projectService.addMemberToTeamInProject(projectKey, teamId, userId);
-        res.status(200).json(updatedProject);
-    } catch (error) {
-        res.status(error.statusCode || 500).json({ message: error.message });
+  try {
+    const { projectKey, teamId } = req.params;
+    const { userId } = req.body; // userId của người cần thêm
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required." });
     }
+    const updatedProject = await projectService.addMemberToTeamInProject(projectKey, teamId, userId);
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
 };
 
 // Xóa thành viên khỏi một team cụ thể trong dự án
 const handleRemoveMemberFromTeam = async (req, res) => {
-    try {
-        const { projectKey, teamId, userId } = req.params;
-        const updatedProject = await projectService.removeMemberFromTeamInProject(projectKey, teamId, userId);
-        res.status(200).json(updatedProject);
-    } catch (error) {
-        res.status(error.statusCode || 500).json({ message: error.message });
-    }
+  try {
+    const { projectKey, teamId, userId } = req.params;
+    const updatedProject = await projectService.removeMemberFromTeamInProject(projectKey, teamId, userId);
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
 };
 
 module.exports = {

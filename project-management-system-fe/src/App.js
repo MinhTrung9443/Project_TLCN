@@ -43,7 +43,6 @@ function App() {
             {/* === CÁC ROUTE CẦN ĐĂNG NHẬP === */}
             <Route path="/" element={<PrivateRoute />}>
               <Route element={<Layout />}>
-                
                 {/* --- Các Route chung cho mọi User --- */}
                 <Route index element={<Dashboard />} />
                 <Route path="dashboard" element={<DashboardPage />} />
@@ -51,38 +50,54 @@ function App() {
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="task-finder" element={<TaskFinderPage />} />
                 <Route path="gantt" element={<GanttPage />} />
-                  
-                  {/* Route cho trang Settings và các tab con của nó */}
+
+                {/* Route cho trang Settings và các tab con của nó */}
                 <Route path="task-mgmt/projects/:projectKey/settings" element={<ProjectSettingsPage />}>
-                    <Route index element={<ProjectSettingsGeneral />} />
-                    <Route path="general" element={<ProjectSettingsGeneral />} />
-                    <Route path="members" element={<ProjectSettingMembers />} />
-                    <Route path="tasktype" element={<ProjectSettingTasktype />} />
-                    <Route path="priority" element={<ProjectSettingPriority />} />
-                    <Route path="platform" element={<ProjectSettingPlatform />} />
-                    <Route path="workflow" element={<ProjectSettingsWorkflow />} />
-                  </Route>
+                  <Route index element={<ProjectSettingsGeneral />} />
+                  <Route path="general" element={<ProjectSettingsGeneral />} />
+                  <Route path="members" element={<ProjectSettingMembers />} />
+                  <Route path="tasktype" element={<ProjectSettingTasktype />} />
+                  <Route path="priority" element={<ProjectSettingPriority />} />
+                  <Route path="platform" element={<ProjectSettingPlatform />} />
+                  <Route path="workflow" element={<ProjectSettingsWorkflow />} />
+                </Route>
 
-                  {/* Các route khác thuộc một project */}
-                  <Route path="task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
-                  <Route path="task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
+                {/* Các route khác thuộc một project */}
+                <Route path="task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
+                <Route path="task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
 
-            
-                {/* --- CÁC ROUTE CHỈ DÀNH CHO ADMIN --- */}
+                {/* --- Organization Routes - All users can view, only admin can manage --- */}
                 <Route path="organization">
-                  <Route path="user" element={<AdminRoute><ManageUser /></AdminRoute>} />
-                  <Route path="user/:userId" element={<AdminRoute><UserProfile /></AdminRoute>} />
-                  <Route path="group" element={<AdminRoute><GroupListPage /></AdminRoute>} />
-                  <Route path="group/:groupId" element={<AdminRoute><GroupMembersPage /></AdminRoute>} />
+                  <Route path="user" element={<ManageUser />} />
+                  <Route path="user/:userId" element={<UserProfile />} />
+                  <Route path="group" element={<GroupListPage />} />
+                  <Route path="group/:groupId" element={<GroupMembersPage />} />
                 </Route>
-                <Route path="settings" element={<AdminRoute><GlobalSettingsPage /></AdminRoute>}>
-                  {/* Route con cho các tab setting nếu có */}
-                  <Route path=":tabName" element={<AdminRoute><GlobalSettingsPage /></AdminRoute>} />
-                </Route>
-                <Route path="audit-log" element={<AdminRoute><AdminAuditLogPage /></AdminRoute>} />
 
-    </Route>
+                {/* --- Admin Only Routes --- */}
+                <Route
+                  path="settings"
+                  element={
+                    <AdminRoute>
+                      <GlobalSettingsPage />
+                    </AdminRoute>
+                  }
+                >
+                  {/* Route con cho các tab setting nếu có */}
+                  <Route
+                    path=":tabName"
+                    element={
+                      <AdminRoute>
+                        <GlobalSettingsPage />
+                      </AdminRoute>
+                    }
+                  />
+                </Route>
+
+                {/* --- Audit Log - Only Admin and PM can view --- */}
+                <Route path="audit-log" element={<AdminAuditLogPage />} />
               </Route>
+            </Route>
           </Routes>
 
           <ToastContainer

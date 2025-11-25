@@ -150,7 +150,15 @@ const DashboardPage = () => {
                   <div className="project-header">
                     <div className="project-info">
                       <div className="project-name">{proj.project}</div>
-                      <div className="project-role">{proj.role}</div>
+                      <div className="project-meta">
+                        <span className="project-role">{proj.role}</span>
+                        {proj.endDate && (
+                          <span className="project-deadline">
+                            <span className="material-symbols-outlined">event</span>
+                            {new Date(proj.endDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="project-percentage">{proj.progress}%</div>
                   </div>

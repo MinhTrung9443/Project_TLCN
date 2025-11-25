@@ -38,16 +38,26 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
       const fetchAllProjects = async () => {
         try {
           const res = await getProjects();
-          setProjects(res.data);
+          let availableProjects = res.data;
+
+          // Filter projects based on user role
+          if (user.role !== "admin") {
+            // Non-admin users can only create tasks in projects where they are PM or LEADER
+            availableProjects = res.data.filter((project) =>
+              project.members?.some((member) => member.userId._id === user._id && (member.role === "PROJECT_MANAGER" || member.role === "LEADER"))
+            );
+          }
+
+          setProjects(availableProjects);
           if (defaultProjectId) {
-            setFormData(prev => ({
+            setFormData((prev) => ({
               ...prev,
               projectId: defaultProjectId, // <-- TỰ ĐỘNG CHỌN PROJECT
               reporterId: user.id,
             }));
           } else {
             // Nếu không, chỉ set reporterId như cũ
-            setFormData(prev => ({
+            setFormData((prev) => ({
               ...prev,
               reporterId: user.id,
             }));
@@ -63,7 +73,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
       setErrors({});
       setShowMore(false);
     }
-  }, [isOpen, user.id, sprint, defaultProjectId]); // Bỏ phụ thuộc vào selectedProjectKey
+  }, [isOpen, user.id, user.role, user._id, sprint, defaultProjectId]); // Bỏ phụ thuộc vào selectedProjectKey
 
   useEffect(() => {
     const fetchSettingsForProject = async () => {
@@ -128,37 +138,37 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
 
     setLoading(true);
     try {
-        // [SỬA LẠI Ở ĐÂY]
-        // 1. Tìm project đã chọn từ danh sách projects
-        const selectedProject = projects.find(p => p._id === formData.projectId);
+      // [SỬA LẠI Ở ĐÂY]
+      // 1. Tìm project đã chọn từ danh sách projects
+      const selectedProject = projects.find((p) => p._id === formData.projectId);
 
-        // 2. Kiểm tra xem có tìm thấy project không
-        if (!selectedProject) {
-            toast.error("Invalid project selected.");
-            setLoading(false);
-            return;
-        }
-
-        // 3. Chuẩn bị payload, loại bỏ các trường rỗng
-        const payload = { ...formData };
-        Object.keys(payload).forEach((key) => {
-            if (payload[key] === "") {
-                delete payload[key];
-            }
-        });
-
-        // 4. Gọi hàm createTask với 2 tham số: projectKey và payload
-        const res = await createTask(selectedProject.key, payload);
-        
-        toast.success("Task created successfully!");
-        onTaskCreated(res.data);
-        onClose();
-    } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to create task.");
-    } finally {
+      // 2. Kiểm tra xem có tìm thấy project không
+      if (!selectedProject) {
+        toast.error("Invalid project selected.");
         setLoading(false);
+        return;
+      }
+
+      // 3. Chuẩn bị payload, loại bỏ các trường rỗng
+      const payload = { ...formData };
+      Object.keys(payload).forEach((key) => {
+        if (payload[key] === "") {
+          delete payload[key];
+        }
+      });
+
+      // 4. Gọi hàm createTask với 2 tham số: projectKey và payload
+      const res = await createTask(selectedProject.key, payload);
+
+      toast.success("Task created successfully!");
+      onTaskCreated(res.data);
+      onClose();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to create task.");
+    } finally {
+      setLoading(false);
     }
-};
+  };
 
   if (!isOpen) return null;
 
@@ -177,13 +187,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
               <label htmlFor="projectId" className="required">
                 Project
               </label>
-              <select 
-      id="projectId" 
-      name="projectId" 
-      value={formData.projectId} 
-      onChange={handleInputChange}
-      disabled={!!defaultProjectId} 
-    >
+              <select id="projectId" name="projectId" value={formData.projectId} onChange={handleInputChange} disabled={!!defaultProjectId}>
                 <option value="">Select Project</option>
                 {projects.map((p) => (
                   <option key={p._id} value={p._id}>

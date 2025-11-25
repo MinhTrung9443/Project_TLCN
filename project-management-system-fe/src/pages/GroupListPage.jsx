@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { groupService } from '../services/groupService';
-import { useAuth } from '../contexts/AuthContext'; 
-import '../styles/pages/GroupListPage.css';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { groupService } from "../services/groupService";
+import { useAuth } from "../contexts/AuthContext";
+import "../styles/pages/GroupListPage.css";
 
-import CreateEditGroupModal from '../components/group/CreateEditGroupModal';
-import ConfirmationModal from '../components/common/ConfirmationModal';
-import { toast } from 'react-toastify'; 
+import CreateEditGroupModal from "../components/group/CreateEditGroupModal";
+import ConfirmationModal from "../components/common/ConfirmationModal";
+import { toast } from "react-toastify";
 
 const GroupListPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'admin';
- console.log("User in GroupListPage:", user);
+  const isAdmin = user?.role === "admin";
+  console.log("User in GroupListPage:", user);
   console.log("Is Admin check:", isAdmin);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ status: 'active' }); 
+  const [filters, setFilters] = useState({ status: "active" });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
@@ -29,7 +29,7 @@ const GroupListPage = () => {
       const response = await groupService.getGroups(filters);
       setGroups(response.data.data);
     } catch (error) {
-      toast.error('Failed to fetch groups.');
+      toast.error("Failed to fetch groups.");
       console.error(error);
     } finally {
       setLoading(false);
@@ -41,7 +41,7 @@ const GroupListPage = () => {
   }, [fetchGroups]);
 
   const handleOpenCreateModal = () => {
-    console.log('CREATE button clicked! Opening modal...'); 
+    console.log("CREATE button clicked! Opening modal...");
     setEditingGroup(null);
     setIsModalOpen(true);
   };
@@ -60,24 +60,24 @@ const GroupListPage = () => {
     try {
       if (editingGroup) {
         await groupService.updateGroup(editingGroup._id, groupData);
-        toast.success('Group updated successfully!');
+        toast.success("Group updated successfully!");
       } else {
         await groupService.createGroup(groupData);
-        toast.success('Group created successfully!');
+        toast.success("Group created successfully!");
       }
       handleCloseModal();
-      fetchGroups(); 
+      fetchGroups();
     } catch (error) {
-      toast.error('An error occurred.');
+      toast.error("An error occurred.");
     }
   };
- const [openActionMenu, setOpenActionMenu] = useState(null); 
+  const [openActionMenu, setOpenActionMenu] = useState(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setOpenActionMenu(null); 
+        setOpenActionMenu(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -85,17 +85,17 @@ const GroupListPage = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-   const handleToggleActionMenu = (groupId) => {
+  const handleToggleActionMenu = (groupId) => {
     setOpenActionMenu(openActionMenu === groupId ? null : groupId);
   };
   const handleToggleStatus = async (group) => {
     try {
-      const newStatus = group.status === 'active' ? 'inactive' : 'active';
+      const newStatus = group.status === "active" ? "inactive" : "active";
       await groupService.updateGroup(group._id, { status: newStatus });
-      toast.success('Status updated successfully!');
+      toast.success("Status updated successfully!");
       fetchGroups();
     } catch (error) {
-      toast.error('Failed to update status.');
+      toast.error("Failed to update status.");
     }
   };
 
@@ -103,18 +103,18 @@ const GroupListPage = () => {
     setDeletingGroupId(groupId);
     setIsConfirmOpen(true);
   };
-  
+
   const handleDeleteConfirm = async () => {
-      try {
-          await groupService.deleteGroup(deletingGroupId);
-          toast.success('Group deleted successfully!');
-          setIsConfirmOpen(false);
-          setDeletingGroupId(null);
-          fetchGroups();
-      } catch (error) {
-          toast.error('Failed to delete group.');
-      }
-  }
+    try {
+      await groupService.deleteGroup(deletingGroupId);
+      toast.success("Group deleted successfully!");
+      setIsConfirmOpen(false);
+      setDeletingGroupId(null);
+      fetchGroups();
+    } catch (error) {
+      toast.error("Failed to delete group.");
+    }
+  };
 
   return (
     <div className="group-page-container">
@@ -150,40 +150,54 @@ const GroupListPage = () => {
                 <td>{group.totalInactives}</td>
                 <td>
                   <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={group.status === 'active'}
-                      onChange={() => handleToggleStatus(group)}
-                      disabled={!isAdmin}
-                    />
+                    <input type="checkbox" checked={group.status === "active"} onChange={() => handleToggleStatus(group)} disabled={!isAdmin} />
                     <span className="slider"></span>
                   </label>
                 </td>
                 <td>
-                  {isAdmin && (
-                    <div className="action-menu-container" ref={openActionMenu === group._id ? menuRef : null}>
-                      <button 
-                        className="action-menu-trigger" 
-                        onClick={() => handleToggleActionMenu(group._id)}
-                      >
-                        &#8942; 
-                      </button>
+                  <div className="action-menu-container" ref={openActionMenu === group._id ? menuRef : null}>
+                    {isAdmin ? (
+                      <>
+                        <button className="action-menu-trigger" onClick={() => handleToggleActionMenu(group._id)}>
+                          &#8942;
+                        </button>
 
-                      {openActionMenu === group._id && (
-                        <div className="action-menu-dropdown">
-                          <button className="action-menu-item" onClick={() => { handleOpenEditModal(group); setOpenActionMenu(null); }}>
-                            Edit
-                          </button>
-                          <button className="action-menu-item" onClick={() => { handleOpenDeleteConfirm(group._id); setOpenActionMenu(null); }}>
-                            Delete
-                          </button>
-                          <button className="action-menu-item" onClick={() => navigate(`/organization/group/${group._id}`)}>
-                            View Member
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        {openActionMenu === group._id && (
+                          <div className="action-menu-dropdown">
+                            <button
+                              className="action-menu-item"
+                              onClick={() => {
+                                handleOpenEditModal(group);
+                                setOpenActionMenu(null);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="action-menu-item"
+                              onClick={() => {
+                                handleOpenDeleteConfirm(group._id);
+                                setOpenActionMenu(null);
+                              }}
+                            >
+                              Delete
+                            </button>
+                            <button className="action-menu-item" onClick={() => navigate(`/organization/group/${group._id}`)}>
+                              View Member
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        className="action-menu-item"
+                        onClick={() => navigate(`/organization/group/${group._id}`)}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: "8px" }}
+                      >
+                        View Member
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -191,12 +205,7 @@ const GroupListPage = () => {
         </table>
       )}
 
-      <CreateEditGroupModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSave={handleSaveGroup}
-        group={editingGroup}
-      />
+      <CreateEditGroupModal isOpen={isModalOpen} onClose={handleCloseModal} onSave={handleSaveGroup} group={editingGroup} />
       <ConfirmationModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}

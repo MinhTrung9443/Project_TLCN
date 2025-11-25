@@ -23,6 +23,8 @@ const BacklogPage = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [sprintToEdit, setSprintToEdit] = useState(null);
   const [projectType, setProjectType] = useState(null);
+  const [userProjectRole, setUserProjectRole] = useState(null);
+  const [projectData, setProjectData] = useState(null);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -31,6 +33,11 @@ const BacklogPage = () => {
     try {
       const response = await getProjectByKey(selectedProjectKey);
       setProjectType(response.data.type);
+      setProjectData(response.data);
+
+      // Find user's role in this project
+      const member = response.data.members?.find((m) => m.userId._id === user._id);
+      setUserProjectRole(member?.role || null);
     } catch (error) {
       console.error("Error fetching project details:", error);
     }
@@ -138,12 +145,17 @@ const BacklogPage = () => {
     }
   }, [selectedProjectKey]);
 
+  // Permission checks
+  const canManageSprints = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
+  const canCreateTask = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER";
+  const canDragDrop = canManageSprints;
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="backlogpage-container">
         <div className="backlogpage-header">
           <h2 className="backlogpage-title">Backlog & Sprints</h2>
-          {user.role === "admin" && projectType !== "Kanban" && (
+          {canManageSprints && projectType !== "Kanban" && (
             <button className="backlogpage-create-btn" onClick={handleCreateSprint}>
               + Create Sprint
             </button>
@@ -160,6 +172,9 @@ const BacklogPage = () => {
               onDelete={handleDeleteSprint}
               onSprintNameClick={handleSprintNameClick}
               projectType={projectType}
+              canManageSprints={canManageSprints}
+              canCreateTask={canCreateTask}
+              canDragDrop={canDragDrop}
             />
           </div>
           {/* Backlog section moved below */}
@@ -169,7 +184,7 @@ const BacklogPage = () => {
             <span className="backlogpage-backlog-title">Backlog</span>
             <span className="backlogpage-backlog-count">{taskList.length}</span>
           </div>
-          <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} />
+          <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} canDragDrop={canDragDrop} />
         </div>
         <ConfirmationModal
           isOpen={showDeleteModal}

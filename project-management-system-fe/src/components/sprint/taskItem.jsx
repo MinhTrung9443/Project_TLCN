@@ -3,7 +3,7 @@ import "../../styles/pages/ManageSprint/taskItem.css";
 import { IconComponent } from "../../components/common/IconPicker";
 
 // Draggable Task Item
-const DraggableTask = ({ task, source }) => {
+const DraggableTask = ({ task, source, canDragDrop }) => {
   const PREDEFINED_PRIORITY_ICONS = [
     { name: "FaExclamationCircle", color: "#CD1317" }, // Critical
     { name: "FaArrowUp", color: "#F57C00" }, // High
@@ -16,12 +16,13 @@ const DraggableTask = ({ task, source }) => {
     () => ({
       type: "task",
       item: { task, source },
+      canDrag: () => canDragDrop,
       log: console.log(`Dragging task: ${task.name}`, source),
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging(),
       }),
     }),
-    [task, source]
+    [task, source, canDragDrop]
   );
 
   return (
@@ -90,10 +91,11 @@ const DraggableTask = ({ task, source }) => {
 };
 
 // DropZone for Task List (Backlog hoặc Sprint)
-const TaskList = ({ tasks, source, onDrop }) => {
+const TaskList = ({ tasks, source, onDrop, canDragDrop = true }) => {
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: "task",
+      canDrop: () => canDragDrop,
       drop: (item) => {
         if (item.source !== source) onDrop(item, source);
       },
@@ -101,13 +103,13 @@ const TaskList = ({ tasks, source, onDrop }) => {
         isOver: !!monitor.isOver(),
       }),
     }),
-    [onDrop, source]
+    [onDrop, source, canDragDrop]
   );
 
   return (
     <div ref={drop} className={`task-list${isOver ? " task-list-over" : ""}`}>
       {tasks && tasks.length > 0 ? (
-        tasks.map((task, index) => <DraggableTask key={task.id || index} task={task} source={source} />)
+        tasks.map((task, index) => <DraggableTask key={task.id || index} task={task} source={source} canDragDrop={canDragDrop} />)
       ) : (
         <div className="task-empty">No tasks</div>
       )}
