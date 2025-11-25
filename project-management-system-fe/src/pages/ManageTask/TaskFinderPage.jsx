@@ -128,8 +128,10 @@ const TaskFinderPage = () => {
   };
 
   const handleTaskDelete = async (taskId) => {
+    const projectKey = selectedTask?.projectId?.key;
+
     try {
-      await deleteTask(taskId); // Giả sử bạn có hàm này trong service
+      await deleteTask(projectKey, taskId); // Giả sử bạn có hàm này trong service
       setTasks((prevTasks) => prevTasks.filter((t) => t._id !== taskId));
       setSelectedTask(null); // Đóng panel sau khi xóa
       toast.success("Task deleted successfully!");
