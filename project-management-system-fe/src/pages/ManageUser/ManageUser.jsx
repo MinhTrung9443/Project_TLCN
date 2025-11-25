@@ -8,12 +8,8 @@ import { toast } from "react-toastify";
 
 const genderIcon = {
   male: <span className="material-symbols-outlined text-blue-700">male</span>,
-  female: (
-    <span className="material-symbols-outlined text-red-500">female</span>
-  ),
-  other: (
-    <span className="material-symbols-outlined text-gray-500">person</span>
-  ),
+  female: <span className="material-symbols-outlined text-red-500">female</span>,
+  other: <span className="material-symbols-outlined text-gray-500">person</span>,
 };
 
 const statusColor = {
@@ -97,13 +93,8 @@ const Component = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-700">User List</h2>
           {user.role === "admin" && (
-            <button
-              className="create-user-btn"
-              onClick={() => setShowCreatePopup(true)}
-            >
-              <span className="material-symbols-outlined align-middle mr-2">
-                person_add
-              </span>
+            <button className="create-user-btn" onClick={() => setShowCreatePopup(true)}>
+              <span className="material-symbols-outlined align-middle mr-2">person_add</span>
               Create User
             </button>
           )}
@@ -121,11 +112,9 @@ const Component = () => {
               <th>Role</th>
               <th>Last Login</th>
               <th>Groups</th>
-              {user.role === "admin" && (
-                <th>
-                  <span className="material-symbols-outlined">apps</span>
-                </th>
-              )}
+              <th>
+                <span className="material-symbols-outlined">apps</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -133,11 +122,7 @@ const Component = () => {
               <tr key={eachUser._id}>
                 <td>
                   {eachUser.avatar ? (
-                    <img
-                      src={eachUser.avatar}
-                      alt={eachUser.fullname}
-                      className="user-table-avatar rounded-full object-cover"
-                    />
+                    <img src={eachUser.avatar} alt={eachUser.fullname} className="user-table-avatar rounded-full object-cover" />
                   ) : (
                     <div className="user-table-avatar flex items-center justify-center rounded-full bg-gray-300 text-gray-600 font-bold text-sm">
                       {eachUser.fullname.charAt(0).toUpperCase()}
@@ -162,32 +147,24 @@ const Component = () => {
                 <td>{eachUser.email}</td>
                 <td>{eachUser.phone}</td>
                 <td>{genderIcon[eachUser.gender] || genderIcon.other}</td>
-                <td className={statusColor[eachUser.status]}>
-                  {eachUser.status}
-                </td>
+                <td className={statusColor[eachUser.status]}>{eachUser.status}</td>
                 <td className={roleColor[eachUser.role]}>{eachUser.role}</td>
+                <td>{eachUser.lastLogin ? new Date(eachUser.lastLogin).toLocaleString() : ""}</td>
                 <td>
-                  {eachUser.lastLogin
-                    ? new Date(eachUser.lastLogin).toLocaleString()
+                  {Array.isArray(eachUser.group) && eachUser.group.length > 0
+                    ? eachUser.group.map((g) => g.name).join(", ") // <-- ĐÃ SỬA
                     : ""}
                 </td>
                 <td>
-  {Array.isArray(eachUser.group) && eachUser.group.length > 0
-    ? eachUser.group.map(g => g.name).join(', ') // <-- ĐÃ SỬA
-    : ""}
-</td>
-                {user.role === "admin" && (
-                  <td>
+                  {user.role === "admin" && (
                     <button
                       className="text-gray-400 hover:text-gray-600 transition-colors duration-150 ease-in-out"
                       onClick={() => handleMenuClick(eachUser._id)}
                     >
-                      <span className="material-symbols-outlined">
-                        more_vert
-                      </span>
+                      <span className="material-symbols-outlined">more_vert</span>
                     </button>
-                  </td>
-                )}
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -203,9 +180,7 @@ const Component = () => {
               navigate(`/Organization/User/${popupUserId}`);
             }}
           >
-            <span className="material-symbols-outlined align-middle mr-2">
-              edit
-            </span>
+            <span className="material-symbols-outlined align-middle mr-2">edit</span>
             Edit
           </button>
           <button
@@ -216,11 +191,7 @@ const Component = () => {
                 const deleteUser = async () => {
                   await userService.deleteUser(popupUserId);
                   //cập nhật trạng thái user mới xóa thành inactive
-                  setUsers((prevUsers) =>
-                    prevUsers.map((u) =>
-                      u._id === popupUserId ? { ...u, status: "inactive" } : u
-                    )
-                  );
+                  setUsers((prevUsers) => prevUsers.map((u) => (u._id === popupUserId ? { ...u, status: "inactive" } : u)));
                 };
                 deleteUser();
               } catch (error) {
@@ -228,9 +199,7 @@ const Component = () => {
               }
             }}
           >
-            <span className="material-symbols-outlined align-middle mr-2">
-              delete
-            </span>
+            <span className="material-symbols-outlined align-middle mr-2">delete</span>
             Delete
           </button>
           <button className="text-gray-500" onClick={handleClosePopup}>
@@ -241,35 +210,13 @@ const Component = () => {
 
       {/* Popup tạo user */}
       {showCreatePopup && (
-        <div
-          className="user-create-popup-overlay"
-          onClick={() => setShowCreatePopup(false)}
-        >
-          <div
-            className="user-create-popup"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="user-create-popup-overlay" onClick={() => setShowCreatePopup(false)}>
+          <div className="user-create-popup" onClick={(e) => e.stopPropagation()}>
             <h3 className="popup-title">Create User</h3>
             <form onSubmit={handleCreateUser}>
-              <input
-                name="fullname"
-                className="popup-input"
-                placeholder="Full Name"
-                required
-              />
-              <input
-                name="username"
-                className="popup-input"
-                placeholder="Username"
-                required
-              />
-              <input
-                name="email"
-                className="popup-input"
-                placeholder="Email"
-                type="email"
-                required
-              />
+              <input name="fullname" className="popup-input" placeholder="Full Name" required />
+              <input name="username" className="popup-input" placeholder="Username" required />
+              <input name="email" className="popup-input" placeholder="Email" type="email" required />
               <input name="phone" className="popup-input" placeholder="Phone" />
               <select name="gender" className="popup-input" required>
                 <option value="">Gender</option>
@@ -281,22 +228,12 @@ const Component = () => {
                 <option value="">Role</option>
                 <option value="user">user</option>
               </select>
-              <input
-                name="password"
-                className="popup-input"
-                placeholder="Password"
-                type="password"
-                required
-              />
+              <input name="password" className="popup-input" placeholder="Password" type="password" required />
               <div className="popup-actions">
                 <button type="submit" className="popup-btn-primary">
                   Create
                 </button>
-                <button
-                  type="button"
-                  className="popup-btn"
-                  onClick={() => setShowCreatePopup(false)}
-                >
+                <button type="button" className="popup-btn" onClick={() => setShowCreatePopup(false)}>
                   Cancel
                 </button>
               </div>

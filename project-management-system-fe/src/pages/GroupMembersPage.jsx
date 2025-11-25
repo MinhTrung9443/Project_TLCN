@@ -100,7 +100,7 @@ const GroupMembersPage = () => {
               <th>Phone</th>
               <th>Gender</th>
               <th>Status</th>
-              {isAdmin && <th>Actions</th>}
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -118,8 +118,8 @@ const GroupMembersPage = () => {
                       <span className="slider"></span>
                     </label>
                   </td>
-                  {isAdmin && (
-                    <td>
+                  <td>
+                    {isAdmin && (
                       <button
                         className="remove-member-btn"
                         onClick={() => handleRemoveMember(member._id, member.fullname)}
@@ -127,13 +127,13 @@ const GroupMembersPage = () => {
                       >
                         <span className="material-symbols-outlined">person_remove</span>
                       </button>
-                    </td>
-                  )}
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={isAdmin ? "7" : "6"} className="no-members-message">
+                <td colSpan="7" className="no-members-message">
                   No data to display.
                 </td>
               </tr>
