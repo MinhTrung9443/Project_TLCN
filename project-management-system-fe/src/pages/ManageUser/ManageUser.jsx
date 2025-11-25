@@ -8,8 +8,12 @@ import { toast } from "react-toastify";
 
 const genderIcon = {
   male: <span className="material-symbols-outlined text-blue-700">male</span>,
-  female: <span className="material-symbols-outlined text-red-500">female</span>,
-  other: <span className="material-symbols-outlined text-gray-500">person</span>,
+  female: (
+    <span className="material-symbols-outlined text-red-500">female</span>
+  ),
+  other: (
+    <span className="material-symbols-outlined text-gray-500">person</span>
+  ),
 };
 
 const statusColor = {
@@ -28,6 +32,21 @@ const Component = () => {
   const [popupUserId, setPopupUserId] = useState(null);
   const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [users, setUsers] = useState([]);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      handleClosePopup();
+    };
+
+    if (popupUserId !== null) {
+      document.addEventListener("click", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [popupUserId]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -48,7 +67,15 @@ const Component = () => {
     navigate(`/Organization/User/${id}`);
   };
 
-  const handleMenuClick = (id) => {
+  const handleMenuClick = (id, event) => {
+    event.stopPropagation();
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    setPopupPosition({
+      top: rect.bottom + window.scrollY + 5,
+      left: rect.left + window.scrollX - 110,
+    });
+
     setPopupUserId(id);
   };
 
@@ -58,7 +85,6 @@ const Component = () => {
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
-    // Lấy dữ liệu từ form
     const formData = new FormData(e.target);
     const newUser = {
       fullname: formData.get("fullname"),
@@ -70,14 +96,10 @@ const Component = () => {
       password: formData.get("password"),
     };
     try {
-      // Gọi API tạo user
       var response = await userService.createUser(newUser);
-      // Cập nhật lại danh sách user
       console.log("Created user:", response.user);
       setUsers([...users, response.user]);
-      // Đóng popup
       setShowCreatePopup(false);
-      // Thông báo thành công
       toast.success("User created successfully");
       e.target.reset();
     } catch (error) {
@@ -93,8 +115,13 @@ const Component = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-700">User List</h2>
           {user.role === "admin" && (
-            <button className="create-user-btn" onClick={() => setShowCreatePopup(true)}>
-              <span className="material-symbols-outlined align-middle mr-2">person_add</span>
+            <button
+              className="create-user-btn"
+              onClick={() => setShowCreatePopup(true)}
+            >
+              <span className="material-symbols-outlined align-middle mr-2">
+                person_add
+              </span>
               Create User
             </button>
           )}
@@ -112,9 +139,11 @@ const Component = () => {
               <th>Role</th>
               <th>Last Login</th>
               <th>Groups</th>
-              <th>
-                <span className="material-symbols-outlined">apps</span>
-              </th>
+              {user.role === "admin" && (
+                <th>
+                  <span className="material-symbols-outlined">apps</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -122,7 +151,11 @@ const Component = () => {
               <tr key={eachUser._id}>
                 <td>
                   {eachUser.avatar ? (
-                    <img src={eachUser.avatar} alt={eachUser.fullname} className="user-table-avatar rounded-full object-cover" />
+                    <img
+                      src={eachUser.avatar}
+                      alt={eachUser.fullname}
+                      className="user-table-avatar rounded-full object-cover"
+                    />
                   ) : (
                     <div className="user-table-avatar flex items-center justify-center rounded-full bg-gray-300 text-gray-600 font-bold text-sm">
                       {eachUser.fullname.charAt(0).toUpperCase()}
@@ -147,24 +180,30 @@ const Component = () => {
                 <td>{eachUser.email}</td>
                 <td>{eachUser.phone}</td>
                 <td>{genderIcon[eachUser.gender] || genderIcon.other}</td>
-                <td className={statusColor[eachUser.status]}>{eachUser.status}</td>
+                <td className={statusColor[eachUser.status]}>
+                  {eachUser.status}
+                </td>
                 <td className={roleColor[eachUser.role]}>{eachUser.role}</td>
-                <td>{eachUser.lastLogin ? new Date(eachUser.lastLogin).toLocaleString() : ""}</td>
                 <td>
-                  {Array.isArray(eachUser.group) && eachUser.group.length > 0
-                    ? eachUser.group.map((g) => g.name).join(", ") // <-- ĐÃ SỬA
+                  {eachUser.lastLogin
+                    ? new Date(eachUser.lastLogin).toLocaleString()
                     : ""}
                 </td>
                 <td>
-                  {user.role === "admin" && (
+                  {Array.isArray(eachUser.group) && eachUser.group.length > 0
+                    ? eachUser.group.map(g => g.name).join(', ')
+                    : ""}
+                </td>
+                {user.role === "admin" && (
+                  <td>
                     <button
-                      className="text-gray-400 hover:text-gray-600 transition-colors duration-150 ease-in-out"
-                      onClick={() => handleMenuClick(eachUser._id)}
+                      className="text-gray-400 hover:text-gray-600"
+                      onClick={(e) => handleMenuClick(eachUser._id, e)}
                     >
                       <span className="material-symbols-outlined">more_vert</span>
                     </button>
-                  )}
-                </td>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -173,14 +212,17 @@ const Component = () => {
 
       {/* Popup menu cho từng user */}
       {popupUserId !== null && (
-        <div className="user-popup-menu">
+        <div className="user-popup-menu"
+          style={{ top: `${popupPosition.top}px`, left: `${popupPosition.left}px` }}>
           <button
             onClick={() => {
               handleClosePopup();
               navigate(`/Organization/User/${popupUserId}`);
             }}
           >
-            <span className="material-symbols-outlined align-middle mr-2">edit</span>
+            <span className="material-symbols-outlined align-middle mr-2">
+              edit
+            </span>
             Edit
           </button>
           <button
@@ -190,8 +232,11 @@ const Component = () => {
               try {
                 const deleteUser = async () => {
                   await userService.deleteUser(popupUserId);
-                  //cập nhật trạng thái user mới xóa thành inactive
-                  setUsers((prevUsers) => prevUsers.map((u) => (u._id === popupUserId ? { ...u, status: "inactive" } : u)));
+                  setUsers((prevUsers) =>
+                    prevUsers.map((u) =>
+                      u._id === popupUserId ? { ...u, status: "inactive" } : u
+                    )
+                  );
                 };
                 deleteUser();
               } catch (error) {
@@ -199,24 +244,45 @@ const Component = () => {
               }
             }}
           >
-            <span className="material-symbols-outlined align-middle mr-2">delete</span>
+            <span className="material-symbols-outlined align-middle mr-2">
+              delete
+            </span>
             Delete
-          </button>
-          <button className="text-gray-500" onClick={handleClosePopup}>
-            Close
           </button>
         </div>
       )}
 
       {/* Popup tạo user */}
       {showCreatePopup && (
-        <div className="user-create-popup-overlay" onClick={() => setShowCreatePopup(false)}>
-          <div className="user-create-popup" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="user-create-popup-overlay"
+          onClick={() => setShowCreatePopup(false)}
+        >
+          <div
+            className="user-create-popup"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="popup-title">Create User</h3>
             <form onSubmit={handleCreateUser}>
-              <input name="fullname" className="popup-input" placeholder="Full Name" required />
-              <input name="username" className="popup-input" placeholder="Username" required />
-              <input name="email" className="popup-input" placeholder="Email" type="email" required />
+              <input
+                name="fullname"
+                className="popup-input"
+                placeholder="Full Name"
+                required
+              />
+              <input
+                name="username"
+                className="popup-input"
+                placeholder="Username"
+                required
+              />
+              <input
+                name="email"
+                className="popup-input"
+                placeholder="Email"
+                type="email"
+                required
+              />
               <input name="phone" className="popup-input" placeholder="Phone" />
               <select name="gender" className="popup-input" required>
                 <option value="">Gender</option>
@@ -228,12 +294,22 @@ const Component = () => {
                 <option value="">Role</option>
                 <option value="user">user</option>
               </select>
-              <input name="password" className="popup-input" placeholder="Password" type="password" required />
+              <input
+                name="password"
+                className="popup-input"
+                placeholder="Password"
+                type="password"
+                required
+              />
               <div className="popup-actions">
                 <button type="submit" className="popup-btn-primary">
                   Create
                 </button>
-                <button type="button" className="popup-btn" onClick={() => setShowCreatePopup(false)}>
+                <button
+                  type="button"
+                  className="popup-btn"
+                  onClick={() => setShowCreatePopup(false)}
+                >
                   Cancel
                 </button>
               </div>
