@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "react-toastify";
 import _ from "lodash";
+import { useAuth } from "../../contexts/AuthContext";
 
 import { getProjects } from "../../services/projectService";
 import { searchTasks, deleteTask } from "../../services/taskService";
@@ -13,6 +14,7 @@ import TaskDetailPanel from "../../components/task/TaskDetailPanel";
 import "../../styles/pages/ManageTask/TaskFinderPage.css";
 
 const TaskFinderPage = () => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,7 +29,7 @@ const TaskFinderPage = () => {
     users: [],
     statuses: [],
     priorities: [],
-    platforms:[],
+    platforms: [],
     taskTypes: [],
     sprints: [],
   });
@@ -140,6 +142,17 @@ const TaskFinderPage = () => {
     console.log("Cloning task with ID:", taskId);
   };
 
+  // Check if user can create tasks
+  const canCreateTask = useMemo(() => {
+    if (!user) return false;
+    if (user.role === "admin") return true;
+
+    // Check if user is PM or LEADER in any project
+    return filterData.projects.some((project) =>
+      project.members?.some((member) => member.userId._id === user._id && (member.role === "PROJECT_MANAGER" || member.role === "LEADER"))
+    );
+  }, [user, filterData.projects]);
+
   return (
     <>
       <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
@@ -147,9 +160,11 @@ const TaskFinderPage = () => {
         <div className="task-finder-main-content">
           <header className="task-finder-header">
             <h1>Task Finder</h1>
-            <button className="create-task-btn" onClick={() => setIsModalOpen(true)}>
-              CREATE TASK
-            </button>
+            {canCreateTask && (
+              <button className="create-task-btn" onClick={() => setIsModalOpen(true)}>
+                CREATE TASK
+              </button>
+            )}
           </header>
 
           <div className="filters-container">
