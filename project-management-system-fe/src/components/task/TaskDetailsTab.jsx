@@ -5,7 +5,25 @@ import AttachmentsTab from "./AttachmentsTab";
 import LinkedTasksTab from "./LinkedTasksTab";
 import LogTimeModal from "./LogTimeModal";
 import TimeLogList from "./TimeLogList";
-
+const statusCategoryStyles = {
+  'To Do': {
+    backgroundColor: '#dfe1e6', // Xám
+    color: '#42526E',
+  },
+  'In Progress': {
+    backgroundColor: '#deebff', // Xanh dương nhạt
+    color: '#0747A6',
+  },
+  'Done': {
+    backgroundColor: '#e3fcef', // Xanh lá nhạt
+    color: '#0B875B',
+  },
+  // Thêm màu cho các category khác nếu có
+  'default': { // Màu mặc định nếu không khớp
+    backgroundColor: '#dfe1e6',
+    color: '#42526E',
+  }
+};
 const TaskDetailsTab = ({
   editableTask,
   setEditableTask,
@@ -45,6 +63,62 @@ const TaskDetailsTab = ({
     return options.find((opt) => opt.value === idToFind);
   };
 
+  const statusOptions = Array.isArray(statuses) ? statuses.map(status => ({
+    value: status._id,
+    label: status.name,
+    category: status.category,
+  })) : [];
+
+  const currentStatusId = editableTask.statusId?._id || editableTask.statusId;
+  const selectedStatusOption = statusOptions.find(opt => opt.value === currentStatusId);
+
+  const formatOptionLabel = ({ label, category }) => {
+    const style = statusCategoryStyles[category] || statusCategoryStyles.default;
+    return (
+      <div style={{ display: 'inline-block' }}>
+        <span style={{
+          ...style,
+          borderRadius: '3px',
+          padding: '3px 8px',
+          fontWeight: 600,
+          fontSize: '12px',
+          textTransform: 'uppercase', // In hoa cho đẹp
+        }}>
+          {label}
+        </span>
+      </div>
+    );
+  };
+
+
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      border: '1px solid #e2e8f0', // Thêm viền
+      borderRadius: '8px',         // Bo góc
+      boxShadow: state.isFocused ? '0 0 0 1px #6366f1' : 'none', // Hiệu ứng khi focus
+      '&:hover': {
+        borderColor: '#cbd5e1'   // Viền đậm hơn khi hover
+      },
+      minHeight: '42px', // Chiều cao đồng bộ
+      backgroundColor: 'white',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected ? '#6366f1' : state.isFocused ? '#f1f5f9' : 'white',
+      color: state.isSelected ? 'white' : 'inherit',
+      cursor: 'pointer',
+    }),
+    singleValue: (provided) => ({ // Style cho giá trị đang được chọn
+        ...provided,
+        paddingLeft: '4px',
+    }),
+    valueContainer: (provided) => ({
+        ...provided,
+        padding: '2px 4px',
+    }),
+  };
+
   return (
     <>
       <div className="panel-section">
@@ -67,13 +141,16 @@ const TaskDetailsTab = ({
 
       <div className="panel-section detail-grid-editable">
           <div className="detail-item-editable">
-            <strong>Status</strong>
-            <Select
-              value={findOption(statuses, editableTask.statusId?._id)}
-              options={statuses}
+    <strong>Status</strong>
+    <Select
+              value={selectedStatusOption}
+              options={statusOptions}
               onChange={(option) => handleUpdate("statusId", option.value)}
+              formatOptionLabel={formatOptionLabel}
+              styles={customSelectStyles} // Áp dụng style custom ở đây
+              placeholder={statusOptions.length === 0 ? "Loading..." : "Select..."}
             />
-          </div>
+      </div>
           <div className="detail-item-editable">
             <strong>Assignee</strong>
             <Select

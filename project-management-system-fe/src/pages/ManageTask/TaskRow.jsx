@@ -41,7 +41,24 @@ const PREDEFINED_PRIORITY_ICONS = [
   { name: "FaArrowAltCircleDown", color: "#03A9F4" },
   { name: "FaExclamationTriangle", color: "#FFB300" },
 ];
-
+const statusCategoryStyles = {
+  'To Do': {
+    backgroundColor: '#dfe1e6',
+    color: '#42526E',
+  },
+  'In Progress': {
+    backgroundColor: '#deebff',
+    color: '#0747A6',
+  },
+  'Done': {
+    backgroundColor: '#e3fcef',
+    color: '#0B875B',
+  },
+  'default': {
+    backgroundColor: '#dfe1e6',
+    color: '#42526E',
+  }
+};
 const TaskRow = ({ task, onTaskClick }) => {
   const renderAvatar = (user) => {
     if (!user)
@@ -63,6 +80,7 @@ const TaskRow = ({ task, onTaskClick }) => {
   const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find((i) => i.name === task.taskTypeId?.icon);
   const platformIconInfo = PREDEFINED_PLATFORM_ICONS.find((i) => i.name === task.platformId?.icon);
   const priorityIconInfo = PREDEFINED_PRIORITY_ICONS.find((i) => i.name === task.priorityId?.icon);
+  const statusStyle = statusCategoryStyles[task.statusId?.category] || statusCategoryStyles.default;
 
   return (
     <div className="task-row" onClick={() => onTaskClick(task)}>
@@ -95,9 +113,19 @@ const TaskRow = ({ task, onTaskClick }) => {
         )}
       </div>
       <div className="task-cell task-status">
-        <span className="status-pill" style={{ backgroundColor: task.statusId?.color || "#ccc" }}>
-          {task.statusId?.name}
-        </span>
+        {task.statusId ? (
+          <span 
+            className="status-pill" 
+            style={{ 
+              backgroundColor: statusStyle.backgroundColor, 
+              color: statusStyle.color 
+            }}
+          >
+            {task.statusId.name}
+          </span>
+        ) : (
+          <span>-</span> // Hiển thị gạch ngang nếu không có status
+        )}
       </div>
       <div className="task-cell task-due-date">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "Due"}</div>
     </div>

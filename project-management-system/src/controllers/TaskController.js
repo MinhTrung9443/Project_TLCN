@@ -1,5 +1,8 @@
 const taskService = require("../services/TaskService");
 const Workflow = require("../models/Workflow");
+const workflowService = require("../services/WorkflowService");
+const projectService = require("../services/ProjectService");
+const Task = require("../models/Task");
 
 const handleGetTasksByProjectKey = async (req, res) => {
   try {
@@ -179,6 +182,59 @@ const handleUnlinkTask = async (req, res) => {
   }
 };
 
+const getAvailableTaskStatuses = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    // 1. Lấy Task và populate projectId
+    const task = await Task.findById(taskId).populate("projectId");
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    // --- KIỂM TRA AN TOÀN (SAFE CHECK) ---
+    
+    // Kiểm tra 1: Task có thuộc Project nào không?
+    if (!task.projectId || !task.projectId.key) {
+      console.error(`[Error] Task ${taskId} does not belong to a valid Project.`);
+      // Nếu lỗi dữ liệu, trả về mảng rỗng hoặc lỗi 400 thay vì crash 500
+      return res.status(400).json({ message: "Project not found for this task" });
+    }
+    const projectKey = task.projectId.key;
+
+    // Kiểm tra 2: Xử lý statusId (Khó nhất vì Mongoose có thể trả về String hoặc Object)
+    let currentStatusId = null;
+    if (task.statusId) {
+        // Nếu là Object (đã populated) -> lấy ._id
+        if (typeof task.statusId === 'object' && task.statusId._id) {
+            currentStatusId = task.statusId._id.toString();
+        } 
+        // Nếu là String/ObjectId -> convert thẳng
+        else {
+            currentStatusId = task.statusId.toString();
+        }
+    }
+
+    if (!currentStatusId) {
+         console.error(`[Error] Task ${taskId} has invalid Status ID.`);
+         return res.status(400).json({ message: "Current status invalid" });
+    }
+
+    // 2. Gọi Service
+    const availableStatuses = await workflowService.getNextStatuses(
+        projectKey, 
+        currentStatusId
+    );
+
+    return res.status(200).json(availableStatuses);
+
+  } catch (error) {
+    // In lỗi chi tiết ra Terminal để bạn debug
+    console.error("CRITICAL SERVER ERROR in getAvailableTaskStatuses:", error); 
+    return res.status(500).json({ message: "Internal Server Error: " + error.message });
+  }
+};
 module.exports = {
   handleGetTasksByProjectKey,
   handleCreateTask,
@@ -192,4 +248,5 @@ module.exports = {
   handleDeleteAttachment,
   handleLinkTask,    
   handleUnlinkTask, 
+  getAvailableTaskStatuses,
 };

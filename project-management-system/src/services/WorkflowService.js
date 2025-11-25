@@ -20,21 +20,40 @@ class WorkflowService {
       // Find project by key
       const project = await Project.findOne({ key: projectKey.toUpperCase() });
       if (!project) {
-        throw new Error("Project not found");
+        // Thay vì throw error 500, trả về null để hàm gọi xử lý
+        console.warn(`Project ${projectKey} not found in WorkflowService`);
+        return null;
       }
 
       // Find workflow for this project
-      const workflow = await Workflow.findOne({ projectId: project._id });
+      let workflow = await Workflow.findOne({ projectId: project._id });
       if (!workflow) {
         // Fallback to default workflow if project doesn't have one
-        return await this.getDefaultWorkflow();
+        workflow = await this.getDefaultWorkflow();
       }
+      
+      if (!workflow) return null; // Double check
 
-      // Populate transitions with full status info
+      // Populate transitions with full status info AN TOÀN
       const workflowObj = workflow.toObject();
-      workflowObj.transitions = workflowObj.transitions.map((transition) => {
-        const fromStatus = workflowObj.statuses.find((s) => s._id.toString() === transition.from.toString());
-        const toStatus = workflowObj.statuses.find((s) => s._id.toString() === transition.to.toString());
+      
+      // Đảm bảo transitions và statuses là mảng
+      const statuses = workflowObj.statuses || [];
+      const transitions = workflowObj.transitions || [];
+
+      workflowObj.transitions = transitions.map((transition) => {
+        // --- SỬA LỖI CRASH TẠI ĐÂY ---
+        // Kiểm tra xem from/to có tồn tại không trước khi toString()
+        const fromId = transition.from ? transition.from.toString() : null;
+        const toId = transition.to ? transition.to.toString() : null;
+
+        const fromStatus = fromId 
+          ? statuses.find((s) => s._id.toString() === fromId) 
+          : null;
+          
+        const toStatus = toId 
+          ? statuses.find((s) => s._id.toString() === toId) 
+          : null;
 
         return {
           ...transition,
@@ -57,9 +76,11 @@ class WorkflowService {
 
       return workflowObj;
     } catch (error) {
+      console.error("Error inside getWorkflowByProject:", error);
       throw error;
     }
   }
+
 
   async getWorkflowById(workflowId) {
     try {
@@ -447,6 +468,57 @@ class WorkflowService {
 
       return { workflow };
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async getNextStatuses(projectKey, currentStatusId) {
+    try {
+      // 1. Lấy workflow (Bây giờ hàm này đã an toàn)
+      const workflow = await this.getWorkflowByProject(projectKey);
+      
+      if (!workflow) {
+        console.warn("Workflow not found for project:", projectKey);
+        return [];
+      }
+
+      const transitions = workflow.transitions || [];
+      const allStatuses = workflow.statuses || [];
+
+      // 3. Lọc transitions an toàn
+      const validTransitions = transitions.filter((t) => {
+        // Kiểm tra t.from có tồn tại không (quan trọng)
+        const fromId = (t.from && t.from._id) ? t.from._id.toString() : (t.from ? t.from.toString() : null);
+        return fromId === currentStatusId.toString();
+      });
+
+      // 4. Map ra danh sách status đích
+      const nextStatuses = validTransitions
+        .map((t) => t.toStatus)
+        .filter(status => status !== null && status !== undefined);
+
+      // 5. Thêm Status hiện tại vào đầu
+      const currentStatusObj = allStatuses.find(
+        (s) => s._id.toString() === currentStatusId.toString()
+      );
+
+      if (currentStatusObj) {
+        const exists = nextStatuses.some(
+            s => s._id.toString() === currentStatusObj._id.toString()
+        );
+        if (!exists) {
+            nextStatuses.unshift({
+                _id: currentStatusObj._id,
+                name: currentStatusObj.name,
+                color: currentStatusObj.color,
+                category: currentStatusObj.category
+            });
+        }
+      }
+
+      return nextStatuses;
+    } catch (error) {
+      console.error("WorkflowService.getNextStatuses Error:", error);
       throw error;
     }
   }
