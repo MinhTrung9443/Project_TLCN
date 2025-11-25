@@ -6,6 +6,7 @@ const { logHistory } = require("./HistoryService");
 const TaskHistory = require("../models/TaskHistory");
 const notificationService = require("./NotificationService");
 const User = require("../models/User");
+const Workflow = require("../models/Workflow");
 const cloudinary = require('../config/cloudinary'); // BẠN CẦN IMPORT CLOUDINARY VÀO ĐÂY
 const path = require('path');
 const fs = require('fs');
@@ -99,19 +100,10 @@ const createTask = async (taskData, userId) => {
 
   return populatedTask;
 };
-
 const searchTasks = async (queryParams) => {
   const {
-    keyword,
-    projectId,
-    assigneeId,
-    reporterId,
-    createdById, // Thêm bộ lọc này
-    statusId,
-    priorityId,
-    taskTypeId,
-    dueDate_gte, // Lớn hơn hoặc bằng (ngày bắt đầu)
-    dueDate_lte, // Nhỏ hơn hoặc bằng (ngày kết thúc)
+    keyword, projectId, assigneeId, reporterId, createdById, statusId,
+    priorityId, taskTypeId, dueDate_gte, dueDate_lte,
   } = queryParams;
 
   const query = {};
@@ -119,24 +111,21 @@ const searchTasks = async (queryParams) => {
   if (projectId) query.projectId = projectId;
   if (assigneeId) query.assigneeId = assigneeId;
   if (reporterId) query.reporterId = reporterId;
-  if (createdById) query.createdById = createdById; // Thêm logic
+  if (createdById) query.createdById = createdById;
   if (statusId) query.statusId = statusId;
   if (priorityId) query.priorityId = priorityId;
   if (taskTypeId) query.taskTypeId = taskTypeId;
 
-  // Xử lý LỌC THEO KHOẢNG NGÀY
   if (dueDate_gte || dueDate_lte) {
     query.dueDate = {};
     if (dueDate_gte) query.dueDate.$gte = new Date(dueDate_gte);
     if (dueDate_lte) {
-      // Thêm 1 ngày để bao gồm cả ngày kết thúc
       const endDate = new Date(dueDate_lte);
       endDate.setDate(endDate.getDate() + 1);
       query.dueDate.$lt = endDate;
     }
   }
 
-  // Xử lý tìm kiếm theo keyword (tìm trong 'name', 'key', 'description')
   if (keyword) {
     query.$or = [
       { name: { $regex: keyword, $options: "i" } },
@@ -146,26 +135,49 @@ const searchTasks = async (queryParams) => {
   }
 
   const tasks = await Task.find(query)
-    .populate("projectId", "name key") // Thêm projectId để có thể filter
+    .populate("projectId", "name key")
     .populate("taskTypeId", "name icon")
     .populate("priorityId", "name icon")
     .populate("assigneeId", "fullname avatar")
     .populate("reporterId", "fullname avatar")
-    .populate("statusId", "name color")
     .populate("sprintId", "name")
     .populate("platformId", "name icon")
     .populate("createdById", "fullname avatar")
     .populate({
         path: 'linkedTasks.taskId',
-        select: 'key name taskTypeId', // Lấy các trường cần thiết
-        populate: { // Populate lồng để lấy icon
-            path: 'taskTypeId',
-            select: 'name icon'
-        }
+        select: 'key name taskTypeId',
+        populate: { path: 'taskTypeId', select: 'name icon' }
     })
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean(); // Chuyển sang object thường, không phải Mongoose document
 
-  return tasks;
+  if (tasks.length === 0) {
+    return [];
+  }
+
+  const projectIdsInTasks = [...new Set(tasks.map(task => task.projectId?._id.toString()).filter(Boolean))];
+
+  const workflows = await Workflow.find({ projectId: { $in: projectIdsInTasks } });
+
+  const workflowMap = new Map(workflows.map(wf => [wf.projectId.toString(), wf]));
+
+  const populatedTasks = tasks.map(task => {
+    if (!task.projectId || !task.statusId) {
+      return task; // Trả về task gốc nếu thiếu dữ liệu
+    }
+
+    const workflow = workflowMap.get(task.projectId._id.toString());
+    if (workflow && workflow.statuses) {
+      const statusObject = workflow.statuses.find(s => s._id.toString() === task.statusId.toString());
+      
+      if (statusObject) {
+        task.statusId = statusObject;
+      }
+    }
+    return task;
+  });
+
+  return populatedTasks;
 };
 
 const updateTask = async (taskId, updateData, userId) => {
@@ -282,6 +294,33 @@ const changeTaskSprint = async (taskId, sprintId, userId) => {
 };
 
 const updateTaskStatus = async (taskId, statusId, userId) => {
+  const task = await Task.findById(taskId).populate('projectId');
+  if (!task) {
+    const error = new Error("Task not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const projectKey = task.projectId.key;
+  const currentStatusId = task.statusId;
+
+  if (currentStatusId.toString() === statusId.toString()) {
+      return task;
+  }
+
+  const workflow = await workflowService.getWorkflowByProject(projectKey);
+  
+  const isValidTransition = workflow.transitions.some(
+      t => t.from.toString() === currentStatusId.toString() && 
+           t.to.toString() === statusId.toString()
+  );
+
+  if (!isValidTransition) {
+      const error = new Error("Invalid status transition according to workflow.");
+      error.statusCode = 400;
+      throw error;
+  }
+
   return updateTask(taskId, { statusId }, userId);
 };
 

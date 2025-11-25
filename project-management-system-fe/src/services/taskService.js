@@ -4,7 +4,6 @@ export const getTasksByProject = (projectKey) => {
   return apiClient.get(`/tasks/project/${projectKey}`);
 };
 
-
 export const createTask = (projectKey, taskData) => {
   return apiClient.post(`/tasks/project/${projectKey}`, taskData);
 };
@@ -12,7 +11,9 @@ export const createTask = (projectKey, taskData) => {
 export const updateTaskSprint = (projectKey, taskId, sprintId) => {
   return apiClient.put(`/tasks/project/${projectKey}/tasks/${taskId}/change-sprint`, { sprintId });
 };
-
+export const getAllowedStatuses = (taskId) => {
+  return apiClient.get(`/tasks/${taskId}/available-statuses`);
+};
 export const updateTaskStatus = (projectKey, taskId, statusId) => {
   return apiClient.put(`/tasks/project/${projectKey}/tasks/${taskId}/update-status`, { statusId });
 };

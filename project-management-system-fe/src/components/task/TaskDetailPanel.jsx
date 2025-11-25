@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment } from "../../services/taskService";
+import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment, getAllowedStatuses  } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
@@ -44,6 +44,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
   const [projectPriorities, setProjectPriorities] = useState([]);
   const [projectPlatforms, setProjectPlatforms] = useState([]);
   const [projectSprints, setProjectSprints] = useState([]);
+  const [allowedStatuses, setAllowedStatuses] = useState([]); 
 
   useEffect(() => {
     setEditableTask(task);
@@ -52,11 +53,21 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     setProjectPriorities([]);
     setProjectSprints([]);
     setProjectPlatforms([]);
+    setAllowedStatuses([]); // Reset allowed statuses
     setAllProjectTasks([]); // Reset
-
     if (task && task.projectId && task.projectId.key) {
       const projectKey = task.projectId.key;
       const projectId = task.projectId._id;
+
+      const fetchAllowedStatuses = async () => {
+        try {
+          const res = await getAllowedStatuses(task._id);
+          setAllowedStatuses(res.data);
+        } catch (error) {
+          console.error("Failed to fetch allowed statuses", error);
+          setAllowedStatuses(statuses); 
+        }
+      };
 
       const fetchTaskTypesForProject = async () => {
         try {
@@ -141,6 +152,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       };
 
       Promise.all([
+        fetchAllowedStatuses(), 
         fetchTaskTypesForProject(),
         fetchMembers(),
         fetchPrioritiesForProject(),
@@ -249,7 +261,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     }
   };
 
-  // 3. THÊM HÀM MỚI: Xử lý xóa attachment
   const handleDeleteAttachment = async (attachmentId) => {
     if (!window.confirm("Are you sure you want to delete this attachment?")) {
       return;
@@ -258,7 +269,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     try {
       const updatedTaskAfterDelete = await deleteAttachment(editableTask._id, attachmentId);
 
-      // Cập nhật lại state
       setEditableTask(updatedTaskAfterDelete);
       onTaskUpdate(updatedTaskAfterDelete);
 
@@ -348,7 +358,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
               editableTask={editableTask}
               setEditableTask={setEditableTask}
               handleUpdate={handleUpdate}
-              statuses={statuses}
+              statuses={allowedStatuses.length > 0 ? allowedStatuses : statuses}
               projectMembers={projectMembers}
               projectTaskTypes={projectTaskTypes}
               projectPriorities={projectPriorities}
