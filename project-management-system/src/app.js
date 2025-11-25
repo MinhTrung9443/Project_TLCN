@@ -27,9 +27,9 @@ const timeLogRoutes = require("./routes/timeLogRoutes");
 const performanceRoutes = require("./routes/performanceRoutes");
 
 const corsOptions = {
-  origin: "http://localhost:3000", // Cho phép origin này
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // Đảm bảo có 'PATCH'
-  allowedHeaders: ["Content-Type", "Authorization"], // Các header được phép
+  origin: "http://localhost:3000",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
 
@@ -38,16 +38,20 @@ const corsOptions = {
 // Sử dụng cấu hình CORS cho tất cả các request
 app.use(cors(corsOptions));
 
-// Bật xử lý pre-flight cho tất cả các route
+// Bật xử lý pre-flight và set headers CORS thủ công
 app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+
   if (req.method === "OPTIONS") {
-    res.sendStatus(204); // No Content
-  } else {
-    next();
+    return res.sendStatus(204);
   }
+  next();
 });
 app.use(express.json()); // Để parse body của request dạng JSON
-const uploadsPath = path.join(__dirname, 'public', 'uploads');
+const uploadsPath = path.join(__dirname, "public", "uploads");
 
 // --- Đăng ký các routes ---
 app.use("/api", appRoute);
