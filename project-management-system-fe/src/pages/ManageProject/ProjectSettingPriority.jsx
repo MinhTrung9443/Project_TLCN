@@ -1,22 +1,23 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import priorityService from '../../services/priorityService';
-import * as FaIcons from 'react-icons/fa';
-import * as VscIcons from 'react-icons/vsc';
-import { FaGripVertical } from 'react-icons/fa';
-import '../../styles/pages/ManageProject/ProjectSettings_TaskType.css';
-import { useAuth } from "../../contexts/AuthContext"; 
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import priorityService from "../../services/priorityService";
+import { getProjectByKey } from "../../services/projectService";
+import * as FaIcons from "react-icons/fa";
+import * as VscIcons from "react-icons/vsc";
+import { FaGripVertical } from "react-icons/fa";
+import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
+import { useAuth } from "../../contexts/AuthContext";
 
 const PREDEFINED_PRIORITY_ICONS = [
-  { name: 'FaExclamationCircle', color: '#CD1317' }, // Critical
-  { name: 'FaArrowUp', color: '#F57C00' }, // High
-  { name: 'FaEquals', color: '#2A9D8F' }, // Medium
-  { name: 'FaArrowDown', color: '#2196F3' }, // Low
-  { name: 'FaFire', color: '#E94F37' },
-  { name: 'FaExclamationTriangle', color: '#FFB300' },
+  { name: "FaExclamationCircle", color: "#CD1317" }, // Critical
+  { name: "FaArrowUp", color: "#F57C00" }, // High
+  { name: "FaEquals", color: "#2A9D8F" }, // Medium
+  { name: "FaArrowDown", color: "#2196F3" }, // Low
+  { name: "FaFire", color: "#E94F37" },
+  { name: "FaExclamationTriangle", color: "#FFB300" },
 ];
 
 const IconComponent = ({ name }) => {
@@ -29,9 +30,12 @@ const IconComponent = ({ name }) => {
 const IconPicker = ({ selectedIcon, onSelect }) => (
   <div className="icon-picker-container">
     {PREDEFINED_PRIORITY_ICONS.map((icon) => (
-      <button key={icon.name} type="button"
-        className={`icon-picker-button ${selectedIcon === icon.name ? 'selected' : ''}`}
-        onClick={() => onSelect(icon.name)}>
+      <button
+        key={icon.name}
+        type="button"
+        className={`icon-picker-button ${selectedIcon === icon.name ? "selected" : ""}`}
+        onClick={() => onSelect(icon.name)}
+      >
         <div className="icon-display" style={{ backgroundColor: icon.color }}>
           <IconComponent name={icon.name} />
         </div>
@@ -40,28 +44,31 @@ const IconPicker = ({ selectedIcon, onSelect }) => (
   </div>
 );
 
-const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDeleteConfirm }) => {
+const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDeleteConfirm, canEdit }) => {
   const ref = React.useRef(null);
-  const ItemType = 'PRIORITY_ITEM';
+  const ItemType = "PRIORITY_ITEM";
   const handleRef = React.useRef(null);
   const [{ isDragging }, drag] = useDrag({
-        type: ItemType,
-        item: { id: item._id, index },
-        collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-    });
-  const [, drop] = useDrop({ 
-    accept: ItemType, 
-    hover(draggedItem) { 
-      if (draggedItem.index !== index) { 
-        moveItem(draggedItem.index, index); 
-        draggedItem.index = index; 
-      } 
-    } 
+    type: ItemType,
+    item: { id: item._id, index },
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+    canDrag: () => canEdit,
   });
-  drag(handleRef);
+  const [, drop] = useDrop({
+    accept: ItemType,
+    hover(draggedItem) {
+      if (canEdit && draggedItem.index !== index) {
+        moveItem(draggedItem.index, index);
+        draggedItem.index = index;
+      }
+    },
+  });
+  if (canEdit) {
+    drag(handleRef);
+  }
   drop(ref);
 
-  const iconInfo = PREDEFINED_PRIORITY_ICONS.find(i => i.name === item.icon);
+  const iconInfo = PREDEFINED_PRIORITY_ICONS.find((i) => i.name === item.icon);
 
   const handleEditClick = (e) => {
     e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
@@ -76,22 +83,29 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDelet
   return (
     <div ref={ref} className="settings-list-row" style={{ opacity: isDragging ? 0.5 : 1 }}>
       <div className="row-col col-drag-handle" ref={handleRef}>
-                <FaGripVertical />
-            </div>
-      <div className="row-col col-icon"><span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || '#7A869A' }}><IconComponent name={item.icon} /></span></div>
+        {canEdit && <FaGripVertical />}
+      </div>
+      <div className="row-col col-icon">
+        <span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || "#7A869A" }}>
+          <IconComponent name={item.icon} />
+        </span>
+      </div>
       <div className="row-col col-name">{item.name}</div>
       <div className="row-col col-actions">
-        <button className="btn-edit" onClick={handleEditClick}>
-          <FaIcons.FaPencilAlt />
-        </button>
-        <button className="btn-delete" onClick={handleDeleteClick}>
-          <FaIcons.FaTrash />
-        </button>
+        {canEdit && (
+          <>
+            <button className="btn-edit" onClick={handleEditClick}>
+              <FaIcons.FaPencilAlt />
+            </button>
+            <button className="btn-delete" onClick={handleDeleteClick}>
+              <FaIcons.FaTrash />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
 };
-
 
 const ProjectSettingPriority = () => {
   const params = useParams();
@@ -102,6 +116,7 @@ const ProjectSettingPriority = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPriority, setCurrentPriority] = useState(null);
+  const [userProjectRole, setUserProjectRole] = useState(null);
 
   const isFetching = useRef(false);
 
@@ -115,7 +130,7 @@ const ProjectSettingPriority = () => {
       const response = await priorityService.getAllPriorities(projectKey);
       setPriorities(response.data);
     } catch (error) {
-      toast.error('Failed to fetch priorities.');
+      toast.error("Failed to fetch priorities.");
     } finally {
       setLoading(false);
       isFetching.current = false; // Kết thúc fetch
@@ -126,8 +141,23 @@ const ProjectSettingPriority = () => {
     fetchPriorities();
   }, [fetchPriorities]);
 
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!projectKey || !user) return;
+      try {
+        const response = await getProjectByKey(projectKey);
+        const project = response.data;
+        const member = project.members?.find((m) => m.userId._id === user._id);
+        setUserProjectRole(member?.role || null);
+      } catch (error) {
+        console.error("Failed to fetch user role:", error);
+      }
+    };
+    fetchUserRole();
+  }, [projectKey, user]);
+
   const handleOpenModal = (priority = null) => {
-    setCurrentPriority(priority ? { ...priority } : { name: '', icon: 'FaFire' });
+    setCurrentPriority(priority ? { ...priority } : { name: "", icon: "FaFire" });
     setIsModalOpen(true);
   };
 
@@ -138,15 +168,18 @@ const ProjectSettingPriority = () => {
     try {
       if (currentPriority._id) {
         await priorityService.updatePriority(currentPriority._id, payload);
-        toast.success('Priority updated!');
+        toast.success("Priority updated!");
       } else {
         await priorityService.createPriority(payload);
-        toast.success('Priority created for this project!');
+        toast.success("Priority created for this project!");
       }
       handleCloseModal();
       fetchPriorities(); // Gọi làm mới
-    } catch (error) { toast.error(error.response?.data?.message || 'An error occurred.'); }
-    finally { setIsSaving(false); }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -156,29 +189,42 @@ const ProjectSettingPriority = () => {
         await priorityService.deletePriority(id);
         toast.success("Priority deleted!");
         fetchPriorities(); // Gọi làm mới
-      } catch (error) { toast.error("Failed to delete priority."); }
+      } catch (error) {
+        toast.error("Failed to delete priority.");
+      }
     }
   };
 
-  const movePriority = useCallback(async (dragIndex, hoverIndex) => {
-    const newPriorities = [...priorities];
-    const [draggedItem] = newPriorities.splice(dragIndex, 1);
-    newPriorities.splice(hoverIndex, 0, draggedItem);
+  const movePriority = useCallback(
+    async (dragIndex, hoverIndex) => {
+      const newPriorities = [...priorities];
+      const [draggedItem] = newPriorities.splice(dragIndex, 1);
+      newPriorities.splice(hoverIndex, 0, draggedItem);
 
-    const updatedItemsWithLevel = newPriorities.map((item, index) => ({ ...item, level: index + 1 }));
-    setPriorities(updatedItemsWithLevel);
+      const updatedItemsWithLevel = newPriorities.map((item, index) => ({ ...item, level: index + 1 }));
+      setPriorities(updatedItemsWithLevel);
 
-    try {
-      await priorityService.updatePriorityLevels(projectKey, updatedItemsWithLevel);
-    } catch (error) {
-      toast.error("Failed to save new order. Reverting.");
-      fetchPriorities(); // Tải lại nếu có lỗi
-    }
-  }, [priorities, projectKey, fetchPriorities]);
+      try {
+        await priorityService.updatePriorityLevels(projectKey, updatedItemsWithLevel);
+      } catch (error) {
+        toast.error("Failed to save new order. Reverting.");
+        fetchPriorities(); // Tải lại nếu có lỗi
+      }
+    },
+    [priorities, projectKey, fetchPriorities]
+  );
 
   const handleCloseModal = () => setIsModalOpen(false);
-  const handleChange = (e) => { const { name, value } = e.target; setCurrentPriority(prev => ({ ...prev, [name]: value })); };
-  const handleIconSelect = (iconName) => { setCurrentPriority(prev => ({ ...prev, icon: iconName })); };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentPriority((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleIconSelect = (iconName) => {
+    setCurrentPriority((prev) => ({ ...prev, icon: iconName }));
+  };
+
+  // Check if user has permission (admin or PM)
+  const canEdit = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
 
   if (loading && priorities.length === 0) return <div>Loading priorities...</div>;
 
@@ -189,7 +235,7 @@ const ProjectSettingPriority = () => {
           <div className="header-col col-drag-handle"></div>
           <div className="header-col col-icon">Icon</div>
           <div className="header-col col-name">Priority Name</div>
-          {user.role === "admin" && (
+          {canEdit && (
             <div className="header-col col-actions">
               <button className="btn-add-icon" onClick={() => handleOpenModal()}>
                 <VscIcons.VscAdd />
@@ -206,6 +252,7 @@ const ProjectSettingPriority = () => {
               moveItem={movePriority}
               openEditModal={handleOpenModal}
               openDeleteConfirm={handleDelete}
+              canEdit={canEdit}
             />
           ))}
         </div>
