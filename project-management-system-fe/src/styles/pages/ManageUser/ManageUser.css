@@ -38,8 +38,6 @@
 /* Popup menu cho user */
 #webcrumbs .user-popup-menu {
   position: absolute;
-  right: 32px;
-  top: 60px;
   z-index: 100;
   min-width: 140px;
   background: #fff;

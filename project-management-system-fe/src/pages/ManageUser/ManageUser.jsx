@@ -32,6 +32,21 @@ const Component = () => {
   const [popupUserId, setPopupUserId] = useState(null);
   const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [users, setUsers] = useState([]);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      handleClosePopup();
+    };
+
+    if (popupUserId !== null) {
+      document.addEventListener("click", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [popupUserId]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -52,7 +67,15 @@ const Component = () => {
     navigate(`/Organization/User/${id}`);
   };
 
-  const handleMenuClick = (id) => {
+  const handleMenuClick = (id, event) => {
+    event.stopPropagation();
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    setPopupPosition({
+      top: rect.bottom + window.scrollY + 5,
+      left: rect.left + window.scrollX - 110,
+    });
+
     setPopupUserId(id);
   };
 
@@ -62,7 +85,6 @@ const Component = () => {
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
-    // Lấy dữ liệu từ form
     const formData = new FormData(e.target);
     const newUser = {
       fullname: formData.get("fullname"),
@@ -74,14 +96,10 @@ const Component = () => {
       password: formData.get("password"),
     };
     try {
-      // Gọi API tạo user
       var response = await userService.createUser(newUser);
-      // Cập nhật lại danh sách user
       console.log("Created user:", response.user);
       setUsers([...users, response.user]);
-      // Đóng popup
       setShowCreatePopup(false);
-      // Thông báo thành công
       toast.success("User created successfully");
       e.target.reset();
     } catch (error) {
@@ -172,19 +190,17 @@ const Component = () => {
                     : ""}
                 </td>
                 <td>
-  {Array.isArray(eachUser.group) && eachUser.group.length > 0
-    ? eachUser.group.map(g => g.name).join(', ') // <-- ĐÃ SỬA
-    : ""}
-</td>
+                  {Array.isArray(eachUser.group) && eachUser.group.length > 0
+                    ? eachUser.group.map(g => g.name).join(', ')
+                    : ""}
+                </td>
                 {user.role === "admin" && (
                   <td>
                     <button
-                      className="text-gray-400 hover:text-gray-600 transition-colors duration-150 ease-in-out"
-                      onClick={() => handleMenuClick(eachUser._id)}
+                      className="text-gray-400 hover:text-gray-600"
+                      onClick={(e) => handleMenuClick(eachUser._id, e)}
                     >
-                      <span className="material-symbols-outlined">
-                        more_vert
-                      </span>
+                      <span className="material-symbols-outlined">more_vert</span>
                     </button>
                   </td>
                 )}
@@ -196,7 +212,8 @@ const Component = () => {
 
       {/* Popup menu cho từng user */}
       {popupUserId !== null && (
-        <div className="user-popup-menu">
+        <div className="user-popup-menu"
+          style={{ top: `${popupPosition.top}px`, left: `${popupPosition.left}px` }}>
           <button
             onClick={() => {
               handleClosePopup();
@@ -215,7 +232,6 @@ const Component = () => {
               try {
                 const deleteUser = async () => {
                   await userService.deleteUser(popupUserId);
-                  //cập nhật trạng thái user mới xóa thành inactive
                   setUsers((prevUsers) =>
                     prevUsers.map((u) =>
                       u._id === popupUserId ? { ...u, status: "inactive" } : u
@@ -232,9 +248,6 @@ const Component = () => {
               delete
             </span>
             Delete
-          </button>
-          <button className="text-gray-500" onClick={handleClosePopup}>
-            Close
           </button>
         </div>
       )}
