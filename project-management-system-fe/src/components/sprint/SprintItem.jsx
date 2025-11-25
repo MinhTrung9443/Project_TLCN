@@ -4,7 +4,19 @@ import "../../styles/pages/ManageSprint/SprintList.css";
 import { useDrop } from "react-dnd";
 import CreateTaskModal from "../../components/task/CreateTaskModal";
 
-const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete, onSprintNameClick, projectType }) => {
+const SprintItem = ({
+  sprint,
+  onDrop,
+  onEdit,
+  onStart,
+  onComplete,
+  onDelete,
+  onSprintNameClick,
+  projectType,
+  canManageSprints,
+  canCreateTask,
+  canDragDrop,
+}) => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,7 +70,7 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete, onS
               {sprint.name}
             </span>
             <span className="sprint-task-badge">{sprint.tasks?.length || 0} Tasks</span>
-            {!isKanbanBoard && (
+            {!isKanbanBoard && canManageSprints && (
               <div className="sprint-header-menu" ref={openMenuId === sprint._id ? menuRef : null}>
                 <button onClick={() => handleMenuToggle(sprint._id)} className="sprint-menu-btn">
                   <span className="material-symbols-outlined">more_horiz</span>
@@ -135,15 +147,19 @@ const SprintItem = ({ sprint, onDrop, onEdit, onStart, onComplete, onDelete, onS
                 </div>
               </div>
               <div className="task-list">
-                <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} />
+                <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} canDragDrop={canDragDrop} />
               </div>
               <div className="sprint-create-task-row">
-                <button className="sprint-add-btn">
-                  <span className="material-symbols-outlined">add_circle</span>
-                </button>
-                <span className="sprint-create-task-label" onClick={() => setIsModalOpen(true)}>
-                  Create Task
-                </span>
+                {canCreateTask && (
+                  <>
+                    <button className="sprint-add-btn">
+                      <span className="material-symbols-outlined">add_circle</span>
+                    </button>
+                    <span className="sprint-create-task-label" onClick={() => setIsModalOpen(true)}>
+                      Create Task
+                    </span>
+                  </>
+                )}
               </div>
             </>
           )}
