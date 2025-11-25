@@ -90,7 +90,9 @@ const TaskRow = ({ task, onTaskClick }) => {
             <IconComponent name={task.taskTypeId.icon} />
           </span>
         )}
-        <span>{task.key}</span>
+        <a href={`/task/${task.key}`} target="_blank" rel="noopener noreferrer" className="task-key-link">
+          {task.key}
+        </a>
       </div>
       <div className="task-cell task-name">{task.name}</div>
       <div className="task-cell task-sprint">

@@ -14,11 +14,13 @@ const {
   handleLinkTask,
   handleUnlinkTask,
   getAvailableTaskStatuses,
+  handleGetTaskByKey,
 } = require("../controllers/TaskController");
 const { handleGetComments, handleCreateComment } = require("../controllers/CommentController");
 const { protect, isProjectMember, isManagerOrLeader } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
+router.get("/key/:taskKey", protect, handleGetTaskByKey);
 router.get("/search", protect, handleSearchTasks);
 router.get("/project/:projectKey", protect, handleGetTasksByProjectKey);
 router.post("/project/:projectKey", protect, isProjectMember, handleCreateTask);

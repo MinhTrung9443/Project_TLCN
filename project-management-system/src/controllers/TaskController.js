@@ -235,6 +235,15 @@ const getAvailableTaskStatuses = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error: " + error.message });
   }
 };
+const handleGetTaskByKey = async (req, res, next) => {
+  try {
+    const { taskKey } = req.params;
+    const task = await taskService.getTaskByKey(taskKey);
+    res.status(200).json(task);
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   handleGetTasksByProjectKey,
   handleCreateTask,
@@ -249,4 +258,5 @@ module.exports = {
   handleLinkTask,    
   handleUnlinkTask, 
   getAvailableTaskStatuses,
+  handleGetTaskByKey,
 };

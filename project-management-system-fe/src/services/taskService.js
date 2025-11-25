@@ -56,3 +56,6 @@ export const unlinkTask = async (taskId, linkId) => {
     const response = await apiClient.delete(`/tasks/${taskId}/links/${linkId}`);
     return response.data;
 };
+export const getTaskByKey = (taskKey) => {
+  return apiClient.get(`/tasks/key/${taskKey}`);
+};

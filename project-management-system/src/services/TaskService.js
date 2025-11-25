@@ -585,6 +585,46 @@ const unlinkTask = async (currentTaskId, linkId, userId) => {
     
     return [updatedCurrentTask, updatedTargetTask].filter(Boolean); 
 };
+const getTaskByKey = async (taskKey) => {
+  const task = await Task.findOne({ key: taskKey.toUpperCase() })
+    .populate([ // Sao chép phần populate từ hàm updateTask để đảm bảo nhất quán
+      { path: "projectId", select: "name key" },
+      { path: "taskTypeId", select: "name icon" },
+      { path: "priorityId", select: "name icon" },
+      { path: "assigneeId", select: "fullname avatar" },
+      { path: "reporterId", select: "fullname avatar" },
+      { path: "createdById", select: "fullname avatar" },
+      { path: "statusId", select: "name color" },
+      { path: "sprintId", select: "name" },
+      { path: "platformId", select: "name icon" },
+      {
+        path: 'linkedTasks.taskId',
+        select: 'key name taskTypeId',
+        populate: { path: 'taskTypeId', select: 'name icon' }
+      },
+    ]);
+
+  if (!task) {
+    const error = new Error("Task not found with that key");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Logic lấy status từ workflow (giống trong searchTasks)
+  if (task.projectId && task.statusId) {
+    const workflow = await Workflow.findOne({ projectId: task.projectId._id });
+    if (workflow && workflow.statuses) {
+      const statusObject = workflow.statuses.find(s => s._id.toString() === task.statusId.toString());
+      if (statusObject) {
+        // Gán lại statusId thành object đầy đủ từ workflow
+        task.statusId = statusObject;
+      }
+    }
+  }
+
+  return task;
+};
+
 module.exports = {
   getTasksByProjectKey,
   createTask,
@@ -598,4 +638,5 @@ module.exports = {
   deleteAttachment,
   linkTask,    
   unlinkTask, 
+  getTaskByKey,
 };

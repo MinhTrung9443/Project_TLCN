@@ -302,7 +302,9 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
                 <IconComponent name={editableTask.taskTypeId.icon} />
               </span>
             )}
-            <span className="task-key-text">{editableTask.key}</span>
+            <a href={`/task/${editableTask.key}`} target="_blank" rel="noopener noreferrer" className="task-key-text">
+          {editableTask.key}
+        </a>
           </div>
 
           <div className="editable-task-name-wrapper" data-replicated-value={editableTask.name}>

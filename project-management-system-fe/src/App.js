@@ -20,6 +20,7 @@ import ProjectsPage from "./pages/ManageProject/ProjectsPage";
 import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage.jsx";
 import GlobalSettingsPage from "./pages/Setting/GlobalSettingsPage"; // <-- Import trang cha
 import TaskFinderPage from "./pages/ManageTask/TaskFinderPage"; // <-- IMPORT
+import TaskDetailPage from './pages/ManageTask/TaskDetailPage';
 import BacklogPage from "./pages/ManageSprint/BacklogPage";
 import ActiveSprintPage from "./pages/ManageSprint/ActiveSprintPage";
 import GanttPage from "./pages/Gantt/GantPage.jsx";
@@ -50,6 +51,7 @@ function App() {
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="task-finder" element={<TaskFinderPage />} />
                 <Route path="gantt" element={<GanttPage />} />
+                <Route path="/task/:taskKey" element={<TaskDetailPage />} /> 
 
                 {/* Route cho trang Settings và các tab con của nó */}
                 <Route path="task-mgmt/projects/:projectKey/settings" element={<ProjectSettingsPage />}>
