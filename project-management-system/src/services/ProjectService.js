@@ -151,11 +151,20 @@ const createProject = async (projectData, userId) => {
 
   return savedProject;
 };
-const getAllProjects = async (actor) => {
+const getAllProjects = async (actor, search) => { // 1. Thêm tham số 'search'
   let query = { isDeleted: false };
 
   if (actor.role !== "admin") {
     query["members.userId"] = actor._id;
+  }
+
+  // 2. Thêm logic tìm kiếm nếu có tham số 'search'
+  if (search) {
+    const searchRegex = new RegExp(search, "i"); // 'i' để tìm kiếm không phân biệt hoa thường
+    query.$or = [
+      { name: { $regex: searchRegex } }, 
+      { key: { $regex: searchRegex } }
+    ];
   }
 
   const projects = await Project.find(query)

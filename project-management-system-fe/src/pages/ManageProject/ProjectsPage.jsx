@@ -15,7 +15,7 @@ const ProjectsPage = () => {
   const { user } = useAuth();
   const { selectedProjectKey, setProjectKey, clearProject } = useContext(ProjectContext);
   const navigate = useNavigate();
-
+  const [searchTerm, setSearchTerm] = useState("");
   const [projects, setProjects] = useState([]);
   const [archivedProjects, setArchivedProjects] = useState([]);
   const [view, setView] = useState("active");
@@ -31,39 +31,44 @@ const ProjectsPage = () => {
     clearProject();
   }, [clearProject]);
 
-  // --- TÁI CẤU TRÚC LOGIC FETCH ---
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      if (view === "active") {
-        const response = await getProjects();
-        setProjects(response.data);
-      } else {
-        // view === 'archived'
-        const response = await getArchivedProjects();
-        setArchivedProjects(response.data);
+  const fetchData = useCallback(
+    async (currentSearchTerm) => {
+      setLoading(true);
+      try {
+        if (view === "active") {
+          // Truyền giá trị tìm kiếm vào hàm getProjects
+          const response = await getProjects(currentSearchTerm);
+          setProjects(response.data);
+        } else {
+          // Tạm thời không tìm kiếm ở trang archived
+          const response = await getArchivedProjects();
+          setArchivedProjects(response.data);
+        }
+      } catch (error) {
+        toast.error(`Could not fetch ${view} projects.`);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      toast.error(`Could not fetch ${view} projects.`);
-    } finally {
-      setLoading(false);
-    }
-  }, [view]); // Hàm này sẽ được tạo lại mỗi khi 'view' thay đổi
+    },
+    [view] // Chỉ phụ thuộc vào `view`
+  );
 
-  // useEffect chính để gọi hàm fetch
   useEffect(() => {
-    fetchData();
-  }, [fetchData]); // Chạy lại mỗi khi 'view' thay đổi
+    const timerId = setTimeout(() => {
+      fetchData(searchTerm);
+    }, 300); 
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm, fetchData]);
 
-  // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
   const handleProjectCreated = () => {
-    // Sau khi tạo, chỉ cần gọi lại fetchData.
-    // Vì 'view' đang là 'active', nó sẽ tự động fetch đúng danh sách.
-    fetchData();
+    setSearchTerm(""); 
+    fetchData(""); 
   };
 
   const handleProjectCloned = () => {
-    fetchData();
+    fetchData(searchTerm);
   };
 
   const openArchiveModal = (project) => {
@@ -89,13 +94,11 @@ const ProjectsPage = () => {
     try {
       if (deleteAction === "archive") {
         await archiveProjectByKey(selectedProject.key);
-        // Sau khi archive thành công, gọi lại fetchData để cập nhật cả 2 danh sách
-        fetchData();
+        fetchData(searchTerm); // Tải lại danh sách với filter hiện tại
         toast.success("Project archived successfully!");
       } else if (deleteAction === "permanent") {
         await permanentlyDeleteProject(selectedProject._id);
-        // Tải lại danh sách archived projects
-        fetchData();
+        fetchData(searchTerm); // Tải lại danh sách với filter hiện tại
         toast.success("Project permanently deleted!");
       }
     } catch (error) {
@@ -110,8 +113,7 @@ const ProjectsPage = () => {
   const handleRestore = async (project) => {
     try {
       await restoreProject(project._id);
-      // Tải lại danh sách archived projects
-      fetchData();
+      fetchData(searchTerm);
       toast.success("Project restored successfully!");
     } catch (error) {
       toast.error("Failed to restore project.");
@@ -209,7 +211,15 @@ const ProjectsPage = () => {
                 </button>
               )}
             </div>
-            <input type="search" placeholder="Search..." className="search-input" />
+            {view === "active" && (
+                <input
+                type="search"
+                placeholder="Search by name or key..."
+                className="search-input"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            )}
           </div>
 
           {loading ? (

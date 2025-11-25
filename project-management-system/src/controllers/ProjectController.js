@@ -106,7 +106,8 @@ const handleAddGroupToProject = async (req, res) => {
 
 const handleGetAllProjects = async (req, res) => {
   try {
-    const projects = await projectService.getAllProjects(req.user);
+    const { search } = req.query; // 1. Lấy 'search' từ query params
+    const projects = await projectService.getAllProjects(req.user, search); // 2. Truyền vào service
 
     res.status(200).json(projects);
   } catch (error) {
