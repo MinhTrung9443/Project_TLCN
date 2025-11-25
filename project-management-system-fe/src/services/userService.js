@@ -80,6 +80,22 @@ const userService = {
       throw error;
     }
   },
+  uploadFile: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await apiClient.post("/uploads", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 60000,
+      });
+      return response.data; 
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default userService;

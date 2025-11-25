@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import '../styles/pages/MyProfilePage.css';
@@ -6,16 +6,18 @@ import userService from '../services/userService';
 
 const MyProfilePage = () => {
     const { user, login } = useAuth();
+    const fileInputRef = useRef(null);
     const [formData, setFormData] = useState({
         fullname: '',
         username: '',
         email: '',
         phone: '',
         gender: '',
+        avatar: '',
     });
 
     const [loading, setLoading] = useState(true);
-
+const [isUploading, setIsUploading] = useState(false);
     useEffect(() => {
         if (user) {
             setFormData({
@@ -24,6 +26,7 @@ const MyProfilePage = () => {
                 email: user.email || '',
                 phone: user.phone || '',
                 gender: user.gender || '',
+                avatar: user.avatar || '',
                 status: user.status || 'inactive',
             });
             setLoading(false);
@@ -45,6 +48,41 @@ const MyProfilePage = () => {
         }));
     };
 
+     const handleAvatarClick = () => {
+        fileInputRef.current.click(); // Kích hoạt input ẩn
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file ảnh
+        if (!file.type.startsWith('image/')) {
+            toast.error("Please select an image file.");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            // Gọi API upload file (đã setup ở các bước trước)
+            const response = await userService.uploadFile(file);
+            
+            // Cập nhật URL ảnh vào formData
+            // Lưu ý: Lúc này ảnh mới hiển thị trên UI, nhưng CHƯA LƯU vào database user cho đến khi bấm nút SAVE
+            setFormData(prev => ({
+                ...prev,
+                avatar: response.imageUrl
+            }));
+            
+            toast.success("Avatar uploaded! Remember to click 'Save' to apply changes.");
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Failed to upload avatar.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         toast.info("Updating profile...");
@@ -52,7 +90,7 @@ const MyProfilePage = () => {
         try {
             const response = await userService.updateProfile(formData);
 
-            const updatedUser = response.data.user;
+            const updatedUser = response.user || response.data?.user; // Tùy cấu trúc trả về của backend
 
             const token = localStorage.getItem('token');
             login(updatedUser, token); 
@@ -64,11 +102,21 @@ const MyProfilePage = () => {
             toast.error(error.response?.data?.message || "Failed to update profile.");
         }
     };
-    const handleCancel = () => {
-        setFormData(formData);
+     const handleCancel = () => {
+        // Reset về dữ liệu ban đầu từ context user
+        if (user) {
+            setFormData({
+                fullname: user.fullname || '',
+                username: user.username || '',
+                email: user.email || '',
+                phone: user.phone || '',
+                gender: user.gender || '',
+                avatar: user.avatar || '',
+                status: user.status || 'inactive',
+            });
+        }
         toast.warn("Changes have been canceled.");
     };
-
 
     if (loading) {
         return <div className="loading-container">Loading profile...</div>;
@@ -167,11 +215,36 @@ const MyProfilePage = () => {
 
                 <div className="profile-sidebar">
                     <div className="avatar-section">
+                        {/* Logic hiển thị Avatar: Nếu có link ảnh thì hiện ảnh, không thì hiện chữ cái */}
                         <div className="avatar-display">
-                            {user.fullname ? user.fullname.charAt(0).toUpperCase() : 'U'}
+                            {formData.avatar ? (
+                                <img 
+                                    src={formData.avatar} 
+                                    alt="Avatar" 
+                                    className="avatar-img-preview" 
+                                />
+                            ) : (
+                                user.fullname ? user.fullname.charAt(0).toUpperCase() : 'U'
+                            )}
                         </div>
-                        <button type="button" className="btn-upload-avatar">
-                            Upload Avatar
+                        
+                        {/* Input ẩn để chọn file */}
+                        <input 
+                            type="file" 
+                            ref={fileInputRef}
+                            style={{ display: "none" }}
+                            accept="image/*"
+                            onChange={handleFileChange}
+                        />
+
+                        {/* Nút bấm kích hoạt upload */}
+                        <button 
+                            type="button" 
+                            className="btn-upload-avatar"
+                            onClick={handleAvatarClick}
+                            disabled={isUploading}
+                        >
+                            {isUploading ? "Uploading..." : "Upload Avatar"}
                         </button>
                     </div>
                 </div>
