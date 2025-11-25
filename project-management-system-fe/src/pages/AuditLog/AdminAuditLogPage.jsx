@@ -13,6 +13,8 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [selectedUser, setSelectedUser] = useState(null); // For performance panel
+  const [userPage, setUserPage] = useState(1); // Pagination for team members
+  const [usersPerPage] = useState(6); // Show 6 members at a time
 
   // Lấy danh sách project
   useEffect(() => {
@@ -202,46 +204,67 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
 
       {/* User Activity Section */}
       <div className="user-activity-card">
-        <h3 className="card-title">
-          <span className="material-symbols-outlined">group</span>
-          Team Member Activity
-        </h3>
-        <div className="user-stats-grid">
-          {Object.values(overview.userStats || {}).map((user, idx) => {
-            // Skip nếu userId không hợp lệ
-            if (!user.userId || user.userId === "unknown" || user.userId === "undefined") {
-              return null;
-            }
-
-            return (
-              <div
-                key={idx}
-                className="user-stat-item clickable-user"
-                onClick={() => {
-                  console.log("Clicked user:", user);
-                  setSelectedUser({
-                    userId: user.userId,
-                    name: user.name,
-                    avatar: user.avatar,
-                  });
-                }}
-                style={{ cursor: "pointer" }}
+        <div className="card-header-with-nav">
+          <h3 className="card-title">
+            <span className="material-symbols-outlined">group</span>
+            Team Member Activity
+          </h3>
+          {Object.values(overview.userStats || {}).filter(user => user.userId && user.userId !== "unknown" && user.userId !== "undefined").length > usersPerPage && (
+            <div className="user-pagination-nav">
+              <button 
+                className="nav-btn" 
+                disabled={userPage === 1}
+                onClick={() => setUserPage(prev => Math.max(1, prev - 1))}
               >
-                <div className="user-avatar">
-                  {user.avatar ? <img src={user.avatar} alt={user.name} /> : <div className="avatar-placeholder">{user.name?.[0] || "?"}</div>}
-                </div>
-                <div className="user-info">
-                  <div className="user-name">{user.name}</div>
-                  <div className="user-actions">
-                    <span className="badge create">{user.actions?.create || 0} Created</span>
-                    <span className="badge update">{user.actions?.update || 0} Updated</span>
-                    <span className="badge delete">{user.actions?.delete || 0} Deleted</span>
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <span className="page-indicator">
+                {userPage} / {Math.ceil(Object.values(overview.userStats || {}).filter(user => user.userId && user.userId !== "unknown" && user.userId !== "undefined").length / usersPerPage)}
+              </span>
+              <button 
+                className="nav-btn"
+                disabled={userPage >= Math.ceil(Object.values(overview.userStats || {}).filter(user => user.userId && user.userId !== "unknown" && user.userId !== "undefined").length / usersPerPage)}
+                onClick={() => setUserPage(prev => prev + 1)}
+              >
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="user-stats-grid">
+          {Object.values(overview.userStats || {})
+            .filter(user => user.userId && user.userId !== "unknown" && user.userId !== "undefined")
+            .slice((userPage - 1) * usersPerPage, userPage * usersPerPage)
+            .map((user, idx) => {
+              return (
+                <div
+                  key={idx}
+                  className="user-stat-item clickable-user"
+                  onClick={() => {
+                    console.log("Clicked user:", user);
+                    setSelectedUser({
+                      userId: user.userId,
+                      name: user.name,
+                      avatar: user.avatar,
+                    });
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="user-avatar">
+                    {user.avatar ? <img src={user.avatar} alt={user.name} /> : <div className="avatar-placeholder">{user.name?.[0] || "?"}</div>}
                   </div>
-                  <div className="total-actions">{user.count} total actions</div>
+                  <div className="user-info">
+                    <div className="user-name">{user.name}</div>
+                    <div className="user-actions">
+                      <span className="badge create">{user.actions?.create || 0} Created</span>
+                      <span className="badge update">{user.actions?.update || 0} Updated</span>
+                      <span className="badge delete">{user.actions?.delete || 0} Deleted</span>
+                    </div>
+                    <div className="total-actions">{user.count} total actions</div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       </div>
 

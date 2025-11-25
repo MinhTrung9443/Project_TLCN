@@ -1,5 +1,6 @@
 const AuditLog = require("../models/AuditLog");
 const Project = require("../models/Project");
+const User = require("../models/User");
 const mongoose = require("mongoose");
 
 const auditLogService = {
@@ -41,6 +42,13 @@ const auditLogService = {
     const allMemberIds = [...new Set([...directMemberIds, ...groupMemberIds].map((id) => id.toString()))];
     console.log("Project direct members:", directMemberIds.length, ", Group members:", groupMemberIds.length, ", Total unique:", allMemberIds.length);
 
+    // Lấy thông tin đầy đủ của tất cả members
+    const allMembers = await User.find({
+      _id: { $in: allMemberIds.map((id) => new mongoose.Types.ObjectId(id)) },
+    })
+      .select("fullname avatar")
+      .lean();
+
     // Chuẩn hóa projectId thành ObjectId
     const projectObjectId = mongoose.Types.ObjectId.isValid(projectId) ? new mongoose.Types.ObjectId(projectId) : projectId;
     const projectIdString = projectId.toString();
@@ -62,24 +70,29 @@ const auditLogService = {
 
     console.log("Found logs for project:", projectIdString, "- Total:", logs.length);
 
-    // Thống kê số lượng action theo user
+    // Khởi tạo userStats với TẤT CẢ members (kể cả người chưa có hoạt động)
     const userStats = {};
+    allMembers.forEach((member) => {
+      const uid = member._id.toString();
+      userStats[uid] = {
+        userId: uid,
+        name: member.fullname || "Unknown",
+        avatar: member.avatar || null,
+        count: 0,
+        actions: { create: 0, update: 0, delete: 0 },
+      };
+    });
+
+    // Cập nhật thống kê từ logs (chỉ cho những user đã có hoạt động)
     logs.forEach((log) => {
-      const uid = log.userId?._id?.toString() || "unknown";
-      if (!userStats[uid]) {
-        userStats[uid] = {
-          userId: uid, // Thêm userId vào đây
-          name: log.userId?.fullname || "Unknown",
-          avatar: log.userId?.avatar || null,
-          count: 0,
-          actions: { create: 0, update: 0, delete: 0 },
-        };
+      const uid = log.userId?._id?.toString();
+      if (uid && userStats[uid]) {
+        userStats[uid].count++;
+        // Đếm theo loại action
+        if (log.action?.includes("create")) userStats[uid].actions.create++;
+        else if (log.action?.includes("update")) userStats[uid].actions.update++;
+        else if (log.action?.includes("delete")) userStats[uid].actions.delete++;
       }
-      userStats[uid].count++;
-      // Đếm theo loại action
-      if (log.action?.includes("create")) userStats[uid].actions.create++;
-      else if (log.action?.includes("update")) userStats[uid].actions.update++;
-      else if (log.action?.includes("delete")) userStats[uid].actions.delete++;
     });
 
     // Thống kê số lượng action theo loại (create/update/delete)
