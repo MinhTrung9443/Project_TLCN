@@ -40,7 +40,8 @@ const projectSchema = new Schema(
       default: "active",
       required: true,
     },
-    members: [ // Đây là nguồn chân lý duy nhất cho quyền trong dự án
+    members: [
+      // Đây là nguồn chân lý duy nhất cho quyền trong dự án
       {
         _id: false,
         userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -53,15 +54,17 @@ const projectSchema = new Schema(
     ],
     teams: [
       {
-          _id: false,
-          teamId: { type: Schema.Types.ObjectId, ref: "Group", required: true }, // Tham chiếu đến Group model
-          leaderId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // Ai là Leader của team này TRONG DỰ ÁN NÀY
-          members: [{
-              type: Schema.Types.ObjectId,
-              ref: "User"
-          }]
-      }
-  ],
+        _id: false,
+        teamId: { type: Schema.Types.ObjectId, ref: "Group", required: true }, // Tham chiếu đến Group model
+        leaderId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // Ai là Leader của team này TRONG DỰ ÁN NÀY
+        members: [
+          {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+          },
+        ],
+      },
+    ],
     isDeleted: {
       type: Boolean,
       default: false,

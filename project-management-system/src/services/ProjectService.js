@@ -151,27 +151,27 @@ const createProject = async (projectData, userId) => {
 
   return savedProject;
 };
-const getAllProjects = async (actor) => { 
+const getAllProjects = async (actor) => {
   let query = { isDeleted: false };
 
-  if (actor.role !== 'admin') {
+  if (actor.role !== "admin") {
     query["members.userId"] = actor._id;
   }
 
   const projects = await Project.find(query)
     .populate({
-        path: 'members.userId',
-        select: 'fullname email avatar'
+      path: "members.userId",
+      select: "fullname email avatar",
     })
     .sort({ createdAt: -1 })
     .lean();
 
-  const projectsWithPM = projects.map(project => {
-      const pm = project.members.find(m => m.role === 'PROJECT_MANAGER');
-      return {
-          ...project,
-          projectManager: pm ? pm.userId : null 
-      };
+  const projectsWithPM = projects.map((project) => {
+    const pm = project.members.find((m) => m.role === "PROJECT_MANAGER");
+    return {
+      ...project,
+      projectManager: pm ? pm.userId : null,
+    };
   });
 
   return projectsWithPM;
@@ -180,69 +180,69 @@ const getAllProjects = async (actor) => {
 const getArchivedProjects = async () => {
   const projects = await Project.find({ isDeleted: true })
     .populate({
-        path: 'members.userId',
-        select: 'fullname email avatar'
+      path: "members.userId",
+      select: "fullname email avatar",
     })
     .sort({ deletedAt: -1 })
     .lean();
 
-  const projectsWithPM = projects.map(project => {
-      const pm = project.members.find(m => m.role === 'PROJECT_MANAGER');
-      return {
-          ...project,
-          projectManager: pm ? pm.userId : null 
-      };
+  const projectsWithPM = projects.map((project) => {
+    const pm = project.members.find((m) => m.role === "PROJECT_MANAGER");
+    return {
+      ...project,
+      projectManager: pm ? pm.userId : null,
+    };
   });
 
   return projectsWithPM;
 };
 
 const updateProjectByKey = async (projectKey, projectData, userId) => {
-    const project = await Project.findOne({ key: projectKey.toUpperCase() });
-    if (!project) {
-        const error = new Error("Project not found");
-        error.statusCode = 404;
-        throw error;
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) {
+    const error = new Error("Project not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const oldProject = project.toObject();
+
+  const newManagerId = projectData.projectManagerId;
+  if (newManagerId) {
+    const currentManagerIndex = project.members.findIndex((m) => m.role === "PROJECT_MANAGER");
+    const currentManager = currentManagerIndex > -1 ? project.members[currentManagerIndex] : null;
+
+    if (currentManager && currentManager.userId.toString() !== newManagerId) {
+      project.members[currentManagerIndex].role = "MEMBER";
+
+      const newManagerIndex = project.members.findIndex((m) => m.userId.toString() === newManagerId);
+      if (newManagerIndex > -1) {
+        project.members[newManagerIndex].role = "PROJECT_MANAGER";
+      } else {
+        project.members.push({ userId: newManagerId, role: "PROJECT_MANAGER" });
+      }
     }
+  }
 
-    const oldProject = project.toObject(); 
+  project.name = projectData.name;
+  project.key = projectData.key;
+  project.type = projectData.type;
+  project.description = projectData.description;
+  project.startDate = projectData.startDate;
+  project.endDate = projectData.endDate;
 
-    const newManagerId = projectData.projectManagerId;
-    if (newManagerId) {
-        const currentManagerIndex = project.members.findIndex(m => m.role === 'PROJECT_MANAGER');
-        const currentManager = currentManagerIndex > -1 ? project.members[currentManagerIndex] : null;
+  const updatedProject = await project.save();
 
-        if (currentManager && currentManager.userId.toString() !== newManagerId) {
-            project.members[currentManagerIndex].role = 'MEMBER';
+  await logAction({
+    userId,
+    action: "update_project",
+    tableName: "Project",
+    recordId: updatedProject._id,
+    oldData: oldProject,
+    newData: updatedProject,
+  });
 
-            const newManagerIndex = project.members.findIndex(m => m.userId.toString() === newManagerId);
-            if (newManagerIndex > -1) {
-                project.members[newManagerIndex].role = 'PROJECT_MANAGER';
-            } else {
-                project.members.push({ userId: newManagerId, role: 'PROJECT_MANAGER' });
-            }
-        }
-    }
-
-    project.name = projectData.name;
-    project.key = projectData.key;
-    project.type = projectData.type;
-    project.description = projectData.description;
-    project.startDate = projectData.startDate;
-    project.endDate = projectData.endDate;
-    
-    const updatedProject = await project.save();
-
-    await logAction({
-        userId,
-        action: "update_project",
-        tableName: "Project",
-        recordId: updatedProject._id,
-        oldData: oldProject,
-        newData: updatedProject,
-    });
-
-    return updatedProject;
+  return updatedProject;
 };
 const archiveProjectByKey = async (projectKey, userId) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase() });
@@ -358,10 +358,10 @@ const getProjectByKey = async (key) => {
   const project = await Project.findOne({ key: key.toUpperCase(), isDeleted: false })
     // Populate lồng: Lấy thông tin user bên trong mảng 'members'
     .populate({
-        path: 'members.userId',
-        select: 'fullname email avatar'
+      path: "members.userId",
+      select: "fullname email avatar",
     });
-    
+
   if (!project) {
     const error = new Error("Project not found");
     error.statusCode = 404;
@@ -370,26 +370,26 @@ const getProjectByKey = async (key) => {
   return project;
 };
 
-
 const getProjectMembers = async (projectKey) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
     .populate("members.userId", "fullname email avatar")
-    .populate("teams.teamId", "name members") // Lấy tên team và ds ID members của nó
-    .populate("teams.leaderId", "fullname email avatar"); // Lấy thông tin của leader
+    .populate("teams.teamId", "name") // Populate để lấy tên group
+    .populate("teams.leaderId", "fullname email avatar") // Lấy thông tin của leader
+    .populate("teams.members", "fullname email avatar"); // Populate members đã được add vào team trong project
 
   if (!project) {
     const error = new Error("Project not found");
     error.statusCode = 404;
     throw error;
   }
-  
+
   return {
-      members: project.members || [],
-      teams: project.teams || []
+    members: project.members || [],
+    teams: project.teams || [],
   };
 };
 
-const addMemberToProject = async (projectKey, { userId, role }, actor) => {
+const addMemberToProject = async (projectKey, { userId, role, teamId }, actor) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase() });
   if (!project) {
     const error = new Error("Project not found");
@@ -397,225 +397,282 @@ const addMemberToProject = async (projectKey, { userId, role }, actor) => {
     throw error;
   }
 
-  // Logic kiểm tra này đã đúng, `member.userId` là một ObjectId
-  const isAlreadyMember = project.members.some((member) => member.userId.equals(userId));
-  if (isAlreadyMember) {
+  // Kiểm tra xem user đã là member chưa (kiểm tra cả trong members và teams)
+  const isAlreadyInMembers = project.members.some((member) => member.userId.equals(userId));
+  const isAlreadyInTeams = project.teams.some((team) => team.members.some((m) => m.equals(userId)));
+
+  if (isAlreadyInMembers || isAlreadyInTeams) {
     const error = new Error("User is already a member of this project");
     error.statusCode = 400;
     throw error;
   }
 
-  project.members.push({ userId, role });
-    await project.save();
+  // Nếu có teamId, thêm user vào team (ĐỂU KHÔNG thêm vào project.members)
+  if (teamId) {
+    // Kiểm tra xem team đã có trong project chưa
+    let team = project.teams.find((t) => t.teamId.equals(teamId));
 
-    try {
-        await notificationService.notifyProjectMemberAdded({
-            projectId: project._id,
-            projectName: project.name,
-            newMemberId: userId,
-            addedByName: actor.fullname, // Dùng tên của người thêm
-            role: role,
-        });
-    } catch (notificationError) {
-        console.error("Failed to send notification:", notificationError);
+    if (team) {
+      // Team đã có trong project
+
+      // Nếu user được thêm với role LEADER, cập nhật leaderId của team
+      if (role === "LEADER") {
+        team.leaderId = userId;
+        // Nếu user đang nằm trong members, xóa khỏi members (vì giờ là leader rồi)
+        team.members = team.members.filter((m) => !m.equals(userId));
+      } else {
+        // Nếu role là MEMBER, thêm vào members (nếu chưa có)
+        if (!team.members.some((m) => m.equals(userId))) {
+          team.members.push(userId);
+        }
+      }
+    } else {
+      // Team chưa có trong project, tạo team mới
+      // User này sẽ làm leader của team mới
+      project.teams.push({
+        teamId: teamId,
+        leaderId: userId, // User làm leader
+        members: [], // Members rỗng, leader KHÔNG nằm trong members
+      });
     }
-    return { message: "Member added successfully" };
+  } else {
+    // Nếu KHÔNG có teamId, thêm vào project.members (user không thuộc team nào)
+    project.members.push({ userId, role });
+  }
+
+  await project.save();
+
+  try {
+    await notificationService.notifyProjectMemberAdded({
+      projectId: project._id,
+      projectName: project.name,
+      newMemberId: userId,
+      addedByName: actor.fullname, // Dùng tên của người thêm
+      role: role,
+    });
+  } catch (notificationError) {
+    console.error("Failed to send notification:", notificationError);
+  }
+  return { message: "Member added successfully" };
 };
 
 const addMembersFromGroupToProject = async (projectKey, data, actor) => {
-    const { groupId, leaderId, memberIds } = data;
-    const project = await Project.findOne({ key: projectKey.toUpperCase() });
-    if (!project) throw new Error("Project not found");
-    
-    const group = await Group.findById(groupId);
-    if (!group) throw new Error("Group not found");
+  const { groupId, leaderId, memberIds } = data;
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) throw new Error("Project not found");
 
-    const teamExists = project.teams.some(t => t.teamId.equals(groupId));
-    if (teamExists) throw new Error("This team is already in the project.");
+  const group = await Group.findById(groupId);
+  if (!group) throw new Error("Group not found");
 
-    project.teams.push({ teamId: groupId, leaderId: leaderId, members: memberIds });
+  const teamExists = project.teams.some((t) => t.teamId.equals(groupId));
+  if (teamExists) throw new Error("This team is already in the project.");
 
-    const existingMemberIds = new Set(project.members.map(m => m.userId.toString()));
-    for (const memberId of memberIds) {
-        if (!existingMemberIds.has(memberId.toString())) {
-            const role = memberId.toString() === leaderId.toString() ? 'LEADER' : 'MEMBER';
-            project.members.push({ userId: memberId, role: role });
-        } else {
-            if (memberId.toString() === leaderId.toString()) {
-                const memberIndex = project.members.findIndex(m => m.userId.toString() === memberId);
-                if (memberIndex > -1 && project.members[memberIndex].role !== 'PROJECT_MANAGER') {
-                    project.members[memberIndex].role = 'LEADER';
-                }
-            }
-        }
-    }
-    await project.save();
-    await logAction({ userId: actor._id, action: 'add_team_to_project', /* ... */ });
-    return project;
+  // Thêm team vào project (KHÔNG thêm members vào project.members)
+  // Leader KHÔNG nằm trong members array
+  const membersWithoutLeader = memberIds.filter((id) => id.toString() !== leaderId.toString());
+
+  project.teams.push({
+    teamId: groupId,
+    leaderId: leaderId,
+    members: membersWithoutLeader, // Chỉ lưu members, không bao gồm leader
+  });
+
+  await project.save();
+  await logAction({ userId: actor._id, action: "add_team_to_project" /* ... */ });
+  return project;
 };
 
 const removeMemberFromProject = async (projectKey, userIdToRemove) => {
-    const project = await Project.findOne({ key: projectKey.toUpperCase() });
-    if (!project) {
-        throw new Error("Project not found");
-    }
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) {
+    throw new Error("Project not found");
+  }
 
-    const memberToRemove = project.members.find(m => m.userId.equals(userIdToRemove));
-    if (!memberToRemove) {
-        throw new Error("Member not found in this project.");
-    }
+  const memberToRemove = project.members.find((m) => m.userId.equals(userIdToRemove));
+  if (!memberToRemove) {
+    throw new Error("Member not found in this project.");
+  }
 
-    if (memberToRemove.role === 'PROJECT_MANAGER') {
-        const pmCount = project.members.filter(m => m.role === 'PROJECT_MANAGER').length;
-        if (pmCount <= 1) {
-            throw new Error("Cannot remove the only Project Manager from the project.");
-        }
+  if (memberToRemove.role === "PROJECT_MANAGER") {
+    const pmCount = project.members.filter((m) => m.role === "PROJECT_MANAGER").length;
+    if (pmCount <= 1) {
+      throw new Error("Cannot remove the only Project Manager from the project.");
     }
-    
-    const isLeadingTeam = project.teams.some(t => t.leaderId.equals(userIdToRemove));
-    if (isLeadingTeam) {
-        throw new Error("Cannot remove user. They are currently leading a team. Please change the team leader first.");
-    }
+  }
 
-    project.members = project.members.filter(m => !m.userId.equals(userIdToRemove));
-    await project.save();
-    return project; // Trả về project đã cập nhật
+  const isLeadingTeam = project.teams.some((t) => t.leaderId.equals(userIdToRemove));
+  if (isLeadingTeam) {
+    throw new Error("Cannot remove user. They are currently leading a team. Please change the team leader first.");
+  }
+
+  project.members = project.members.filter((m) => !m.userId.equals(userIdToRemove));
+  await project.save();
+  return project; // Trả về project đã cập nhật
 };
 
 const removeTeamFromProject = async (projectKey, teamIdToRemove) => {
-    const project = await Project.findOne({ key: projectKey.toUpperCase() }).populate('teams.teamId');
-    if (!project) {
-        throw new Error("Project not found");
-    }
+  const project = await Project.findOne({ key: projectKey.toUpperCase() }).populate("teams.teamId");
+  if (!project) {
+    throw new Error("Project not found");
+  }
 
-    const teamRelationToRemove = project.teams.find(t => t.teamId._id.equals(teamIdToRemove));
-    if (!teamRelationToRemove) {
-        throw new Error("Team not found in this project.");
-    }
+  const teamRelationToRemove = project.teams.find((t) => t.teamId._id.equals(teamIdToRemove));
+  if (!teamRelationToRemove) {
+    throw new Error("Team not found in this project.");
+  }
 
-    const memberIdsInTeamToRemove = teamRelationToRemove.teamId.members.map(id => id.toString());
+  const memberIdsInTeamToRemove = teamRelationToRemove.teamId.members.map((id) => id.toString());
 
-    const pmsInTeam = project.members.filter(member => 
-        member.role === 'PROJECT_MANAGER' && memberIdsInTeamToRemove.includes(member.userId.toString())
+  const pmsInTeam = project.members.filter(
+    (member) => member.role === "PROJECT_MANAGER" && memberIdsInTeamToRemove.includes(member.userId.toString())
+  );
+
+  const totalPMsInProject = project.members.filter((m) => m.role === "PROJECT_MANAGER").length;
+
+  if (pmsInTeam.length > 0 && pmsInTeam.length >= totalPMsInProject) {
+    throw new Error(
+      "Cannot remove this team. Doing so would remove the only Project Manager(s) from the project. Please assign a new Project Manager first."
     );
+  }
 
-    const totalPMsInProject = project.members.filter(m => m.role === 'PROJECT_MANAGER').length;
+  project.teams = project.teams.filter((t) => !t.teamId._id.equals(teamIdToRemove));
 
-    if (pmsInTeam.length > 0 && pmsInTeam.length >= totalPMsInProject) {
-        throw new Error("Cannot remove this team. Doing so would remove the only Project Manager(s) from the project. Please assign a new Project Manager first.");
-    }
+  project.members = project.members.filter((m) => !memberIdsInTeamToRemove.includes(m.userId.toString()));
 
-    project.teams = project.teams.filter(t => !t.teamId._id.equals(teamIdToRemove));
-
-    project.members = project.members.filter(m => !memberIdsInTeamToRemove.includes(m.userId.toString()));
-
-    await project.save();
-    return project;
+  await project.save();
+  return project;
 };
 
 const changeMemberRole = async (projectKey, userId, newRole) => {
-    const project = await Project.findOne({ key: projectKey.toUpperCase() });
-    if (!project) throw new Error("Project not found");
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) throw new Error("Project not found");
 
-    const memberIndex = project.members.findIndex(m => m.userId.equals(userId));
-    if (memberIndex === -1) throw new Error("Member not found in this project.");
+  // Tìm user trong teams (có thể là leader hoặc member)
+  const userTeam = project.teams.find((t) => t.leaderId.equals(userId) || t.members.some((m) => m.equals(userId)));
 
+  // Tìm user trong members array (individual members)
+  const memberIndex = project.members.findIndex((m) => m.userId.equals(userId));
+
+  // Kiểm tra user có tồn tại trong project không
+  if (!userTeam && memberIndex === -1) {
+    throw new Error("Member not found in this project.");
+  }
+
+  // Nếu có trong members array, kiểm tra PM
+  if (memberIndex > -1) {
     const memberToChange = project.members[memberIndex];
-
-    if (memberToChange.role === 'PROJECT_MANAGER' && newRole !== 'PROJECT_MANAGER') {
-        const pmCount = project.members.filter(m => m.role === 'PROJECT_MANAGER').length;
-        if (pmCount <= 1) {
-            throw new Error("Cannot change the role of the only Project Manager.");
-        }
+    if (memberToChange.role === "PROJECT_MANAGER" && newRole !== "PROJECT_MANAGER") {
+      const pmCount = project.members.filter((m) => m.role === "PROJECT_MANAGER").length;
+      if (pmCount <= 1) {
+        throw new Error("Cannot change the role of the only Project Manager.");
+      }
     }
+  }
 
-    if (newRole === 'LEADER' && memberToChange.role !== 'LEADER') {
-        const teamInfo = project.teams.find(t => t.members.includes(memberToChange.userId));
-        
-        if (teamInfo) {
-            const oldLeaderId = teamInfo.leaderId;
-            const newLeaderId = memberToChange.userId;
+  // Xử lý thay đổi role trong team
+  if (userTeam) {
+    if (newRole === "LEADER") {
+      // Set as LEADER: Chuyển user thành leader, leader cũ thành member
+      const oldLeaderId = userTeam.leaderId;
 
-            teamInfo.leaderId = newLeaderId;
+      // Set leader mới
+      userTeam.leaderId = userId;
 
-            const oldLeaderMemberIndex = project.members.findIndex(m => m.userId.equals(oldLeaderId));
-            if (oldLeaderMemberIndex > -1) {
-                const isOldLeaderStillLeading = project.teams.some(t => t.leaderId.equals(oldLeaderId));
-                if (!isOldLeaderStillLeading && project.members[oldLeaderMemberIndex].role !== 'PROJECT_MANAGER') {
-                    project.members[oldLeaderMemberIndex].role = 'MEMBER';
-                }
-            }
-        }
+      // Xóa user mới khỏi members array (leader không nằm trong members)
+      userTeam.members = userTeam.members.filter((m) => !m.equals(userId));
+
+      // Thêm leader cũ vào members array (nếu không phải là leader của team khác)
+      const isOldLeaderStillLeading = project.teams.some((t) => t.teamId.toString() !== userTeam.teamId.toString() && t.leaderId.equals(oldLeaderId));
+      if (!isOldLeaderStillLeading && !userTeam.members.some((m) => m.equals(oldLeaderId))) {
+        userTeam.members.push(oldLeaderId);
+      }
+
+      // Cập nhật role trong members array nếu có
+      const oldLeaderIndex = project.members.findIndex((m) => m.userId.equals(oldLeaderId));
+      if (oldLeaderIndex > -1 && project.members[oldLeaderIndex].role !== "PROJECT_MANAGER") {
+        project.members[oldLeaderIndex].role = "MEMBER";
+      }
+    } else if (newRole === "MEMBER") {
+      // Set as MEMBER: Nếu đang là leader, chuyển thành member
+      if (userTeam.leaderId.equals(userId)) {
+        throw new Error("Cannot change leader to member. Please assign a new leader first.");
+      }
+      // Nếu đã là member trong team, không cần làm gì (role đã đúng)
     }
+  }
+
+  // Cập nhật role trong members array (nếu user là individual member)
+  if (memberIndex > -1) {
     project.members[memberIndex].role = newRole;
-    
-    await project.save();
-    return project;
+  }
+
+  await project.save();
+  return project;
 };
 const changeTeamLeader = async (projectKey, teamId, newLeaderId) => {
-    const project = await Project.findOne({ key: projectKey.toUpperCase() });
-    if (!project) {
-        throw new Error("Project not found");
-    }
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) {
+    throw new Error("Project not found");
+  }
 
-    const teamIndex = project.teams.findIndex(t => t.teamId.equals(teamId));
-    if (teamIndex === -1) {
-        throw new Error("Team not found in this project.");
-    }
+  const teamIndex = project.teams.findIndex((t) => t.teamId.equals(teamId));
+  if (teamIndex === -1) {
+    throw new Error("Team not found in this project.");
+  }
 
-    const oldLeaderId = project.teams[teamIndex].leaderId;
+  const oldLeaderId = project.teams[teamIndex].leaderId;
 
-    project.teams[teamIndex].leaderId = newLeaderId;
+  project.teams[teamIndex].leaderId = newLeaderId;
 
-    const isOldLeaderStillLeading = project.teams.some(t => t.leaderId.equals(oldLeaderId));
-    const oldLeaderMemberIndex = project.members.findIndex(m => m.userId.equals(oldLeaderId));
-    if (oldLeaderMemberIndex > -1 && !isOldLeaderStillLeading && project.members[oldLeaderMemberIndex].role !== 'PROJECT_MANAGER') {
-        project.members[oldLeaderMemberIndex].role = 'MEMBER';
-    }
+  const isOldLeaderStillLeading = project.teams.some((t) => t.leaderId.equals(oldLeaderId));
+  const oldLeaderMemberIndex = project.members.findIndex((m) => m.userId.equals(oldLeaderId));
+  if (oldLeaderMemberIndex > -1 && !isOldLeaderStillLeading && project.members[oldLeaderMemberIndex].role !== "PROJECT_MANAGER") {
+    project.members[oldLeaderMemberIndex].role = "MEMBER";
+  }
 
-    const newLeaderMemberIndex = project.members.findIndex(m => m.userId.equals(newLeaderId));
-    if (newLeaderMemberIndex > -1) {
-        project.members[newLeaderMemberIndex].role = 'LEADER';
-    } else {
-        project.members.push({ userId: newLeaderId, role: 'LEADER' });
-    }
-    
-    await project.save();
-    return project;
+  const newLeaderMemberIndex = project.members.findIndex((m) => m.userId.equals(newLeaderId));
+  if (newLeaderMemberIndex > -1) {
+    project.members[newLeaderMemberIndex].role = "LEADER";
+  } else {
+    project.members.push({ userId: newLeaderId, role: "LEADER" });
+  }
+
+  await project.save();
+  return project;
 };
 const addMemberToTeamInProject = async (projectKey, teamId, userIdToAdd) => {
-    const project = await Project.findOne({ key: projectKey.toUpperCase() });
-    if (!project) throw new Error("Project not found");
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) throw new Error("Project not found");
 
-    const teamIndex = project.teams.findIndex(t => t.teamId.equals(teamId));
-    if (teamIndex === -1) throw new Error("Team not found in project.");
+  const teamIndex = project.teams.findIndex((t) => t.teamId.equals(teamId));
+  if (teamIndex === -1) throw new Error("Team not found in project.");
 
-    project.teams[teamIndex].members.addToSet(userIdToAdd);
-    
-    const isAlreadyMember = project.members.some(m => m.userId.equals(userIdToAdd));
-    if (!isAlreadyMember) {
-        project.members.push({ userId: userIdToAdd, role: 'MEMBER' });
-    }
+  project.teams[teamIndex].members.addToSet(userIdToAdd);
 
-    await project.save();
-    return project;
+  const isAlreadyMember = project.members.some((m) => m.userId.equals(userIdToAdd));
+  if (!isAlreadyMember) {
+    project.members.push({ userId: userIdToAdd, role: "MEMBER" });
+  }
+
+  await project.save();
+  return project;
 };
 
 const removeMemberFromTeamInProject = async (projectKey, teamId, userIdToRemove) => {
-    const project = await Project.findOne({ key: projectKey.toUpperCase() });
-    if (!project) throw new Error("Project not found");
+  const project = await Project.findOne({ key: projectKey.toUpperCase() });
+  if (!project) throw new Error("Project not found");
 
-    const teamIndex = project.teams.findIndex(t => t.teamId.equals(teamId));
-    if (teamIndex === -1) throw new Error("Team not found in project.");
+  const team = project.teams.find((t) => t.groupId.equals(teamId));
+  if (teamIndex === -1) throw new Error("Team not found in project.");
 
-    if (project.teams[teamIndex].leaderId.equals(userIdToRemove)) {
-        throw new Error("Cannot remove the team leader. Please change the leader first.");
-    }
+  if (project.teams[teamIndex].leaderId.equals(userIdToRemove)) {
+    throw new Error("Cannot remove the team leader. Please change the leader first.");
+  }
 
-    project.teams[teamIndex].members.pull(userIdToRemove);
-    
-    await project.save();
-    return project;
+  project.teams[teamIndex].members.pull(userIdToRemove);
+
+  await project.save();
+  return project;
 };
 
 module.exports = {
@@ -623,7 +680,7 @@ module.exports = {
   getAllProjects,
   getArchivedProjects,
   updateProjectByKey,
-  archiveProjectByKey, 
+  archiveProjectByKey,
   restoreProject,
   permanentlyDeleteProject,
   cloneProject,

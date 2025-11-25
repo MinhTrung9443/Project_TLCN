@@ -83,8 +83,24 @@ const getProjectRole = async (userId, projectKey) => {
     const project = await Project.findOne({ key: projectKey.toUpperCase() });
     if (!project) return null;
 
+    // 1. Kiểm tra trong project.members trước (ưu tiên cao hơn)
     const member = project.members.find((m) => m.userId && m.userId.equals(userId));
-    return member ? member.role : null;
+    if (member) return member.role;
+
+    // 2. Nếu không có trong members, kiểm tra trong teams
+    for (const team of project.teams) {
+      // Kiểm tra nếu là leader của team
+      if (team.leaderId && team.leaderId.equals(userId)) {
+        return "LEADER";
+      }
+      // Kiểm tra nếu là member của team
+      if (team.members && team.members.some((m) => m.equals(userId))) {
+        return "MEMBER";
+      }
+    }
+
+    // 3. Không tìm thấy ở đâu cả
+    return null;
   } catch (dbError) {
     console.error("DATABASE ERROR in getProjectRole:", dbError);
     return null;
