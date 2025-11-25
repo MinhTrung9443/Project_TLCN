@@ -93,14 +93,9 @@ function App() {
                     }
                   />
                 </Route>
-                <Route
-                  path="audit-log"
-                  element={
-                    <AdminRoute>
-                      <AdminAuditLogPage />
-                    </AdminRoute>
-                  }
-                />
+
+                {/* --- Audit Log - Only Admin and PM can view --- */}
+                <Route path="audit-log" element={<AdminAuditLogPage />} />
               </Route>
             </Route>
           </Routes>

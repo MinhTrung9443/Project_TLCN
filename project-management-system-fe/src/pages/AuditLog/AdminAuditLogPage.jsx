@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { getProjectAuditOverview, getProjectAuditLogs } from "../../services/auditLogService";
 import { getProjects } from "../../services/projectService";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import PerformancePanel from "../../components/common/PerformancePanel";
 import "../../styles/AdminAuditLog.css";
 
 const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId || "");
   const [overview, setOverview] = useState(null);
@@ -16,15 +20,45 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   const [userPage, setUserPage] = useState(1); // Pagination for team members
   const [usersPerPage] = useState(6); // Show 6 members at a time
 
-  // Lấy danh sách project
+  // Kiểm tra quyền truy cập - Chỉ admin và PM được xem
   useEffect(() => {
+    if (!user) return;
+
+    // Nếu không phải admin, kiểm tra xem có phải PM của project nào không
+    if (user.role !== "admin") {
+      // Tạm thời cho phép truy cập, sẽ kiểm tra PM khi load projects
+      // Nếu không có project nào mà user là PM, sẽ redirect về dashboard
+    }
+  }, [user]);
+
+  // Lấy danh sách project và filter theo role
+  useEffect(() => {
+    if (!user) return;
+
     getProjects().then((res) => {
-      setProjects(res.data || []);
-      if (!selectedProjectId && res.data && res.data.length > 0) {
-        setSelectedProjectId(res.data[0]._id || res.data[0].id);
+      let availableProjects = res.data || [];
+
+      // Admin thì xem tất cả
+      // Non-admin chỉ xem projects mà họ là PM
+      if (user.role !== "admin") {
+        availableProjects = availableProjects.filter((project) =>
+          project.members?.some((member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER")
+        );
+
+        // Nếu không có project nào mà user là PM, redirect về dashboard
+        if (availableProjects.length === 0) {
+          alert("Bạn không có quyền truy cập trang này. Chỉ Admin và Project Manager mới có thể xem Audit Log.");
+          navigate("/dashboard");
+          return;
+        }
+      }
+
+      setProjects(availableProjects);
+      if (!selectedProjectId && availableProjects.length > 0) {
+        setSelectedProjectId(availableProjects[0]._id || availableProjects[0].id);
       }
     });
-  }, []);
+  }, [user, navigate]);
 
   // Lấy dữ liệu auditlog khi đổi project hoặc page
   useEffect(() => {
