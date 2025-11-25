@@ -35,7 +35,7 @@ const dashboardService = {
       .populate("statusId", "name");
 
     // Dự án tham gia (dựa vào Project.members.userId)
-    const projects = await Project.find({ "members.userId": userId });
+    const projects = await Project.find({ "members.userId": userId, isDeleted: false });
     const projectProgress = await Promise.all(
       projects.map(async (project) => {
         const total = await Task.countDocuments({ projectId: project._id });
@@ -47,6 +47,7 @@ const dashboardService = {
           projectKey: project.key,
           progress: total > 0 ? Math.round((completed / total) * 100) : 0,
           role: member?.role || "Member",
+          endDate: project.endDate,
         };
       })
     );
