@@ -1,21 +1,22 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const groupController = require('../controllers/GroupController');
-const { protect, isAdmin } = require('../middleware/authMiddleware');
+const groupController = require("../controllers/GroupController");
+const { protect, isAdmin } = require("../middleware/authMiddleware");
 
-router.get('/', protect, groupController.getAllGroups);
+router.get("/", protect, groupController.getAllGroups);
 
-router.post('/', protect, isAdmin, groupController.createGroup);
+router.post("/", protect, isAdmin, groupController.createGroup);
 
-router.put('/:id', protect, isAdmin, groupController.updateGroup);
+router.put("/:id", protect, isAdmin, groupController.updateGroup);
 
-router.delete('/:id', protect, isAdmin, groupController.deleteGroup);
+router.delete("/:id", protect, isAdmin, groupController.deleteGroup);
 
-router.get('/:id/members', protect, groupController.getMembers);
+router.get("/:id/members", protect, groupController.getMembers);
 
-router.post('/:id/members', protect, isAdmin, groupController.addMember);
+router.post("/:id/members", protect, isAdmin, groupController.addMember);
 
-router.get('/:id', protect, groupController.getGroupById);
+router.delete("/:id/members/:userId", protect, isAdmin, groupController.removeMember);
 
+router.get("/:id", protect, groupController.getGroupById);
 
 module.exports = router;

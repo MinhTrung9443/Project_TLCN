@@ -151,5 +151,54 @@ class GroupService {
     }
     return group;
   }
+
+  async removeMember(groupId, userId, removedBy = null) {
+    const userToRemove = await User.findById(userId);
+    if (!userToRemove) {
+      throw createError(404, "User not found");
+    }
+
+    const group = await Group.findByIdAndUpdate(groupId, { $pull: { members: userId } }, { new: true });
+
+    if (!group) {
+      throw createError(404, "Group not found");
+    }
+
+    // Remove group from user's group array
+    await User.findByIdAndUpdate(userId, { $pull: { group: groupId } });
+
+    // Log action
+    if (removedBy) {
+      await logAction({
+        userId: removedBy,
+        action: "remove_group_member",
+        tableName: "Group",
+        recordId: group._id,
+        oldData: { memberId: userId, memberName: userToRemove.fullname },
+      });
+    }
+
+    // Send notification
+    try {
+      let removedByName = "Group Admin";
+      if (removedBy) {
+        const remover = await User.findById(removedBy);
+        removedByName = remover?.fullname || "Group Admin";
+      }
+
+      await notificationService.createAndSend({
+        recipientId: userId,
+        type: "group_member_removed",
+        title: "Removed from Group",
+        message: `You have been removed from group "${group.name}" by ${removedByName}`,
+        relatedEntityType: "Group",
+        relatedEntityId: group._id,
+      });
+    } catch (notificationError) {
+      console.error("Failed to send group member removed notification:", notificationError);
+    }
+
+    return group;
+  }
 }
 module.exports = new GroupService();

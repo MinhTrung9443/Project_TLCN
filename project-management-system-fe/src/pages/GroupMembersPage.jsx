@@ -1,41 +1,37 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { groupService, userService } from '../services/groupService';
-import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'react-toastify';
-import AddMemberModal from '../components/group/AddMemberModal';
-import '../styles/pages/GroupMembersPage.css';
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, Link } from "react-router-dom";
+import { groupService, userService } from "../services/groupService";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-toastify";
+import AddMemberModal from "../components/group/AddMemberModal";
+import "../styles/pages/GroupMembersPage.css";
 
 const GroupMembersPage = () => {
   const { groupId } = useParams();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin";
 
   const [members, setMembers] = useState([]);
-  const [group, setGroup] = useState(null); 
+  const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
 
-const fetchMembersAndGroup = useCallback(async () => {
-  try {
-    setLoading(true);
+  const fetchMembersAndGroup = useCallback(async () => {
+    try {
+      setLoading(true);
 
-    const [membersResponse, groupResponse] = await Promise.all([
-      groupService.getGroupMembers(groupId),
-      groupService.getGroupById(groupId)                      
-    ]);
-    
-    setMembers(membersResponse.data.data);
-    setGroup(groupResponse.data.data);
+      const [membersResponse, groupResponse] = await Promise.all([groupService.getGroupMembers(groupId), groupService.getGroupById(groupId)]);
 
-  } catch (error) {
-    toast.error('Failed to fetch page data.');
-    console.error("Error fetching members and group details:", error);
-  } finally {
-    setLoading(false);
-  }
-}, [groupId]);
+      setMembers(membersResponse.data.data);
+      setGroup(groupResponse.data.data);
+    } catch (error) {
+      toast.error("Failed to fetch page data.");
+      console.error("Error fetching members and group details:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId]);
 
   useEffect(() => {
     fetchMembersAndGroup();
@@ -44,7 +40,7 @@ const fetchMembersAndGroup = useCallback(async () => {
   const handleOpenAddModal = async () => {
     console.log("Opening Add Member modal...");
     try {
-      const response = await userService.getUsers({ status: 'active' });
+      const response = await userService.getUsers({ status: "active" });
       setAllUsers(response.data.data);
       setIsAddModalOpen(true);
     } catch (error) {
@@ -66,11 +62,24 @@ const fetchMembersAndGroup = useCallback(async () => {
     }
   };
 
+  const handleRemoveMember = async (userId, userName) => {
+    if (!window.confirm(`Are you sure you want to remove ${userName} from this group?`)) {
+      return;
+    }
+    try {
+      await groupService.removeMemberFromGroup(groupId, userId);
+      toast.success("Member removed successfully!");
+      fetchMembersAndGroup();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to remove member.");
+    }
+  };
+
   return (
     <div className="member-page-container">
       <div className="member-page-header">
         <h1 className="breadcrumbs">
-          <Link to="/organization/group">Groups</Link> / <span>{group?.name || 'Group Members'}</span>
+          <Link to="/organization/group">Groups</Link> / <span>{group?.name || "Group Members"}</span>
         </h1>
         {isAdmin && (
           <button onClick={handleOpenAddModal} className="add-member-button">
@@ -91,6 +100,7 @@ const fetchMembersAndGroup = useCallback(async () => {
               <th>Phone</th>
               <th>Gender</th>
               <th>Status</th>
+              {isAdmin && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -104,18 +114,26 @@ const fetchMembersAndGroup = useCallback(async () => {
                   <td>{member.gender}</td>
                   <td>
                     <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={member.status === 'active'}
-                        disabled={!isAdmin}                      />
+                      <input type="checkbox" checked={member.status === "active"} disabled={!isAdmin} />
                       <span className="slider"></span>
                     </label>
                   </td>
+                  {isAdmin && (
+                    <td>
+                      <button
+                        className="remove-member-btn"
+                        onClick={() => handleRemoveMember(member._id, member.fullname)}
+                        title="Remove member from group"
+                      >
+                        <span className="material-symbols-outlined">person_remove</span>
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="no-members-message">
+                <td colSpan={isAdmin ? "7" : "6"} className="no-members-message">
                   No data to display.
                 </td>
               </tr>
@@ -128,7 +146,7 @@ const fetchMembersAndGroup = useCallback(async () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddMember}
-        users={allUsers.filter(u => !members.some(m => m._id === u._id))}
+        users={allUsers.filter((u) => !members.some((m) => m._id === u._id))}
       />
     </div>
   );

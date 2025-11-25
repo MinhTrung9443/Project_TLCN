@@ -209,22 +209,29 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
             <span className="material-symbols-outlined">group</span>
             Team Member Activity
           </h3>
-          {Object.values(overview.userStats || {}).filter(user => user.userId && user.userId !== "unknown" && user.userId !== "undefined").length > usersPerPage && (
+          {Object.values(overview.userStats || {}).filter((user) => user.userId && user.userId !== "unknown" && user.userId !== "undefined").length >
+            usersPerPage && (
             <div className="user-pagination-nav">
-              <button 
-                className="nav-btn" 
-                disabled={userPage === 1}
-                onClick={() => setUserPage(prev => Math.max(1, prev - 1))}
-              >
+              <button className="nav-btn" disabled={userPage === 1} onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}>
                 <span className="material-symbols-outlined">chevron_left</span>
               </button>
               <span className="page-indicator">
-                {userPage} / {Math.ceil(Object.values(overview.userStats || {}).filter(user => user.userId && user.userId !== "unknown" && user.userId !== "undefined").length / usersPerPage)}
+                {userPage} /{" "}
+                {Math.ceil(
+                  Object.values(overview.userStats || {}).filter((user) => user.userId && user.userId !== "unknown" && user.userId !== "undefined")
+                    .length / usersPerPage
+                )}
               </span>
-              <button 
+              <button
                 className="nav-btn"
-                disabled={userPage >= Math.ceil(Object.values(overview.userStats || {}).filter(user => user.userId && user.userId !== "unknown" && user.userId !== "undefined").length / usersPerPage)}
-                onClick={() => setUserPage(prev => prev + 1)}
+                disabled={
+                  userPage >=
+                  Math.ceil(
+                    Object.values(overview.userStats || {}).filter((user) => user.userId && user.userId !== "unknown" && user.userId !== "undefined")
+                      .length / usersPerPage
+                  )
+                }
+                onClick={() => setUserPage((prev) => prev + 1)}
               >
                 <span className="material-symbols-outlined">chevron_right</span>
               </button>
@@ -233,7 +240,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         </div>
         <div className="user-stats-grid">
           {Object.values(overview.userStats || {})
-            .filter(user => user.userId && user.userId !== "unknown" && user.userId !== "undefined")
+            .filter((user) => user.userId && user.userId !== "unknown" && user.userId !== "undefined")
             .slice((userPage - 1) * usersPerPage, userPage * usersPerPage)
             .map((user, idx) => {
               return (
