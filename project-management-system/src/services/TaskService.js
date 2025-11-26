@@ -7,9 +7,9 @@ const TaskHistory = require("../models/TaskHistory");
 const notificationService = require("./NotificationService");
 const User = require("../models/User");
 const Workflow = require("../models/Workflow");
-const cloudinary = require('../config/cloudinary'); // BẠN CẦN IMPORT CLOUDINARY VÀO ĐÂY
-const path = require('path');
-const fs = require('fs');
+const cloudinary = require("../config/cloudinary"); // BẠN CẦN IMPORT CLOUDINARY VÀO ĐÂY
+const path = require("path");
+const fs = require("fs");
 // Hàm lấy task theo projectId
 const getTasksByProjectKey = async (projectKey) => {
   // 1. Tìm project để lấy projectId
@@ -35,7 +35,7 @@ const getTasksByProjectKey = async (projectKey) => {
 
 // Hàm tạo một task mới
 const createTask = async (taskData, userId) => {
-  const { projectId } = taskData;
+  const { projectId, sprintId } = taskData;
 
   // Kiểm tra projectId có hợp lệ không
   if (!mongoose.Types.ObjectId.isValid(projectId)) {
@@ -49,6 +49,15 @@ const createTask = async (taskData, userId) => {
     const error = new Error("Project not found");
     error.statusCode = 404;
     throw error;
+  }
+
+  // Nếu task được tạo trong sprint và chưa có startDate, lấy startDate từ sprint
+  if (sprintId && !taskData.startDate) {
+    const Sprint = require("../models/Sprint");
+    const sprint = await Sprint.findById(sprintId);
+    if (sprint && sprint.startDate) {
+      taskData.startDate = sprint.startDate;
+    }
   }
 
   const taskCount = await Task.countDocuments({ projectId: taskData.projectId });
@@ -101,10 +110,7 @@ const createTask = async (taskData, userId) => {
   return populatedTask;
 };
 const searchTasks = async (queryParams) => {
-  const {
-    keyword, projectId, assigneeId, reporterId, createdById, statusId,
-    priorityId, taskTypeId, dueDate_gte, dueDate_lte,
-  } = queryParams;
+  const { keyword, projectId, assigneeId, reporterId, createdById, statusId, priorityId, taskTypeId, dueDate_gte, dueDate_lte } = queryParams;
 
   const query = {};
 
@@ -144,9 +150,9 @@ const searchTasks = async (queryParams) => {
     .populate("platformId", "name icon")
     .populate("createdById", "fullname avatar")
     .populate({
-        path: 'linkedTasks.taskId',
-        select: 'key name taskTypeId',
-        populate: { path: 'taskTypeId', select: 'name icon' }
+      path: "linkedTasks.taskId",
+      select: "key name taskTypeId",
+      populate: { path: "taskTypeId", select: "name icon" },
     })
     .sort({ createdAt: -1 })
     .lean(); // Chuyển sang object thường, không phải Mongoose document
@@ -155,21 +161,21 @@ const searchTasks = async (queryParams) => {
     return [];
   }
 
-  const projectIdsInTasks = [...new Set(tasks.map(task => task.projectId?._id.toString()).filter(Boolean))];
+  const projectIdsInTasks = [...new Set(tasks.map((task) => task.projectId?._id.toString()).filter(Boolean))];
 
   const workflows = await Workflow.find({ projectId: { $in: projectIdsInTasks } });
 
-  const workflowMap = new Map(workflows.map(wf => [wf.projectId.toString(), wf]));
+  const workflowMap = new Map(workflows.map((wf) => [wf.projectId.toString(), wf]));
 
-  const populatedTasks = tasks.map(task => {
+  const populatedTasks = tasks.map((task) => {
     if (!task.projectId || !task.statusId) {
       return task; // Trả về task gốc nếu thiếu dữ liệu
     }
 
     const workflow = workflowMap.get(task.projectId._id.toString());
     if (workflow && workflow.statuses) {
-      const statusObject = workflow.statuses.find(s => s._id.toString() === task.statusId.toString());
-      
+      const statusObject = workflow.statuses.find((s) => s._id.toString() === task.statusId.toString());
+
       if (statusObject) {
         task.statusId = statusObject;
       }
@@ -215,7 +221,6 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
   } catch (historyError) {
-
     console.error("--- CRITICAL: Failed to log task history but update was successful ---");
     console.error(historyError);
   }
@@ -230,10 +235,10 @@ const updateTask = async (taskId, updateData, userId) => {
     { path: "statusId", select: "name color" },
     { path: "sprintId", select: "name" },
     { path: "platformId", select: "name icon" },
-    { 
-        path: 'linkedTasks.taskId',
-        select: 'key name taskTypeId',
-        populate: { path: 'taskTypeId', select: 'name icon' }
+    {
+      path: "linkedTasks.taskId",
+      select: "key name taskTypeId",
+      populate: { path: "taskTypeId", select: "name icon" },
     },
   ]);
 
@@ -290,11 +295,22 @@ const updateTask = async (taskId, updateData, userId) => {
 };
 
 const changeTaskSprint = async (taskId, sprintId, userId) => {
-  return updateTask(taskId, { sprintId: sprintId || null }, userId);
+  const updateData = { sprintId: sprintId || null };
+
+  // Nếu add vào sprint (sprintId có giá trị), cập nhật startDate theo sprint
+  if (sprintId) {
+    const Sprint = require("../models/Sprint");
+    const sprint = await Sprint.findById(sprintId);
+    if (sprint && sprint.startDate) {
+      updateData.startDate = sprint.startDate;
+    }
+  }
+
+  return updateTask(taskId, updateData, userId);
 };
 
 const updateTaskStatus = async (taskId, statusId, userId) => {
-  const task = await Task.findById(taskId).populate('projectId');
+  const task = await Task.findById(taskId).populate("projectId");
   if (!task) {
     const error = new Error("Task not found");
     error.statusCode = 404;
@@ -305,20 +321,19 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
   const currentStatusId = task.statusId;
 
   if (currentStatusId.toString() === statusId.toString()) {
-      return task;
+    return task;
   }
 
   const workflow = await workflowService.getWorkflowByProject(projectKey);
-  
+
   const isValidTransition = workflow.transitions.some(
-      t => t.from.toString() === currentStatusId.toString() && 
-           t.to.toString() === statusId.toString()
+    (t) => t.from.toString() === currentStatusId.toString() && t.to.toString() === statusId.toString()
   );
 
   if (!isValidTransition) {
-      const error = new Error("Invalid status transition according to workflow.");
-      error.statusCode = 400;
-      throw error;
+    const error = new Error("Invalid status transition according to workflow.");
+    error.statusCode = 400;
+    throw error;
   }
 
   return updateTask(taskId, { statusId }, userId);
@@ -395,27 +410,20 @@ const addAttachment = async (taskId, file, userId) => {
     error.statusCode = 404;
     throw error;
   }
-  
+
   // Logic mới: Sử dụng thông tin từ Cloudinary (req.file)
   const newAttachment = {
-    filename: file.originalname,      // Tên file gốc
-    url: file.path,                   // URL từ Cloudinary
-    public_id: file.filename,         // public_id từ Cloudinary
+    filename: file.originalname, // Tên file gốc
+    url: file.path, // URL từ Cloudinary
+    public_id: file.filename, // public_id từ Cloudinary
   };
-  
+
   task.attachments.push(newAttachment);
-  
+
   const updatedTask = await task.save();
 
-  await logHistory(
-    taskId,
-    userId,
-    "Attachment",
-    null,
-    `Đã thêm tệp đính kèm: ${file.originalname}`,
-    "UPDATE"
-  );
-  
+  await logHistory(taskId, userId, "Attachment", null, `Đã thêm tệp đính kèm: ${file.originalname}`, "UPDATE");
+
   // Dùng lại hàm populate của bạn để trả về dữ liệu đầy đủ
   return populateFullTask(Task.findById(updatedTask._id));
 };
@@ -440,7 +448,7 @@ const deleteAttachment = async (taskId, attachmentId, userId) => {
     error.statusCode = 404;
     throw error;
   }
-  
+
   try {
     await cloudinary.uploader.destroy(attachment.public_id);
   } catch (cloudinaryError) {
@@ -450,51 +458,42 @@ const deleteAttachment = async (taskId, attachmentId, userId) => {
   task.attachments.pull(attachmentId);
   const updatedTask = await task.save();
 
-  await logHistory(
-    taskId,
-    userId,
-    "Attachment",
-    null,
-    `Đã xóa tệp đính kèm: ${attachment.filename}`,
-    "UPDATE"
-  );
-  
+  await logHistory(taskId, userId, "Attachment", null, `Đã xóa tệp đính kèm: ${attachment.filename}`, "UPDATE");
+
   return populateFullTask(Task.findById(updatedTask._id));
 };
 
 const getOppositeLinkType = (type) => {
   const opposites = {
-    "blocks": "is blocked by",
+    blocks: "is blocked by",
     "is blocked by": "blocks",
-    "clones": "is cloned by",
+    clones: "is cloned by",
     "is cloned by": "clones",
-    "duplicates": "is duplicated by",
+    duplicates: "is duplicated by",
     "is duplicated by": "duplicates",
     "relates to": "relates to",
   };
   return opposites[type];
 };
 
-
 const populateFullTask = (taskQuery) => {
   return taskQuery.populate([
     { path: "projectId", select: "name key" },
     { path: "taskTypeId", select: "name icon" },
     { path: "priorityId", select: "name icon" },
-    { path: "assigneeId", select: "fullname avatar" }, 
-    { path: "reporterId", select: "fullname avatar" }, 
+    { path: "assigneeId", select: "fullname avatar" },
+    { path: "reporterId", select: "fullname avatar" },
     { path: "createdById", select: "fullname avatar" },
     { path: "statusId", select: "name color" },
     { path: "sprintId", select: "name" },
     { path: "platformId", select: "name icon" },
     {
-      path: 'linkedTasks.taskId',
-      select: 'key name taskTypeId',
-      populate: { path: 'taskTypeId', select: 'name icon' }
-    }
+      path: "linkedTasks.taskId",
+      select: "key name taskTypeId",
+      populate: { path: "taskTypeId", select: "name icon" },
+    },
   ]);
 };
-
 
 const linkTask = async (currentTaskId, targetTaskId, linkType, userId) => {
   if (currentTaskId === targetTaskId) {
@@ -502,11 +501,8 @@ const linkTask = async (currentTaskId, targetTaskId, linkType, userId) => {
     error.statusCode = 400;
     throw error;
   }
-  
-  const [currentTask, targetTask] = await Promise.all([
-    Task.findById(currentTaskId),
-    Task.findById(targetTaskId),
-  ]);
+
+  const [currentTask, targetTask] = await Promise.all([Task.findById(currentTaskId), Task.findById(targetTaskId)]);
 
   if (!currentTask || !targetTask) {
     const error = new Error("One or both tasks not found.");
@@ -514,11 +510,11 @@ const linkTask = async (currentTaskId, targetTaskId, linkType, userId) => {
     throw error;
   }
 
-  const existingLink = currentTask.linkedTasks.find(link => link.taskId.toString() === targetTaskId);
+  const existingLink = currentTask.linkedTasks.find((link) => link.taskId.toString() === targetTaskId);
   if (existingLink) {
-     const error = new Error("Tasks are already linked.");
-     error.statusCode = 409;
-     throw error;
+    const error = new Error("Tasks are already linked.");
+    error.statusCode = 409;
+    throw error;
   }
 
   const oppositeType = getOppositeLinkType(linkType);
@@ -527,7 +523,7 @@ const linkTask = async (currentTaskId, targetTaskId, linkType, userId) => {
     error.statusCode = 400;
     throw error;
   }
-  
+
   currentTask.linkedTasks.push({ type: linkType, taskId: targetTaskId });
   targetTask.linkedTasks.push({ type: oppositeType, taskId: currentTaskId });
 
@@ -535,74 +531,73 @@ const linkTask = async (currentTaskId, targetTaskId, linkType, userId) => {
 
   await logHistory(currentTaskId, userId, "Link", null, `Linked as '${linkType}' ${targetTask.key}`, "UPDATE");
   await logHistory(targetTaskId, userId, "Link", null, `Linked as '${oppositeType}' ${currentTask.key}`, "UPDATE");
-  
+
   const [updatedCurrentTask, updatedTargetTask] = await Promise.all([
     populateFullTask(Task.findById(currentTaskId)),
-    populateFullTask(Task.findById(targetTaskId))
+    populateFullTask(Task.findById(targetTaskId)),
   ]);
 
-  return [updatedCurrentTask, updatedTargetTask]; 
+  return [updatedCurrentTask, updatedTargetTask];
 };
-
 
 const unlinkTask = async (currentTaskId, linkId, userId) => {
-    const currentTask = await Task.findById(currentTaskId);
-    if (!currentTask) {
-        const error = new Error("Task not found.");
-        error.statusCode = 404;
-        throw error;
-    }
+  const currentTask = await Task.findById(currentTaskId);
+  if (!currentTask) {
+    const error = new Error("Task not found.");
+    error.statusCode = 404;
+    throw error;
+  }
 
-    const linkToRemove = currentTask.linkedTasks.id(linkId);
-    if (!linkToRemove) {
-        const error = new Error("Link not found.");
-        error.statusCode = 404;
-        throw error;
-    }
+  const linkToRemove = currentTask.linkedTasks.id(linkId);
+  if (!linkToRemove) {
+    const error = new Error("Link not found.");
+    error.statusCode = 404;
+    throw error;
+  }
 
-    const targetTaskId = linkToRemove.taskId;
-    const targetTask = await Task.findById(targetTaskId);
+  const targetTaskId = linkToRemove.taskId;
+  const targetTask = await Task.findById(targetTaskId);
 
-    currentTask.linkedTasks.pull(linkId);
+  currentTask.linkedTasks.pull(linkId);
 
-    if (targetTask) {
-        targetTask.linkedTasks.pull({ taskId: currentTaskId });
-        await targetTask.save();
-    }
-    
-    await currentTask.save();
+  if (targetTask) {
+    targetTask.linkedTasks.pull({ taskId: currentTaskId });
+    await targetTask.save();
+  }
 
-    const targetTaskKey = targetTask?.key || 'unknown task';
-    await logHistory(currentTaskId, userId, "Link", null, `Unlinked from ${targetTaskKey}`, "UPDATE");
-    if(targetTask) {
-      await logHistory(targetTaskId, userId, "Link", null, `Unlinked from ${currentTask.key}`, "UPDATE");
-    }
+  await currentTask.save();
 
-    const [updatedCurrentTask, updatedTargetTask] = await Promise.all([
-        populateFullTask(Task.findById(currentTaskId)),
-        targetTask ? populateFullTask(Task.findById(targetTaskId)) : Promise.resolve(null)
-    ]);
-    
-    return [updatedCurrentTask, updatedTargetTask].filter(Boolean); 
+  const targetTaskKey = targetTask?.key || "unknown task";
+  await logHistory(currentTaskId, userId, "Link", null, `Unlinked from ${targetTaskKey}`, "UPDATE");
+  if (targetTask) {
+    await logHistory(targetTaskId, userId, "Link", null, `Unlinked from ${currentTask.key}`, "UPDATE");
+  }
+
+  const [updatedCurrentTask, updatedTargetTask] = await Promise.all([
+    populateFullTask(Task.findById(currentTaskId)),
+    targetTask ? populateFullTask(Task.findById(targetTaskId)) : Promise.resolve(null),
+  ]);
+
+  return [updatedCurrentTask, updatedTargetTask].filter(Boolean);
 };
 const getTaskByKey = async (taskKey) => {
-  const task = await Task.findOne({ key: taskKey.toUpperCase() })
-    .populate([ // Sao chép phần populate từ hàm updateTask để đảm bảo nhất quán
-      { path: "projectId", select: "name key" },
-      { path: "taskTypeId", select: "name icon" },
-      { path: "priorityId", select: "name icon" },
-      { path: "assigneeId", select: "fullname avatar" },
-      { path: "reporterId", select: "fullname avatar" },
-      { path: "createdById", select: "fullname avatar" },
-      { path: "statusId", select: "name color" },
-      { path: "sprintId", select: "name" },
-      { path: "platformId", select: "name icon" },
-      {
-        path: 'linkedTasks.taskId',
-        select: 'key name taskTypeId',
-        populate: { path: 'taskTypeId', select: 'name icon' }
-      },
-    ]);
+  const task = await Task.findOne({ key: taskKey.toUpperCase() }).populate([
+    // Sao chép phần populate từ hàm updateTask để đảm bảo nhất quán
+    { path: "projectId", select: "name key" },
+    { path: "taskTypeId", select: "name icon" },
+    { path: "priorityId", select: "name icon" },
+    { path: "assigneeId", select: "fullname avatar" },
+    { path: "reporterId", select: "fullname avatar" },
+    { path: "createdById", select: "fullname avatar" },
+    { path: "statusId", select: "name color" },
+    { path: "sprintId", select: "name" },
+    { path: "platformId", select: "name icon" },
+    {
+      path: "linkedTasks.taskId",
+      select: "key name taskTypeId",
+      populate: { path: "taskTypeId", select: "name icon" },
+    },
+  ]);
 
   if (!task) {
     const error = new Error("Task not found with that key");
@@ -614,7 +609,7 @@ const getTaskByKey = async (taskKey) => {
   if (task.projectId && task.statusId) {
     const workflow = await Workflow.findOne({ projectId: task.projectId._id });
     if (workflow && workflow.statuses) {
-      const statusObject = workflow.statuses.find(s => s._id.toString() === task.statusId.toString());
+      const statusObject = workflow.statuses.find((s) => s._id.toString() === task.statusId.toString());
       if (statusObject) {
         // Gán lại statusId thành object đầy đủ từ workflow
         task.statusId = statusObject;
@@ -634,9 +629,9 @@ module.exports = {
   updateTask,
   deleteTask,
   getTaskHistory,
-  addAttachment, 
+  addAttachment,
   deleteAttachment,
-  linkTask,    
-  unlinkTask, 
+  linkTask,
+  unlinkTask,
   getTaskByKey,
 };

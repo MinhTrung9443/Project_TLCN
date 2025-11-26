@@ -54,12 +54,14 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
               ...prev,
               projectId: defaultProjectId, // <-- TỰ ĐỘNG CHỌN PROJECT
               reporterId: user.id,
+              sprintId: sprint ? sprint._id : "", // <-- TỰ ĐỘNG CHỌN SPRINT
             }));
           } else {
             // Nếu không, chỉ set reporterId như cũ
             setFormData((prev) => ({
               ...prev,
               reporterId: user.id,
+              sprintId: sprint ? sprint._id : "", // <-- TỰ ĐỘNG CHỌN SPRINT
             }));
           }
         } catch (error) {
