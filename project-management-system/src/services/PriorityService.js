@@ -102,6 +102,18 @@ class PriorityService {
 
   async deletePriority(id) {
     try {
+      // Kiểm tra xem priority có đang được sử dụng không
+      const Task = require("../models/Task");
+      const taskCount = await Task.countDocuments({ priorityId: id });
+
+      if (taskCount > 0) {
+        const priority = await Priority.findById(id);
+        const priorityName = priority ? priority.name : "priority";
+        const error = new Error(`This "${priorityName}" is in use`);
+        error.statusCode = 400;
+        throw error;
+      }
+
       const result = await Priority.findByIdAndDelete(id);
       if (!result) {
         const error = new Error("Priority not found");

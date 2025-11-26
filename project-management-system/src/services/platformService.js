@@ -84,6 +84,18 @@ class PlatformService {
 
   async deletePlatform(platformId) {
     try {
+      // Kiểm tra xem platform có đang được sử dụng không
+      const Task = require("../models/Task");
+      const taskCount = await Task.countDocuments({ platformId: platformId });
+
+      if (taskCount > 0) {
+        const platform = await Platform.findById(platformId);
+        const platformName = platform ? platform.name : "platform";
+        const error = new Error(`This "${platformName}" is in use`);
+        error.statusCode = 400;
+        throw error;
+      }
+
       const result = await Platform.findByIdAndDelete(platformId);
       if (!result) {
         const error = new Error("Platform not found");

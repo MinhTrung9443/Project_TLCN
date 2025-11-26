@@ -96,6 +96,18 @@ class TaskTypeService {
   // Delete a task type by ID
   async deleteTaskType(id) {
     try {
+      // Kiểm tra xem task type có đang được sử dụng không
+      const Task = require("../models/Task");
+      const taskCount = await Task.countDocuments({ taskTypeId: id });
+
+      if (taskCount > 0) {
+        const taskType = await TaskType.findById(id);
+        const taskTypeName = taskType ? taskType.name : "task type";
+        const error = new Error(`This "${taskTypeName}" is in use`);
+        error.statusCode = 400;
+        throw error;
+      }
+
       const result = await TaskType.findByIdAndDelete(id);
       if (!result) {
         const error = new Error("Task type not found");
