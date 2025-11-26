@@ -38,7 +38,6 @@
   box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
 }
 
-
 .task-list-container {
   flex-grow: 1; /* Cho phép nó chiếm hết không gian còn lại */
   overflow: auto; /* Tự động thêm thanh cuộn DỌC và NGANG nếu cần */
@@ -46,7 +45,8 @@
 }
 
 /* Base styles for rows and headers */
-.task-list-header, .task-row {
+.task-list-header,
+.task-row {
   display: flex;
   align-items: center;
   padding: 0 16px;
@@ -80,13 +80,32 @@
 }
 
 /* Specific column widths */
-.task-key { flex: 0 0 100px; }
-.task-name { flex: 1 1 300px; font-weight: 500; color: #172b4d; }
-.task-sprint { flex: 0 0 120px; }
-.task-assignee, .task-reporter { flex: 0 0 80px; justify-content: center; }
-.task-priority { flex: 0 0 80px; justify-content: center; }
-.task-status { flex: 0 0 120px; }
-.task-due-date { flex: 0 0 120px; }
+.task-key {
+  flex: 0 0 100px;
+}
+.task-name {
+  flex: 1 1 300px;
+  font-weight: 500;
+  color: #172b4d;
+}
+.task-sprint {
+  flex: 0 0 120px;
+}
+.task-assignee,
+.task-reporter {
+  flex: 0 0 80px;
+  justify-content: center;
+}
+.task-priority {
+  flex: 0 0 80px;
+  justify-content: center;
+}
+.task-status {
+  flex: 0 0 120px;
+}
+.task-due-date {
+  flex: 0 0 120px;
+}
 
 /* Avatar styles */
 .avatar {
@@ -122,11 +141,12 @@
   text-transform: uppercase;
 }
 
-.loading-text, .info-text {
-    padding: 20px;
-    text-align: center;
-    color: #5e6c84;
-    font-size: 16px;
+.loading-text,
+.info-text {
+  padding: 20px;
+  text-align: center;
+  color: #5e6c84;
+  font-size: 16px;
 }
 .task-cell {
   padding: 8px;
@@ -137,14 +157,36 @@
   align-items: center;
 }
 
-.task-key { flex: 0 0 120px; } 
-.task-name { flex: 1 1 280px; font-weight: 500; color: #172b4d; }
-.task-sprint { flex: 0 0 120px; }
-.task-platform { flex: 0 0 80px; justify-content: center; } 
-.task-assignee, .task-reporter { flex: 0 0 80px; justify-content: center; }
-.task-priority { flex: 0 0 80px; justify-content: center; }
-.task-status { flex: 0 0 120px; }
-.task-due-date { flex: 0 0 120px; }
+.task-key {
+  flex: 0 0 120px;
+}
+.task-name {
+  flex: 1 1 280px;
+  font-weight: 500;
+  color: #172b4d;
+}
+.task-sprint {
+  flex: 0 0 120px;
+}
+.task-platform {
+  flex: 0 0 80px;
+  justify-content: center;
+}
+.task-assignee,
+.task-reporter {
+  flex: 0 0 80px;
+  justify-content: center;
+}
+.task-priority {
+  flex: 0 0 80px;
+  justify-content: center;
+}
+.task-status {
+  flex: 0 0 120px;
+}
+.task-due-date {
+  flex: 0 0 120px;
+}
 
 /* Avatar styles (giữ nguyên) */
 .avatar {
@@ -164,34 +206,34 @@
 }
 
 .icon-wrapper-list {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    color: white;
-    font-size: 16px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
 }
 
 /* Style cho wrapper icon nhỏ hơn, nằm cạnh Key */
 .icon-wrapper-list-small {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    color: white;
-    font-size: 14px;
-    margin-right: 8px; /* Tạo khoảng cách với text Key */
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  margin-right: 8px; /* Tạo khoảng cách với text Key */
 }
 
 .task-finder-wrapper {
   display: grid;
   /* Định nghĩa 2 cột: Cột nội dung chính và Cột panel */
   /* Ban đầu, cột panel có chiều rộng là 0 */
-  grid-template-columns: 1fr 0px; 
+  grid-template-columns: 1fr 0px;
   /* Chiều cao 100% của viewport trừ đi chiều cao của header (nếu có) */
   height: calc(100vh - 64px); /* Giả sử header cao 64px, bạn hãy điều chỉnh */
   overflow: hidden; /* Ngăn cuộn ở cấp độ cao nhất */
@@ -224,7 +266,8 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
-.filters-bar select, .filters-bar .search-input {
+.filters-bar select,
+.filters-bar .search-input {
   padding: 8px 12px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -236,98 +279,150 @@
 }
 
 .task-row {
-    cursor: pointer;
-    transition: background-color 0.2s;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 .task-row:hover {
-    background-color: #f5f5f5;
+  background-color: #f5f5f5;
 }
 
 .filters-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 1rem;
-    background-color: #f9f9f9;
-    border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 1rem;
+}
+
+.filter-dropdowns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 160px;
+  transition: all 0.2s;
+}
+
+.filter-select:hover {
+  border-color: #4f46e5;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.btn-clear-filters {
+  padding: 8px 16px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  transition: all 0.2s;
+}
+
+.btn-clear-filters:hover {
+  background-color: #f8f9fa;
+  border-color: #495057;
+}
+
+.right-side-filters {
+  display: flex;
+  gap: 0.5rem;
 }
 
 /* --- CSS for AdvancedFilterBar --- */
 .advanced-filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: center;
-    flex-grow: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  flex-grow: 1;
 }
 
 .active-filters-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .filter-pill {
-    display: flex;
-    align-items: center;
-    background-color: #e9ecef;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 14px;
+  display: flex;
+  align-items: center;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 14px;
 }
 
 .filter-pill-label {
-    margin-right: 8px;
-    color: #495057;
-    font-weight: 500;
+  margin-right: 8px;
+  color: #495057;
+  font-weight: 500;
 }
 
 .filter-select-input {
-    min-width: 180px;
+  min-width: 180px;
 }
 
 .remove-filter-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #6c757d;
-    margin-left: 8px;
-    padding: 0;
-    display: flex;
-    align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6c757d;
+  margin-left: 8px;
+  padding: 0;
+  display: flex;
+  align-items: center;
 }
 .remove-filter-btn:hover {
-    color: #343a40;
+  color: #343a40;
 }
 
 .filter-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .add-filter-select {
-    min-width: 150px;
+  min-width: 150px;
 }
 
 .search-btn {
-    padding: 8px 16px;
-    border: none;
-    background-color: #4f46e5;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
+  padding: 8px 16px;
+  border: none;
+  background-color: #4f46e5;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
 }
 .search-btn:hover {
-    background-color: #4338ca;
+  background-color: #4338ca;
 }
 
 .keyword-search-input {
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    min-width: 250px;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  min-width: 250px;
 }
 
 .panel-header {
@@ -369,18 +464,18 @@
   font-weight: 600;
   color: #172b4d;
   line-height: 1.3;
-  
+
   width: 100%;
   padding: 4px 6px;
   margin: -4px -6px;
-  
+
   border: 2px solid transparent;
   border-radius: 4px;
   background-color: transparent;
-  
+
   resize: none;
   overflow: hidden; /* Quan trọng: ẩn thanh cuộn của chính textarea */
-  
+
   transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
 }
 

@@ -37,22 +37,26 @@ const TaskFinderPage = () => {
   useEffect(() => {
     const fetchFilterData = async () => {
       try {
-        const [projectsRes, statusesRes, usersRes] = await Promise.all([
-          getProjects(), // Hàm này có thể đã được export riêng lẻ
-          userService.getAllUsers(), // Gọi qua object
+        const [projectsRes, usersRes, statusesRes] = await Promise.all([
+          getProjects(),
+          userService.getAllUsers(1, 1000), // Get all users with large limit
           statusService.getStatusList(),
         ]);
 
+        console.log("Users response:", usersRes); // Debug log
+
         setFilterData({
           projects: projectsRes.data || [],
-          users: usersRes.data || [],
+          users: Array.isArray(usersRes) ? usersRes : usersRes.data || [], // Backend returns array directly
           statuses: statusesRes.data || [],
           priorities: [],
           platforms: [],
           taskTypes: [],
           sprints: [],
         });
-      } catch (error) {}
+      } catch (error) {
+        console.error("Error fetching filter data:", error);
+      }
     };
     fetchFilterData();
   }, []);
@@ -155,6 +159,17 @@ const TaskFinderPage = () => {
     );
   }, [user, filterData.projects]);
 
+  const handleFilterChange = (filterName, value) => {
+    setActiveFilters((prev) => ({
+      ...prev,
+      [filterName]: value || undefined, // Remove filter if empty
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setActiveFilters({});
+  };
+
   return (
     <>
       <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
@@ -170,6 +185,51 @@ const TaskFinderPage = () => {
           </header>
 
           <div className="filters-container">
+            <div className="filter-dropdowns">
+              <select
+                className="filter-select"
+                value={activeFilters.projectId || ""}
+                onChange={(e) => handleFilterChange("projectId", e.target.value)}
+              >
+                <option value="">All Projects</option>
+                {selectOptions.projects.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="filter-select"
+                value={activeFilters.assigneeId || ""}
+                onChange={(e) => handleFilterChange("assigneeId", e.target.value)}
+              >
+                <option value="">All Assignees</option>
+                {selectOptions.users.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="filter-select"
+                value={activeFilters.reporterId || ""}
+                onChange={(e) => handleFilterChange("reporterId", e.target.value)}
+              >
+                <option value="">All Reporters</option>
+                {selectOptions.users.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+
+              <button className="btn-clear-filters" onClick={clearAllFilters}>
+                Clear Filters
+              </button>
+            </div>
+
             <div className="right-side-filters">
               <input
                 type="text"
