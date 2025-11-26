@@ -116,11 +116,11 @@ const DashboardPage = () => {
               </div>
             ) : (
               overview.upcomingTasks.map((task) => (
-                <div 
-                  key={task._id} 
+                <div
+                  key={task._id}
                   className="upcoming-task-item clickable"
                   onClick={() => task.key && navigate(`/task/${task.key}`)}
-                  style={{ cursor: task.key ? 'pointer' : 'default' }}
+                  style={{ cursor: task.key ? "pointer" : "default" }}
                 >
                   <div className="task-info">
                     <div className="task-name">{task.name}</div>
