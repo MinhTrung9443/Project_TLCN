@@ -87,6 +87,56 @@
   align-items: center;
   gap: 10px;
 }
+
+.task-priority {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.task-status-type {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.task-status-type .material-symbols-outlined {
+  font-size: 1.4rem;
+}
+
+.task-status-todo {
+  color: #64748b;
+}
+
+.task-status-inprogress {
+  color: #f59e0b;
+}
+
+.task-status-done {
+  color: #22c55e;
+}
+
+.icon-wrapper-list {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.icon-wrapper-list svg {
+  width: 16px;
+  height: 16px;
+}
+
 .task-assignee {
   width: 32px;
   height: 32px;
@@ -96,6 +146,20 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
+}
+
+.task-duedate {
+  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.task-due-label {
+  color: #94a3b8;
+  font-size: 0.95rem;
 }
 .task-assignee-avatar {
   width: 28px;
