@@ -336,7 +336,15 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
     throw error;
   }
 
-  return updateTask(taskId, { statusId }, userId);
+  // Check if new status is "Done" category, then auto-set progress to 100%
+  const newStatus = workflow.statuses.find((s) => s._id.toString() === statusId.toString());
+  const updateData = { statusId };
+
+  if (newStatus && newStatus.category === "Done") {
+    updateData.progress = 100;
+  }
+
+  return updateTask(taskId, updateData, userId);
 };
 
 const deleteTask = async (taskId, userId) => {
