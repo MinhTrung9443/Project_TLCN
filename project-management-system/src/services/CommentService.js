@@ -46,6 +46,7 @@ const createComment = async (commentData, userId) => {
       if (recipientIds.size > 0) {
         await notificationService.notifyTaskCommented({
           taskId: task._id,
+          taskKey: task.key,
           taskName: task.name,
           commenterName,
           commentPreview,

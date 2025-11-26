@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { getDashboardOverview, getDashboardActivity } from "../services/dashboardService";
 import "../styles/pages/DashboardPage.css";
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [overview, setOverview] = useState(null);
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +116,12 @@ const DashboardPage = () => {
               </div>
             ) : (
               overview.upcomingTasks.map((task) => (
-                <div key={task._id} className="upcoming-task-item">
+                <div 
+                  key={task._id} 
+                  className="upcoming-task-item clickable"
+                  onClick={() => task.key && navigate(`/task/${task.key}`)}
+                  style={{ cursor: task.key ? 'pointer' : 'default' }}
+                >
                   <div className="task-info">
                     <div className="task-name">{task.name}</div>
                     <div className="task-meta">

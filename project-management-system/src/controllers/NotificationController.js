@@ -19,11 +19,29 @@ class NotificationController {
         .skip((page - 1) * limit)
         .lean();
 
+      // Populate Task to get key if relatedType is Task
+      const Task = require("../models/Task");
+      const notificationsWithKey = await Promise.all(
+        notifications.map(async (notif) => {
+          if (notif.relatedType === "Task" && notif.relatedId) {
+            try {
+              const task = await Task.findById(notif.relatedId).select("key").lean();
+              if (task && task.key) {
+                return { ...notif, relatedId: task.key }; // Replace ID with key
+              }
+            } catch (err) {
+              console.error("Error fetching task key:", err);
+            }
+          }
+          return notif;
+        })
+      );
+
       const total = await Notification.countDocuments(query);
       const hasMore = page * limit < total;
 
       res.status(200).json({
-        notifications,
+        notifications: notificationsWithKey,
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
         total,

@@ -114,25 +114,25 @@ class NotificationService {
   // TASK NOTIFICATIONS
   // ============================================
 
-  async notifyTaskAssigned({ taskId, taskName, assigneeId, assignerName, projectKey }) {
+  async notifyTaskAssigned({ taskId, taskKey, taskName, assigneeId, assignerName, projectKey }) {
     return this.createAndSend({
       userId: assigneeId,
       title: "New Task Assigned",
       message: `${assignerName} assigned you to task "${taskName}" in project ${projectKey}`,
       type: NotificationService.TYPES.TASK_ASSIGNED,
-      relatedId: taskId,
+      relatedId: taskKey || taskId, // Use taskKey if provided, fallback to taskId
       relatedType: "Task",
     });
   }
 
-  async notifyTaskCommented({ taskId, taskName, commenterName, commentPreview, recipientIds }) {
+  async notifyTaskCommented({ taskId, taskKey, taskName, commenterName, commentPreview, recipientIds }) {
     const notifications = recipientIds.map((userId) =>
       this.createAndSend({
         userId,
         title: "New Comment on Task",
         message: `${commenterName} commented on "${taskName}": ${commentPreview}`,
         type: NotificationService.TYPES.TASK_COMMENTED,
-        relatedId: taskId,
+        relatedId: taskKey || taskId,
         relatedType: "Task",
       })
     );
@@ -140,7 +140,7 @@ class NotificationService {
     return Promise.all(notifications);
   }
 
-  async notifyTaskUpdated({ taskId, taskName, changedBy, recipientIds, changeSummary = null }) {
+  async notifyTaskUpdated({ taskId, taskKey, taskName, changedBy, recipientIds, changeSummary = null }) {
     const message = changeSummary ? `${changedBy} updated "${taskName}": ${changeSummary}` : `${changedBy} updated "${taskName}"`;
 
     const notifications = recipientIds.map((userId) =>
@@ -149,7 +149,7 @@ class NotificationService {
         title: "Task Updated",
         message,
         type: NotificationService.TYPES.TASK_UPDATED,
-        relatedId: taskId,
+        relatedId: taskKey || taskId,
         relatedType: "Task",
       })
     );
@@ -157,14 +157,14 @@ class NotificationService {
     return Promise.all(notifications);
   }
 
-  async notifyTaskStatusChanged({ taskId, taskName, oldStatus, newStatus, changedBy, recipientIds }) {
+  async notifyTaskStatusChanged({ taskId, taskKey, taskName, oldStatus, newStatus, changedBy, recipientIds }) {
     const notifications = recipientIds.map((userId) =>
       this.createAndSend({
         userId,
         title: "Task Status Updated",
         message: `${changedBy} moved "${taskName}" from ${oldStatus} to ${newStatus}`,
         type: NotificationService.TYPES.TASK_STATUS_CHANGED,
-        relatedId: taskId,
+        relatedId: taskKey || taskId,
         relatedType: "Task",
       })
     );
@@ -172,7 +172,7 @@ class NotificationService {
     return Promise.all(notifications);
   }
 
-  async notifyTaskPriorityChanged({ taskId, taskName, oldPriority, newPriority, changedBy, recipientIds }) {
+  async notifyTaskPriorityChanged({ taskId, taskKey, taskName, oldPriority, newPriority, changedBy, recipientIds }) {
     // Only notify if priority increased to High or Critical
     if (!["High", "Critical"].includes(newPriority)) {
       return;

@@ -97,6 +97,7 @@ const createTask = async (taskData, userId) => {
       const creator = await User.findById(userId);
       await notificationService.notifyTaskAssigned({
         taskId: populatedTask._id,
+        taskKey: populatedTask.key,
         taskName: populatedTask.name,
         assigneeId: populatedTask.assigneeId._id,
         assignerName: creator?.fullname || "Someone",

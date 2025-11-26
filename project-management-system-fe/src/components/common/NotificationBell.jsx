@@ -198,7 +198,7 @@ const NotificationBell = () => {
 
     // Navigate based on notification type
     if (notification.relatedType === "Task" && notification.relatedId) {
-      navigate(`/tasks/${notification.relatedId}`);
+      navigate(`/task/${notification.relatedId}`);
     } else if (notification.relatedType === "Project" && notification.relatedId) {
       navigate(`/projects/${notification.relatedId}`);
     }

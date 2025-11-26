@@ -30,7 +30,7 @@ const dashboardService = {
     })
       .sort({ dueDate: 1 })
       .limit(5)
-      .select("name dueDate statusId projectId")
+      .select("name key dueDate statusId projectId")
       .populate("projectId", "name key")
       .populate("statusId", "name");
 
@@ -79,7 +79,7 @@ const dashboardService = {
       let entityKey = log.newData?.key || log.newData?.code || log.recordId || log.newData?._id || log.oldData?._id || "";
       let entityName = log.newData?.name || log.newData?.title || log.oldData?.name || log.oldData?.title || "";
       let entityUrl = null;
-      if (entityType === "task") entityUrl = `/tasks/${entityKey}`;
+      if (entityType === "task") entityUrl = `/task/${entityKey}`;
       else if (entityType === "project") entityUrl = `/projects/${entityKey}`;
       // ...có thể mở rộng cho các loại entity khác
       return {
