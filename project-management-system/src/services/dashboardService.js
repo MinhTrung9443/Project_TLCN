@@ -34,19 +34,31 @@ const dashboardService = {
       .populate("projectId", "name key")
       .populate("statusId", "name");
 
-    // Dự án tham gia (dựa vào Project.members.userId)
-    const projects = await Project.find({ "members.userId": userId, isDeleted: false });
+    // Dự án tham gia (dựa vào Project.members.userId HOẶC teams)
+    const projects = await Project.find({
+      isDeleted: false,
+      $or: [{ "members.userId": userId }, { "teams.leaderId": userId }, { "teams.members": userId }],
+    });
     const projectProgress = await Promise.all(
       projects.map(async (project) => {
         const total = await Task.countDocuments({ projectId: project._id });
         const completed = await Task.countDocuments({ projectId: project._id, statusId: STATUS.DONE });
-        // Tìm role của user trong project
+        // Tìm role của user trong project (ưu tiên members, sau đó teams)
         const member = project.members.find((m) => m.userId.equals(userId));
+        let role = member?.role || "Member";
+
+        // Nếu không có trong members, check trong teams
+        if (!member) {
+          const isLeader = project.teams?.some((team) => team.leaderId?.equals(userId));
+          const isMember = project.teams?.some((team) => team.members?.some((memberId) => memberId.equals(userId)));
+          role = isLeader ? "LEADER" : isMember ? "MEMBER" : "Member";
+        }
+
         return {
           project: project.name,
           projectKey: project.key,
           progress: total > 0 ? Math.round((completed / total) * 100) : 0,
-          role: member?.role || "Member",
+          role: role,
           endDate: project.endDate,
         };
       })
