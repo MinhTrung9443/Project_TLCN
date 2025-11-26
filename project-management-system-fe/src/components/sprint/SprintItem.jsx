@@ -56,7 +56,13 @@ const SprintItem = ({
 
   return (
     <>
-      <CreateTaskModal sprint={sprint} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
+      <CreateTaskModal
+        sprint={sprint}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onTaskCreated={handleTaskCreated}
+        defaultProjectId={sprint.projectId}
+      />
       <div className="sprint-card" key={sprint._id}>
         <div ref={drop} className={`sprint-card-dropzone${isOver ? " sprint-card-dropzone-over" : ""}`}>
           <div className="sprint-header">

@@ -9,6 +9,7 @@ import { updateTaskSprint } from "../../services/taskService";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import SprintEditModal from "../../components/sprint/SprintEditModal";
+import CreateTaskModal from "../../components/task/CreateTaskModal";
 import { getProjectByKey } from "../../services/projectService";
 import "../../styles/pages/ManageSprint/BacklogPage.css";
 import { toast } from "react-toastify";
@@ -25,6 +26,7 @@ const BacklogPage = () => {
   const [projectType, setProjectType] = useState(null);
   const [userProjectRole, setUserProjectRole] = useState(null);
   const [projectData, setProjectData] = useState(null);
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -138,6 +140,11 @@ const BacklogPage = () => {
     }
   };
 
+  const handleBacklogTaskCreated = (newTask) => {
+    setTaskList((prev) => [...prev, newTask]);
+    setIsCreateTaskModalOpen(false);
+  };
+
   useEffect(() => {
     if (selectedProjectKey) {
       fetchProjectDetails();
@@ -185,6 +192,16 @@ const BacklogPage = () => {
             <span className="backlogpage-backlog-count">{taskList.length}</span>
           </div>
           <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} canDragDrop={canDragDrop} />
+          {canCreateTask && (
+            <div className="sprint-create-task-row">
+              <button className="sprint-add-btn">
+                <span className="material-symbols-outlined">add_circle</span>
+              </button>
+              <span className="sprint-create-task-label" onClick={() => setIsCreateTaskModalOpen(true)}>
+                Create Task
+              </span>
+            </div>
+          )}
         </div>
         <ConfirmationModal
           isOpen={showDeleteModal}
@@ -204,6 +221,12 @@ const BacklogPage = () => {
             setSprintToEdit(null);
           }}
           onSave={handleSaveEditSprint}
+        />
+        <CreateTaskModal
+          isOpen={isCreateTaskModalOpen}
+          onClose={() => setIsCreateTaskModalOpen(false)}
+          onTaskCreated={handleBacklogTaskCreated}
+          defaultProjectId={projectData?._id}
         />
       </div>
     </DndProvider>
