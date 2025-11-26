@@ -1,12 +1,12 @@
 :root {
-  --primary-color: #2563eb; 
+  --primary-color: #2563eb;
   --primary-color-hover: #1d4ed8;
   --text-color-dark: #1f2937;
   --text-color-light: #6b7280;
   --background-color: #f9fafb;
   --container-bg-color: #ffffff;
   --border-color: #e5e7eb;
-  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .projects-page-container {
@@ -20,7 +20,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -65,30 +65,75 @@
 }
 
 .projects-controls {
-    padding: 16px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .filter-btn {
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background-color: white;
-    cursor: pointer;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
 }
 .filter-btn:hover {
-    background-color: #f3f4f6;
+  background-color: #f3f4f6;
 }
 
 .search-input {
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    width: 250px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  width: 250px;
+}
+
+.projects-filters {
+  padding: 0 16px 16px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 180px;
+}
+
+.filter-select:hover {
+  border-color: var(--primary-color);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.btn-clear-filters {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color-dark);
+  transition: all 0.2s;
+}
+
+.btn-clear-filters:hover {
+  background-color: #f3f4f6;
+  border-color: var(--text-color-dark);
 }
 
 .projects-table {
@@ -101,7 +146,7 @@
   padding: 12px 24px;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
-  white-space: nowrap; 
+  white-space: nowrap;
 }
 
 .projects-table thead {
@@ -121,32 +166,32 @@
 }
 
 .project-name-link {
-    color: var(--primary-color);
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
+  color: var(--primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
 }
 .project-name-link:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .status-badge {
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: capitalize;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
 }
 
 .status-active {
-    background-color: #dcfce7; 
-    color: #166534; 
+  background-color: #dcfce7;
+  color: #166534;
 }
 
 .no-projects-message td {
-    text-align: center;
-    padding: 40px;
-    color: var(--text-color-light);
+  text-align: center;
+  padding: 40px;
+  color: var(--text-color-light);
 }
 .project-actions-menu {
   position: relative;

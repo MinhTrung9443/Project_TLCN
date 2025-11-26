@@ -16,6 +16,11 @@ const ProjectsPage = () => {
   const { selectedProjectKey, setProjectKey, clearProject } = useContext(ProjectContext);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    type: "",
+    projectManager: "",
+    status: "",
+  });
   const [projects, setProjects] = useState([]);
   const [archivedProjects, setArchivedProjects] = useState([]);
   const [view, setView] = useState("active");
@@ -56,15 +61,15 @@ const ProjectsPage = () => {
   useEffect(() => {
     const timerId = setTimeout(() => {
       fetchData(searchTerm);
-    }, 300); 
+    }, 300);
     return () => {
       clearTimeout(timerId);
     };
   }, [searchTerm, fetchData]);
 
   const handleProjectCreated = () => {
-    setSearchTerm(""); 
-    fetchData(""); 
+    setSearchTerm("");
+    fetchData("");
   };
 
   const handleProjectCloned = () => {
@@ -131,10 +136,43 @@ const ProjectsPage = () => {
     }
   };
 
-  const renderProjects = () => {
+  const handleFilterChange = (filterName, value) => {
+    setFilters((prev) => ({ ...prev, [filterName]: value }));
+  };
+
+  const getFilteredProjects = () => {
     const projectList = view === "active" ? projects : archivedProjects;
 
-    return projectList.map((project) => (
+    return projectList.filter((project) => {
+      // Filter by type
+      if (filters.type && project.type !== filters.type) return false;
+
+      // Filter by project manager
+      if (filters.projectManager && project.projectManager?._id !== filters.projectManager) return false;
+
+      // Filter by status
+      if (filters.status && project.status !== filters.status) return false;
+
+      return true;
+    });
+  };
+
+  // Get unique project managers for filter dropdown
+  const getProjectManagers = () => {
+    const projectList = view === "active" ? projects : archivedProjects;
+    const managers = new Map();
+    projectList.forEach((project) => {
+      if (project.projectManager) {
+        managers.set(project.projectManager._id, project.projectManager);
+      }
+    });
+    return Array.from(managers.values());
+  };
+
+  const renderProjects = () => {
+    const filteredProjects = getFilteredProjects();
+
+    return filteredProjects.map((project) => (
       <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{ cursor: view === "active" ? "pointer" : "default" }}>
         <td>
           <a
@@ -212,15 +250,45 @@ const ProjectsPage = () => {
               )}
             </div>
             {view === "active" && (
-                <input
+              <input
                 type="search"
                 placeholder="Search by name or key..."
                 className="search-input"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              />
             )}
           </div>
+
+          {view === "active" && (
+            <div className="projects-filters">
+              <select className="filter-select" value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
+                <option value="">All Types</option>
+                <option value="Scrum">Scrum</option>
+                <option value="Kanban">Kanban</option>
+              </select>
+
+              <select className="filter-select" value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
+                <option value="">All Project Managers</option>
+                {getProjectManagers().map((pm) => (
+                  <option key={pm._id} value={pm._id}>
+                    {pm.fullname}
+                  </option>
+                ))}
+              </select>
+
+              <select className="filter-select" value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="completed">Completed</option>
+              </select>
+
+              <button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
+                Clear Filters
+              </button>
+            </div>
+          )}
 
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px" }}>Loading...</div>
