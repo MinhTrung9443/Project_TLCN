@@ -13,6 +13,8 @@ const GanttHeader = ({
   timeView,
   setTimeView,
   statistics = { atRisk: 0, done: 0, delay: 0, inProgress: 0, unplanned: 0, total: 0 },
+  searchKeyword,
+  setSearchKeyword,
 }) => {
   const groupByRef = useRef(null);
   const filterRef = useRef(null);
@@ -93,7 +95,13 @@ const GanttHeader = ({
           {statistics.unplanned > 0 && <span className="status-badge status-unplanned">{statistics.unplanned} Unplanned</span>}
           {statistics.total === 0 && <span className="status-badge status-empty">No tasks</span>}
         </div>
-        <input type="text" className="gantt-search" placeholder="Search" />
+        <input
+          type="text"
+          className="gantt-search"
+          placeholder="Search tasks..."
+          value={searchKeyword}
+          onChange={(e) => setSearchKeyword(e.target.value)}
+        />
       </div>
     </div>
   );

@@ -225,18 +225,21 @@
   background: #f9fafb;
   min-width: max-content;
   height: 60px;
+  width: fit-content;
 }
 
 /* Timeline Header */
 .gantt-timeline-header {
   display: flex;
   height: 60px;
+  min-width: max-content;
+  width: fit-content;
 }
 
 .gantt-timeline-col {
-  width: 80px;
-  min-width: 80px;
-  max-width: 80px;
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
   height: 60px;
   border-left: 1px solid #e5e7eb;
   padding: 8px 4px;
@@ -257,9 +260,9 @@
 
 /* Adjust column width based on time view */
 .gantt-page[data-timeview="weeks"] .gantt-timeline-col {
-  width: 80px;
-  min-width: 80px;
-  max-width: 80px;
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
 }
 
 .gantt-page[data-timeview="months"] .gantt-timeline-col {
@@ -320,6 +323,7 @@
   flex: 1;
   position: relative;
   min-width: max-content;
+  width: fit-content;
 }
 
 /* Item Info */
@@ -415,6 +419,7 @@
   height: 48px;
   display: flex;
   width: 100%;
+  min-width: max-content;
   background: #fff;
 }
 

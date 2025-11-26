@@ -110,11 +110,11 @@ export const calculateDateRange = (items, backlogTasks = []) => {
   // Add padding based on time view (will be determined in component)
   // For now, add reasonable padding
   const padding = new Date(minDate);
-  padding.setDate(padding.getDate() - 14); // 2 weeks before
+  padding.setDate(padding.getDate() - 21); // 8 weeks before
   minDate = padding;
 
   const paddingEnd = new Date(maxDate);
-  paddingEnd.setDate(paddingEnd.getDate() + 14); // 2 weeks after
+  paddingEnd.setDate(paddingEnd.getDate() + 21); // 8 weeks after
   maxDate = paddingEnd;
 
   return {

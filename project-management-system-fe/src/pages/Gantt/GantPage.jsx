@@ -26,6 +26,7 @@ const GanttPage = () => {
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showGroupByPanel, setShowGroupByPanel] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   // Sync scroll between left and right sections
   useEffect(() => {
@@ -97,6 +98,75 @@ const GanttPage = () => {
   // Generate timeline columns, include backlogTasks in date range calculation
   const dateRange = calculateDateRange(ganttData, backlogTasks);
   const timelineColumns = generateTimelineColumns(timeView, dateRange.startDate, dateRange.endDate);
+
+  // Filter data based on search keyword
+  const filterBySearch = (items, keyword) => {
+    if (!keyword || keyword.trim() === "") return items;
+
+    const lowerKeyword = keyword.toLowerCase().trim();
+
+    return items
+      .map((item) => {
+        const filteredItem = { ...item };
+
+        // Filter tasks at project level
+        if (filteredItem.tasks) {
+          filteredItem.tasks = filteredItem.tasks.filter(
+            (task) =>
+              task.key?.toLowerCase().includes(lowerKeyword) ||
+              task.name?.toLowerCase().includes(lowerKeyword) ||
+              task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword)
+          );
+        }
+
+        // Filter sprints and their tasks
+        if (filteredItem.sprints) {
+          filteredItem.sprints = filteredItem.sprints
+            .map((sprint) => {
+              const filteredSprint = { ...sprint };
+              if (filteredSprint.tasks) {
+                filteredSprint.tasks = filteredSprint.tasks.filter(
+                  (task) =>
+                    task.key?.toLowerCase().includes(lowerKeyword) ||
+                    task.name?.toLowerCase().includes(lowerKeyword) ||
+                    task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword)
+                );
+              }
+              return filteredSprint;
+            })
+            .filter((sprint) => sprint.name?.toLowerCase().includes(lowerKeyword) || (sprint.tasks && sprint.tasks.length > 0));
+        }
+
+        // Filter backlog tasks
+        if (filteredItem.backlogTasks) {
+          filteredItem.backlogTasks = filteredItem.backlogTasks.filter(
+            (task) =>
+              task.key?.toLowerCase().includes(lowerKeyword) ||
+              task.name?.toLowerCase().includes(lowerKeyword) ||
+              task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword)
+          );
+        }
+
+        return filteredItem;
+      })
+      .filter(
+        (item) =>
+          item.name?.toLowerCase().includes(lowerKeyword) ||
+          (item.tasks && item.tasks.length > 0) ||
+          (item.sprints && item.sprints.length > 0) ||
+          (item.backlogTasks && item.backlogTasks.length > 0)
+      );
+  };
+
+  const filteredGanttData = filterBySearch(ganttData, searchKeyword);
+  const filteredBacklogTasks = searchKeyword
+    ? backlogTasks.filter(
+        (task) =>
+          task.key?.toLowerCase().includes(searchKeyword.toLowerCase().trim()) ||
+          task.name?.toLowerCase().includes(searchKeyword.toLowerCase().trim()) ||
+          task.assigneeId?.fullname?.toLowerCase().includes(searchKeyword.toLowerCase().trim())
+      )
+    : backlogTasks;
 
   // Calculate bar position wrapper
   const calculatePosition = (startDate, endDate) => {
@@ -212,14 +282,16 @@ const GanttPage = () => {
         timeView={timeView}
         setTimeView={setTimeView}
         statistics={statistics}
+        searchKeyword={searchKeyword}
+        setSearchKeyword={setSearchKeyword}
       />
 
       {/* Gantt Chart */}
       <div className="gantt-container">
         {/* Left Section - Fixed */}
         <GanttLeftSection
-          projects={ganttData}
-          backlogTasks={backlogTasks}
+          projects={filteredGanttData}
+          backlogTasks={filteredBacklogTasks}
           groupBy={groupBy}
           expandedItems={expandedItems}
           toggleExpand={toggleExpand}
@@ -228,8 +300,8 @@ const GanttPage = () => {
 
         {/* Right Section - Scrollable */}
         <GanttRightSection
-          projects={ganttData}
-          backlogTasks={backlogTasks}
+          projects={filteredGanttData}
+          backlogTasks={filteredBacklogTasks}
           groupBy={groupBy}
           expandedItems={expandedItems}
           timelineColumns={timelineColumns}

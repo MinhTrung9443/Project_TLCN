@@ -19,6 +19,30 @@ const GanttRightSection = ({ projects, backlogTasks = [], groupBy, expandedItems
     );
   }
 
+  // Calculate wrapper width based on number of columns and column width
+  // Each column has different width based on timeView
+  const getColumnWidth = () => {
+    // This should match the CSS values
+    const timeViewElement = document.querySelector(".gantt-page");
+    const timeView = timeViewElement?.getAttribute("data-timeview") || "weeks";
+
+    switch (timeView) {
+      case "months":
+        return 100;
+      case "years":
+        return 120;
+      default:
+        return 120; // weeks - increased from 80px to 120px
+    }
+  };
+
+  const columnWidth = getColumnWidth();
+  const totalWidth = timelineColumns.length * columnWidth;
+  const wrapperStyle = {
+    minWidth: `${totalWidth}px`,
+    width: `${totalWidth}px`,
+  };
+
   // Determine what type of data we're displaying
   const hasProject = groupBy.includes("project");
   const hasSprint = groupBy.includes("sprint");
@@ -26,7 +50,7 @@ const GanttRightSection = ({ projects, backlogTasks = [], groupBy, expandedItems
 
   return (
     <div className="gantt-right-section" ref={rightSectionRef}>
-      <div className="gantt-wrapper">
+      <div className="gantt-wrapper" style={wrapperStyle}>
         {/* Header */}
         <GanttTimeline timelineColumns={timelineColumns} />
 
