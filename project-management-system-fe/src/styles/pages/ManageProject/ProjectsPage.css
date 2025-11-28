@@ -6,7 +6,8 @@
   --background-color: #f9fafb;
   --container-bg-color: #ffffff;
   --border-color: #e5e7eb;
-  --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
 }
 
 .projects-page-container {
@@ -221,6 +222,7 @@
   margin: 2px 0 0;
   z-index: 1000;
   width: 160px;
+  font-family: var(--font-family);
 }
 
 .actions-dropdown li a,
@@ -234,6 +236,8 @@
   cursor: pointer;
   color: #333;
   text-decoration: none;
+  font-size: 14px;
+  font-family: inherit;
 }
 
 .actions-dropdown li a:hover,
