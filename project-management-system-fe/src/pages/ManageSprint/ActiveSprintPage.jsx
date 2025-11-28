@@ -1,9 +1,10 @@
-import React, { useContext, useEffect } from "react";
-import { useSearchParams, useParams } from "react-router-dom";
+import React, { useContext, useEffect, useState } from "react";
+import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { updateTaskStatus } from "../../services/taskService";
+import sprintService from "../../services/sprintService";
 import { toast } from "react-toastify";
 import { useSprintData } from "../../hooks/useSprintData";
 import BoardColumn from "../../components/sprint/BoardColumn";
@@ -15,6 +16,8 @@ const ActiveSprintPage = () => {
   const { projectKey } = useParams();
   const { selectedProjectKey } = useContext(ProjectContext);
   const [searchParams] = useSearchParams();
+  const [isCompleting, setIsCompleting] = useState(false);
+  const navigate = useNavigate();
 
   const effectiveProjectKey = projectKey || selectedProjectKey;
 
@@ -80,6 +83,34 @@ const ActiveSprintPage = () => {
     return tasks.filter((task) => task.statusId?._id === status._id || (task.statusId?.category === status.category && !task.statusId?._id));
   };
 
+  // Handle complete sprint
+  const handleCompleteSprint = async () => {
+    if (!currentSprint) return;
+
+    const incompleteTasks = tasks.filter((task) => task.statusId?.category !== "Done");
+
+    if (incompleteTasks.length > 0) {
+      const confirmed = window.confirm(
+        `This sprint has ${incompleteTasks.length} incomplete task(s). Are you sure you want to complete it? Incomplete tasks will be moved to backlog.`
+      );
+      if (!confirmed) return;
+    }
+
+    setIsCompleting(true);
+    try {
+      await sprintService.updateSprint(currentSprint._id, { status: "Completed" });
+      toast.success("Sprint completed successfully!");
+
+      // Navigate back to sprint list with project context preserved
+      navigate(`/task-mgmt/projects/${effectiveProjectKey}/active-sprint`);
+    } catch (error) {
+      console.error("Error completing sprint:", error);
+      toast.error("Failed to complete sprint");
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="active-sprint-loading">
@@ -106,6 +137,13 @@ const ActiveSprintPage = () => {
       <div className="active-sprint-page">
         <div className="active-sprint-header">
           <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
+
+          {currentSprint && (
+            <button className="btn-complete-sprint" onClick={handleCompleteSprint} disabled={isCompleting}>
+              <span className="material-symbols-outlined">check_circle</span>
+              {isCompleting ? "Completing..." : "Complete Sprint"}
+            </button>
+          )}
         </div>
 
         <div className="active-sprint-board">
