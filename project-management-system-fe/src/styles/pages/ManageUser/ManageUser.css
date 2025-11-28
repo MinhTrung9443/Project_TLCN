@@ -18,6 +18,26 @@
   white-space: nowrap;
 }
 
+/* Groups cell - cho phép wrap */
+#webcrumbs .user-table td .groups-cell {
+  max-width: 250px;
+  white-space: normal;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+#webcrumbs .user-table .group-tag {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 #webcrumbs .user-table th {
   font-size: 13px;
 }
@@ -104,6 +124,49 @@
 #webcrumbs .create-user-btn:hover {
   background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.13);
+}
+
+/* Pagination */
+#webcrumbs .pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px 0;
+}
+
+#webcrumbs .pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #374151;
+}
+
+#webcrumbs .pagination-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+#webcrumbs .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#webcrumbs .pagination-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 120px;
+  text-align: center;
 }
 
 /* Popup overlay cho tạo user */

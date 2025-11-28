@@ -29,6 +29,8 @@ const Component = () => {
   const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [users, setUsers] = useState([]);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -138,7 +140,7 @@ const Component = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((eachUser) => (
+            {users.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage).map((eachUser) => (
               <tr key={eachUser._id}>
                 <td>
                   {eachUser.avatar ? (
@@ -170,7 +172,19 @@ const Component = () => {
                 <td className={statusColor[eachUser.status]}>{eachUser.status}</td>
                 <td className={roleColor[eachUser.role]}>{eachUser.role}</td>
                 <td>{eachUser.lastLogin ? new Date(eachUser.lastLogin).toLocaleString() : ""}</td>
-                <td>{Array.isArray(eachUser.group) && eachUser.group.length > 0 ? eachUser.group.map((g) => g.name).join(", ") : ""}</td>
+                <td>
+                  <div className="groups-cell">
+                    {Array.isArray(eachUser.group) && eachUser.group.length > 0 ? (
+                      eachUser.group.map((g) => (
+                        <span key={g._id} className="group-tag">
+                          {g.name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </div>
+                </td>
                 {user.role === "admin" && (
                   <td>
                     <button className="text-gray-400 hover:text-gray-600" onClick={(e) => handleMenuClick(eachUser._id, e)}>
@@ -182,6 +196,27 @@ const Component = () => {
             ))}
           </tbody>
         </table>
+
+        {/* Pagination */}
+        {users.length > usersPerPage && (
+          <div className="pagination">
+            <button className="pagination-btn" onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+
+            <div className="pagination-info">
+              Page {currentPage} of {Math.ceil(users.length / usersPerPage)}
+            </div>
+
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(users.length / usersPerPage)))}
+              disabled={currentPage === Math.ceil(users.length / usersPerPage)}
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Popup menu cho từng user */}
