@@ -172,7 +172,9 @@ const ProjectSettingPlatform = () => {
             <h2>{currentPlatform?._id ? "Edit Platform" : "Create Platform"}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="name">Name*</label>
+                <label htmlFor="name" className="required">
+                  Name
+                </label>
                 <input id="name" name="name" value={currentPlatform.name} onChange={handleChange} required />
               </div>
               <div className="form-group">

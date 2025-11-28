@@ -79,21 +79,15 @@ const Component = () => {
             Basic Info
           </div>
           <div>
-            <label className="user-profile-label">
-              Full Name<span className="text-red-500">*</span>
-            </label>
+            <label className="user-profile-label required">Full Name</label>
             <input className="user-profile-input" value={updateUser.fullname || ""} onChange={onInputChange} name="fullname" />
           </div>
           <div>
-            <label className="user-profile-label">
-              Username<span className="text-red-500">*</span>
-            </label>
+            <label className="user-profile-label required">Username</label>
             <input className="user-profile-input" value={updateUser.username || ""} readOnly name="username" />
           </div>
           <div>
-            <label className="user-profile-label">
-              Email<span className="text-red-500">*</span>
-            </label>
+            <label className="user-profile-label required">Email</label>
             <input className="user-profile-input" value={updateUser.email || ""} readOnly name="email" />
           </div>
           <div>

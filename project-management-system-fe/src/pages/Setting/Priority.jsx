@@ -249,7 +249,9 @@ export const SettingsPriorities = () => {
             <h2>{currentPriority._id ? "Edit Priority" : "Create Priority"}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="name">Priority Name*</label>
+                <label htmlFor="name" className="required">
+                  Priority Name
+                </label>
                 <input id="name" name="name" value={currentPriority.name} onChange={handleChange} required />
               </div>
               <div className="form-group">

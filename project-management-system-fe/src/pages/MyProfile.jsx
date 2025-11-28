@@ -136,15 +136,21 @@ const MyProfilePage = () => {
             <h3 className="section-title">Basic Info</h3>
             <div className="form-grid">
               <div className="form-group">
-                <label htmlFor="fullname">Full Name *</label>
+                <label htmlFor="fullname" className="required">
+                  Full Name
+                </label>
                 <input type="text" id="fullname" name="fullname" value={formData.fullname} onChange={handleChange} required />
               </div>
               <div className="form-group">
-                <label htmlFor="username">Username *</label>
+                <label htmlFor="username" className="required">
+                  Username
+                </label>
                 <input type="text" id="username" name="username" value={formData.username} onChange={handleChange} required disabled />
               </div>
               <div className="form-group">
-                <label htmlFor="email">Email *</label>
+                <label htmlFor="email" className="required">
+                  Email
+                </label>
                 <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required disabled />
               </div>
               <div className="form-group">

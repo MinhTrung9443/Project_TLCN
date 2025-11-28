@@ -173,7 +173,9 @@ const ProjectSettingTaskType = () => {
             <h2>{currentTaskType._id ? "Edit Task Type" : "Create Task Type"}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="name">Task Type*</label>
+                <label htmlFor="name" className="required">
+                  Task Type
+                </label>
                 <input id="name" name="name" value={currentTaskType.name} onChange={handleChange} required />
               </div>
 
