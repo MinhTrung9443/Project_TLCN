@@ -10,6 +10,7 @@ const Component = () => {
   const isAdmin = currentUser?.role === "admin";
   const [user, setUser] = useState(null);
   const [updateUser, setUpdateUser] = useState(user || {});
+  const [initialData, setInitialData] = useState(null);
   const { userId } = useParams();
 
   useEffect(() => {
@@ -19,17 +20,29 @@ const Component = () => {
         // Cập nhật state với thông tin user
         setUser(user);
         setUpdateUser(user);
+        setInitialData(user);
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [userId]);
 
   const onInputChange = (e) => {
     const { name, value } = e.target;
     setUpdateUser((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const hasChanges = () => {
+    if (!initialData) return false;
+    return JSON.stringify(updateUser) !== JSON.stringify(initialData);
+  };
+
+  const handleCancel = () => {
+    if (initialData) {
+      setUpdateUser(initialData);
+    }
   };
 
   const handleUpdateUser = async (e) => {
@@ -39,6 +52,8 @@ const Component = () => {
       const response = await userService.updateUserInfo(userId, updateUser);
       console.log("Update response:", response);
       toast.success("User updated successfully!");
+      // Cập nhật initialData sau khi save thành công
+      setInitialData(updateUser);
     } catch (error) {
       console.error("Error updating user:", error);
       toast.error("Failed to update user.");
@@ -137,14 +152,14 @@ const Component = () => {
             />
           </div>
           <div className="user-profile-actions">
+            <button className="user-profile-btn-cancel" type="button" onClick={handleCancel} disabled={!isAdmin || !hasChanges()}>
+              Cancel
+            </button>
             {isAdmin && (
-              <button className="user-profile-btn-save" type="submit">
+              <button className="user-profile-btn-save" type="submit" disabled={!hasChanges()}>
                 Save
               </button>
             )}
-            <button className="user-profile-btn-cancel" type="button" onClick={() => window.history.back()}>
-              {isAdmin ? "Cancel" : "Back"}
-            </button>
           </div>
         </form>
       </div>
