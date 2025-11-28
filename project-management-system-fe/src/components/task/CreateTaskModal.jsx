@@ -183,110 +183,112 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
             &times;
           </button>
         </header>
-        <form onSubmit={handleSubmit} className="modal-body">
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="projectId" className="required">
-                Project
-              </label>
-              <select id="projectId" name="projectId" value={formData.projectId} onChange={handleInputChange} disabled={!!defaultProjectId}>
-                <option value="">Select Project</option>
-                {projects.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              {errors.projectId && <p className="error-text">{errors.projectId}</p>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="taskTypeId" className="required">
-                Type
-              </label>
-              <select id="taskTypeId" name="taskTypeId" value={formData.taskTypeId} onChange={handleInputChange} disabled={!formData.projectId}>
-                <option value="">Select Type</option>
-                {settings.taskTypes.map((t) => (
-                  <option key={t._id} value={t._id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-              {errors.taskTypeId && <p className="error-text">{errors.taskTypeId}</p>}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="name" className="required">
-              Task Name
-            </label>
-            <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} />
-            {errors.name && <p className="error-text">{errors.name}</p>}
-          </div>
-
-          <div className="form-group">
-            <label>Description</label>
-            {/* THAY THẾ <textarea> BẰNG COMPONENT MỚI CỦA BẠN */}
-            <RichTextEditor value={formData.description} onChange={handleDescriptionChange} />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="priorityId" className="required">
-                Priority
-              </label>
-              <select id="priorityId" name="priorityId" value={formData.priorityId} onChange={handleInputChange} disabled={!formData.projectId}>
-                <option value="">Select Priority</option>
-                {settings.priorities.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              {errors.priorityId && <p className="error-text">{errors.priorityId}</p>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="dueDate">Due Date</label>
-              <input type="date" id="dueDate" name="dueDate" value={formData.dueDate} onChange={handleInputChange} />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="assigneeId">Assignee</label>
-              <select id="assigneeId" name="assigneeId" value={formData.assigneeId} onChange={handleInputChange} disabled={!formData.projectId}>
-                <option value="">Unassigned</option>
-                {settings.members.map((m) => (
-                  <option key={m.userId._id} value={m.userId._id}>
-                    {m.userId.fullname}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Reporter</label>
-              <input type="text" value={user.fullname} disabled />
-            </div>
-          </div>
-
-          <button type="button" className="show-more-btn" onClick={() => setShowMore(!showMore)}>
-            {showMore ? "Hide" : "Show"} more fields
-          </button>
-
-          {showMore && (
-            <div className="more-fields">
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body-scrollable">
+            <div className="form-row">
               <div className="form-group">
-                <label htmlFor="platformId">Platform</label>
-                <select id="platformId" name="platformId" value={formData.platformId} onChange={handleInputChange} disabled={!formData.projectId}>
-                  <option value="">Select Platform</option>
-                  {settings.platforms.map((p) => (
+                <label htmlFor="projectId" className="required">
+                  Project
+                </label>
+                <select id="projectId" name="projectId" value={formData.projectId} onChange={handleInputChange} disabled={!!defaultProjectId}>
+                  <option value="">Select Project</option>
+                  {projects.map((p) => (
                     <option key={p._id} value={p._id}>
                       {p.name}
                     </option>
                   ))}
                 </select>
+                {errors.projectId && <p className="error-text">{errors.projectId}</p>}
+              </div>
+              <div className="form-group">
+                <label htmlFor="taskTypeId" className="required">
+                  Type
+                </label>
+                <select id="taskTypeId" name="taskTypeId" value={formData.taskTypeId} onChange={handleInputChange} disabled={!formData.projectId}>
+                  <option value="">Select Type</option>
+                  {settings.taskTypes.map((t) => (
+                    <option key={t._id} value={t._id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.taskTypeId && <p className="error-text">{errors.taskTypeId}</p>}
               </div>
             </div>
-          )}
+
+            <div className="form-group">
+              <label htmlFor="name" className="required">
+                Task Name
+              </label>
+              <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} />
+              {errors.name && <p className="error-text">{errors.name}</p>}
+            </div>
+
+            <div className="form-group">
+              <label>Description</label>
+              {/* THAY THẾ <textarea> BẰNG COMPONENT MỚI CỦA BẠN */}
+              <RichTextEditor value={formData.description} onChange={handleDescriptionChange} />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="priorityId" className="required">
+                  Priority
+                </label>
+                <select id="priorityId" name="priorityId" value={formData.priorityId} onChange={handleInputChange} disabled={!formData.projectId}>
+                  <option value="">Select Priority</option>
+                  {settings.priorities.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.priorityId && <p className="error-text">{errors.priorityId}</p>}
+              </div>
+              <div className="form-group">
+                <label htmlFor="dueDate">Due Date</label>
+                <input type="date" id="dueDate" name="dueDate" value={formData.dueDate} onChange={handleInputChange} />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="assigneeId">Assignee</label>
+                <select id="assigneeId" name="assigneeId" value={formData.assigneeId} onChange={handleInputChange} disabled={!formData.projectId}>
+                  <option value="">Unassigned</option>
+                  {settings.members.map((m) => (
+                    <option key={m.userId._id} value={m.userId._id}>
+                      {m.userId.fullname}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Reporter</label>
+                <input type="text" value={user.fullname} disabled />
+              </div>
+            </div>
+
+            <button type="button" className="show-more-btn" onClick={() => setShowMore(!showMore)}>
+              {showMore ? "Hide" : "Show"} more fields
+            </button>
+
+            {showMore && (
+              <div className="more-fields">
+                <div className="form-group">
+                  <label htmlFor="platformId">Platform</label>
+                  <select id="platformId" name="platformId" value={formData.platformId} onChange={handleInputChange} disabled={!formData.projectId}>
+                    <option value="">Select Platform</option>
+                    {settings.platforms.map((p) => (
+                      <option key={p._id} value={p._id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
 
           <footer className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
