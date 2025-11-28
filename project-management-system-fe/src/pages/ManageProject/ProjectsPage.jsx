@@ -140,6 +140,22 @@ const ProjectsPage = () => {
     setFilters((prev) => ({ ...prev, [filterName]: value }));
   };
 
+  const getTotalMembers = (project) => {
+    // Tính tổng members từ project.members
+    let totalMembers = project.members ? project.members.length : 0;
+
+    // Thêm tất cả members từ các teams
+    if (project.teams && Array.isArray(project.teams)) {
+      project.teams.forEach((team) => {
+        if (team.members && Array.isArray(team.members)) {
+          totalMembers += team.members.length;
+        }
+      });
+    }
+
+    return totalMembers;
+  };
+
   const getFilteredProjects = () => {
     const projectList = view === "active" ? projects : archivedProjects;
 
@@ -189,7 +205,7 @@ const ProjectsPage = () => {
         <td>{project.key}</td>
         <td>{project.type}</td>
         <td>{project.projectManager?.fullname || "N/A"}</td>
-        <td>{project.members.length}</td>
+        <td>{getTotalMembers(project)}</td>
         <td>{formatDate(view === "active" ? project.createdAt : project.deletedAt)}</td>
         <td>
           <span className={`status-badge ${view === "active" ? "status-active" : "status-archived"}`}>
