@@ -5,6 +5,7 @@ const { logAction } = require("./AuditLogHelper");
 const { logHistory } = require("./HistoryService");
 const TaskHistory = require("../models/TaskHistory");
 const notificationService = require("./NotificationService");
+const workflowService = require("./WorkflowService");
 const User = require("../models/User");
 const Workflow = require("../models/Workflow");
 const cloudinary = require("../config/cloudinary"); // BẠN CẦN IMPORT CLOUDINARY VÀO ĐÂY
@@ -311,6 +312,11 @@ const changeTaskSprint = async (taskId, sprintId, userId) => {
 };
 
 const updateTaskStatus = async (taskId, statusId, userId) => {
+  console.log("=== updateTaskStatus called ===");
+  console.log("taskId:", taskId);
+  console.log("statusId:", statusId);
+  console.log("userId:", userId);
+
   const task = await Task.findById(taskId).populate("projectId");
   if (!task) {
     const error = new Error("Task not found");
@@ -321,15 +327,21 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
   const projectKey = task.projectId.key;
   const currentStatusId = task.statusId;
 
+  console.log("Current statusId:", currentStatusId);
+  console.log("New statusId:", statusId);
+
   if (currentStatusId.toString() === statusId.toString()) {
     return task;
   }
 
   const workflow = await workflowService.getWorkflowByProject(projectKey);
+  console.log("Workflow transitions:", workflow.transitions);
 
   const isValidTransition = workflow.transitions.some(
     (t) => t.from.toString() === currentStatusId.toString() && t.to.toString() === statusId.toString()
   );
+
+  console.log("Is valid transition:", isValidTransition);
 
   if (!isValidTransition) {
     const error = new Error("Invalid status transition according to workflow.");
@@ -345,7 +357,16 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
     updateData.progress = 100;
   }
 
-  return updateTask(taskId, updateData, userId);
+  console.log("Calling updateTask with:", updateData);
+
+  try {
+    const result = await updateTask(taskId, updateData, userId);
+    console.log("updateTask succeeded");
+    return result;
+  } catch (error) {
+    console.error("updateTask failed:", error);
+    throw error;
+  }
 };
 
 const deleteTask = async (taskId, userId) => {
