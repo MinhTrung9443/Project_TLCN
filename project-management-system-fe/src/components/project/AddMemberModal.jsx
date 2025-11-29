@@ -24,7 +24,7 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [usersRes, groupsRes] = await Promise.all([userService.getUsers({ status: "active" }), groupService.getGroups()]);
+      const [usersRes, groupsRes] = await Promise.all([userService.getUsers({ status: "active" }), groupService.getGroups({ status: "active" })]);
 
       // Xử lý đúng cấu trúc dữ liệu trả về
       const usersData = Array.isArray(usersRes) ? usersRes : usersRes.data || [];

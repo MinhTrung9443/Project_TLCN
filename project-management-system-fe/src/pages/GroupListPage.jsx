@@ -119,90 +119,108 @@ const GroupListPage = () => {
   return (
     <div className="group-page-container">
       <div className="group-page-header">
-        <h1 className="group-page-title">Groups</h1>
+        <div className="header-content">
+          <h1 className="group-page-title">Groups</h1>
+        </div>
         {isAdmin && (
           <button onClick={handleOpenCreateModal} className="create-button">
-            CREATE
+            <span className="plus-icon">+</span>
+            Create Group
           </button>
         )}
       </div>
 
       {loading ? (
-        <p>Loading...</p>
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>Loading teams...</p>
+        </div>
+      ) : groups.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon">📁</div>
+          <h3>No teams found</h3>
+          <p>Create your first team to get started</p>
+        </div>
       ) : (
-        <table className="groups-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Total Actives</th>
-              <th>Total Inactives</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {groups.map((group) => (
-              <tr key={group._id}>
-                <td>{group.name}</td>
-                <td>{group.description}</td>
-                <td>{group.totalActives}</td>
-                <td>{group.totalInactives}</td>
-                <td>
-                  <label className="switch">
-                    <input type="checkbox" checked={group.status === "active"} onChange={() => handleToggleStatus(group)} disabled={!isAdmin} />
-                    <span className="slider"></span>
-                  </label>
-                </td>
-                <td>
+        <div className="groups-grid">
+          {groups.map((group) => (
+            <div key={group._id} className={`group-card ${group.status === "inactive" ? "inactive" : ""}`}>
+              <div className="group-card-header">
+                <div className="group-name-section">
+                  <h3 className="group-name">{group.name}</h3>
+                  <span className={`status-badge ${group.status}`}>{group.status === "active" ? "Active" : "Inactive"}</span>
+                </div>
+                {isAdmin && (
                   <div className="action-menu-container" ref={openActionMenu === group._id ? menuRef : null}>
-                    {isAdmin ? (
-                      <>
-                        <button className="action-menu-trigger" onClick={() => handleToggleActionMenu(group._id)}>
-                          &#8942;
+                    <button className="action-menu-trigger" onClick={() => handleToggleActionMenu(group._id)}>
+                      ⋮
+                    </button>
+                    {openActionMenu === group._id && (
+                      <div className="action-menu-dropdown">
+                        <button
+                          className="action-menu-item"
+                          onClick={() => {
+                            handleOpenEditModal(group);
+                            setOpenActionMenu(null);
+                          }}
+                        >
+                          <span className="menu-icon">✏️</span>
+                          Edit
                         </button>
-
-                        {openActionMenu === group._id && (
-                          <div className="action-menu-dropdown">
-                            <button
-                              className="action-menu-item"
-                              onClick={() => {
-                                handleOpenEditModal(group);
-                                setOpenActionMenu(null);
-                              }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="action-menu-item"
-                              onClick={() => {
-                                handleOpenDeleteConfirm(group._id);
-                                setOpenActionMenu(null);
-                              }}
-                            >
-                              Delete
-                            </button>
-                            <button className="action-menu-item" onClick={() => navigate(`/organization/group/${group._id}`)}>
-                              View Member
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <button
-                        className="action-menu-item"
-                        onClick={() => navigate(`/organization/group/${group._id}`)}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: "8px" }}
-                      >
-                        View Member
-                      </button>
+                        <button
+                          className="action-menu-item"
+                          onClick={() => {
+                            handleToggleStatus(group);
+                            setOpenActionMenu(null);
+                          }}
+                        >
+                          <span className="menu-icon">{group.status === "active" ? "🔒" : "🔓"}</span>
+                          {group.status === "active" ? "Deactivate" : "Activate"}
+                        </button>
+                        <button
+                          className="action-menu-item delete"
+                          onClick={() => {
+                            handleOpenDeleteConfirm(group._id);
+                            setOpenActionMenu(null);
+                          }}
+                        >
+                          <span className="menu-icon">🗑️</span>
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )}
+              </div>
+
+              <p className="group-description">{group.description || "No description provided"}</p>
+
+              <div className="group-stats">
+                <div className="stat-item">
+                  <div className="stat-icon active-icon">👥</div>
+                  <div className="stat-content">
+                    <span className="stat-number">{group.totalActives || 0}</span>
+                    <span className="stat-label">Active Members</span>
+                  </div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-icon inactive-icon">💤</div>
+                  <div className="stat-content">
+                    <span className="stat-number">{group.totalInactives || 0}</span>
+                    <span className="stat-label">Inactive Members</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="group-card-footer">
+                <button className="view-members-btn" onClick={() => navigate(`/organization/group/${group._id}`)}>
+                  View Members
+                  <span className="arrow-icon">→</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       <CreateEditGroupModal isOpen={isModalOpen} onClose={handleCloseModal} onSave={handleSaveGroup} group={editingGroup} />
