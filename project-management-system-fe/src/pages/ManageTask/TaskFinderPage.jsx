@@ -39,7 +39,7 @@ const TaskFinderPage = () => {
       try {
         const [projectsRes, usersRes, statusesRes] = await Promise.all([
           getProjects(),
-          userService.getAllUsers(1, 1000), // Get all users with large limit
+          userService.getUsers({ status: "active" }), // Get only active users
           statusService.getStatusList(),
         ]);
 

@@ -74,7 +74,9 @@ const userService = {
   // Lấy users với params (cho filter)
   getUsers: async (params) => {
     try {
-      const response = await apiClient.get("/users/get-all-users");
+      const response = await apiClient.get("/users", {
+        params: params,
+      });
       return response.data;
     } catch (error) {
       throw error;
@@ -91,7 +93,7 @@ const userService = {
         },
         timeout: 60000,
       });
-      return response.data; 
+      return response.data;
     } catch (error) {
       throw error;
     }

@@ -81,7 +81,7 @@ const ProjectSettingsGeneral = () => {
   useEffect(() => {
     if (canChangeManager) {
       userService
-        .getAllUsers() // Giả sử hàm này trả về { data: [...] }
+        .getUsers({ status: "active" }) // Get only active users
         .then((response) => {
           // Xử lý cả 2 trường hợp API trả về
           const usersData = Array.isArray(response.data) ? response.data : response || [];
