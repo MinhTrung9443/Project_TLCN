@@ -151,7 +151,8 @@ const createProject = async (projectData, userId) => {
 
   return savedProject;
 };
-const getAllProjects = async (actor, search) => { // 1. Thêm tham số 'search'
+const getAllProjects = async (actor, search) => {
+  // 1. Thêm tham số 'search'
   let query = { isDeleted: false };
 
   if (actor.role !== "admin") {
@@ -161,10 +162,7 @@ const getAllProjects = async (actor, search) => { // 1. Thêm tham số 'search'
   // 2. Thêm logic tìm kiếm nếu có tham số 'search'
   if (search) {
     const searchRegex = new RegExp(search, "i"); // 'i' để tìm kiếm không phân biệt hoa thường
-    query.$or = [
-      { name: { $regex: searchRegex } }, 
-      { key: { $regex: searchRegex } }
-    ];
+    query.$or = [{ name: { $regex: searchRegex } }, { key: { $regex: searchRegex } }];
   }
 
   const projects = await Project.find(query)
@@ -186,8 +184,15 @@ const getAllProjects = async (actor, search) => { // 1. Thêm tham số 'search'
   return projectsWithPM;
 };
 
-const getArchivedProjects = async () => {
-  const projects = await Project.find({ isDeleted: true })
+const getArchivedProjects = async (search) => {
+  let query = { isDeleted: true };
+
+  // Thêm điều kiện tìm kiếm theo name hoặc key nếu có
+  if (search) {
+    query.$or = [{ name: { $regex: search, $options: "i" } }, { key: { $regex: search, $options: "i" } }];
+  }
+
+  const projects = await Project.find(query)
     .populate({
       path: "members.userId",
       select: "fullname email avatar",

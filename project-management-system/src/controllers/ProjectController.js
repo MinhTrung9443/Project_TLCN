@@ -23,7 +23,8 @@ const handleCloneProject = async (req, res) => {
 };
 const handleGetArchivedProjects = async (req, res) => {
   try {
-    const projects = await projectService.getArchivedProjects();
+    const { search } = req.query;
+    const projects = await projectService.getArchivedProjects(search);
     res.status(200).json(projects);
   } catch (error) {
     res.status(500).json({ message: error.message || "Server Error" });

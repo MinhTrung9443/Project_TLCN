@@ -45,8 +45,8 @@ const ProjectsPage = () => {
           const response = await getProjects(currentSearchTerm);
           setProjects(response.data);
         } else {
-          // Tạm thời không tìm kiếm ở trang archived
-          const response = await getArchivedProjects();
+          // Tìm kiếm ở trang archived
+          const response = await getArchivedProjects(currentSearchTerm);
           setArchivedProjects(response.data);
         }
       } catch (error) {
@@ -265,15 +265,13 @@ const ProjectsPage = () => {
                 </button>
               )}
             </div>
-            {view === "active" && (
-              <input
-                type="search"
-                placeholder="Search by name or key..."
-                className="search-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            )}
+            <input
+              type="search"
+              placeholder="Search by name or key..."
+              className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
 
           {view === "active" && (
@@ -298,6 +296,29 @@ const ProjectsPage = () => {
                 <option value="active">Active</option>
                 <option value="paused">Paused</option>
                 <option value="completed">Completed</option>
+              </select>
+
+              <button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
+                Clear Filters
+              </button>
+            </div>
+          )}
+
+          {view === "archived" && (
+            <div className="projects-filters">
+              <select className="filter-select" value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
+                <option value="">All Types</option>
+                <option value="Scrum">Scrum</option>
+                <option value="Kanban">Kanban</option>
+              </select>
+
+              <select className="filter-select" value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
+                <option value="">All Project Managers</option>
+                {getProjectManagers().map((pm) => (
+                  <option key={pm._id} value={pm._id}>
+                    {pm.fullname}
+                  </option>
+                ))}
               </select>
 
               <button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
