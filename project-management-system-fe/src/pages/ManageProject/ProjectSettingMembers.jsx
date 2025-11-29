@@ -83,7 +83,12 @@ const ProjectSettingMembers = () => {
       // Individual members: chỉ những người trong rawMembers và KHÔNG có trong teams
       const individualMembers = rawMembers.filter((m) => !memberIdsInTeams.has(m.userId._id.toString()));
 
-      setDisplayList([...teamsWithMembers, ...individualMembers]);
+      // Tách PM ra khỏi individual members
+      const pmMembers = individualMembers.filter((m) => m.role === "PROJECT_MANAGER");
+      const otherIndividualMembers = individualMembers.filter((m) => m.role !== "PROJECT_MANAGER");
+
+      // Sắp xếp: PM đầu tiên, sau đó teams, cuối cùng là individual members khác
+      setDisplayList([...pmMembers, ...teamsWithMembers, ...otherIndividualMembers]);
     }
   }, [rawMembers, rawTeams, loading]);
 
@@ -221,10 +226,11 @@ const ProjectSettingMembers = () => {
             );
           } else {
             return (
-              <div className="table-row member-row" key={item.userId._id}>
+              <div className={`table-row member-row ${item.role === "PROJECT_MANAGER" ? "pm-row" : ""}`} key={item.userId._id}>
                 <div className="member-info">
                   <img src={item.userId.avatar || "/default-avatar.png"} alt="" className="member-avatar" />
                   <span>{item.userId.fullname}</span>
+                  {item.role === "PROJECT_MANAGER" && <span className="pm-badge">PM</span>}
                 </div>
                 <div>{item.role}</div>
                 <div>Added individually</div>

@@ -12,6 +12,7 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState("MEMBER");
   const [selectedUserTeam, setSelectedUserTeam] = useState(null); // Team được chọn cho user (nếu user thuộc nhiều team)
+  const [selectedTemporaryGroup, setSelectedTemporaryGroup] = useState(null); // Group tạm thời cho user không thuộc group nào
   const [allGroups, setAllGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -103,6 +104,13 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
           return;
         }
 
+        // Kiểm tra nếu user không thuộc team nào nhưng chưa chọn temporary group
+        if (userTeamOptions.length === 0 && !selectedTemporaryGroup) {
+          toast.warn("This user is not in any team. Please select a temporary group for this project.");
+          setIsSaving(false);
+          return;
+        }
+
         // Xác định teamId để gửi
         let teamIdToSend = null;
         if (userTeamOptions.length === 1) {
@@ -111,8 +119,10 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
         } else if (userTeamOptions.length > 1 && selectedUserTeam) {
           // User thuộc nhiều team và đã chọn team
           teamIdToSend = selectedUserTeam.value;
+        } else if (userTeamOptions.length === 0 && selectedTemporaryGroup) {
+          // User không thuộc team nào, dùng temporary group được chọn
+          teamIdToSend = selectedTemporaryGroup.value;
         }
-        // Nếu userTeamOptions.length === 0, teamIdToSend = null (user không thuộc team nào)
 
         await addMemberToProject(projectKey, {
           userId: selectedUser.value,
@@ -166,6 +176,7 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
     setSelectedUser(null);
     setSelectedRole("MEMBER");
     setSelectedUserTeam(null);
+    setSelectedTemporaryGroup(null);
     setSelectedGroup(null);
     setSelectedLeader(null);
     setTeamMembers([]);
@@ -195,7 +206,9 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
   const selectedUserData = selectedUser ? userOptions.find((opt) => opt.value === selectedUser.value) : null;
   const userTeamOptions = selectedUserData?.userGroups?.map((g) => ({ value: g._id, label: g.name })) || [];
 
-  const groupOptions = allGroups
+  const groupOptions = allGroups.map((g) => ({ value: g._id, label: g.name }));
+
+  const groupOptionsForTeamMode = allGroups
     .filter((g) => !existingTeamIds.includes(g._id)) // Lọc ra các team đã có trong dự án
     .map((g) => ({ value: g._id, label: g.name }));
 
@@ -226,6 +239,7 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                     setSelectedUser(option);
                     // Reset team selection khi đổi user
                     setSelectedUserTeam(null);
+                    setSelectedTemporaryGroup(null);
                   }}
                   isLoading={isLoadingData}
                 />
@@ -254,9 +268,14 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
 
               {selectedUser && userTeamOptions.length === 0 && (
                 <div className="form-group">
-                  <p className="text-muted">
-                    <i>This user is not in any team</i>
-                  </p>
+                  <label>Temporary Group (This user is not in any team)</label>
+                  <Select
+                    options={groupOptions}
+                    value={selectedTemporaryGroup}
+                    onChange={setSelectedTemporaryGroup}
+                    placeholder="Select a group for this project..."
+                  />
+                  <small className="form-hint">This user will be temporarily assigned to the selected group in this project.</small>
                 </div>
               )}
 
@@ -278,7 +297,7 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
             <>
               <div className="form-group">
                 <label>Select a Team</label>
-                <Select options={groupOptions} value={selectedGroup} onChange={setSelectedGroup} isLoading={isLoadingData} />
+                <Select options={groupOptionsForTeamMode} value={selectedGroup} onChange={setSelectedGroup} isLoading={isLoadingData} />
               </div>
 
               {selectedGroup && teamMembers.length === 0 && (
