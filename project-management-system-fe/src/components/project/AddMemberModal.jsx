@@ -57,7 +57,9 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
           const belongsToGroup = group.members.includes(u._id);
           // Chưa có trong project
           const notInProject = !existingMemberIds.includes(u._id);
-          return belongsToGroup && notInProject;
+          // Không phải admin
+          const notAdmin = u.role !== "admin";
+          return belongsToGroup && notInProject && notAdmin;
         });
 
         setTeamMembers(membersOfGroup);
@@ -189,6 +191,7 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
   // Tạo userOptions với thông tin team
   const userOptions = allUsers
     .filter((u) => !existingMemberIds.includes(u._id))
+    .filter((u) => u.role !== "admin") // Lọc bỏ admin
     .map((u) => {
       // Tìm tất cả các groups mà user này thuộc về
       const userGroups = allGroups.filter((g) => g.members && g.members.includes(u._id));
