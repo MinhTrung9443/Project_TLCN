@@ -12,6 +12,7 @@ const SprintItem = ({
   onComplete,
   onDelete,
   onSprintNameClick,
+  onTaskClick,
   projectType,
   canManageSprints,
   canCreateTask,
@@ -153,7 +154,7 @@ const SprintItem = ({
                 </div>
               </div>
               <div className="task-list">
-                <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} canDragDrop={canDragDrop} />
+                <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} canDragDrop={canDragDrop} onTaskClick={onTaskClick} />
               </div>
               <div className="sprint-create-task-row">
                 {canCreateTask && (

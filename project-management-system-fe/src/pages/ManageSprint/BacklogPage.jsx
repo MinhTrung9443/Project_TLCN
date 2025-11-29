@@ -145,6 +145,10 @@ const BacklogPage = () => {
     setIsCreateTaskModalOpen(false);
   };
 
+  const handleTaskClick = (task) => {
+    navigate(`/task/${task.key}`);
+  };
+
   useEffect(() => {
     if (selectedProjectKey) {
       fetchProjectDetails();
@@ -178,6 +182,7 @@ const BacklogPage = () => {
               onComplete={handleCompleteSprint}
               onDelete={handleDeleteSprint}
               onSprintNameClick={handleSprintNameClick}
+              onTaskClick={handleTaskClick}
               projectType={projectType}
               canManageSprints={canManageSprints}
               canCreateTask={canCreateTask}
@@ -191,7 +196,7 @@ const BacklogPage = () => {
             <span className="backlogpage-backlog-title">Backlog</span>
             <span className="backlogpage-backlog-count">{taskList.length}</span>
           </div>
-          <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} canDragDrop={canDragDrop} />
+          <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} canDragDrop={canDragDrop} onTaskClick={handleTaskClick} />
           {canCreateTask && (
             <div className="sprint-create-task-row">
               <button className="sprint-add-btn">

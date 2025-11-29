@@ -9,6 +9,7 @@ export const SprintList = ({
   onComplete,
   onDelete,
   onSprintNameClick,
+  onTaskClick,
   projectType,
   canManageSprints,
   canCreateTask,
@@ -27,6 +28,7 @@ export const SprintList = ({
           onComplete={onComplete}
           onDelete={onDelete}
           onSprintNameClick={onSprintNameClick}
+          onTaskClick={onTaskClick}
           projectType={projectType}
           canManageSprints={canManageSprints}
           canCreateTask={canCreateTask}
