@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import typeTaskService from "../../services/typeTaskService";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
 import { useAuth } from "../../contexts/AuthContext";
 const PREDEFINED_ICONS = [
@@ -54,6 +55,8 @@ const ProjectSettingTaskType = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentTaskType, setCurrentTaskType] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteTaskTypeId, setDeleteTaskTypeId] = useState(null);
 
   const fetchTaskTypes = useCallback(async () => {
     try {
@@ -111,15 +114,15 @@ const ProjectSettingTaskType = () => {
     }
   };
 
-  const handleDelete = async (taskTypeId) => {
-    if (window.confirm("Are you sure you want to delete this task type?")) {
-      try {
-        await typeTaskService.deleteTypeTask(taskTypeId);
-        toast.success("Task type deleted successfully!");
-        fetchTaskTypes();
-      } catch (error) {
-        toast.error("Failed to delete task type.");
-      }
+  const handleDelete = async () => {
+    try {
+      await typeTaskService.deleteTypeTask(deleteTaskTypeId);
+      toast.success("Task type deleted successfully!");
+      fetchTaskTypes();
+      setIsDeleteModalOpen(false);
+      setDeleteTaskTypeId(null);
+    } catch (error) {
+      toast.error("Failed to delete task type.");
     }
   };
 
@@ -157,7 +160,13 @@ const ProjectSettingTaskType = () => {
                   <button className="btn-edit" onClick={() => handleOpenModal(tt)}>
                     <FaIcons.FaPencilAlt />
                   </button>
-                  <button className="btn-delete" onClick={() => handleDelete(tt._id)}>
+                  <button
+                    className="btn-delete"
+                    onClick={() => {
+                      setDeleteTaskTypeId(tt._id);
+                      setIsDeleteModalOpen(true);
+                    }}
+                  >
                     <FaIcons.FaTrash />
                   </button>
                 </div>
@@ -200,6 +209,17 @@ const ProjectSettingTaskType = () => {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTaskTypeId(null);
+        }}
+        onConfirm={handleDelete}
+        title="Delete Task Type"
+        message="Are you sure you want to delete this task type? This might affect projects using it."
+      />
     </div>
   );
 };

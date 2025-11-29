@@ -4,6 +4,7 @@ import { groupService, userService } from "../services/groupService";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 import AddMemberModal from "../components/group/AddMemberModal";
+import ConfirmationModal from "../components/common/ConfirmationModal";
 import "../styles/pages/GroupMembersPage.css";
 
 const GroupMembersPage = () => {
@@ -15,6 +16,9 @@ const GroupMembersPage = () => {
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRemoveMemberModalOpen, setIsRemoveMemberModalOpen] = useState(false);
+  const [removeMemberData, setRemoveMemberData] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
 
   const fetchMembersAndGroup = useCallback(async () => {
@@ -62,14 +66,13 @@ const GroupMembersPage = () => {
     }
   };
 
-  const handleRemoveMember = async (userId, userName) => {
-    if (!window.confirm(`Are you sure you want to remove ${userName} from this group?`)) {
-      return;
-    }
+  const handleRemoveMember = async () => {
     try {
-      await groupService.removeMemberFromGroup(groupId, userId);
+      await groupService.removeMemberFromGroup(groupId, removeMemberData.userId);
       toast.success("Member removed successfully!");
       fetchMembersAndGroup();
+      setIsRemoveMemberModalOpen(false);
+      setRemoveMemberData(null);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to remove member.");
     }
@@ -122,7 +125,10 @@ const GroupMembersPage = () => {
                     {isAdmin && (
                       <button
                         className="remove-member-btn"
-                        onClick={() => handleRemoveMember(member._id, member.fullname)}
+                        onClick={() => {
+                          setRemoveMemberData({ userId: member._id, userName: member.fullname });
+                          setIsRemoveMemberModalOpen(true);
+                        }}
                         title="Remove member from group"
                       >
                         <span className="material-symbols-outlined">person_remove</span>
@@ -147,6 +153,17 @@ const GroupMembersPage = () => {
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddMember}
         users={allUsers.filter((u) => !members.some((m) => m._id === u._id))}
+      />
+
+      <ConfirmationModal
+        isOpen={isRemoveMemberModalOpen}
+        onClose={() => {
+          setIsRemoveMemberModalOpen(false);
+          setRemoveMemberData(null);
+        }}
+        onConfirm={handleRemoveMember}
+        title="Remove Member from Group"
+        message={`Are you sure you want to remove ${removeMemberData?.userName || "this member"} from this group?`}
       />
     </div>
   );

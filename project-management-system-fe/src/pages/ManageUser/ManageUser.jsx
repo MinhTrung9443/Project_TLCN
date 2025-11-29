@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import userService from "../../services/userService";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 
 const genderIcon = {
   male: <span className="material-symbols-outlined text-blue-700">male</span>,
@@ -28,6 +29,8 @@ const Component = () => {
   const [popupUserId, setPopupUserId] = useState(null);
   const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [users, setUsers] = useState([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteUserData, setDeleteUserData] = useState(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
@@ -104,6 +107,19 @@ const Component = () => {
       console.error("Error creating user:", error);
       toast.error("Failed to create user");
       return;
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      await userService.deleteUser(deleteUserData.userId);
+      setUsers((prevUsers) => prevUsers.map((u) => (u._id === deleteUserData.userId ? { ...u, status: "inactive" } : u)));
+      toast.success("User deleted successfully");
+      setIsDeleteModalOpen(false);
+      setDeleteUserData(null);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Failed to delete user");
     }
   };
 
@@ -233,17 +249,11 @@ const Component = () => {
           </button>
           <button
             className="text-red-600"
-            onClick={async () => {
+            onClick={() => {
+              const userToDelete = users.find((u) => u._id === popupUserId);
+              setDeleteUserData({ userId: popupUserId, userName: userToDelete?.fullname });
+              setIsDeleteModalOpen(true);
               handleClosePopup();
-              try {
-                const deleteUser = async () => {
-                  await userService.deleteUser(popupUserId);
-                  setUsers((prevUsers) => prevUsers.map((u) => (u._id === popupUserId ? { ...u, status: "inactive" } : u)));
-                };
-                deleteUser();
-              } catch (error) {
-                console.error("Error deleting user:", error);
-              }
             }}
           >
             <span className="material-symbols-outlined align-middle mr-2">delete</span>
@@ -323,6 +333,18 @@ const Component = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteUserData(null);
+        }}
+        onConfirm={handleDeleteUser}
+        title="Delete User"
+        message={`Are you sure you want to delete ${deleteUserData?.userName}? This action will deactivate the user account.`}
+      />
     </div>
   );
 };

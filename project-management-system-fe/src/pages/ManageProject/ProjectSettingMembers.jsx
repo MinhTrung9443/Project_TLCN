@@ -12,6 +12,7 @@ import {
 } from "../../services/projectService";
 import AddMemberModal from "../../components/project/AddMemberModal";
 import { useAuth } from "../../contexts/AuthContext";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 import "../../styles/pages/ManageProject/ProjectMembersTab.css"; // Cần thêm CSS cho thụt lề
 import MemberActionsMenu from "../../components/project/MemberActionsMenu";
 import AddMemberToTeamModal from "../../components/project/AddMemberToTeamModal"; // <-- Import modal mới
@@ -29,6 +30,11 @@ const ProjectSettingMembers = () => {
   // State để lưu dữ liệu gốc
   const [rawMembers, setRawMembers] = useState([]);
   const [rawTeams, setRawTeams] = useState([]);
+
+  const [isRemoveMemberModalOpen, setIsRemoveMemberModalOpen] = useState(false);
+  const [isRemoveTeamModalOpen, setIsRemoveTeamModalOpen] = useState(false);
+  const [removeMemberData, setRemoveMemberData] = useState(null);
+  const [removeTeamData, setRemoveTeamData] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -92,27 +98,27 @@ const ProjectSettingMembers = () => {
   const existingMemberIds = [...rawMembers.map((m) => m.userId._id), ...rawTeams.flatMap((t) => [t.leaderId._id, ...t.members.map((m) => m._id)])];
   const existingTeamIds = rawTeams.map((t) => t.teamId._id);
 
-  const handleRemoveMember = async (member) => {
-    if (window.confirm(`Are you sure you want to remove ${member.userId.fullname}?`)) {
-      try {
-        await removeMemberFromProject(projectKey, member.userId._id);
-        toast.success("Member removed.");
-        fetchData();
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to remove member.");
-      }
+  const handleRemoveMember = async () => {
+    try {
+      await removeMemberFromProject(projectKey, removeMemberData.userId._id);
+      toast.success("Member removed.");
+      fetchData();
+      setIsRemoveMemberModalOpen(false);
+      setRemoveMemberData(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to remove member.");
     }
   };
 
-  const handleRemoveTeam = async (team) => {
-    if (window.confirm(`Are you sure you want to remove the team "${team.teamId.name}"?`)) {
-      try {
-        await removeTeamFromProject(projectKey, team.teamId._id);
-        toast.success("Team removed.");
-        fetchData();
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to remove team.");
-      }
+  const handleRemoveTeam = async () => {
+    try {
+      await removeTeamFromProject(projectKey, removeTeamData.teamId._id);
+      toast.success("Team removed.");
+      fetchData();
+      setIsRemoveTeamModalOpen(false);
+      setRemoveTeamData(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to remove team.");
     }
   };
 
@@ -161,7 +167,14 @@ const ProjectSettingMembers = () => {
                   <span>TEAM</span>
                   <span></span>
                   <div>
-                    <MemberActionsMenu item={item} onRemoveTeam={handleRemoveTeam} onAddMemberToTeam={handleAddMemberToTeam} />
+                    <MemberActionsMenu
+                      item={item}
+                      onRemoveTeam={(team) => {
+                        setRemoveTeamData(team);
+                        setIsRemoveTeamModalOpen(true);
+                      }}
+                      onAddMemberToTeam={handleAddMemberToTeam}
+                    />
                   </div>
                 </div>
                 {item.leader && (
@@ -173,7 +186,14 @@ const ProjectSettingMembers = () => {
                     <div>{item.leader.role}</div>
                     <div>Added via {item.team.teamId.name}</div>
                     <div>
-                      <MemberActionsMenu item={item.leader} onRemoveMember={handleRemoveMember} onChangeRole={handleChangeRole} />
+                      <MemberActionsMenu
+                        item={item.leader}
+                        onRemoveMember={(member) => {
+                          setRemoveMemberData(member);
+                          setIsRemoveMemberModalOpen(true);
+                        }}
+                        onChangeRole={handleChangeRole}
+                      />
                     </div>
                   </div>
                 )}
@@ -186,7 +206,14 @@ const ProjectSettingMembers = () => {
                     <div>{member.role}</div>
                     <div>Added via {item.team.teamId.name}</div>
                     <div>
-                      <MemberActionsMenu item={member} onRemoveMember={handleRemoveMember} onChangeRole={handleChangeRole} />
+                      <MemberActionsMenu
+                        item={member}
+                        onRemoveMember={(m) => {
+                          setRemoveMemberData(m);
+                          setIsRemoveMemberModalOpen(true);
+                        }}
+                        onChangeRole={handleChangeRole}
+                      />
                     </div>
                   </div>
                 ))}
@@ -202,7 +229,14 @@ const ProjectSettingMembers = () => {
                 <div>{item.role}</div>
                 <div>Added individually</div>
                 <div>
-                  <MemberActionsMenu item={item} onRemoveMember={handleRemoveMember} onChangeRole={handleChangeRole} />
+                  <MemberActionsMenu
+                    item={item}
+                    onRemoveMember={(m) => {
+                      setRemoveMemberData(m);
+                      setIsRemoveMemberModalOpen(true);
+                    }}
+                    onChangeRole={handleChangeRole}
+                  />
                 </div>
               </div>
             );
@@ -233,6 +267,28 @@ const ProjectSettingMembers = () => {
           existingMemberIds={existingMemberIds}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={isRemoveMemberModalOpen}
+        onClose={() => {
+          setIsRemoveMemberModalOpen(false);
+          setRemoveMemberData(null);
+        }}
+        onConfirm={handleRemoveMember}
+        title="Remove Member"
+        message={`Are you sure you want to remove ${removeMemberData?.userId?.fullname || "this member"} from the project?`}
+      />
+
+      <ConfirmationModal
+        isOpen={isRemoveTeamModalOpen}
+        onClose={() => {
+          setIsRemoveTeamModalOpen(false);
+          setRemoveTeamData(null);
+        }}
+        onConfirm={handleRemoveTeam}
+        title="Remove Team"
+        message={`Are you sure you want to remove the team "${removeTeamData?.teamId?.name || "this team"}" from the project?`}
+      />
     </div>
   );
 };

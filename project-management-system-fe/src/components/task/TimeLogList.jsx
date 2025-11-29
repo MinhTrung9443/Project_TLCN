@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import timeLogService from "../../services/timeLogService";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
+import ConfirmationModal from "../common/ConfirmationModal";
 import "../../styles/components/task/TimeLogList.css";
 
 const TimeLogList = ({ taskId, onTimeLogsUpdate }) => {
   const [timeLogs, setTimeLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteTimeLogId, setDeleteTimeLogId] = useState(null);
 
   useEffect(() => {
     if (taskId) {
@@ -34,15 +37,13 @@ const TimeLogList = ({ taskId, onTimeLogsUpdate }) => {
     }
   };
 
-  const handleDelete = async (timeLogId) => {
-    if (!window.confirm("Are you sure you want to delete this time log?")) {
-      return;
-    }
-
+  const handleDelete = async () => {
     try {
-      await timeLogService.deleteTimeLog(timeLogId);
+      await timeLogService.deleteTimeLog(deleteTimeLogId);
       toast.success("Time log deleted");
       fetchTimeLogs();
+      setIsDeleteModalOpen(false);
+      setDeleteTimeLogId(null);
     } catch (error) {
       console.error("Error deleting time log:", error);
       toast.error(error.response?.data?.message || "Failed to delete");
@@ -132,7 +133,14 @@ const TimeLogList = ({ taskId, onTimeLogsUpdate }) => {
 
               {user?._id === log.userId?._id && (
                 <div className="time-log-actions">
-                  <button className="time-log-delete-btn" onClick={() => handleDelete(log._id)} title="Delete">
+                  <button
+                    className="time-log-delete-btn"
+                    onClick={() => {
+                      setDeleteTimeLogId(log._id);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    title="Delete"
+                  >
                     <span className="material-symbols-outlined">delete</span>
                   </button>
                 </div>
@@ -141,6 +149,17 @@ const TimeLogList = ({ taskId, onTimeLogsUpdate }) => {
           </div>
         ))}
       </div>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTimeLogId(null);
+        }}
+        onConfirm={handleDelete}
+        title="Delete Time Log"
+        message="Are you sure you want to delete this time log? This action cannot be undone."
+      />
     </div>
   );
 };

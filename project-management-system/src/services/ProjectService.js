@@ -502,24 +502,36 @@ const removeMemberFromProject = async (projectKey, userIdToRemove) => {
     throw new Error("Project not found");
   }
 
+  // Kiểm tra user có tồn tại trong project không (kiểm tra cả members array và teams)
   const memberToRemove = project.members.find((m) => m.userId.equals(userIdToRemove));
-  if (!memberToRemove) {
+  const isInTeams = project.teams.some((t) => t.leaderId.equals(userIdToRemove) || t.members.some((m) => m.equals(userIdToRemove)));
+
+  if (!memberToRemove && !isInTeams) {
     throw new Error("Member not found in this project.");
   }
 
-  if (memberToRemove.role === "PROJECT_MANAGER") {
+  // Kiểm tra nếu user là PM trong members array
+  if (memberToRemove && memberToRemove.role === "PROJECT_MANAGER") {
     const pmCount = project.members.filter((m) => m.role === "PROJECT_MANAGER").length;
     if (pmCount <= 1) {
       throw new Error("Cannot remove the only Project Manager from the project.");
     }
   }
 
+  // Kiểm tra nếu user đang là leader của team nào
   const isLeadingTeam = project.teams.some((t) => t.leaderId.equals(userIdToRemove));
   if (isLeadingTeam) {
     throw new Error("Cannot remove user. They are currently leading a team. Please change the team leader first.");
   }
 
+  // Xóa user khỏi members array (nếu có)
   project.members = project.members.filter((m) => !m.userId.equals(userIdToRemove));
+
+  // Xóa user khỏi tất cả teams (nếu có)
+  project.teams.forEach((team) => {
+    team.members = team.members.filter((m) => !m.equals(userIdToRemove));
+  });
+
   await project.save();
   return project; // Trả về project đã cập nhật
 };

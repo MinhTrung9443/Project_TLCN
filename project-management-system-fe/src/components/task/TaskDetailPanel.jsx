@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment, getAllowedStatuses  } from "../../services/taskService";
+import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment, getAllowedStatuses } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import platformService from "../../services/platformService";
 import sprintService from "../../services/sprintService";
 import ActionsMenu from "../common/ActionsMenu";
-import CommentsTab from './CommentsTab';
-import HistoryTab from './HistoryTab';
+import CommentsTab from "./CommentsTab";
+import HistoryTab from "./HistoryTab";
+import ConfirmationModal from "../common/ConfirmationModal";
 import "../../styles/components/TaskDetailPanel.css";
 import { IconComponent } from "../common/IconPicker";
-import TaskDetailsTab from './TaskDetailsTab';
+import TaskDetailsTab from "./TaskDetailsTab";
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
   { name: "FaStar", color: "#2ECC71" },
@@ -26,13 +27,18 @@ const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaFileAlt", color: "#00B8D9" },
 ];
 
-
 const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClone, statuses = [] }) => {
   const [editableTask, setEditableTask] = useState(task);
-  const [activeTab, setActiveTab] = useState('Details');
+  const [activeTab, setActiveTab] = useState("Details");
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
   const nameTextAreaRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
+  const [isDeleteLinkModalOpen, setIsDeleteLinkModalOpen] = useState(false);
+  const [isDeleteAttachmentModalOpen, setIsDeleteAttachmentModalOpen] = useState(false);
+  const [selectedLinkId, setSelectedLinkId] = useState(null);
+  const [selectedAttachmentId, setSelectedAttachmentId] = useState(null);
   useEffect(() => {
     if (nameTextAreaRef.current) {
       nameTextAreaRef.current.style.height = "auto";
@@ -44,7 +50,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
   const [projectPriorities, setProjectPriorities] = useState([]);
   const [projectPlatforms, setProjectPlatforms] = useState([]);
   const [projectSprints, setProjectSprints] = useState([]);
-  const [allowedStatuses, setAllowedStatuses] = useState([]); 
+  const [allowedStatuses, setAllowedStatuses] = useState([]);
 
   useEffect(() => {
     setEditableTask(task);
@@ -65,14 +71,14 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
           setAllowedStatuses(res.data);
         } catch (error) {
           console.error("Failed to fetch allowed statuses", error);
-          setAllowedStatuses(statuses); 
+          setAllowedStatuses(statuses);
         }
       };
 
       const fetchTaskTypesForProject = async () => {
         try {
           const res = await typeTaskService.getAllTypeTask(projectKey);
-          const formattedTypes = res.data.map(t => ({ value: t._id, label: t.name }));
+          const formattedTypes = res.data.map((t) => ({ value: t._id, label: t.name }));
           setProjectTaskTypes(formattedTypes);
         } catch (error) {
           toast.error(`Could not load task types for project ${projectKey}.`);
@@ -97,7 +103,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       const fetchPrioritiesForProject = async () => {
         try {
           const res = await priorityService.getAllPriorities(projectKey);
-          const formattedPriorities = res.data.map(p => ({ value: p._id, label: p.name }));
+          const formattedPriorities = res.data.map((p) => ({ value: p._id, label: p.name }));
           setProjectPriorities(formattedPriorities);
         } catch (error) {
           toast.error(`Could not load priorities for project ${projectKey}.`);
@@ -108,7 +114,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       const fetchPlatformsForProject = async () => {
         try {
           const res = await platformService.getAllPlatforms(projectKey);
-          const formattedPlatforms = res.data.map(p => ({ value: p._id, label: p.name }));
+          const formattedPlatforms = res.data.map((p) => ({ value: p._id, label: p.name }));
           setProjectPlatforms(formattedPlatforms);
         } catch (error) {
           toast.error(`Could not load platforms for project ${projectKey}.`);
@@ -119,20 +125,18 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
         try {
           const responseData = await sprintService.getSprints(projectKey);
           const allSprints = responseData.sprint || [];
-          const activeSprints = allSprints.filter(
-            sprint => sprint.status === 'Not Started' || sprint.status === 'Started'
-          );
+          const activeSprints = allSprints.filter((sprint) => sprint.status === "Not Started" || sprint.status === "Started");
           const currentSprintId = task.sprintId?._id || task.sprintId;
           if (currentSprintId) {
-            const isInActiveList = activeSprints.some(s => s._id === currentSprintId);
+            const isInActiveList = activeSprints.some((s) => s._id === currentSprintId);
             if (!isInActiveList) {
-              const completedSprint = allSprints.find(s => s._id === currentSprintId);
+              const completedSprint = allSprints.find((s) => s._id === currentSprintId);
               if (completedSprint) {
                 activeSprints.push(completedSprint);
               }
             }
           }
-          const formattedSprints = activeSprints.map(s => ({ value: s._id, label: s.name }));
+          const formattedSprints = activeSprints.map((s) => ({ value: s._id, label: s.name }));
           setProjectSprints(formattedSprints);
         } catch (error) {
           toast.error(`Could not load sprints for project ${projectKey}.`);
@@ -144,7 +148,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
           const response = await searchTasks({ projectId: projectId });
 
           setAllProjectTasks(response.data);
-
         } catch (error) {
           toast.error("Could not load tasks for linking.");
           setAllProjectTasks([]);
@@ -152,7 +155,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       };
 
       Promise.all([
-        fetchAllowedStatuses(), 
+        fetchAllowedStatuses(),
         fetchTaskTypesForProject(),
         fetchMembers(),
         fetchPrioritiesForProject(),
@@ -160,7 +163,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
         fetchSprintsForProject(),
         fetchAllTasksInProject(),
       ]);
-
     }
   }, [task]);
 
@@ -185,7 +187,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     try {
       const res = await updateTask(projectKey, taskId, { [fieldName]: updateValue });
       onTaskUpdate(res.data);
-      if (fieldName !== 'name') {
+      if (fieldName !== "name") {
         toast.success(`${fieldName.replace(/([A-Z])/g, " $1")} updated successfully!`);
       }
     } catch (error) {
@@ -209,24 +211,24 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     }
   };
 
-  const handleUnlinkTask = async (linkId) => {
-    if (!window.confirm("Are you sure you want to remove this link?")) return;
+  const handleUnlinkTask = async () => {
     try {
-      const updatedTasks = await unlinkTask(editableTask._id, linkId);
+      const updatedTasks = await unlinkTask(editableTask._id, selectedLinkId);
 
       onTaskUpdate(updatedTasks);
 
       setEditableTask(updatedTasks[0]);
 
       toast.success("Link removed successfully!");
+      setIsDeleteLinkModalOpen(false);
+      setSelectedLinkId(null);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to remove link.");
     }
   };
   const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete task ${editableTask.key}?`)) {
-      onTaskDelete(editableTask._id);
-    }
+    onTaskDelete(editableTask._id);
+    setIsDeleteTaskModalOpen(false);
   };
 
   const handleClone = () => {
@@ -261,60 +263,47 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     }
   };
 
-  const handleDeleteAttachment = async (attachmentId) => {
-    if (!window.confirm("Are you sure you want to delete this attachment?")) {
-      return;
-    }
-
+  const handleDeleteAttachment = async () => {
     try {
-      const updatedTaskAfterDelete = await deleteAttachment(editableTask._id, attachmentId);
+      const updatedTaskAfterDelete = await deleteAttachment(editableTask._id, selectedAttachmentId);
 
       setEditableTask(updatedTaskAfterDelete);
       onTaskUpdate(updatedTaskAfterDelete);
 
       toast.success("Attachment deleted successfully!");
+      setIsDeleteAttachmentModalOpen(false);
+      setSelectedAttachmentId(null);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete attachment.");
     }
   };
 
-  const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find(
-    i => i.name === editableTask.taskTypeId?.icon
-  );
+  const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find((i) => i.name === editableTask.taskTypeId?.icon);
 
   return (
     <div className="task-detail-panel">
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
-        style={{ display: 'none' }}
-      />
+      <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
       <header className="panel-header">
         <div className="panel-header-left">
           <div className="task-key-container">
             {typeIconInfo && (
-              <span
-                className="icon-wrapper-list-small"
-                style={{ backgroundColor: typeIconInfo.color }}
-                title={editableTask.taskTypeId.name}
-              >
+              <span className="icon-wrapper-list-small" style={{ backgroundColor: typeIconInfo.color }} title={editableTask.taskTypeId.name}>
                 <IconComponent name={editableTask.taskTypeId.icon} />
               </span>
             )}
             <a href={`/task/${editableTask.key}`} target="_blank" rel="noopener noreferrer" className="task-key-text">
-          {editableTask.key}
-        </a>
+              {editableTask.key}
+            </a>
           </div>
 
           <div className="editable-task-name-wrapper" data-replicated-value={editableTask.name}>
             <textarea
               className="editable-task-name"
               value={editableTask.name}
-              onChange={(e) => setEditableTask(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => setEditableTask((prev) => ({ ...prev, name: e.target.value }))}
               onBlur={() => handleUpdate("name", editableTask.name)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   e.target.blur();
                 }
@@ -326,7 +315,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
           </div>
         </div>
         <div className="panel-header-right">
-          <ActionsMenu onDelete={handleDelete} onClone={handleClone} onAddAttachment={handleAddAttachment} />
+          <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onClone={handleClone} onAddAttachment={handleAddAttachment} />
           <button onClick={onClose} className="close-btn">
             &times;
           </button>
@@ -334,28 +323,19 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       </header>
       <main className="panel-body">
         <div className="panel-tabs">
-          <button
-            className={`tab-btn ${activeTab === 'Details' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Details')}
-          >
+          <button className={`tab-btn ${activeTab === "Details" ? "active" : ""}`} onClick={() => setActiveTab("Details")}>
             Details
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'Comments' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Comments')}
-          >
+          <button className={`tab-btn ${activeTab === "Comments" ? "active" : ""}`} onClick={() => setActiveTab("Comments")}>
             Comments
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'History' ? 'active' : ''}`}
-            onClick={() => setActiveTab('History')}
-          >
+          <button className={`tab-btn ${activeTab === "History" ? "active" : ""}`} onClick={() => setActiveTab("History")}>
             History
           </button>
         </div>
 
         <div className="panel-tab-content">
-          {activeTab === 'Details' && (
+          {activeTab === "Details" && (
             <TaskDetailsTab
               editableTask={editableTask}
               setEditableTask={setEditableTask}
@@ -368,15 +348,51 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
               projectSprints={projectSprints}
               allProjectTasks={allProjectTasks}
               onLinkTask={handleLinkTask}
-              onUnlinkTask={handleUnlinkTask}
+              onUnlinkTask={(linkId) => {
+                setSelectedLinkId(linkId);
+                setIsDeleteLinkModalOpen(true);
+              }}
               onAddAttachment={handleAddAttachment}
-              onDeleteAttachment={handleDeleteAttachment}
+              onDeleteAttachment={(attachmentId) => {
+                setSelectedAttachmentId(attachmentId);
+                setIsDeleteAttachmentModalOpen(true);
+              }}
             />
           )}
-          {activeTab === 'Comments' && <CommentsTab taskId={editableTask._id} />}
-          {activeTab === 'History' && <HistoryTab taskId={editableTask._id} />}
+          {activeTab === "Comments" && <CommentsTab taskId={editableTask._id} />}
+          {activeTab === "History" && <HistoryTab taskId={editableTask._id} />}
         </div>
       </main>
+
+      <ConfirmationModal
+        isOpen={isDeleteTaskModalOpen}
+        onClose={() => setIsDeleteTaskModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Task"
+        message={`Are you sure you want to delete task ${editableTask.key}? This action cannot be undone.`}
+      />
+
+      <ConfirmationModal
+        isOpen={isDeleteLinkModalOpen}
+        onClose={() => {
+          setIsDeleteLinkModalOpen(false);
+          setSelectedLinkId(null);
+        }}
+        onConfirm={handleUnlinkTask}
+        title="Remove Link"
+        message="Are you sure you want to remove this link? This action cannot be undone."
+      />
+
+      <ConfirmationModal
+        isOpen={isDeleteAttachmentModalOpen}
+        onClose={() => {
+          setIsDeleteAttachmentModalOpen(false);
+          setSelectedAttachmentId(null);
+        }}
+        onConfirm={handleDeleteAttachment}
+        title="Delete Attachment"
+        message="Are you sure you want to delete this attachment? This action cannot be undone."
+      />
     </div>
   );
 };
