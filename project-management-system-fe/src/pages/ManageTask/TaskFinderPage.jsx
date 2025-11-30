@@ -20,6 +20,8 @@ const TaskFinderPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [includeDone, setIncludeDone] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [activeFilters, setActiveFilters] = useState({});
 
@@ -99,6 +101,7 @@ const TaskFinderPage = () => {
 
   useEffect(() => {
     debouncedFetch(activeFilters, keyword, includeDone);
+    setCurrentPage(1); // Reset to page 1 when search or filters change
   }, [keyword, debouncedFetch, activeFilters, includeDone]); // Thêm activeFilters vào dependency array
 
   const handleTaskCreated = (newTask) => {
@@ -175,6 +178,16 @@ const TaskFinderPage = () => {
 
   const clearAllFilters = () => {
     setActiveFilters({});
+  };
+
+  const getPaginatedTasks = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return tasks.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    return Math.ceil(tasks.length / itemsPerPage);
   };
 
   return (
@@ -254,11 +267,6 @@ const TaskFinderPage = () => {
           </div>
 
           <div className="task-list-container">
-            {!loading && (
-              <div className="task-list-summary">
-                Task List / {tasks.length} {tasks.length === 1 ? "Task" : "Tasks"}
-              </div>
-            )}
             <div className="task-list-header">
               <div className="task-cell task-key">Key</div>
               <div className="task-cell task-name">Name</div>
@@ -276,10 +284,27 @@ const TaskFinderPage = () => {
               ) : tasks.length === 0 ? (
                 <p className="info-text">No tasks found.</p>
               ) : (
-                tasks.map((task) => <TaskRow key={task._id} task={task} onTaskClick={handleTaskClick} />)
+                getPaginatedTasks().map((task) => <TaskRow key={task._id} task={task} onTaskClick={handleTaskClick} />)
               )}
             </div>
           </div>
+          {!loading && getTotalPages() > 1 && (
+            <div className="pagination-container">
+              <button className="pagination-btn" onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                Previous
+              </button>
+              <div className="pagination-info">
+                Page {currentPage} of {getTotalPages()}
+              </div>
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
+                disabled={currentPage === getTotalPages()}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
         <TaskDetailPanel
           key={selectedTask?._id}
