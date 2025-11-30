@@ -112,7 +112,8 @@ const createTask = async (taskData, userId) => {
   return populatedTask;
 };
 const searchTasks = async (queryParams) => {
-  const { keyword, projectId, assigneeId, reporterId, createdById, statusId, priorityId, taskTypeId, dueDate_gte, dueDate_lte } = queryParams;
+  const { keyword, projectId, assigneeId, reporterId, createdById, statusId, priorityId, taskTypeId, dueDate_gte, dueDate_lte, statusCategory } =
+    queryParams;
 
   const query = {};
 
@@ -185,7 +186,18 @@ const searchTasks = async (queryParams) => {
     return task;
   });
 
-  return populatedTasks;
+  // Filter by status category if provided
+  let filteredTasks = populatedTasks;
+  if (statusCategory) {
+    const categories = statusCategory.split(",").map((c) => c.trim());
+    filteredTasks = populatedTasks.filter((task) => {
+      if (!task.statusId || !task.statusId.category) return false;
+      // Case-insensitive comparison
+      return categories.some((cat) => cat.toLowerCase() === task.statusId.category.toLowerCase());
+    });
+  }
+
+  return filteredTasks;
 };
 
 const updateTask = async (taskId, updateData, userId) => {

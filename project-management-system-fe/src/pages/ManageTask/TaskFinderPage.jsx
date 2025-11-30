@@ -19,6 +19,7 @@ const TaskFinderPage = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [includeDone, setIncludeDone] = useState(false);
 
   const [activeFilters, setActiveFilters] = useState({});
 
@@ -74,10 +75,16 @@ const TaskFinderPage = () => {
     [filterData]
   );
 
-  const fetchTasks = async (filters, currentKeyword) => {
+  const fetchTasks = async (filters, currentKeyword, showDone) => {
     setLoading(true);
     try {
-      const params = { ...filters, keyword: currentKeyword };
+      // Add statusCategory filter - include Done if checkbox is checked
+      const categories = showDone ? "To Do,In Progress,Done" : "To Do,In Progress";
+      const params = {
+        ...filters,
+        keyword: currentKeyword,
+        statusCategory: categories,
+      };
       const response = await searchTasks(_.pickBy(params, _.identity));
       setTasks(response.data);
     } catch (error) {
@@ -91,11 +98,11 @@ const TaskFinderPage = () => {
   const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), []);
 
   useEffect(() => {
-    debouncedFetch(activeFilters, keyword);
-  }, [keyword, debouncedFetch, activeFilters]); // Thêm activeFilters vào dependency array
+    debouncedFetch(activeFilters, keyword, includeDone);
+  }, [keyword, debouncedFetch, activeFilters, includeDone]); // Thêm activeFilters vào dependency array
 
   const handleTaskCreated = (newTask) => {
-    fetchTasks(activeFilters, keyword);
+    fetchTasks(activeFilters, keyword, includeDone);
   };
 
   const handleTaskUpdate = (updatedData) => {
@@ -228,6 +235,11 @@ const TaskFinderPage = () => {
               <button className="btn-clear-filters" onClick={clearAllFilters}>
                 Clear Filters
               </button>
+
+              <label className="include-done-checkbox">
+                <input type="checkbox" checked={includeDone} onChange={(e) => setIncludeDone(e.target.checked)} />
+                <span>Include Done tasks</span>
+              </label>
             </div>
 
             <div className="right-side-filters">

@@ -342,6 +342,38 @@
   border-color: #495057;
 }
 
+.include-done-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.include-done-checkbox:hover {
+  background-color: #f8f9fa;
+  border-color: #495057;
+}
+
+.include-done-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4f46e5;
+}
+
+.include-done-checkbox span {
+  cursor: pointer;
+}
+
 .right-side-filters {
   display: flex;
   gap: 0.5rem;
