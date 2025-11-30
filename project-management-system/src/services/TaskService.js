@@ -111,7 +111,7 @@ const createTask = async (taskData, userId) => {
 
   return populatedTask;
 };
-const searchTasks = async (queryParams) => {
+const searchTasks = async (queryParams, user) => {
   const { keyword, projectId, assigneeId, reporterId, createdById, statusId, priorityId, taskTypeId, dueDate_gte, dueDate_lte, statusCategory } =
     queryParams;
 
@@ -124,6 +124,71 @@ const searchTasks = async (queryParams) => {
   if (statusId) query.statusId = statusId;
   if (priorityId) query.priorityId = priorityId;
   if (taskTypeId) query.taskTypeId = taskTypeId;
+
+  // Apply role-based filtering
+  if (user && user.role !== "admin") {
+    const userId = user._id || user.id;
+
+    // Get user's projects to check their roles
+    const userProjects = await Project.find({
+      "members.userId": userId,
+    }).lean();
+
+    // Categorize projects by user's role
+    const pmProjectIds = [];
+    const leaderProjectIds = [];
+    const memberProjectIds = [];
+
+    for (const project of userProjects) {
+      const member = project.members.find((m) => m.userId.toString() === userId.toString());
+      if (member) {
+        if (member.role === "PROJECT_MANAGER") {
+          pmProjectIds.push(project._id);
+        } else if (member.role === "LEADER") {
+          leaderProjectIds.push(project._id);
+        } else {
+          memberProjectIds.push(project._id);
+        }
+      }
+
+      // Check in teams
+      for (const team of project.teams || []) {
+        if (team.leaderId && team.leaderId.toString() === userId.toString()) {
+          leaderProjectIds.push(project._id);
+        }
+      }
+    }
+
+    // Build query based on role
+    const roleConditions = [];
+
+    // PM: all tasks in projects they manage
+    if (pmProjectIds.length > 0) {
+      roleConditions.push({ projectId: { $in: pmProjectIds } });
+    }
+
+    // LEADER: tasks they created (reporterId) in their projects
+    if (leaderProjectIds.length > 0) {
+      roleConditions.push({
+        projectId: { $in: leaderProjectIds },
+        reporterId: userId,
+      });
+    }
+
+    // MEMBER: tasks assigned to them
+    roleConditions.push({ assigneeId: userId });
+
+    // Combine all conditions with $or
+    if (roleConditions.length > 0) {
+      if (query.$or) {
+        // If there's already $or (from keyword search), combine them
+        query.$and = [{ $or: query.$or }, { $or: roleConditions }];
+        delete query.$or;
+      } else {
+        query.$or = roleConditions;
+      }
+    }
+  }
 
   if (dueDate_gte || dueDate_lte) {
     query.dueDate = {};
