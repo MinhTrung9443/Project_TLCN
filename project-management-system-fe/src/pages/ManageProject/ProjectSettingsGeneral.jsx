@@ -47,6 +47,7 @@ const ProjectSettingsGeneral = () => {
     projectManagerId: "",
     startDate: "",
     endDate: "",
+    status: "",
   });
   const [initialData, setInitialData] = useState(null);
 
@@ -104,6 +105,7 @@ const ProjectSettingsGeneral = () => {
         projectManagerId: projectManager?.userId?._id || "",
         startDate: formatDateForInput(projectData.startDate),
         endDate: formatDateForInput(projectData.endDate),
+        status: projectData.status || "active",
       };
       setFormData(data);
       setInitialData(data);
@@ -175,6 +177,14 @@ const ProjectSettingsGeneral = () => {
         <select name="type" value={formData.type} onChange={handleChange} disabled={!canEditSensitiveInfo}>
           <option value="Scrum">Scrum</option>
           <option value="Kanban">Kanban</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label>Status</label>
+        <select name="status" value={formData.status} onChange={handleChange} disabled={!canEditGeneralInfo}>
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+          <option value="completed">Completed</option>
         </select>
       </div>
       <div className="form-row">

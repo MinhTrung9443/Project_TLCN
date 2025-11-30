@@ -20,6 +20,7 @@ const TaskFinderPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [includeDone, setIncludeDone] = useState(false);
+  const [projectStatus, setProjectStatus] = useState("active"); // Default to active projects only
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -66,7 +67,9 @@ const TaskFinderPage = () => {
 
   const selectOptions = useMemo(
     () => ({
-      projects: filterData.projects.map((p) => ({ value: p._id, label: p.name })),
+      projects: filterData.projects
+        .filter((p) => !projectStatus || p.status === projectStatus) // Filter projects by status
+        .map((p) => ({ value: p._id, label: p.name, status: p.status })),
       users: filterData.users.map((u) => ({ value: u._id, label: u.fullname })),
       statuses: filterData.statuses.map((s) => ({ value: s._id, label: s.name })),
       priorities: filterData.priorities.map((p) => ({ value: p._id, label: p.name })),
@@ -74,19 +77,27 @@ const TaskFinderPage = () => {
       taskTypes: filterData.taskTypes.map((t) => ({ value: t._id, label: t.name })),
       sprints: filterData.sprints.map((sp) => ({ value: sp._id, label: sp.name })),
     }),
-    [filterData]
+    [filterData, projectStatus]
   );
 
-  const fetchTasks = async (filters, currentKeyword, showDone) => {
+  const fetchTasks = async (filters, currentKeyword, showDone, projStatus) => {
     setLoading(true);
     try {
       // Add statusCategory filter - include Done if checkbox is checked
       const categories = showDone ? "To Do,In Progress,Done" : "To Do,In Progress";
+
+      // Filter to get project IDs based on status
+      const filteredProjectIds = projStatus
+        ? filterData.projects.filter((p) => p.status === projStatus).map((p) => p._id)
+        : filterData.projects.map((p) => p._id);
+
       const params = {
         ...filters,
         keyword: currentKeyword,
         statusCategory: categories,
+        projectStatus: projStatus || undefined, // Pass project status to backend
       };
+
       const response = await searchTasks(_.pickBy(params, _.identity));
       setTasks(response.data);
     } catch (error) {
@@ -97,15 +108,15 @@ const TaskFinderPage = () => {
     }
   };
 
-  const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), []);
+  const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), [filterData.projects]);
 
   useEffect(() => {
-    debouncedFetch(activeFilters, keyword, includeDone);
+    debouncedFetch(activeFilters, keyword, includeDone, projectStatus);
     setCurrentPage(1); // Reset to page 1 when search or filters change
-  }, [keyword, debouncedFetch, activeFilters, includeDone]); // Thêm activeFilters vào dependency array
+  }, [keyword, debouncedFetch, activeFilters, includeDone, projectStatus]); // Thêm activeFilters vào dependency array
 
   const handleTaskCreated = (newTask) => {
-    fetchTasks(activeFilters, keyword, includeDone);
+    fetchTasks(activeFilters, keyword, includeDone, projectStatus);
   };
 
   const handleTaskUpdate = (updatedData) => {
@@ -206,6 +217,13 @@ const TaskFinderPage = () => {
 
           <div className="filters-container">
             <div className="filter-dropdowns">
+              <select className="filter-select" value={projectStatus} onChange={(e) => setProjectStatus(e.target.value)}>
+                <option value="">All Project Status</option>
+                <option value="active">Active Projects</option>
+                <option value="paused">Paused Projects</option>
+                <option value="completed">Completed Projects</option>
+              </select>
+
               <select
                 className="filter-select"
                 value={activeFilters.projectId || ""}

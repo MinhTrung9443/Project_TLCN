@@ -1,5 +1,8 @@
 const TimeLog = require("../models/TimeLog");
 const Task = require("../models/Task");
+const Project = require("../models/Project");
+const User = require("../models/User");
+const Notification = require("../models/Notification");
 const { logAction } = require("./AuditLogHelper");
 
 const timeLogService = {
@@ -7,7 +10,7 @@ const timeLogService = {
   createTimeLog: async (taskId, userId, timeSpent, comment) => {
     try {
       // Validate task tồn tại
-      const task = await Task.findById(taskId);
+      const task = await Task.findById(taskId).populate("projectId");
       if (!task) {
         throw { statusCode: 404, message: "Task not found" };
       }
@@ -37,6 +40,45 @@ const timeLogService = {
 
       // Populate user info
       await timeLog.populate("userId", "fullname email avatar");
+
+      // Tạo thông báo cho PM và Leader của project
+      if (task.projectId) {
+        const project = await Project.findById(task.projectId._id).populate("projectManager members.userId teams.leaderId");
+
+        if (project) {
+          const recipientIds = new Set();
+
+          // Thêm PM
+          if (project.projectManager && project.projectManager._id.toString() !== userId.toString()) {
+            recipientIds.add(project.projectManager._id.toString());
+          }
+
+          // Thêm các leaders từ teams
+          if (project.teams && Array.isArray(project.teams)) {
+            project.teams.forEach((team) => {
+              if (team.leaderId && team.leaderId._id.toString() !== userId.toString()) {
+                recipientIds.add(team.leaderId._id.toString());
+              }
+            });
+          }
+
+          // Tạo thông báo cho từng người
+          const user = await User.findById(userId);
+          const notifications = Array.from(recipientIds).map((recipientId) => ({
+            userId: recipientId,
+            title: "Time Logged",
+            message: `${user?.fullname || "A member"} logged ${timeSpent}h on task ${task.key || taskId}`,
+            type: "time_log",
+            relatedId: timeLog._id,
+            relatedType: "TimeLog",
+            isRead: false,
+          }));
+
+          if (notifications.length > 0) {
+            await Notification.insertMany(notifications);
+          }
+        }
+      }
 
       return timeLog;
     } catch (error) {

@@ -112,8 +112,20 @@ const createTask = async (taskData, userId) => {
   return populatedTask;
 };
 const searchTasks = async (queryParams, user) => {
-  const { keyword, projectId, assigneeId, reporterId, createdById, statusId, priorityId, taskTypeId, dueDate_gte, dueDate_lte, statusCategory } =
-    queryParams;
+  const {
+    keyword,
+    projectId,
+    assigneeId,
+    reporterId,
+    createdById,
+    statusId,
+    priorityId,
+    taskTypeId,
+    dueDate_gte,
+    dueDate_lte,
+    statusCategory,
+    projectStatus,
+  } = queryParams;
 
   const query = {};
 
@@ -132,6 +144,7 @@ const searchTasks = async (queryParams, user) => {
     // Get user's projects to check their roles
     const userProjects = await Project.find({
       "members.userId": userId,
+      isDeleted: false,
     }).lean();
 
     // Categorize projects by user's role
@@ -209,7 +222,7 @@ const searchTasks = async (queryParams, user) => {
   }
 
   const tasks = await Task.find(query)
-    .populate("projectId", "name key")
+    .populate("projectId", "name key isDeleted status")
     .populate("taskTypeId", "name icon")
     .populate("priorityId", "name icon")
     .populate("assigneeId", "fullname avatar")
@@ -225,17 +238,24 @@ const searchTasks = async (queryParams, user) => {
     .sort({ createdAt: -1 })
     .lean(); // Chuyển sang object thường, không phải Mongoose document
 
-  if (tasks.length === 0) {
+  // Filter out tasks from deleted projects and optionally by project status
+  let filteredTasks = tasks.filter((task) => task.projectId && task.projectId.isDeleted === false);
+
+  if (projectStatus) {
+    filteredTasks = filteredTasks.filter((task) => task.projectId && task.projectId.status === projectStatus);
+  }
+
+  if (filteredTasks.length === 0) {
     return [];
   }
 
-  const projectIdsInTasks = [...new Set(tasks.map((task) => task.projectId?._id.toString()).filter(Boolean))];
+  const projectIdsInTasks = [...new Set(filteredTasks.map((task) => task.projectId?._id.toString()).filter(Boolean))];
 
   const workflows = await Workflow.find({ projectId: { $in: projectIdsInTasks } });
 
   const workflowMap = new Map(workflows.map((wf) => [wf.projectId.toString(), wf]));
 
-  const populatedTasks = tasks.map((task) => {
+  const populatedTasks = filteredTasks.map((task) => {
     if (!task.projectId || !task.statusId) {
       return task; // Trả về task gốc nếu thiếu dữ liệu
     }
@@ -252,17 +272,17 @@ const searchTasks = async (queryParams, user) => {
   });
 
   // Filter by status category if provided
-  let filteredTasks = populatedTasks;
+  let finalTasks = populatedTasks;
   if (statusCategory) {
     const categories = statusCategory.split(",").map((c) => c.trim());
-    filteredTasks = populatedTasks.filter((task) => {
+    finalTasks = populatedTasks.filter((task) => {
       if (!task.statusId || !task.statusId.category) return false;
       // Case-insensitive comparison
       return categories.some((cat) => cat.toLowerCase() === task.statusId.category.toLowerCase());
     });
   }
 
-  return filteredTasks;
+  return finalTasks;
 };
 
 const updateTask = async (taskId, updateData, userId) => {

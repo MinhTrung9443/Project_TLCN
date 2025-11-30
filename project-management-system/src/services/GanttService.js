@@ -72,7 +72,7 @@ class GanttService {
 
   // 1. GROUP BY: Project only
   async getProjectsOnly(projectIds, assigneeIds) {
-    let query = {};
+    let query = { isDeleted: false };
 
     if (projectIds.length > 0) {
       query._id = { $in: projectIds };
@@ -95,7 +95,7 @@ class GanttService {
 
   // 2. GROUP BY: Project + Sprint
   async getProjectsWithSprints(projectIds, assigneeIds) {
-    let projectQuery = {};
+    let projectQuery = { isDeleted: false };
 
     if (projectIds.length > 0) {
       projectQuery._id = { $in: projectIds };
@@ -134,7 +134,7 @@ class GanttService {
 
   // 3. GROUP BY: Project + Sprint + Task
   async getProjectsWithSprintsAndTasks(projectIds, assigneeIds) {
-    let projectQuery = {};
+    let projectQuery = { isDeleted: false };
 
     if (projectIds.length > 0) {
       projectQuery._id = { $in: projectIds };
@@ -199,7 +199,7 @@ class GanttService {
   }
   // 4. GROUP BY: Project + Task (no sprint)
   async getProjectsWithTasks(projectIds, assigneeIds) {
-    let projectQuery = {};
+    let projectQuery = { isDeleted: false };
     if (projectIds.length > 0) {
       projectQuery._id = { $in: projectIds };
     }

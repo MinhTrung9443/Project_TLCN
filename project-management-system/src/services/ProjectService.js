@@ -244,6 +244,9 @@ const updateProjectByKey = async (projectKey, projectData, userId) => {
   project.description = projectData.description;
   project.startDate = projectData.startDate;
   project.endDate = projectData.endDate;
+  if (projectData.status) {
+    project.status = projectData.status;
+  }
 
   const updatedProject = await project.save();
 
