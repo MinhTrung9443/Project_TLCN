@@ -9,7 +9,7 @@ const commentSchema = new Schema(
       ref: "Task",
       required: true,
     },
-    parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
+    parentId: { type: mongoose.Schema.Types.ObjectId, ref: "Comment", default: null },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -34,16 +34,22 @@ const commentSchema = new Schema(
           type: String,
           required: true,
         },
+        public_id: {
+          type: String,
+          required: true,
+        },
         uploadedAt: {
           type: Date,
           default: Date.now,
         },
       },
     ],
-    reactions: [{
+    reactions: [
+      {
         emoji: { type: String, required: true },
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
-    }]
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -73,6 +73,13 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
       console.error("Failed to post reply", error);
     }
   };
+
+  // Helper function to check if file is an image
+  const isImage = (filename) => {
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"];
+    return imageExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
+  };
+
   if (!comment?.userId) {
     return null;
   }
@@ -118,7 +125,44 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
               <button onClick={() => setIsEditing(false)}>Cancel</button>
             </div>
           ) : (
-            <p>{comment.content}</p>
+            <>
+              <p>{comment.content}</p>
+
+              {/* Display attachments */}
+              {comment.attachments && comment.attachments.length > 0 && (
+                <div className="comment-attachments-list">
+                  {comment.attachments.map((attachment, index) => (
+                    <div key={index} className="attachment-item">
+                      {isImage(attachment.filename) ? (
+                        <div className="attachment-image">
+                          <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={attachment.url}
+                              alt={attachment.filename}
+                              style={{
+                                maxWidth: "150px",
+                                maxHeight: "150px",
+                                borderRadius: "8px",
+                                objectFit: "contain",
+                                display: "block",
+                              }}
+                            />
+                          </a>
+                          <div className="attachment-filename">{attachment.filename}</div>
+                        </div>
+                      ) : (
+                        <div className="attachment-file">
+                          <span className="material-symbols-outlined">attach_file</span>
+                          <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                            {attachment.filename}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {/* --- Reactions và Actions đặt ở đây --- */}
