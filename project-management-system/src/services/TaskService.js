@@ -273,11 +273,25 @@ const updateTask = async (taskId, updateData, userId) => {
   }
 
   // 1. Lấy task hiện tại TRƯỚC KHI cập nhật để so sánh
-  const originalTask = await Task.findById(taskId).lean();
+  const originalTask = await Task.findById(taskId).populate("projectId", "_id").populate("statusId", "_id").lean();
+
   if (!originalTask) {
     const error = new Error("Task not found");
     error.statusCode = 404;
     throw error;
+  }
+
+  // 2. Kiểm tra xem task đã Done chưa
+  if (originalTask.statusId && originalTask.projectId) {
+    const workflow = await Workflow.findOne({ projectId: originalTask.projectId._id });
+    if (workflow && workflow.statuses) {
+      const currentStatus = workflow.statuses.find((s) => s._id.toString() === originalTask.statusId._id.toString());
+      if (currentStatus && currentStatus.category && currentStatus.category.toLowerCase() === "done") {
+        const error = new Error("Cannot edit task that is already Done");
+        error.statusCode = 403;
+        throw error;
+      }
+    }
   }
 
   // 2. Cập nhật task (Chức năng cốt lõi)

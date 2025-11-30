@@ -175,9 +175,15 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     const newStartDate = fieldName === "startDate" ? updateValue : editableTask.startDate;
     const newDueDate = fieldName === "dueDate" ? updateValue : editableTask.dueDate;
 
-    if (newStartDate && newDueDate && new Date(newStartDate) > new Date(newDueDate)) {
-      toast.error("Start Date cannot be after Due Date.");
-      return;
+    // So sánh chỉ phần ngày, bỏ qua giờ
+    if (newStartDate && newDueDate) {
+      const startDateOnly = new Date(newStartDate).setHours(0, 0, 0, 0);
+      const dueDateOnly = new Date(newDueDate).setHours(0, 0, 0, 0);
+
+      if (startDateOnly > dueDateOnly) {
+        toast.error("Start Date cannot be after Due Date.");
+        return;
+      }
     }
 
     const originalTask = { ...editableTask };
@@ -191,7 +197,8 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
         toast.success(`${fieldName.replace(/([A-Z])/g, " $1")} updated successfully!`);
       }
     } catch (error) {
-      toast.error("Update failed. Reverting changes.");
+      const errorMessage = error.response?.data?.message || "Update failed. Reverting changes.";
+      toast.error(errorMessage);
       setEditableTask(originalTask); // Hoàn tác nếu lỗi
     }
   };
