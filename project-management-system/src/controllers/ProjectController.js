@@ -24,7 +24,8 @@ const handleCloneProject = async (req, res) => {
 const handleGetArchivedProjects = async (req, res) => {
   try {
     const { search } = req.query;
-    const projects = await projectService.getArchivedProjects(search);
+    const actor = req.user; // Get actor from auth middleware
+    const projects = await projectService.getArchivedProjects(actor, search);
     res.status(200).json(projects);
   } catch (error) {
     res.status(500).json({ message: error.message || "Server Error" });
@@ -129,7 +130,8 @@ const handleGetProjectByKey = async (req, res) => {
 const handleGetProjectMembers = async (req, res) => {
   try {
     const { projectKey } = req.params;
-    const members = await projectService.getProjectMembers(projectKey);
+    const userId = req.user.id; // Get current user ID from auth middleware
+    const members = await projectService.getProjectMembers(projectKey, userId);
     res.status(200).json(members);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });

@@ -1,6 +1,8 @@
 const Task = require("../models/Task");
 const TimeLog = require("../models/TimeLog");
 const User = require("../models/User");
+const Project = require("../models/Project");
+const mongoose = require("mongoose");
 
 const performanceService = {
   /**
@@ -234,6 +236,220 @@ const performanceService = {
       const timeLogs = await TimeLog.find(timeLogFilter).populate("taskId", "key name").sort({ logDate: -1 }).limit(limit);
 
       return timeLogs;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get team progress statistics for a project
+   */
+  getTeamProgress: async (userId, projectId, teamId = null) => {
+    try {
+      // Get project with teams - populate Group for teamId to get group name
+      const project = await Project.findById(projectId)
+        .populate({
+          path: "teams.teamId",
+          model: "Group",
+          select: "name status",
+        })
+        .populate("teams.leaderId", "fullname email")
+        .populate("teams.members", "fullname email avatar")
+        .populate("members.userId", "_id email");
+
+      if (!project) {
+        throw { statusCode: 404, message: "Project not found" };
+      }
+
+      console.log("Project teams:", JSON.stringify(project.teams, null, 2));
+
+      // Check user permissions
+      const user = await User.findById(userId);
+      const isAdmin = user.role === "admin";
+      const isPM = project.members.some((m) => (m.userId._id || m.userId).toString() === userId.toString() && m.role === "PROJECT_MANAGER");
+
+      // If teamId specified, filter to that team only
+      let teamsToAnalyze = project.teams || [];
+      if (teamId) {
+        teamsToAnalyze = teamsToAnalyze.filter((t) => (t.teamId?._id || t.teamId).toString() === teamId);
+      }
+
+      // If not admin or PM, filter to teams user leads
+      if (!isAdmin && !isPM) {
+        teamsToAnalyze = teamsToAnalyze.filter((t) => (t.leaderId?._id || t.leaderId).toString() === userId.toString());
+      }
+
+      // Calculate stats for each team
+      const teamStats = {};
+
+      for (const team of teamsToAnalyze) {
+        const currentTeamId = team.teamId?._id || team.teamId;
+
+        // Get member IDs from team.members (these are ObjectIds in the project.teams array)
+        const memberIds = (team.members || []).map((m) => {
+          // Handle both populated and non-populated members
+          return mongoose.Types.ObjectId.isValid(m) ? m : m._id || m;
+        });
+
+        // IMPORTANT: Include leader in the member list for stats calculation
+        const leaderId = team.leaderId?._id || team.leaderId;
+        if (leaderId && !memberIds.some((id) => id.toString() === leaderId.toString())) {
+          memberIds.push(leaderId);
+        }
+
+        console.log(`Processing team ${team.teamId?.name}, members (including leader):`, memberIds);
+
+        if (memberIds.length === 0) {
+          console.log(`Team ${team.teamId?.name} has no members`);
+          teamStats[currentTeamId.toString()] = {
+            totalTasks: 0,
+            completedTasks: 0,
+            totalTime: 0,
+            completionRate: 0,
+          };
+          continue;
+        }
+
+        // Get tasks assigned to team members in this project
+        const tasks = await Task.find({
+          projectId: projectId,
+          assigneeId: { $in: memberIds },
+        }).select("_id status");
+
+        console.log(`Team ${team.teamId?.name} tasks found:`, tasks.length);
+
+        const totalTasks = tasks.length;
+        const completedTasks = tasks.filter((t) => t.status === "done").length;
+
+        // Get time logs for team members' tasks
+        const taskIds = tasks.map((t) => t._id);
+        const timeLogs = await TimeLog.find({
+          taskId: { $in: taskIds },
+          userId: { $in: memberIds },
+        });
+
+        const totalTime = timeLogs.reduce((sum, log) => sum + (log.timeSpent || 0), 0);
+
+        console.log(`Team ${team.teamId?.name} stats:`, { totalTasks, completedTasks, totalTime });
+
+        teamStats[currentTeamId.toString()] = {
+          totalTasks,
+          completedTasks,
+          totalTime,
+          completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+        };
+      }
+
+      console.log("Final team stats:", teamStats);
+      return teamStats;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get member progress statistics for a team
+   */
+  getMemberProgress: async (userId, projectId, teamId, memberId = null) => {
+    try {
+      // Get project with teams - populate Group for teamId to get group name
+      const project = await Project.findById(projectId)
+        .populate({
+          path: "teams.teamId",
+          model: "Group",
+          select: "name status",
+        })
+        .populate("teams.leaderId", "fullname email")
+        .populate("teams.members", "fullname email avatar")
+        .populate("members.userId", "_id email");
+
+      if (!project) {
+        throw { statusCode: 404, message: "Project not found" };
+      }
+
+      // Find the specific team
+      const team = project.teams.find((t) => (t.teamId?._id || t.teamId).toString() === teamId);
+
+      if (!team) {
+        throw { statusCode: 404, message: "Team not found" };
+      }
+
+      // Check user permissions
+      const user = await User.findById(userId);
+      const isAdmin = user.role === "admin";
+      const isPM = project.members.some((m) => (m.userId._id || m.userId).toString() === userId.toString() && m.role === "PROJECT_MANAGER");
+      const isLeader = (team.leaderId?._id || team.leaderId).toString() === userId.toString();
+
+      if (!isAdmin && !isPM && !isLeader) {
+        throw { statusCode: 403, message: "You don't have permission to view this team's progress" };
+      }
+
+      // Get members to analyze - INCLUDE LEADER
+      let membersToAnalyze = [...(team.members || [])];
+
+      // Add leader to members list if not already included
+      const leaderId = team.leaderId?._id || team.leaderId;
+      const leaderInMembers = membersToAnalyze.some((m) => {
+        const mId = mongoose.Types.ObjectId.isValid(m) ? m : m._id || m;
+        return mId.toString() === leaderId.toString();
+      });
+
+      if (!leaderInMembers && leaderId) {
+        // Need to fetch leader info since it's not in members array
+        const leaderUser = await User.findById(leaderId).select("fullname email avatar");
+        if (leaderUser) {
+          membersToAnalyze.push(leaderUser);
+        }
+      }
+
+      if (memberId) {
+        membersToAnalyze = membersToAnalyze.filter((m) => {
+          const mId = mongoose.Types.ObjectId.isValid(m) ? m : m._id || m;
+          return mId.toString() === memberId;
+        });
+      }
+
+      console.log(`Analyzing ${membersToAnalyze.length} members (including leader) for team ${team.teamId?.name}`);
+
+      // Calculate stats for each member
+      const memberStats = {};
+
+      for (const member of membersToAnalyze) {
+        // Handle both populated and non-populated member IDs
+        const currentMemberId = mongoose.Types.ObjectId.isValid(member) ? member : member._id || member;
+
+        console.log(`Processing member ${currentMemberId}`);
+
+        // Get tasks assigned to this member in this project
+        const tasks = await Task.find({
+          projectId: projectId,
+          assigneeId: currentMemberId,
+        }).select("_id status");
+
+        const tasksAssigned = tasks.length;
+        const tasksCompleted = tasks.filter((t) => t.status === "done").length;
+
+        // Get time logs for this member's tasks
+        const taskIds = tasks.map((t) => t._id);
+        const timeLogs = await TimeLog.find({
+          taskId: { $in: taskIds },
+          userId: currentMemberId,
+        });
+
+        const totalTime = timeLogs.reduce((sum, log) => sum + (log.timeSpent || 0), 0);
+
+        console.log(`Member ${currentMemberId} stats:`, { tasksAssigned, tasksCompleted, totalTime });
+
+        memberStats[currentMemberId.toString()] = {
+          tasksAssigned,
+          tasksCompleted,
+          totalTime,
+          completionRate: tasksAssigned > 0 ? Math.round((tasksCompleted / tasksAssigned) * 100) : 0,
+        };
+      }
+
+      console.log("Final member stats:", memberStats);
+      return memberStats;
     } catch (error) {
       throw error;
     }

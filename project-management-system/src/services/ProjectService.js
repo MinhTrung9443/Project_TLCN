@@ -4,6 +4,7 @@ const Priority = require("../models/Priority");
 const Platform = require("../models/Platform");
 const Workflow = require("../models/Workflow");
 const Sprint = require("../models/Sprint");
+const User = require("../models/User");
 const { logAction } = require("./AuditLogHelper");
 const notificationService = require("./NotificationService");
 const Group = require("../models/Group");
@@ -155,19 +156,51 @@ const getAllProjects = async (actor, search) => {
   // 1. Thêm tham số 'search'
   let query = { isDeleted: false };
 
+  // 2. Filter projects for non-admin users
   if (actor.role !== "admin") {
-    query["members.userId"] = actor._id;
+    // User must be in: project.members, teams.leaderId, or teams.members
+    query.$or = [
+      { "members.userId": actor._id }, // In project members
+      { "teams.leaderId": actor._id }, // Is team leader
+      { "teams.members": actor._id }, // Is team member
+    ];
   }
 
-  // 2. Thêm logic tìm kiếm nếu có tham số 'search'
+  // 3. Thêm logic tìm kiếm nếu có tham số 'search'
   if (search) {
     const searchRegex = new RegExp(search, "i"); // 'i' để tìm kiếm không phân biệt hoa thường
-    query.$or = [{ name: { $regex: searchRegex } }, { key: { $regex: searchRegex } }];
+    const searchCondition = [{ name: { $regex: searchRegex } }, { key: { $regex: searchRegex } }];
+
+    // If already has $or from role filtering, combine with $and
+    if (query.$or) {
+      query = {
+        isDeleted: false,
+        $and: [
+          { $or: query.$or }, // Role filter
+          { $or: searchCondition }, // Search filter
+        ],
+      };
+    } else {
+      query.$or = searchCondition;
+    }
   }
 
   const projects = await Project.find(query)
     .populate({
       path: "members.userId",
+      select: "fullname email avatar",
+    })
+    .populate({
+      path: "teams.teamId",
+      model: "Group",
+      select: "name status",
+    })
+    .populate({
+      path: "teams.leaderId",
+      select: "fullname email avatar",
+    })
+    .populate({
+      path: "teams.members",
       select: "fullname email avatar",
     })
     .sort({ createdAt: -1 })
@@ -184,17 +217,52 @@ const getAllProjects = async (actor, search) => {
   return projectsWithPM;
 };
 
-const getArchivedProjects = async (search) => {
+const getArchivedProjects = async (actor, search) => {
   let query = { isDeleted: true };
+
+  // Filter archived projects for non-admin users
+  if (actor && actor.role !== "admin") {
+    query.$or = [
+      { "members.userId": actor._id }, // In project members
+      { "teams.leaderId": actor._id }, // Is team leader
+      { "teams.members": actor._id }, // Is team member
+    ];
+  }
 
   // Thêm điều kiện tìm kiếm theo name hoặc key nếu có
   if (search) {
-    query.$or = [{ name: { $regex: search, $options: "i" } }, { key: { $regex: search, $options: "i" } }];
+    const searchCondition = [{ name: { $regex: search, $options: "i" } }, { key: { $regex: search, $options: "i" } }];
+
+    // If already has $or from role filtering, combine with $and
+    if (query.$or) {
+      query = {
+        isDeleted: true,
+        $and: [
+          { $or: query.$or }, // Role filter
+          { $or: searchCondition }, // Search filter
+        ],
+      };
+    } else {
+      query.$or = searchCondition;
+    }
   }
 
   const projects = await Project.find(query)
     .populate({
       path: "members.userId",
+      select: "fullname email avatar",
+    })
+    .populate({
+      path: "teams.teamId",
+      model: "Group",
+      select: "name status",
+    })
+    .populate({
+      path: "teams.leaderId",
+      select: "fullname email avatar",
+    })
+    .populate({
+      path: "teams.members",
       select: "fullname email avatar",
     })
     .sort({ deletedAt: -1 })
@@ -387,9 +455,9 @@ const getProjectByKey = async (key) => {
   return project;
 };
 
-const getProjectMembers = async (projectKey) => {
+const getProjectMembers = async (projectKey, userId = null) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
-    .populate("members.userId", "fullname email avatar")
+    .populate("members.userId", "fullname email avatar role")
     .populate("teams.teamId", "name") // Populate để lấy tên group
     .populate("teams.leaderId", "fullname email avatar") // Lấy thông tin của leader
     .populate("teams.members", "fullname email avatar"); // Populate members đã được add vào team trong project
@@ -400,6 +468,9 @@ const getProjectMembers = async (projectKey) => {
     throw error;
   }
 
+  // Always return all members and teams (no filtering)
+  // Project Members page shows all members to everyone
+  // Only edit permissions are restricted (handled by middleware)
   return {
     members: project.members || [],
     teams: project.teams || [],

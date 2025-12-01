@@ -35,6 +35,34 @@ const performanceService = {
       throw error;
     }
   },
+
+  // Get team progress statistics for a project
+  getTeamProgress: async (projectId, teamId = null) => {
+    try {
+      const params = { projectId };
+      if (teamId) params.teamId = teamId;
+
+      const response = await apiClient.get("/performance/team-progress", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching team progress:", error);
+      throw error;
+    }
+  },
+
+  // Get member progress statistics
+  getMemberProgress: async (projectId, teamId, memberId = null) => {
+    try {
+      const params = { projectId, teamId };
+      if (memberId) params.memberId = memberId;
+
+      const response = await apiClient.get("/performance/member-progress", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching member progress:", error);
+      throw error;
+    }
+  },
 };
 
 export default performanceService;

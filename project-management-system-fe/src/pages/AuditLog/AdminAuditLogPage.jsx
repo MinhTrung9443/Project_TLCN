@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getProjectAuditOverview, getProjectAuditLogs } from "../../services/auditLogService";
 import { getProjects } from "../../services/projectService";
+import performanceService from "../../services/performanceService";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import PerformancePanel from "../../components/common/PerformancePanel";
@@ -19,6 +20,11 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   const [selectedUser, setSelectedUser] = useState(null); // For performance panel
   const [userPage, setUserPage] = useState(1); // Pagination for team members
   const [usersPerPage] = useState(6); // Show 6 members at a time
+  const [viewMode, setViewMode] = useState("teams"); // "teams" or "members"
+  const [selectedTeam, setSelectedTeam] = useState(null); // Selected team for member view
+  const [teamStats, setTeamStats] = useState({}); // Team statistics
+  const [memberStats, setMemberStats] = useState({}); // Member statistics
+  const [pmStats, setPmStats] = useState({}); // PM statistics (keyed by PM userId)
 
   // Kiểm tra quyền truy cập - Chỉ admin và PM được xem
   useEffect(() => {
@@ -38,16 +44,29 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
     getProjects().then((res) => {
       let availableProjects = res.data || [];
 
-      // Admin thì xem tất cả
-      // Non-admin chỉ xem projects mà họ là PM
-      if (user.role !== "admin") {
-        availableProjects = availableProjects.filter((project) =>
-          project.members?.some((member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER")
-        );
+      console.log("Projects loaded:", availableProjects.length);
+      console.log("First project sample:", availableProjects[0]);
+      console.log("First project teams:", availableProjects[0]?.teams);
 
-        // Nếu không có project nào mà user là PM, redirect về dashboard
+      // Admin thì xem tất cả
+      // Non-admin: Backend đã filter projects (PM, Leader, Member)
+      // Nhưng Audit Log page chỉ cho phép Admin, PM, và Leader
+      if (user.role !== "admin") {
+        availableProjects = availableProjects.filter((project) => {
+          // Check if PM
+          const isPM = project.members?.some(
+            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+          );
+
+          // Check if Leader
+          const isLeader = project.teams?.some((team) => team.leaderId._id === user._id || team.leaderId === user._id);
+
+          return isPM || isLeader;
+        });
+
+        // Nếu không có project nào mà user là PM hoặc Leader, redirect về dashboard
         if (availableProjects.length === 0) {
-          alert("Bạn không có quyền truy cập trang này. Chỉ Admin và Project Manager mới có thể xem Audit Log.");
+          alert("Bạn không có quyền truy cập trang này. Chỉ Admin, Project Manager và Team Leader mới có thể xem Audit Log.");
           navigate("/dashboard");
           return;
         }
@@ -58,7 +77,447 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         setSelectedProjectId(availableProjects[0]._id || availableProjects[0].id);
       }
     });
-  }, [user, navigate]);
+  }, [user, navigate, selectedProjectId]);
+
+  // Fetch team statistics when project is selected
+  useEffect(() => {
+    if (!selectedProjectId) return;
+
+    const fetchTeamStats = async () => {
+      try {
+        console.log("Fetching team stats for project:", selectedProjectId);
+        const response = await performanceService.getTeamProgress(selectedProjectId);
+        console.log("Team stats response:", response);
+        const statsData = response.data?.data || response.data || {};
+        console.log("Team stats data:", statsData);
+        setTeamStats(statsData);
+      } catch (error) {
+        console.error("Error fetching team stats:", error);
+        setTeamStats({});
+      }
+    };
+
+    fetchTeamStats();
+  }, [selectedProjectId]);
+
+  // Fetch PM statistics when project is selected
+  useEffect(() => {
+    if (!selectedProjectId) return;
+
+    const fetchPMStats = async () => {
+      try {
+        const currentProject = projects.find((p) => (p._id || p.id) === selectedProjectId);
+        if (!currentProject) return;
+
+        const projectManagers = (currentProject.members || []).filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
+
+        const stats = {};
+        for (const pm of projectManagers) {
+          const pmId = pm._id || pm;
+          console.log("Fetching stats for PM:", pmId);
+          try {
+            const response = await performanceService.getUserPerformance(pmId, selectedProjectId);
+            console.log("PM performance response:", response);
+            const perfData = response.data || response;
+            console.log("PM performance data:", perfData);
+
+            // Map from backend structure to expected format
+            const summary = perfData.summary || {};
+            stats[pmId] = {
+              tasksAssigned: summary.totalTasks || 0,
+              tasksCompleted: summary.completedTasks || 0,
+              totalTime: summary.totalActualTime || 0,
+              completionRate: summary.totalTasks > 0 ? Math.round((summary.completedTasks / summary.totalTasks) * 100) : 0,
+            };
+            console.log("PM stats set:", stats[pmId]);
+          } catch (error) {
+            console.error(`Error fetching PM stats for ${pmId}:`, error);
+            stats[pmId] = { tasksAssigned: 0, tasksCompleted: 0, totalTime: 0, completionRate: 0 };
+          }
+        }
+        console.log("All PM stats:", stats);
+        setPmStats(stats);
+      } catch (error) {
+        console.error("Error fetching PM stats:", error);
+        setPmStats({});
+      }
+    };
+
+    fetchPMStats();
+  }, [selectedProjectId, projects]);
+
+  // Fetch member statistics when team is selected
+  useEffect(() => {
+    if (!selectedTeam || !selectedProjectId) return;
+
+    const fetchMemberStats = async () => {
+      try {
+        const teamId = selectedTeam.teamId?._id || selectedTeam._id;
+        console.log("Fetching member stats for team:", teamId);
+        const response = await performanceService.getMemberProgress(selectedProjectId, teamId);
+        console.log("Member stats response:", response);
+        const statsData = response.data?.data || response.data || {};
+        console.log("Member stats data:", statsData);
+        setMemberStats(statsData);
+      } catch (error) {
+        console.error("Error fetching member stats:", error);
+        setMemberStats({});
+      }
+    };
+
+    fetchMemberStats();
+  }, [selectedTeam, selectedProjectId]);
+
+  // Get current project data
+  const getCurrentProject = () => {
+    return projects.find((p) => (p._id || p.id) === selectedProjectId);
+  };
+
+  // Determine user's role in the project
+  const getUserRoleInProject = () => {
+    if (!user) return null;
+    if (user.role === "admin") return "admin";
+
+    const currentProject = getCurrentProject();
+    if (!currentProject) return null;
+
+    // Check if PM
+    const isPM = currentProject.members?.some(
+      (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+    );
+
+    if (isPM) return "PM";
+
+    // Check if Leader
+    const isLeader = currentProject.teams?.some((team) => team.leaderId._id === user._id || team.leaderId === user._id);
+
+    if (isLeader) return "LEADER";
+
+    return null;
+  };
+
+  // Render team/member activity based on role
+  const renderTeamMemberActivity = () => {
+    const userRole = getUserRoleInProject();
+    const currentProject = getCurrentProject();
+
+    if (!currentProject) {
+      return <div className="no-data">No project selected</div>;
+    }
+
+    // For Admin and PM: Show teams or members based on viewMode
+    if (userRole === "admin" || userRole === "PM") {
+      if (viewMode === "teams") {
+        return renderTeamCards(currentProject);
+      } else {
+        return renderMemberCards(currentProject);
+      }
+    }
+
+    // For Leader: Show only their team members
+    if (userRole === "LEADER") {
+      const leaderTeam = currentProject.teams?.find((team) => (team.leaderId._id || team.leaderId) === user._id);
+
+      if (!leaderTeam) {
+        return <div className="no-data">No team found</div>;
+      }
+
+      // Auto-set the team for leader if not already set
+      if (!selectedTeam || (selectedTeam.teamId?._id || selectedTeam._id) !== (leaderTeam.teamId?._id || leaderTeam._id)) {
+        setTimeout(() => setSelectedTeam(leaderTeam), 0);
+      }
+
+      return renderLeaderMemberCards(leaderTeam);
+    }
+
+    return <div className="no-data">No permission to view this section</div>;
+  };
+
+  // Render team cards for Admin/PM
+  const renderTeamCards = (project) => {
+    const teams = project.teams || [];
+    const projectManagers = (project.members || []).filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
+
+    console.log("Rendering team cards for project:", project.name);
+    console.log("Teams data:", teams);
+    console.log("Project Managers:", projectManagers);
+
+    if (teams.length === 0 && projectManagers.length === 0) {
+      return (
+        <div className="no-data">
+          <p>No teams or project managers found in this project.</p>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "8px" }}>Please add teams to this project in Project Settings.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="team-cards-grid">
+        {/* PM Cards */}
+        {projectManagers.map((pm) => {
+          const pmId = pm._id || pm;
+          const pmName = pm.fullname || pm.name || "Project Manager";
+          const pmAvatar = pm.avatar;
+          const stats = pmStats[pmId] || { tasksAssigned: 0, tasksCompleted: 0, totalTime: 0, completionRate: 0 };
+          const completionRate = stats.completionRate || 0;
+
+          return (
+            <div
+              key={`pm-${pmId}`}
+              className="team-card pm-card clickable"
+              onClick={() => {
+                setSelectedUser({
+                  userId: pmId,
+                  name: pmName,
+                  avatar: pmAvatar,
+                });
+              }}
+            >
+              <div className="team-header pm-header">
+                <div className="pm-badge">PM</div>
+                <h4>{pmName}</h4>
+              </div>
+              <div className="pm-avatar-section">
+                {pmAvatar ? (
+                  <img src={pmAvatar} alt={pmName} className="pm-avatar" />
+                ) : (
+                  <div className="pm-avatar-placeholder">{pmName?.[0] || "P"}</div>
+                )}
+              </div>
+              <div className="team-stats-summary">
+                <div className="stat-row">
+                  <span className="stat-label">Tasks:</span>
+                  <span className="stat-value">
+                    {stats.tasksCompleted} / {stats.tasksAssigned}
+                  </span>
+                </div>
+                <div className="progress-bar-mini">
+                  <div className="progress-fill-mini" style={{ width: `${completionRate}%` }}></div>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Time Logged:</span>
+                  <span className="stat-value">{stats.totalTime || 0}h</span>
+                </div>
+              </div>
+              <div className="view-team-btn">
+                <span className="material-symbols-outlined">person</span>
+                View Performance
+              </div>
+            </div>
+          );
+        })}
+        {/* Team Cards */}
+        {teams.map((team) => {
+          const teamId = team.teamId?._id || team._id;
+          const teamName = team.teamId?.name || "Unknown Team";
+          const stats = teamStats[teamId] || { totalTasks: 0, completedTasks: 0, totalTime: 0 };
+          const completionRate = stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0;
+
+          console.log(`Team ${teamName} stats:`, stats);
+
+          return (
+            <div
+              key={teamId}
+              className="team-card clickable"
+              onClick={() => {
+                setSelectedTeam(team);
+                setViewMode("members");
+                setUserPage(1);
+              }}
+            >
+              <div className="team-header">
+                <h4>{teamName}</h4>
+                <span className="member-count-badge">{team.members?.length || 0} members</span>
+              </div>
+              <div className="team-leader">
+                <span className="label">Leader:</span>
+                <span className="value">{team.leaderId?.fullname || "N/A"}</span>
+              </div>
+              <div className="team-stats-summary">
+                <div className="stat-row">
+                  <span className="stat-label">Tasks:</span>
+                  <span className="stat-value">
+                    {stats.completedTasks} / {stats.totalTasks}
+                  </span>
+                </div>
+                <div className="progress-bar-mini">
+                  <div className="progress-fill-mini" style={{ width: `${completionRate}%` }}></div>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Time Logged:</span>
+                  <span className="stat-value">{stats.totalTime || 0}h</span>
+                </div>
+              </div>
+              <div className="view-team-btn">
+                <span className="material-symbols-outlined">arrow_forward</span>
+                View Members
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Render member cards for selected team (Admin/PM view)
+  const renderMemberCards = (project) => {
+    if (!selectedTeam) return null;
+
+    // Get team members
+    let members = [...(selectedTeam.members || [])];
+
+    // Add leader if not already in members
+    const leader = selectedTeam.leaderId;
+    if (leader) {
+      const leaderId = leader._id || leader;
+      const leaderExists = members.some((m) => (m._id || m) === leaderId);
+      if (!leaderExists) {
+        members.unshift(leader); // Add leader at the beginning
+      }
+    }
+
+    // DO NOT add PM to team member list - PM has their own card
+
+    const paginatedMembers = members.slice((userPage - 1) * usersPerPage, userPage * usersPerPage);
+
+    return (
+      <>
+        {members.length > usersPerPage && (
+          <div className="user-pagination-nav">
+            <button className="nav-btn" disabled={userPage === 1} onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}>
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+            <span className="page-indicator">
+              {userPage} / {Math.ceil(members.length / usersPerPage)}
+            </span>
+            <button
+              className="nav-btn"
+              disabled={userPage >= Math.ceil(members.length / usersPerPage)}
+              onClick={() => setUserPage((prev) => prev + 1)}
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        )}
+        <div className="user-stats-grid">
+          {paginatedMembers.map((member) => {
+            const memberId = member._id || member;
+
+            return (
+              <div
+                key={memberId}
+                className="user-stat-item clickable-user"
+                onClick={() => {
+                  setSelectedUser({
+                    userId: memberId,
+                    name: member.fullname || member.name,
+                    avatar: member.avatar,
+                  });
+                }}
+              >
+                <div className="user-avatar">
+                  {member.avatar ? (
+                    <img src={member.avatar} alt={member.fullname} />
+                  ) : (
+                    <div className="avatar-placeholder">{member.fullname?.[0] || "?"}</div>
+                  )}
+                </div>
+                <div className="user-info">
+                  <div className="user-name">{member.fullname || "Unknown"}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  };
+
+  // Render member cards for Leader's team
+  const renderLeaderMemberCards = (team) => {
+    // Get team members
+    let members = [...(team.members || [])];
+
+    // Add leader if not already in members
+    const leader = team.leaderId;
+    if (leader) {
+      const leaderId = leader._id || leader;
+      const leaderExists = members.some((m) => (m._id || m) === leaderId);
+      if (!leaderExists) {
+        members.unshift(leader); // Add leader at the beginning
+      }
+    }
+
+    // DO NOT add PM to leader's team member list
+
+    const paginatedMembers = members.slice((userPage - 1) * usersPerPage, userPage * usersPerPage);
+
+    return (
+      <>
+        {members.length > usersPerPage && (
+          <div className="user-pagination-nav">
+            <button className="nav-btn" disabled={userPage === 1} onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}>
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+            <span className="page-indicator">
+              {userPage} / {Math.ceil(members.length / usersPerPage)}
+            </span>
+            <button
+              className="nav-btn"
+              disabled={userPage >= Math.ceil(members.length / usersPerPage)}
+              onClick={() => setUserPage((prev) => prev + 1)}
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        )}
+        <div className="user-stats-grid">
+          {paginatedMembers.map((member) => {
+            const memberId = member._id || member;
+
+            // Fetch member stats if not already loaded
+            if (!memberStats[memberId]) {
+              const teamId = team.teamId?._id || team._id;
+              performanceService
+                .getMemberProgress(selectedProjectId, teamId, memberId)
+                .then((response) => {
+                  setMemberStats((prev) => ({
+                    ...prev,
+                    [memberId]: response.data?.[memberId] || { tasksAssigned: 0, tasksCompleted: 0, totalTime: 0, completionRate: 0 },
+                  }));
+                })
+                .catch((err) => console.error("Error fetching member stats:", err));
+            }
+
+            return (
+              <div
+                key={memberId}
+                className="user-stat-item clickable-user"
+                onClick={() => {
+                  setSelectedUser({
+                    userId: memberId,
+                    name: member.fullname || member.name,
+                    avatar: member.avatar,
+                  });
+                }}
+              >
+                <div className="user-avatar">
+                  {member.avatar ? (
+                    <img src={member.avatar} alt={member.fullname} />
+                  ) : (
+                    <div className="avatar-placeholder">{member.fullname?.[0] || "?"}</div>
+                  )}
+                </div>
+                <div className="user-info">
+                  <div className="user-name">{member.fullname || "Unknown"}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  };
 
   // Lấy dữ liệu auditlog khi đổi project hoặc page
   useEffect(() => {
@@ -243,70 +702,21 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
             <span className="material-symbols-outlined">group</span>
             Team Member Activity
           </h3>
-          {Object.values(overview.userStats || {}).filter((user) => user.userId && user.userId !== "unknown" && user.userId !== "undefined").length >
-            usersPerPage && (
-            <div className="user-pagination-nav">
-              <button className="nav-btn" disabled={userPage === 1} onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}>
-                <span className="material-symbols-outlined">chevron_left</span>
-              </button>
-              <span className="page-indicator">
-                {userPage} /{" "}
-                {Math.ceil(
-                  Object.values(overview.userStats || {}).filter((user) => user.userId && user.userId !== "unknown" && user.userId !== "undefined")
-                    .length / usersPerPage
-                )}
-              </span>
-              <button
-                className="nav-btn"
-                disabled={
-                  userPage >=
-                  Math.ceil(
-                    Object.values(overview.userStats || {}).filter((user) => user.userId && user.userId !== "unknown" && user.userId !== "undefined")
-                      .length / usersPerPage
-                  )
-                }
-                onClick={() => setUserPage((prev) => prev + 1)}
-              >
-                <span className="material-symbols-outlined">chevron_right</span>
-              </button>
-            </div>
+          {viewMode === "members" && selectedTeam && (
+            <button
+              className="back-to-teams-btn"
+              onClick={() => {
+                setViewMode("teams");
+                setSelectedTeam(null);
+                setUserPage(1);
+              }}
+            >
+              <span className="material-symbols-outlined">arrow_back</span>
+              Back to Teams
+            </button>
           )}
         </div>
-        <div className="user-stats-grid">
-          {Object.values(overview.userStats || {})
-            .filter((user) => user.userId && user.userId !== "unknown" && user.userId !== "undefined")
-            .slice((userPage - 1) * usersPerPage, userPage * usersPerPage)
-            .map((user, idx) => {
-              return (
-                <div
-                  key={idx}
-                  className="user-stat-item clickable-user"
-                  onClick={() => {
-                    console.log("Clicked user:", user);
-                    setSelectedUser({
-                      userId: user.userId,
-                      name: user.name,
-                      avatar: user.avatar,
-                    });
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div className="user-avatar">
-                    {user.avatar ? <img src={user.avatar} alt={user.name} /> : <div className="avatar-placeholder">{user.name?.[0] || "?"}</div>}
-                  </div>
-                  <div className="user-info">
-                    <div className="user-name">{user.name}</div>
-                    <div className="user-actions">
-                      <span className="badge create">{user.actions?.create || 0} Created</span>
-                      <span className="badge update">{user.actions?.update || 0} Updated</span>
-                      <span className="badge delete">{user.actions?.delete || 0} Deleted</span>
-                    </div>
-                    <div className="total-actions">{user.count} total actions</div>
-                  </div>
-                </div>
-              );
-            })}
-        </div>
+        {renderTeamMemberActivity()}
       </div>
 
       {/* Recent Activity Feed */}

@@ -43,14 +43,21 @@ const timeLogService = {
 
       // Tạo thông báo cho PM và Leader của project
       if (task.projectId) {
-        const project = await Project.findById(task.projectId._id).populate("projectManager members.userId teams.leaderId");
+        const project = await Project.findById(task.projectId._id)
+          .populate("members.userId", "fullname email avatar")
+          .populate("teams.leaderId", "fullname email avatar");
 
         if (project) {
           const recipientIds = new Set();
 
-          // Thêm PM
-          if (project.projectManager && project.projectManager._id.toString() !== userId.toString()) {
-            recipientIds.add(project.projectManager._id.toString());
+          // Thêm PM từ members array
+          if (project.members && Array.isArray(project.members)) {
+            const projectManagers = project.members.filter((m) => m.role === "PROJECT_MANAGER");
+            projectManagers.forEach((pm) => {
+              if (pm.userId && pm.userId._id.toString() !== userId.toString()) {
+                recipientIds.add(pm.userId._id.toString());
+              }
+            });
           }
 
           // Thêm các leaders từ teams

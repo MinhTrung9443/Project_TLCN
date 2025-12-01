@@ -85,6 +85,70 @@ const PerformanceController = {
       });
     }
   },
+
+  // Get team progress statistics
+  handleGetTeamProgress: async (req, res) => {
+    try {
+      const { projectId, teamId } = req.query;
+      const userId = req.user._id;
+
+      console.log("handleGetTeamProgress called with:", { userId, projectId, teamId });
+
+      if (!projectId) {
+        return res.status(400).json({
+          success: false,
+          message: "Project ID is required",
+        });
+      }
+
+      const result = await performanceService.getTeamProgress(userId, projectId, teamId);
+
+      console.log("Team progress result:", result);
+
+      return res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error in getTeamProgress:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to fetch team progress",
+      });
+    }
+  },
+
+  // Get member progress statistics
+  handleGetMemberProgress: async (req, res) => {
+    try {
+      const { projectId, teamId, memberId } = req.query;
+      const userId = req.user._id;
+
+      console.log("handleGetMemberProgress called with:", { userId, projectId, teamId, memberId });
+
+      if (!projectId || !teamId) {
+        return res.status(400).json({
+          success: false,
+          message: "Project ID and Team ID are required",
+        });
+      }
+
+      const result = await performanceService.getMemberProgress(userId, projectId, teamId, memberId);
+
+      console.log("Member progress result:", result);
+
+      return res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error in getMemberProgress:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to fetch member progress",
+      });
+    }
+  },
 };
 
 module.exports = PerformanceController;
