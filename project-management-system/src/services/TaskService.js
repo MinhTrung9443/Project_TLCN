@@ -724,7 +724,7 @@ const unlinkTask = async (currentTaskId, linkId, userId) => {
 const getTaskByKey = async (taskKey) => {
   const task = await Task.findOne({ key: taskKey.toUpperCase() }).populate([
     // Sao chép phần populate từ hàm updateTask để đảm bảo nhất quán
-    { path: "projectId", select: "name key" },
+    { path: "projectId", select: "name key status isDeleted" }, // Thêm status và isDeleted
     { path: "taskTypeId", select: "name icon" },
     { path: "priorityId", select: "name icon" },
     { path: "assigneeId", select: "fullname avatar" },
@@ -743,6 +743,20 @@ const getTaskByKey = async (taskKey) => {
   if (!task) {
     const error = new Error("Task not found with that key");
     error.statusCode = 404;
+    throw error;
+  }
+
+  // Kiểm tra xem task có bị xóa không
+  if (task.isDeleted) {
+    const error = new Error("This task has been deleted and is no longer accessible");
+    error.statusCode = 410; // 410 Gone - resource deleted
+    throw error;
+  }
+
+  // Kiểm tra xem project có bị xóa không
+  if (task.projectId && task.projectId.isDeleted) {
+    const error = new Error("This task belongs to a deleted project and is no longer accessible");
+    error.statusCode = 410;
     throw error;
   }
 
