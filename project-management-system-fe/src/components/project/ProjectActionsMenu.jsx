@@ -52,7 +52,7 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
             <button onClick={() => { onClone(project); setIsOpen(false); }}>Clone Project</button>
           </li>
           <li>
-            <button className="delete-option" onClick={() => { onDelete(project); setIsOpen(false); }}>Delete Project</button>
+            <button className="delete-option" onClick={() => { onDelete(project); setIsOpen(false); }}>Archived Project</button>
           </li>
         </ul>
       )}

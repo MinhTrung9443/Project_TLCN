@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import * as ganttService from "../../services/ganttService";
 import GanttHeader from "../../components/gantt/GanttHeader";
 import GanttLeftSection from "../../components/gantt/GanttLeftSection";
@@ -7,6 +8,9 @@ import { generateTimelineColumns, calculateBarPosition, calculateDateRange } fro
 import "../../styles/pages/Gantt/GanttPage.css";
 
 const GanttPage = () => {
+  // Get user from AuthContext
+  const { user } = useAuth();
+
   // Refs for scroll sync
   const leftSectionRef = useRef(null);
   const rightSectionRef = useRef(null);
@@ -17,8 +21,10 @@ const GanttPage = () => {
     groupIds: [],
     assigneeIds: [],
     includeUnassigned: false,
+    statusFilter: "active", // Default to active projects only
   });
 
+  const [statusFilter, setStatusFilter] = useState("active"); // 'active', 'all', 'completed', 'archived'
   const [groupBy, setGroupBy] = useState(["project", "sprint", "task"]);
   const [timeView, setTimeView] = useState("weeks"); // weeks, months, years
   const [ganttData, setGanttData] = useState([]);
@@ -56,7 +62,13 @@ const GanttPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await ganttService.getGanttData(filter, groupBy);
+        // Add statusFilter to filter object
+        const filterWithStatus = {
+          ...filter,
+          statusFilter: statusFilter,
+        };
+
+        const response = await ganttService.getGanttData(filterWithStatus, groupBy);
         console.log("Gantt Data Response:", response);
 
         // API trả về { message, data: { type, data, backlogTasks } }
@@ -71,7 +83,7 @@ const GanttPage = () => {
     };
 
     fetchData();
-  }, [filter, groupBy]);
+  }, [filter, groupBy, statusFilter]); // Add statusFilter to dependencies
 
   // Toggle expand/collapse
   const toggleExpand = (id) => {
@@ -281,6 +293,8 @@ const GanttPage = () => {
         handleGroupByChange={handleGroupByChange}
         timeView={timeView}
         setTimeView={setTimeView}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
         statistics={statistics}
         searchKeyword={searchKeyword}
         setSearchKeyword={setSearchKeyword}

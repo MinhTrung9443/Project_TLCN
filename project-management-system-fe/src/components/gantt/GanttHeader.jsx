@@ -12,12 +12,16 @@ const GanttHeader = ({
   handleGroupByChange,
   timeView,
   setTimeView,
+  statusFilter,
+  setStatusFilter,
   statistics = { atRisk: 0, done: 0, delay: 0, inProgress: 0, unplanned: 0, total: 0 },
   searchKeyword,
   setSearchKeyword,
 }) => {
   const groupByRef = useRef(null);
   const filterRef = useRef(null);
+  const statusRef = useRef(null);
+  const [showStatusPanel, setShowStatusPanel] = React.useState(false);
 
   // Calculate total filter count
   const filterCount = filter.projectIds.length + filter.groupIds.length + filter.assigneeIds.length + (filter.includeUnassigned ? 1 : 0);
@@ -30,6 +34,9 @@ const GanttHeader = ({
       }
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setShowFilterPanel(false);
+      }
+      if (statusRef.current && !statusRef.current.contains(event.target)) {
+        setShowStatusPanel(false);
       }
     };
 
@@ -73,6 +80,66 @@ const GanttHeader = ({
                 <input type="checkbox" checked={groupBy.includes("task")} onChange={() => handleGroupByChange("task")} />
                 <span>Task</span>
               </label>
+            </div>
+          )}
+        </div>
+
+        <div ref={statusRef} style={{ position: "relative" }}>
+          <button className={`gantt-groupby-btn ${statusFilter !== "active" ? "active" : ""}`} onClick={() => setShowStatusPanel(!showStatusPanel)}>
+            <span className="material-symbols-outlined">check_circle</span>
+            {statusFilter === "active"
+              ? "Active Projects"
+              : statusFilter === "all"
+              ? "All Projects"
+              : statusFilter === "completed"
+              ? "Completed"
+              : "Paused"}
+          </button>
+
+          {/* Status Filter Dropdown */}
+          {showStatusPanel && (
+            <div className="gantt-dropdown gantt-status-dropdown">
+              <div className="gantt-dropdown-header">PROJECT STATUS</div>
+              <div
+                className={`gantt-dropdown-item ${statusFilter === "active" ? "selected" : ""}`}
+                onClick={() => {
+                  setStatusFilter("active");
+                  setShowStatusPanel(false);
+                }}
+              >
+                <span className="material-symbols-outlined">play_circle</span>
+                <span>Active Projects</span>
+              </div>
+              <div
+                className={`gantt-dropdown-item ${statusFilter === "all" ? "selected" : ""}`}
+                onClick={() => {
+                  setStatusFilter("all");
+                  setShowStatusPanel(false);
+                }}
+              >
+                <span className="material-symbols-outlined">all_inclusive</span>
+                <span>All Projects</span>
+              </div>
+              <div
+                className={`gantt-dropdown-item ${statusFilter === "completed" ? "selected" : ""}`}
+                onClick={() => {
+                  setStatusFilter("completed");
+                  setShowStatusPanel(false);
+                }}
+              >
+                <span className="material-symbols-outlined">task_alt</span>
+                <span>Completed Projects</span>
+              </div>
+              <div
+                className={`gantt-dropdown-item ${statusFilter === "paused" ? "selected" : ""}`}
+                onClick={() => {
+                  setStatusFilter("paused");
+                  setShowStatusPanel(false);
+                }}
+              >
+                <span className="material-symbols-outlined">pause_circle</span>
+                <span>Paused Projects</span>
+              </div>
             </div>
           )}
         </div>

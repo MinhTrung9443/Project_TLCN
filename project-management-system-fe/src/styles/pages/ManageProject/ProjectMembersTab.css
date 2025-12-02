@@ -92,6 +92,16 @@
   object-fit: cover; /* Đảm bảo ảnh không bị méo */
 }
 
+.member-avatar.avatar-placeholder {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .member-info span {
   font-weight: 500;
   color: #111827;

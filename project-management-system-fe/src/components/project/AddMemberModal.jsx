@@ -245,6 +245,40 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                     setSelectedTemporaryGroup(null);
                   }}
                   isLoading={isLoadingData}
+                  formatOptionLabel={(option) => (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      {option.userData?.avatar ? (
+                        <img
+                          src={option.userData.avatar}
+                          alt={option.label}
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            color: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {(option.userData?.fullname || option.userData?.username || "U").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span>{option.label}</span>
+                    </div>
+                  )}
                 />
               </div>
 

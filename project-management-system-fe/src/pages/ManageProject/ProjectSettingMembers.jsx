@@ -185,7 +185,13 @@ const ProjectSettingMembers = () => {
                 {item.leader && (
                   <div className="table-row member-row indented">
                     <div className="member-info">
-                      <img src={item.leader.userId.avatar || "/default-avatar.png"} alt="" className="member-avatar" />
+                      {item.leader.userId.avatar ? (
+                        <img src={item.leader.userId.avatar} alt="" className="member-avatar" />
+                      ) : (
+                        <div className="member-avatar avatar-placeholder">
+                          {(item.leader.userId.fullname || item.leader.userId.username || "U").charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <span>{item.leader.userId.fullname}</span>
                     </div>
                     <div>{item.leader.role}</div>
@@ -205,7 +211,13 @@ const ProjectSettingMembers = () => {
                 {item.members.map((member) => (
                   <div className="table-row member-row indented" key={member.userId._id}>
                     <div className="member-info">
-                      <img src={member.userId.avatar || "/default-avatar.png"} alt="" className="member-avatar" />
+                      {member.userId.avatar ? (
+                        <img src={member.userId.avatar} alt="" className="member-avatar" />
+                      ) : (
+                        <div className="member-avatar avatar-placeholder">
+                          {(member.userId.fullname || member.userId.username || "U").charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <span>{member.userId.fullname}</span>
                     </div>
                     <div>{member.role}</div>
@@ -228,7 +240,13 @@ const ProjectSettingMembers = () => {
             return (
               <div className={`table-row member-row ${item.role === "PROJECT_MANAGER" ? "pm-row" : ""}`} key={item.userId._id}>
                 <div className="member-info">
-                  <img src={item.userId.avatar || "/default-avatar.png"} alt="" className="member-avatar" />
+                  {item.userId.avatar ? (
+                    <img src={item.userId.avatar} alt="" className="member-avatar" />
+                  ) : (
+                    <div className="member-avatar avatar-placeholder">
+                      {(item.userId.fullname || item.userId.username || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <span>{item.userId.fullname}</span>
                   {item.role === "PROJECT_MANAGER" && <span className="pm-badge">PM</span>}
                 </div>

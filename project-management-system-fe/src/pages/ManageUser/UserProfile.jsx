@@ -122,7 +122,7 @@ const Component = () => {
 
           <div>
             <label className="user-profile-label">Role</label>
-            <select className="user-profile-select" value={updateUser.role || "user"} readOnly name="role">
+            <select className="user-profile-select" value={updateUser.role || "user"} onChange={onInputChange} disabled={!isAdmin} name="role">
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
