@@ -108,7 +108,7 @@ const GanttPage = () => {
   };
 
   // Generate timeline columns, include backlogTasks in date range calculation
-  const dateRange = calculateDateRange(ganttData, backlogTasks);
+  const dateRange = calculateDateRange(ganttData, backlogTasks, timeView);
   const timelineColumns = generateTimelineColumns(timeView, dateRange.startDate, dateRange.endDate);
 
   // Filter data based on search keyword
@@ -301,7 +301,7 @@ const GanttPage = () => {
       />
 
       {/* Gantt Chart */}
-      <div className="gantt-container">
+      <div className="gantt-container" key={timeView}>
         {/* Left Section - Fixed */}
         <GanttLeftSection
           projects={filteredGanttData}
