@@ -1,5 +1,5 @@
 // In frontend/src/pages/ManageTask/TaskDetailPage.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getTaskByKey } from "../../services/taskService";
@@ -9,6 +9,7 @@ import "../../styles/pages/ManageTask/TaskDetailPage.css"; // Tạo file CSS m�
 const TaskDetailPage = () => {
   const { taskKey } = useParams();
   const navigate = useNavigate();
+  const hasShownError = useRef(false); // Prevent duplicate error messages
 
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,10 +17,15 @@ const TaskDetailPage = () => {
   useEffect(() => {
     const fetchTask = async () => {
       setLoading(true);
+      hasShownError.current = false; // Reset flag
       try {
         const response = await getTaskByKey(taskKey);
         setTask(response.data);
       } catch (error) {
+        // Prevent duplicate toast messages
+        if (hasShownError.current) return;
+        hasShownError.current = true;
+
         const status = error.response?.status;
         const message = error.response?.data?.message;
 
@@ -39,14 +45,15 @@ const TaskDetailPage = () => {
         }
 
         // Điều hướng về trang task finder
-        navigate("/task-finder");
+        setTimeout(() => navigate("/task-finder"), 1500);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTask();
-  }, [taskKey, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskKey]); // Chỉ re-run khi taskKey thay đổi
 
   // Hàm này cần thiết cho TaskDetailPanel, nhưng chúng ta sẽ cập nhật task tại chỗ
   const handleTaskUpdate = (updatedData) => {
