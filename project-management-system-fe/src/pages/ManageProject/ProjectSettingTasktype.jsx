@@ -17,7 +17,6 @@ const PREDEFINED_ICONS = [
   { name: "FaBullseye", color: "#654DF7" }, // Giống Feature
   { name: "FaQuestionCircle", color: "#7A869A" },
   { name: "FaRegClone", color: "#4BADE8" }, // Giống Task Template
-  { name: "FaEquals", color: "#DE350B" }, // Giống Requirement
   { name: "FaFileAlt", color: "#00B8D9" },
 ];
 
