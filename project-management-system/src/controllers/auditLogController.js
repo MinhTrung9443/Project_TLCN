@@ -17,11 +17,16 @@ exports.getProjectAuditOverview = async (req, res) => {
 // Lấy log chi tiết cho 1 project (phân trang)
 exports.getProjectAuditLogs = async (req, res) => {
   try {
-    const { projectId, page = 1, limit = 20 } = req.query;
+    const { projectId, page = 1, limit = 20, userId, action, tableName } = req.query;
     if (!projectId) {
       return res.status(400).json({ message: "projectId is required" });
     }
-    const logs = await auditLogService.getProjectAuditLogs(projectId, page, limit);
+    const filters = {};
+    if (userId) filters.userId = userId;
+    if (action) filters.action = action;
+    if (tableName) filters.tableName = tableName;
+
+    const logs = await auditLogService.getProjectAuditLogs(projectId, page, limit, filters);
     res.json({ success: true, data: logs });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err.message });

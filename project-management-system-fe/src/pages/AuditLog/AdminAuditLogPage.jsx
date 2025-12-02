@@ -15,8 +15,9 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   const [overview, setOverview] = useState(null);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [limit] = useState(10);
   const [selectedUser, setSelectedUser] = useState(null); // For performance panel
   const [userPage, setUserPage] = useState(1); // Pagination for team members
   const [usersPerPage] = useState(6); // Show 6 members at a time
@@ -25,6 +26,11 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   const [teamStats, setTeamStats] = useState({}); // Team statistics
   const [memberStats, setMemberStats] = useState({}); // Member statistics
   const [pmStats, setPmStats] = useState({}); // PM statistics (keyed by PM userId)
+
+  // Filters for audit logs
+  const [filterUserId, setFilterUserId] = useState("");
+  const [filterAction, setFilterAction] = useState("");
+  const [filterEntity, setFilterEntity] = useState("");
 
   // Kiểm tra quyền truy cập - Chỉ admin và PM được xem
   useEffect(() => {
@@ -519,34 +525,55 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
     );
   };
 
-  // Lấy dữ liệu auditlog khi đổi project hoặc page
+  // Lấy dữ liệu overview khi đổi project
   useEffect(() => {
     if (!selectedProjectId) {
       console.log("No project selected yet");
       return;
     }
-    console.log("Fetching audit log for project:", selectedProjectId);
+    console.log("Fetching overview for project:", selectedProjectId);
     setLoading(true);
-    Promise.all([getProjectAuditOverview(selectedProjectId), getProjectAuditLogs(selectedProjectId, page, limit)])
-      .then(([overviewRes, logsRes]) => {
+
+    getProjectAuditOverview(selectedProjectId)
+      .then((overviewRes) => {
         console.log("Overview response:", overviewRes);
-        console.log("Logs response:", logsRes);
-        // Backend trả về { success, data }
         const overviewData = overviewRes.data?.data || overviewRes.data;
-        const logsData = logsRes.data?.data || logsRes.data;
         console.log("Processed overview data:", overviewData);
-        console.log("Processed logs data:", logsData);
         setOverview(overviewData);
+      })
+      .catch((err) => {
+        console.error("Error loading overview:", err);
+        setOverview(null);
+      })
+      .finally(() => setLoading(false));
+  }, [selectedProjectId]);
+
+  // Lấy dữ liệu logs khi đổi project, page hoặc filters
+  useEffect(() => {
+    if (!selectedProjectId) {
+      return;
+    }
+    console.log("Fetching logs for project:", selectedProjectId);
+    setLoadingLogs(true);
+
+    const filters = {};
+    if (filterUserId) filters.userId = filterUserId;
+    if (filterAction) filters.action = filterAction;
+    if (filterEntity) filters.tableName = filterEntity;
+
+    getProjectAuditLogs(selectedProjectId, page, limit, filters)
+      .then((logsRes) => {
+        console.log("Logs response:", logsRes);
+        const logsData = logsRes.data?.data || logsRes.data;
+        console.log("Processed logs data:", logsData);
         setLogs(logsData);
       })
       .catch((err) => {
-        console.error("Error loading audit log:", err);
-        console.error("Error details:", err.response?.data);
-        setOverview(null);
+        console.error("Error loading logs:", err);
         setLogs([]);
       })
-      .finally(() => setLoading(false));
-  }, [selectedProjectId, page, limit]);
+      .finally(() => setLoadingLogs(false));
+  }, [selectedProjectId, page, limit, filterUserId, filterAction, filterEntity]);
 
   if (loading) {
     return (
@@ -719,83 +746,150 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         {renderTeamMemberActivity()}
       </div>
 
-      {/* Recent Activity Feed */}
-      <div className="activity-feed-card">
-        <h3 className="card-title">
-          <span className="material-symbols-outlined">notifications_active</span>
-          Recent Activity Feed
-        </h3>
-        <div className="activity-timeline">
-          {(overview.activity || []).map((log, idx) => (
-            <div key={idx} className="timeline-item">
-              <div className="timeline-avatar">
-                {log.user.avatar ? (
-                  <img src={log.user.avatar} alt={log.user.name} />
-                ) : (
-                  <div className="avatar-placeholder">{log.user.name?.[0] || "?"}</div>
-                )}
-              </div>
-              <div className="timeline-content">
-                <div className="timeline-header">
-                  <span className="user-name">{log.user.name}</span>
-                  <span className="action-text">{log.action}</span>
-                  {log.entityUrl ? (
-                    <a href={log.entityUrl} className="entity-link">
-                      {log.entityKey}
-                    </a>
-                  ) : log.entityKey ? (
-                    <span className="entity-key">{log.entityKey}</span>
-                  ) : null}
-                  {log.entityName && <span className="entity-name">{log.entityName}</span>}
-                </div>
-                <div className="timeline-time">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Detailed Logs Table */}
       <div className="logs-table-card">
         <h3 className="card-title">
           <span className="material-symbols-outlined">receipt_long</span>
           Detailed Audit Logs
         </h3>
-        <div className="logs-table">
-          <table>
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Action</th>
-                <th>Entity</th>
-                <th>Record ID</th>
-                <th>Timestamp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log, idx) => (
-                <tr key={idx}>
-                  <td className="user-cell">
-                    {log.userId?.avatar && <img src={log.userId.avatar} alt={log.userId.fullname} className="table-avatar" />}
-                    <span>{log.userId?.fullname || "Unknown"}</span>
-                  </td>
-                  <td>
-                    <span
-                      className={`action-badge ${log.action?.includes("create") ? "create" : log.action?.includes("update") ? "update" : "delete"}`}
-                    >
-                      {log.action}
-                    </span>
-                  </td>
-                  <td>
-                    <strong>{log.tableName}</strong>
-                  </td>
-                  <td className="record-id">{log.recordId}</td>
-                  <td className="timestamp">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* Filters */}
+        <div className="audit-filters" style={{ display: "flex", gap: "15px", marginBottom: "20px", flexWrap: "wrap" }}>
+          <div style={{ flex: "1", minWidth: "200px" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "500" }}>User</label>
+            <select
+              value={filterUserId}
+              onChange={(e) => {
+                setFilterUserId(e.target.value);
+                setPage(1);
+              }}
+              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ddd" }}
+            >
+              <option value="">All Users</option>
+              {overview?.userStats &&
+                Object.entries(overview.userStats).map(([userId, userData]) => (
+                  <option key={userId} value={userId}>
+                    {userData.name || "Unknown"}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div style={{ flex: "1", minWidth: "200px" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "500" }}>Action</label>
+            <select
+              value={filterAction}
+              onChange={(e) => {
+                setFilterAction(e.target.value);
+                setPage(1);
+              }}
+              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ddd" }}
+            >
+              <option value="">All Actions</option>
+              <option value="create">Create</option>
+              <option value="update">Update</option>
+              <option value="delete">Delete</option>
+            </select>
+          </div>
+
+          <div style={{ flex: "1", minWidth: "200px" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "500" }}>Entity</label>
+            <select
+              value={filterEntity}
+              onChange={(e) => {
+                setFilterEntity(e.target.value);
+                setPage(1);
+              }}
+              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ddd" }}
+            >
+              <option value="">All Entities</option>
+              <option value="Task">Tasks</option>
+              <option value="Sprint">Sprints</option>
+              <option value="Project">Projects</option>
+              <option value="Platform">Platforms</option>
+              <option value="TaskType">Task Types</option>
+              <option value="Priority">Priorities</option>
+              <option value="TimeLog">Time Logs</option>
+              <option value="Group">Groups</option>
+              <option value="User">Users</option>
+            </select>
+          </div>
+
+          {(filterUserId || filterAction || filterEntity) && (
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
+              <button
+                onClick={() => {
+                  setFilterUserId("");
+                  setFilterAction("");
+                  setFilterEntity("");
+                  setPage(1);
+                }}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  background: "#f5f5f5",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                }}
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
         </div>
+
+        {loadingLogs ? (
+          <div style={{ textAlign: "center", padding: "40px" }}>
+            <p>Loading logs...</p>
+          </div>
+        ) : (
+          <div className="logs-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>Record</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: "center", padding: "20px", color: "#999" }}>
+                      No logs found
+                    </td>
+                  </tr>
+                ) : (
+                  logs.map((log, idx) => (
+                    <tr key={idx}>
+                      <td className="user-cell">
+                        {log.userId?.avatar && <img src={log.userId.avatar} alt={log.userId.fullname} className="table-avatar" />}
+                        <span>{log.userId?.fullname || "Unknown"}</span>
+                      </td>
+                      <td>
+                        <span
+                          className={`action-badge ${
+                            log.action?.includes("create") ? "create" : log.action?.includes("update") ? "update" : "delete"
+                          }`}
+                        >
+                          {log.action}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>{log.tableName}</strong>
+                      </td>
+                      <td className="record-id">{log.recordName || log.recordId || "-"}</td>
+                      <td className="timestamp">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Pagination */}
         <div className="pagination">
