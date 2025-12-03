@@ -15,4 +15,10 @@ router.get("/project/:projectId/top", PerformanceController.handleGetTopPerforme
 // GET /api/performance/user/:userId/project/:projectId/timelogs - Lấy time logs của user
 router.get("/user/:userId/project/:projectId/timelogs", PerformanceController.handleGetUserTimeLogs);
 
+// GET /api/performance/team-progress - Get team progress statistics
+router.get("/team-progress", PerformanceController.handleGetTeamProgress);
+
+// GET /api/performance/member-progress - Get member progress statistics
+router.get("/member-progress", PerformanceController.handleGetMemberProgress);
+
 module.exports = router;

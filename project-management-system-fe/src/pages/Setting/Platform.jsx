@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import platformService from "../../services/platformService"; // Service cho Platform
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
-import { useAuth } from "../../contexts/AuthContext"; 
+import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
 
 const PREDEFINED_PLATFORM_ICONS = [
@@ -141,11 +141,13 @@ export const SettingsPlatforms = () => {
         <div className="header-col col-icon">Icon</div>
         <div className="header-col col-name">Platform Name</div>
         <div className="header-col col-description">Description</div>
-        {user.role === "admin" && (<div className="header-col col-actions">
-          <button className="btn-add-icon" onClick={() => handleOpenModal()}>
-            <VscIcons.VscAdd />
-          </button>
-        </div>)}
+        {user.role === "admin" && (
+          <div className="header-col col-actions">
+            <button className="btn-add-icon" onClick={() => handleOpenModal()}>
+              <VscIcons.VscAdd />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="settings-list-body">
@@ -187,7 +189,9 @@ export const SettingsPlatforms = () => {
             <h2>{currentPlatform?._id ? "Edit Platform" : "Create Platform"}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="name">Name*</label>
+                <label htmlFor="name" className="required">
+                  Name
+                </label>
                 <input id="name" name="name" value={currentPlatform.name} onChange={handleChange} required />
               </div>
               <div className="form-group">

@@ -1,5 +1,6 @@
 import React from "react";
 import { useDrag } from "react-dnd";
+import { useNavigate, useParams } from "react-router-dom";
 
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "task", color: "#4BADE8" },
@@ -23,6 +24,9 @@ const IconComponent = ({ name }) => <span className="material-symbols-outlined">
 
 // Task Card Component with Drag functionality
 const TaskCard = ({ task, onStatusChange }) => {
+  const navigate = useNavigate();
+  const { projectKey } = useParams();
+
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "task",
     item: { task },
@@ -30,6 +34,12 @@ const TaskCard = ({ task, onStatusChange }) => {
       isDragging: monitor.isDragging(),
     }),
   }));
+
+  const handleCardClick = (e) => {
+    // Prevent navigation when dragging
+    if (isDragging) return;
+    navigate(`/task/${task.key}`);
+  };
 
   const getTypeIcon = () => {
     const typeInfo = PREDEFINED_TASKTYPE_ICONS.find((i) => i.name === task.taskTypeId?.icon);
@@ -45,16 +55,20 @@ const TaskCard = ({ task, onStatusChange }) => {
   const priorityIcon = getPriorityIcon();
 
   return (
-    <div ref={drag} className={`board-task-card ${isDragging ? "dragging" : ""}`} style={{ opacity: isDragging ? 0.5 : 1 }}>
+    <div
+      ref={drag}
+      className={`board-task-card ${isDragging ? "dragging" : ""}`}
+      style={{ opacity: isDragging ? 0.5 : 1, cursor: "pointer" }}
+      onClick={handleCardClick}
+    >
       <div className="board-task-top">
         <span className="board-task-checkbox material-symbols-outlined">check_box</span>
         <span className="board-task-code">{task.key}</span>
-        <span className="board-task-menu material-symbols-outlined">more_horiz</span>
       </div>
 
       <div className="board-task-type-row">
         <span className="icon-wrapper-task" style={{ backgroundColor: typeIcon.color }} title={task.taskTypeId?.name}>
-          <IconComponent name={task.taskTypeId?.icon || "task"} />
+          <IconComponent name={typeIcon.name} />
         </span>
         <span className="board-task-type-name">{task.taskTypeId?.name || "Task"}</span>
       </div>
@@ -63,7 +77,7 @@ const TaskCard = ({ task, onStatusChange }) => {
 
       <div className="board-task-footer">
         <span className="icon-wrapper-priority" style={{ backgroundColor: priorityIcon.color }} title={task.priorityId?.name}>
-          <IconComponent name={task.priorityId?.icon || "task"} />
+          <IconComponent name={priorityIcon.name} />
         </span>
         <div className="board-task-assignee">
           {task.assigneeId ? (

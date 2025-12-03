@@ -5,6 +5,7 @@ const { logAction } = require("./AuditLogHelper");
 const { logHistory } = require("./HistoryService");
 const TaskHistory = require("../models/TaskHistory");
 const notificationService = require("./NotificationService");
+const workflowService = require("./WorkflowService");
 const User = require("../models/User");
 const Workflow = require("../models/Workflow");
 const cloudinary = require("../config/cloudinary"); // BẠN CẦN IMPORT CLOUDINARY VÀO ĐÂY
@@ -110,8 +111,21 @@ const createTask = async (taskData, userId) => {
 
   return populatedTask;
 };
-const searchTasks = async (queryParams) => {
-  const { keyword, projectId, assigneeId, reporterId, createdById, statusId, priorityId, taskTypeId, dueDate_gte, dueDate_lte } = queryParams;
+const searchTasks = async (queryParams, user) => {
+  const {
+    keyword,
+    projectId,
+    assigneeId,
+    reporterId,
+    createdById,
+    statusId,
+    priorityId,
+    taskTypeId,
+    dueDate_gte,
+    dueDate_lte,
+    statusCategory,
+    projectStatus,
+  } = queryParams;
 
   const query = {};
 
@@ -122,6 +136,72 @@ const searchTasks = async (queryParams) => {
   if (statusId) query.statusId = statusId;
   if (priorityId) query.priorityId = priorityId;
   if (taskTypeId) query.taskTypeId = taskTypeId;
+
+  // Apply role-based filtering
+  if (user && user.role !== "admin") {
+    const userId = user._id || user.id;
+
+    // Get user's projects to check their roles
+    const userProjects = await Project.find({
+      "members.userId": userId,
+      isDeleted: false,
+    }).lean();
+
+    // Categorize projects by user's role
+    const pmProjectIds = [];
+    const leaderProjectIds = [];
+    const memberProjectIds = [];
+
+    for (const project of userProjects) {
+      const member = project.members.find((m) => m.userId.toString() === userId.toString());
+      if (member) {
+        if (member.role === "PROJECT_MANAGER") {
+          pmProjectIds.push(project._id);
+        } else if (member.role === "LEADER") {
+          leaderProjectIds.push(project._id);
+        } else {
+          memberProjectIds.push(project._id);
+        }
+      }
+
+      // Check in teams
+      for (const team of project.teams || []) {
+        if (team.leaderId && team.leaderId.toString() === userId.toString()) {
+          leaderProjectIds.push(project._id);
+        }
+      }
+    }
+
+    // Build query based on role
+    const roleConditions = [];
+
+    // PM: all tasks in projects they manage
+    if (pmProjectIds.length > 0) {
+      roleConditions.push({ projectId: { $in: pmProjectIds } });
+    }
+
+    // LEADER: tasks they created (reporterId) in their projects
+    if (leaderProjectIds.length > 0) {
+      roleConditions.push({
+        projectId: { $in: leaderProjectIds },
+        reporterId: userId,
+      });
+    }
+
+    // MEMBER: tasks assigned to them
+    roleConditions.push({ assigneeId: userId });
+
+    // Combine all conditions with $or
+    if (roleConditions.length > 0) {
+      if (query.$or) {
+        // If there's already $or (from keyword search), combine them
+        query.$and = [{ $or: query.$or }, { $or: roleConditions }];
+        delete query.$or;
+      } else {
+        query.$or = roleConditions;
+      }
+    }
+  }
 
   if (dueDate_gte || dueDate_lte) {
     query.dueDate = {};
@@ -142,7 +222,7 @@ const searchTasks = async (queryParams) => {
   }
 
   const tasks = await Task.find(query)
-    .populate("projectId", "name key")
+    .populate("projectId", "name key isDeleted status")
     .populate("taskTypeId", "name icon")
     .populate("priorityId", "name icon")
     .populate("assigneeId", "fullname avatar")
@@ -158,17 +238,24 @@ const searchTasks = async (queryParams) => {
     .sort({ createdAt: -1 })
     .lean(); // Chuyển sang object thường, không phải Mongoose document
 
-  if (tasks.length === 0) {
+  // Filter out tasks from deleted projects and optionally by project status
+  let filteredTasks = tasks.filter((task) => task.projectId && task.projectId.isDeleted === false);
+
+  if (projectStatus) {
+    filteredTasks = filteredTasks.filter((task) => task.projectId && task.projectId.status === projectStatus);
+  }
+
+  if (filteredTasks.length === 0) {
     return [];
   }
 
-  const projectIdsInTasks = [...new Set(tasks.map((task) => task.projectId?._id.toString()).filter(Boolean))];
+  const projectIdsInTasks = [...new Set(filteredTasks.map((task) => task.projectId?._id.toString()).filter(Boolean))];
 
   const workflows = await Workflow.find({ projectId: { $in: projectIdsInTasks } });
 
   const workflowMap = new Map(workflows.map((wf) => [wf.projectId.toString(), wf]));
 
-  const populatedTasks = tasks.map((task) => {
+  const populatedTasks = filteredTasks.map((task) => {
     if (!task.projectId || !task.statusId) {
       return task; // Trả về task gốc nếu thiếu dữ liệu
     }
@@ -184,7 +271,18 @@ const searchTasks = async (queryParams) => {
     return task;
   });
 
-  return populatedTasks;
+  // Filter by status category if provided
+  let finalTasks = populatedTasks;
+  if (statusCategory) {
+    const categories = statusCategory.split(",").map((c) => c.trim());
+    finalTasks = populatedTasks.filter((task) => {
+      if (!task.statusId || !task.statusId.category) return false;
+      // Case-insensitive comparison
+      return categories.some((cat) => cat.toLowerCase() === task.statusId.category.toLowerCase());
+    });
+  }
+
+  return finalTasks;
 };
 
 const updateTask = async (taskId, updateData, userId) => {
@@ -195,11 +293,25 @@ const updateTask = async (taskId, updateData, userId) => {
   }
 
   // 1. Lấy task hiện tại TRƯỚC KHI cập nhật để so sánh
-  const originalTask = await Task.findById(taskId).lean();
+  const originalTask = await Task.findById(taskId).populate("projectId", "_id").populate("statusId", "_id").lean();
+
   if (!originalTask) {
     const error = new Error("Task not found");
     error.statusCode = 404;
     throw error;
+  }
+
+  // 2. Kiểm tra xem task đã Done chưa
+  if (originalTask.statusId && originalTask.projectId) {
+    const workflow = await Workflow.findOne({ projectId: originalTask.projectId._id });
+    if (workflow && workflow.statuses) {
+      const currentStatus = workflow.statuses.find((s) => s._id.toString() === originalTask.statusId._id.toString());
+      if (currentStatus && currentStatus.category && currentStatus.category.toLowerCase() === "done") {
+        const error = new Error("Cannot edit task that is already Done");
+        error.statusCode = 403;
+        throw error;
+      }
+    }
   }
 
   // 2. Cập nhật task (Chức năng cốt lõi)
@@ -311,6 +423,11 @@ const changeTaskSprint = async (taskId, sprintId, userId) => {
 };
 
 const updateTaskStatus = async (taskId, statusId, userId) => {
+  console.log("=== updateTaskStatus called ===");
+  console.log("taskId:", taskId);
+  console.log("statusId:", statusId);
+  console.log("userId:", userId);
+
   const task = await Task.findById(taskId).populate("projectId");
   if (!task) {
     const error = new Error("Task not found");
@@ -321,15 +438,21 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
   const projectKey = task.projectId.key;
   const currentStatusId = task.statusId;
 
+  console.log("Current statusId:", currentStatusId);
+  console.log("New statusId:", statusId);
+
   if (currentStatusId.toString() === statusId.toString()) {
     return task;
   }
 
   const workflow = await workflowService.getWorkflowByProject(projectKey);
+  console.log("Workflow transitions:", workflow.transitions);
 
   const isValidTransition = workflow.transitions.some(
     (t) => t.from.toString() === currentStatusId.toString() && t.to.toString() === statusId.toString()
   );
+
+  console.log("Is valid transition:", isValidTransition);
 
   if (!isValidTransition) {
     const error = new Error("Invalid status transition according to workflow.");
@@ -345,7 +468,16 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
     updateData.progress = 100;
   }
 
-  return updateTask(taskId, updateData, userId);
+  console.log("Calling updateTask with:", updateData);
+
+  try {
+    const result = await updateTask(taskId, updateData, userId);
+    console.log("updateTask succeeded");
+    return result;
+  } catch (error) {
+    console.error("updateTask failed:", error);
+    throw error;
+  }
 };
 
 const deleteTask = async (taskId, userId) => {
@@ -592,7 +724,7 @@ const unlinkTask = async (currentTaskId, linkId, userId) => {
 const getTaskByKey = async (taskKey) => {
   const task = await Task.findOne({ key: taskKey.toUpperCase() }).populate([
     // Sao chép phần populate từ hàm updateTask để đảm bảo nhất quán
-    { path: "projectId", select: "name key" },
+    { path: "projectId", select: "name key status isDeleted" }, // Thêm status và isDeleted
     { path: "taskTypeId", select: "name icon" },
     { path: "priorityId", select: "name icon" },
     { path: "assigneeId", select: "fullname avatar" },
@@ -611,6 +743,20 @@ const getTaskByKey = async (taskKey) => {
   if (!task) {
     const error = new Error("Task not found with that key");
     error.statusCode = 404;
+    throw error;
+  }
+
+  // Kiểm tra xem task có bị xóa không
+  if (task.isDeleted) {
+    const error = new Error("This task has been deleted and is no longer accessible");
+    error.statusCode = 410; // 410 Gone - resource deleted
+    throw error;
+  }
+
+  // Kiểm tra xem project có bị xóa không
+  if (task.projectId && task.projectId.isDeleted) {
+    const error = new Error("This task belongs to a deleted project and is no longer accessible");
+    error.statusCode = 410;
     throw error;
   }
 

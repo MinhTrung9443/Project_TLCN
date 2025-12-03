@@ -11,7 +11,7 @@ export const formatDate = (dateString) => {
 };
 
 // Calculate earliest start date and latest end date from gantt data
-export const calculateDateRange = (items, backlogTasks = []) => {
+export const calculateDateRange = (items, backlogTasks = [], timeView = "weeks") => {
   if (!Array.isArray(items) || items.length === 0) {
     // Check if backlogTasks has data
     if (Array.isArray(backlogTasks) && backlogTasks.length > 0) {
@@ -107,19 +107,24 @@ export const calculateDateRange = (items, backlogTasks = []) => {
   if (!minDate) minDate = new Date("2025-02-01");
   if (!maxDate) maxDate = new Date("2025-12-31");
 
-  // Add padding based on time view (will be determined in component)
-  // For now, add reasonable padding
-  const padding = new Date(minDate);
-  padding.setDate(padding.getDate() - 21); // 8 weeks before
-  minDate = padding;
-
+  // Add padding based on time view
+  const paddingStart = new Date(minDate);
   const paddingEnd = new Date(maxDate);
-  paddingEnd.setDate(paddingEnd.getDate() + 21); // 8 weeks after
-  maxDate = paddingEnd;
+
+  if (timeView === "weeks") {
+    paddingStart.setDate(paddingStart.getDate() - 21); // 3 weeks before
+    paddingEnd.setDate(paddingEnd.getDate() + 21); // 3 weeks after
+  } else if (timeView === "months") {
+    paddingStart.setMonth(paddingStart.getMonth() - 1); // 1 month before
+    paddingEnd.setMonth(paddingEnd.getMonth() + 1); // 1 month after
+  } else if (timeView === "years") {
+    paddingStart.setFullYear(paddingStart.getFullYear() - 1); // 1 year before
+    paddingEnd.setFullYear(paddingEnd.getFullYear() + 1); // 1 year after
+  }
 
   return {
-    startDate: minDate,
-    endDate: maxDate,
+    startDate: paddingStart,
+    endDate: paddingEnd,
   };
 };
 
@@ -155,18 +160,12 @@ export const generateTimelineColumns = (timeView, startDate, endDate) => {
       weekNum++;
     }
   } else if (timeView === "months") {
-    // Add 5-6 months padding before and after
     let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    // Go back 5 months
-    current.setMonth(current.getMonth() - 5);
-
-    let endWithPadding = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
-    // Add 6 months after
-    endWithPadding.setMonth(endWithPadding.getMonth() + 6);
+    const end = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    while (current <= endWithPadding) {
+    while (current <= end) {
       const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
       const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0);
 
@@ -184,12 +183,7 @@ export const generateTimelineColumns = (timeView, startDate, endDate) => {
     let currentYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
 
-    // Add 2 years padding before and after (since years are larger units)
-    currentYear = currentYear - 5;
-    const endYearWithPadding = endYear + 6;
-
-    // Always include the year that contains endDate
-    while (currentYear <= endYearWithPadding) {
+    while (currentYear <= endYear) {
       const yearStart = new Date(currentYear, 0, 1);
       const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
 
@@ -242,8 +236,8 @@ export const calculateBarPosition = (startDate, endDate, timelineColumns) => {
 
     if (start >= colStart && start <= colEnd) {
       startColumnIndex = i;
-      const columnDuration = (colEnd - colStart) / (1000 * 60 * 60 * 24);
-      const offsetFromStart = (start - colStart) / (1000 * 60 * 60 * 24);
+      const columnDuration = colEnd - colStart + 1;
+      const offsetFromStart = start - colStart;
       startOffsetInColumn = (offsetFromStart / columnDuration) * columnWidthPercent;
       break;
     } else if (start < colStart && startColumnIndex === -1) {
@@ -263,8 +257,8 @@ export const calculateBarPosition = (startDate, endDate, timelineColumns) => {
 
     if (end >= colStart && end <= colEnd) {
       endColumnIndex = i;
-      const columnDuration = (colEnd - colStart) / (1000 * 60 * 60 * 24);
-      const offsetFromStart = (end - colStart) / (1000 * 60 * 60 * 24);
+      const columnDuration = colEnd - colStart + 1;
+      const offsetFromStart = end - colStart;
       endOffsetInColumn = (offsetFromStart / columnDuration) * columnWidthPercent;
       break;
     } else if (end > colEnd) {

@@ -7,12 +7,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
-
 #webcrumbs .user-table {
   font-size: 14px;
   min-width: 900px;
 }
-
 
 #webcrumbs .user-table th,
 #webcrumbs .user-table td {
@@ -20,27 +18,42 @@
   white-space: nowrap;
 }
 
+/* Groups cell - cho phép wrap */
+#webcrumbs .user-table td .groups-cell {
+  max-width: 250px;
+  white-space: normal;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+#webcrumbs .user-table .group-tag {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
 
 #webcrumbs .user-table th {
   font-size: 13px;
 }
 
-
 #webcrumbs .user-table td {
   font-size: 14px;
 }
-
 
 #webcrumbs .user-table tr:hover {
   background: #f3f4f6;
 }
 
-
 #webcrumbs .user-table-avatar {
   width: 32px;
   height: 32px;
 }
-
 
 /* Popup menu cho user */
 #webcrumbs .user-popup-menu {
@@ -91,7 +104,6 @@
   }
 }
 
-
 /* Button Create User */
 #webcrumbs .create-user-btn {
   display: flex;
@@ -114,83 +126,210 @@
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.13);
 }
 
+/* Pagination */
+#webcrumbs .pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px 0;
+}
+
+#webcrumbs .pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #374151;
+}
+
+#webcrumbs .pagination-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+#webcrumbs .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#webcrumbs .pagination-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 120px;
+  text-align: center;
+}
 
 /* Popup overlay cho tạo user */
 #webcrumbs .user-create-popup-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(30, 41, 59, 0.18);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(4px);
+  padding-top: 60px;
 }
 
-
-/* Popup tạo user */
+/* Popup tạo user - Modern Design */
 #webcrumbs .user-create-popup {
   background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.13);
-  padding: 18px 12px 14px 12px; /* giảm padding */
-  min-width: 240px; /* popup nhỏ hơn */
-  max-width: 340px; /* giới hạn chiều rộng tối đa */
-  width: 100%;
-  animation: fadeInMenu 0.18s;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  padding: 0;
+  max-width: 650px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
 }
-#webcrumbs .user-create-popup .popup-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 18px;
-  color: #374151;
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header Section */
+#webcrumbs .user-create-popup .popup-header {
   text-align: center;
+  padding: 32px 24px 24px;
+  border-bottom: 2px dashed #e5e7eb;
 }
+
+#webcrumbs .user-create-popup .popup-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+}
+
+#webcrumbs .user-create-popup .popup-icon .material-symbols-outlined {
+  font-size: 40px;
+  color: white;
+}
+
+#webcrumbs .user-create-popup .popup-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+#webcrumbs .user-create-popup .popup-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Form Section */
+#webcrumbs .user-create-popup form {
+  padding: 24px;
+}
+
+#webcrumbs .user-create-popup .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+#webcrumbs .user-create-popup .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+#webcrumbs .user-create-popup .form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
 #webcrumbs .user-create-popup .popup-input {
   width: 100%;
-  margin-bottom: 14px;
-  padding: 9px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 7px;
-  font-size: 15px;
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
   outline: none;
-  transition: border 0.15s;
+  transition: all 0.2s;
+  background: white;
 }
+
 #webcrumbs .user-create-popup .popup-input:focus {
-  border: 1.5px solid #6366f1;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
-#webcrumbs .user-create-popup .popup-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+
+#webcrumbs .user-create-popup .popup-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Submit Button */
+#webcrumbs .user-create-popup .popup-btn-submit {
+  width: 100%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
   margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
-#webcrumbs .user-create-popup .popup-btn-primary {
-  background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  padding: 8px 20px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.18s;
+
+#webcrumbs .user-create-popup .popup-btn-submit:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
 }
-#webcrumbs .user-create-popup .popup-btn-primary:hover {
-  background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+
+#webcrumbs .user-create-popup .popup-btn-submit:active {
+  transform: translateY(0);
 }
+
+/* Responsive */
+@media (max-width: 640px) {
+  #webcrumbs .user-create-popup .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  #webcrumbs .user-create-popup {
+    width: 95%;
+  }
+}
+
+/* Old styles - Remove if not used elsewhere */
+#webcrumbs .user-create-popup .popup-actions {
+  display: none;
+}
+
+#webcrumbs .user-create-popup .popup-btn-primary,
 #webcrumbs .user-create-popup .popup-btn {
-  background: #f3f4f6;
-  color: #374151;
-  border: none;
-  border-radius: 7px;
-  padding: 8px 18px;
-  font-size: 15px;
-  cursor: pointer;
-  transition: background 0.15s;
+  display: none;
 }
-#webcrumbs .user-create-popup .popup-btn:hover {
-  background: #e5e7eb;
-}
-
-
-

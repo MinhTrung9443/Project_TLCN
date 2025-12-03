@@ -1,6 +1,12 @@
 const AuditLog = require("../models/AuditLog");
 const Project = require("../models/Project");
 const User = require("../models/User");
+const Task = require("../models/Task");
+const Sprint = require("../models/Sprint");
+const Platform = require("../models/Platform");
+const TaskType = require("../models/TaskType");
+const Priority = require("../models/Priority");
+const Group = require("../models/Group");
 const mongoose = require("mongoose");
 
 const auditLogService = {
@@ -17,7 +23,6 @@ const auditLogService = {
         actionStats: { create: 0, update: 0, delete: 0, total: 0 },
         entityStats: {},
         dayStats: {},
-        activity: [],
         totalLogs: 0,
       };
     }
@@ -127,40 +132,17 @@ const auditLogService = {
       }
     });
 
-    // Chuẩn hóa log cho FE (chỉ lấy 20 activity gần nhất)
-    const activity = logs.slice(0, 20).map((log) => {
-      let entityType = log.tableName?.toLowerCase() || "task";
-      let entityKey = log.newData?.key || log.newData?.code || log.recordId || log.newData?._id || log.oldData?._id || "";
-      let entityName = log.newData?.name || log.newData?.title || log.oldData?.name || log.oldData?.title || "";
-      let entityUrl = null;
-      if (entityType === "task") entityUrl = `/tasks/${entityKey}`;
-      else if (entityType === "project") entityUrl = `/projects/${entityKey}`;
-      return {
-        user: {
-          name: log.userId?.fullname || "Unknown",
-          avatar: log.userId?.avatar || null,
-        },
-        action: log.action || "activity",
-        entityType,
-        entityKey,
-        entityName,
-        createdAt: log.createdAt,
-        entityUrl,
-      };
-    });
-
     return {
       userStats,
       actionStats,
       entityStats,
       dayStats,
-      activity,
       totalLogs: logs.length,
     };
   },
 
-  async getProjectAuditLogs(projectId, page = 1, limit = 20) {
-    console.log("Getting audit logs for projectId:", projectId, "page:", page);
+  async getProjectAuditLogs(projectId, page = 1, limit = 20, filters = {}) {
+    console.log("Getting audit logs for projectId:", projectId, "page:", page, "filters:", filters);
 
     // [SỬA 2] - Chỉ cần kiểm tra project có tồn tại không
     const projectExists = await Project.findById(projectId).select("_id").lean();
@@ -175,19 +157,100 @@ const auditLogService = {
     const projectIdString = projectId.toString();
     const skip = (Number(page) - 1) * Number(limit);
 
-    const logs = await AuditLog.find({
+    // Build query with filters
+    const query = {
       $or: [
         { "newData.projectId": projectObjectId },
         { "oldData.projectId": projectObjectId },
         { "newData.projectId": projectIdString },
         { "oldData.projectId": projectIdString },
       ],
-    })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit))
-      .populate("userId", "fullname avatar")
-      .lean();
+    };
+
+    // Apply filters
+    if (filters.userId) {
+      query.userId = filters.userId;
+    }
+    if (filters.action) {
+      // Filter by action type (create, update, delete)
+      query.action = { $regex: filters.action, $options: "i" };
+    }
+    if (filters.tableName) {
+      query.tableName = filters.tableName;
+    }
+
+    const logs = await AuditLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).populate("userId", "fullname avatar").lean();
+
+    // Populate record names based on table name
+    for (let log of logs) {
+      try {
+        if (log.tableName === "Task" && log.recordId) {
+          const task = await Task.findById(log.recordId).select("key name").lean();
+          if (task) {
+            log.recordName = `${task.key}: ${task.name}`;
+          } else {
+            const taskKey = log.newData?.key || log.oldData?.key;
+            const taskName = log.newData?.name || log.oldData?.name;
+            if (taskKey && taskName) {
+              log.recordName = `${taskKey}: ${taskName}`;
+            } else if (taskKey) {
+              log.recordName = taskKey;
+            }
+          }
+        } else if (log.tableName === "Sprint" && log.recordId) {
+          const sprint = await Sprint.findById(log.recordId).select("name").lean();
+          if (sprint) {
+            log.recordName = sprint.name;
+          } else {
+            log.recordName = log.newData?.name || log.oldData?.name;
+          }
+        } else if (log.tableName === "Project" && log.recordId) {
+          const project = await Project.findById(log.recordId).select("name").lean();
+          if (project) {
+            log.recordName = project.name;
+          } else {
+            log.recordName = log.newData?.name || log.oldData?.name;
+          }
+        } else if (log.tableName === "Platform" && log.recordId) {
+          const platform = await Platform.findById(log.recordId).select("name").lean();
+          if (platform) {
+            log.recordName = platform.name;
+          } else {
+            log.recordName = log.newData?.name || log.oldData?.name;
+          }
+        } else if (log.tableName === "TaskType" && log.recordId) {
+          const taskType = await TaskType.findById(log.recordId).select("name").lean();
+          if (taskType) {
+            log.recordName = taskType.name;
+          } else {
+            log.recordName = log.newData?.name || log.oldData?.name;
+          }
+        } else if (log.tableName === "Priority" && log.recordId) {
+          const priority = await Priority.findById(log.recordId).select("name").lean();
+          if (priority) {
+            log.recordName = priority.name;
+          } else {
+            log.recordName = log.newData?.name || log.oldData?.name;
+          }
+        } else if (log.tableName === "Group" && log.recordId) {
+          const group = await Group.findById(log.recordId).select("name").lean();
+          if (group) {
+            log.recordName = group.name;
+          } else {
+            log.recordName = log.newData?.name || log.oldData?.name;
+          }
+        } else if (log.tableName === "TimeLog" && log.recordId) {
+          const timeSpent = log.newData?.timeSpent || log.oldData?.timeSpent;
+          if (timeSpent) {
+            log.recordName = `${timeSpent}h`;
+          }
+        } else if (log.tableName === "User" && log.recordId) {
+          log.recordName = log.newData?.fullname || log.oldData?.fullname;
+        }
+      } catch (err) {
+        console.log(`Error fetching ${log.tableName}:`, err.message);
+      }
+    }
 
     console.log("Found detailed logs for page", page, ":", logs.length);
     return logs;

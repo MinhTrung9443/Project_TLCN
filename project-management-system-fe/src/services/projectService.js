@@ -1,19 +1,23 @@
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 
 export const getProjects = (search) => {
   const params = {};
   if (search) {
     params.search = search;
   }
-  return apiClient.get('/projects', { params }); 
+  return apiClient.get("/projects", { params });
 };
 
 export const createProject = (projectData) => {
-  return apiClient.post('/projects', projectData);
+  return apiClient.post("/projects", projectData);
 };
 
-export const getArchivedProjects = () => {
-  return apiClient.get('/projects/archived');
+export const getArchivedProjects = (search) => {
+  const params = {};
+  if (search) {
+    params.search = search;
+  }
+  return apiClient.get("/projects/archived", { params });
 };
 
 export const cloneProject = (sourceProjectId, cloneData) => {
@@ -37,7 +41,7 @@ export const getProjectMembers = (projectKey) => {
   return apiClient.get(`/projects/key/${projectKey}/members`);
 };
 export const getProjectMember = (projectKey) => {
-    return apiClient.get(`/projects/key/${projectKey}/members`);
+  return apiClient.get(`/projects/key/${projectKey}/members`);
 };
 export const addMemberToProject = (projectKey, data) => {
   return apiClient.post(`/projects/key/${projectKey}/members`, data);
@@ -80,9 +84,9 @@ export const changeTeamLeader = (projectKey, teamId, data) => {
   return apiClient.put(`/projects/key/${projectKey}/teams/${teamId}/leader`, data);
 };
 export const addMemberToTeamInProject = (projectKey, teamId, data) => {
-    return apiClient.post(`/projects/key/${projectKey}/teams/${teamId}/members`, data);
+  return apiClient.post(`/projects/key/${projectKey}/teams/${teamId}/members`, data);
 };
 
 export const removeMemberFromTeamInProject = (projectKey, teamId, userId) => {
-    return apiClient.delete(`/projects/key/${projectKey}/teams/${teamId}/members/${userId}`);
+  return apiClient.delete(`/projects/key/${projectKey}/teams/${teamId}/members/${userId}`);
 };

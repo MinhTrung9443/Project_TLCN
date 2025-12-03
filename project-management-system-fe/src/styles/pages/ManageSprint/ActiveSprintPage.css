@@ -12,6 +12,43 @@
   background: white;
   border-bottom: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Complete Sprint Button */
+.btn-complete-sprint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.btn-complete-sprint:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-complete-sprint:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-complete-sprint .material-symbols-outlined {
+  font-size: 20px;
 }
 
 /* Sprint Selector */
@@ -267,19 +304,25 @@
   padding: 16px;
   margin-bottom: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  cursor: grab;
+  cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid #e2e8f0;
 }
 
 .board-task-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  border-color: #3b82f6;
+}
+
+.board-task-card:active {
+  transform: translateY(0);
 }
 
 .board-task-card.dragging {
   transform: rotate(5deg);
   z-index: 1000;
+  cursor: grabbing;
 }
 
 .board-task-top {
@@ -303,17 +346,6 @@
   border-radius: 4px;
 }
 
-.board-task-menu {
-  color: #94a3b8;
-  font-size: 18px;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.board-task-menu:hover {
-  color: #64748b;
-}
-
 /* Task Type Row */
 .board-task-type-row {
   display: flex;
@@ -331,6 +363,11 @@
   border-radius: 4px;
   color: white;
   font-size: 14px;
+}
+
+.icon-wrapper-task .material-symbols-outlined {
+  font-size: 16px;
+  color: white;
 }
 
 .board-task-type-name {
@@ -366,6 +403,11 @@
   border-radius: 4px;
   color: white;
   font-size: 12px;
+}
+
+.icon-wrapper-priority .material-symbols-outlined {
+  font-size: 14px;
+  color: white;
 }
 
 /* Avatar Styles */

@@ -5,6 +5,7 @@ import platformService from "../../services/platformService"; // Service mới c
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
 import { useAuth } from "../../contexts/AuthContext";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
 
 const PREDEFINED_PLATFORM_ICONS = [
@@ -51,6 +52,8 @@ const ProjectSettingPlatform = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPlatform, setCurrentPlatform] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletePlatformId, setDeletePlatformId] = useState(null);
 
   const fetchPlatforms = useCallback(async () => {
     try {
@@ -99,15 +102,15 @@ const ProjectSettingPlatform = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure?")) {
-      try {
-        await platformService.deletePlatform(id);
-        toast.success("Platform deleted!");
-        fetchPlatforms();
-      } catch (error) {
-        toast.error("Failed to delete platform.");
-      }
+  const handleDelete = async () => {
+    try {
+      await platformService.deletePlatform(deletePlatformId);
+      toast.success("Platform deleted!");
+      fetchPlatforms();
+      setIsDeleteModalOpen(false);
+      setDeletePlatformId(null);
+    } catch (error) {
+      toast.error("Failed to delete platform.");
     }
   };
 
@@ -156,7 +159,13 @@ const ProjectSettingPlatform = () => {
                   <button className="btn-edit" onClick={() => handleOpenModal(p)}>
                     <FaIcons.FaPencilAlt />
                   </button>
-                  <button className="btn-delete" onClick={() => handleDelete(p._id)}>
+                  <button
+                    className="btn-delete"
+                    onClick={() => {
+                      setDeletePlatformId(p._id);
+                      setIsDeleteModalOpen(true);
+                    }}
+                  >
                     <FaIcons.FaTrash />
                   </button>
                 </div>
@@ -172,7 +181,9 @@ const ProjectSettingPlatform = () => {
             <h2>{currentPlatform?._id ? "Edit Platform" : "Create Platform"}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="name">Name*</label>
+                <label htmlFor="name" className="required">
+                  Name
+                </label>
                 <input id="name" name="name" value={currentPlatform.name} onChange={handleChange} required />
               </div>
               <div className="form-group">
@@ -195,6 +206,17 @@ const ProjectSettingPlatform = () => {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeletePlatformId(null);
+        }}
+        onConfirm={handleDelete}
+        title="Delete Platform"
+        message="Are you sure you want to delete this platform? This might affect projects using it."
+      />
     </div>
   );
 };

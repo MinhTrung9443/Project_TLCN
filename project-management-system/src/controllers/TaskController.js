@@ -58,7 +58,7 @@ const changeSprint = async (req, res) => {
 const handleUpdateTaskStatus = async (req, res) => {
   try {
     // Lấy cả hai tham số từ URL
-    const { projectKey, taskId } = req.params; 
+    const { projectKey, taskId } = req.params;
     const { statusId } = req.body;
 
     if (!req.user || !req.user.id) {
@@ -67,7 +67,7 @@ const handleUpdateTaskStatus = async (req, res) => {
 
     // Gọi service, có thể không cần truyền projectKey nếu service không dùng
     const updatedTask = await taskService.updateTaskStatus(taskId, statusId, req.user.id);
-    
+
     res.status(200).json(updatedTask);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
@@ -76,7 +76,7 @@ const handleUpdateTaskStatus = async (req, res) => {
 
 const handleSearchTasks = async (req, res) => {
   try {
-    const tasks = await taskService.searchTasks(req.query);
+    const tasks = await taskService.searchTasks(req.query, req.user);
     res.status(200).json(tasks);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
@@ -85,7 +85,7 @@ const handleSearchTasks = async (req, res) => {
 
 const handleUpdateTask = async (req, res) => {
   try {
-    const { projectKey, taskId } = req.params; 
+    const { projectKey, taskId } = req.params;
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized: User not found." });
     }
@@ -126,31 +126,31 @@ const handleGetTaskHistory = async (req, res) => {
 };
 
 const handleAddAttachment = async (req, res) => {
-    try {
-        const { taskId } = req.params;
-        const userId = req.user.id;
-        
-        const updatedTask = await taskService.addAttachment(taskId, req.file, userId);
-        
-        res.status(200).json(updatedTask);
-    } catch (error) {
-        console.error("Error adding attachment:", error);
-        res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
-    }
+  try {
+    const { taskId } = req.params;
+    const userId = req.user.id;
+
+    const updatedTask = await taskService.addAttachment(taskId, req.file, userId);
+
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    console.error("Error adding attachment:", error);
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
 };
 
 const handleDeleteAttachment = async (req, res) => {
-    try {
-        const { taskId, attachmentId } = req.params;
-        const userId = req.user.id;
-        
-        const updatedTask = await taskService.deleteAttachment(taskId, attachmentId, userId);
-        
-        res.status(200).json(updatedTask);
-    } catch (error) {
-        console.error("Error deleting attachment:", error);
-        res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
-    }
+  try {
+    const { taskId, attachmentId } = req.params;
+    const userId = req.user.id;
+
+    const updatedTask = await taskService.deleteAttachment(taskId, attachmentId, userId);
+
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    console.error("Error deleting attachment:", error);
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
 };
 
 const handleLinkTask = async (req, res) => {
@@ -194,7 +194,7 @@ const getAvailableTaskStatuses = async (req, res) => {
     }
 
     // --- KIỂM TRA AN TOÀN (SAFE CHECK) ---
-    
+
     // Kiểm tra 1: Task có thuộc Project nào không?
     if (!task.projectId || !task.projectId.key) {
       console.error(`[Error] Task ${taskId} does not belong to a valid Project.`);
@@ -206,32 +206,28 @@ const getAvailableTaskStatuses = async (req, res) => {
     // Kiểm tra 2: Xử lý statusId (Khó nhất vì Mongoose có thể trả về String hoặc Object)
     let currentStatusId = null;
     if (task.statusId) {
-        // Nếu là Object (đã populated) -> lấy ._id
-        if (typeof task.statusId === 'object' && task.statusId._id) {
-            currentStatusId = task.statusId._id.toString();
-        } 
-        // Nếu là String/ObjectId -> convert thẳng
-        else {
-            currentStatusId = task.statusId.toString();
-        }
+      // Nếu là Object (đã populated) -> lấy ._id
+      if (typeof task.statusId === "object" && task.statusId._id) {
+        currentStatusId = task.statusId._id.toString();
+      }
+      // Nếu là String/ObjectId -> convert thẳng
+      else {
+        currentStatusId = task.statusId.toString();
+      }
     }
 
     if (!currentStatusId) {
-         console.error(`[Error] Task ${taskId} has invalid Status ID.`);
-         return res.status(400).json({ message: "Current status invalid" });
+      console.error(`[Error] Task ${taskId} has invalid Status ID.`);
+      return res.status(400).json({ message: "Current status invalid" });
     }
 
     // 2. Gọi Service
-    const availableStatuses = await workflowService.getNextStatuses(
-        projectKey, 
-        currentStatusId
-    );
+    const availableStatuses = await workflowService.getNextStatuses(projectKey, currentStatusId);
 
     return res.status(200).json(availableStatuses);
-
   } catch (error) {
     // In lỗi chi tiết ra Terminal để bạn debug
-    console.error("CRITICAL SERVER ERROR in getAvailableTaskStatuses:", error); 
+    console.error("CRITICAL SERVER ERROR in getAvailableTaskStatuses:", error);
     return res.status(500).json({ message: "Internal Server Error: " + error.message });
   }
 };
@@ -253,10 +249,10 @@ module.exports = {
   handleUpdateTask,
   handleDeleteTask,
   handleGetTaskHistory,
-  handleAddAttachment, 
+  handleAddAttachment,
   handleDeleteAttachment,
-  handleLinkTask,    
-  handleUnlinkTask, 
+  handleLinkTask,
+  handleUnlinkTask,
   getAvailableTaskStatuses,
   handleGetTaskByKey,
 };

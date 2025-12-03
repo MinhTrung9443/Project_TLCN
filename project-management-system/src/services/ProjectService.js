@@ -4,6 +4,7 @@ const Priority = require("../models/Priority");
 const Platform = require("../models/Platform");
 const Workflow = require("../models/Workflow");
 const Sprint = require("../models/Sprint");
+const User = require("../models/User");
 const { logAction } = require("./AuditLogHelper");
 const notificationService = require("./NotificationService");
 const Group = require("../models/Group");
@@ -151,25 +152,55 @@ const createProject = async (projectData, userId) => {
 
   return savedProject;
 };
-const getAllProjects = async (actor, search) => { // 1. Thêm tham số 'search'
+const getAllProjects = async (actor, search) => {
+  // 1. Thêm tham số 'search'
   let query = { isDeleted: false };
 
+  // 2. Filter projects for non-admin users
   if (actor.role !== "admin") {
-    query["members.userId"] = actor._id;
+    // User must be in: project.members, teams.leaderId, or teams.members
+    query.$or = [
+      { "members.userId": actor._id }, // In project members
+      { "teams.leaderId": actor._id }, // Is team leader
+      { "teams.members": actor._id }, // Is team member
+    ];
   }
 
-  // 2. Thêm logic tìm kiếm nếu có tham số 'search'
+  // 3. Thêm logic tìm kiếm nếu có tham số 'search'
   if (search) {
     const searchRegex = new RegExp(search, "i"); // 'i' để tìm kiếm không phân biệt hoa thường
-    query.$or = [
-      { name: { $regex: searchRegex } }, 
-      { key: { $regex: searchRegex } }
-    ];
+    const searchCondition = [{ name: { $regex: searchRegex } }, { key: { $regex: searchRegex } }];
+
+    // If already has $or from role filtering, combine with $and
+    if (query.$or) {
+      query = {
+        isDeleted: false,
+        $and: [
+          { $or: query.$or }, // Role filter
+          { $or: searchCondition }, // Search filter
+        ],
+      };
+    } else {
+      query.$or = searchCondition;
+    }
   }
 
   const projects = await Project.find(query)
     .populate({
       path: "members.userId",
+      select: "fullname email avatar",
+    })
+    .populate({
+      path: "teams.teamId",
+      model: "Group",
+      select: "name status",
+    })
+    .populate({
+      path: "teams.leaderId",
+      select: "fullname email avatar",
+    })
+    .populate({
+      path: "teams.members",
       select: "fullname email avatar",
     })
     .sort({ createdAt: -1 })
@@ -186,10 +217,52 @@ const getAllProjects = async (actor, search) => { // 1. Thêm tham số 'search'
   return projectsWithPM;
 };
 
-const getArchivedProjects = async () => {
-  const projects = await Project.find({ isDeleted: true })
+const getArchivedProjects = async (actor, search) => {
+  let query = { isDeleted: true };
+
+  // Filter archived projects for non-admin users
+  if (actor && actor.role !== "admin") {
+    query.$or = [
+      { "members.userId": actor._id }, // In project members
+      { "teams.leaderId": actor._id }, // Is team leader
+      { "teams.members": actor._id }, // Is team member
+    ];
+  }
+
+  // Thêm điều kiện tìm kiếm theo name hoặc key nếu có
+  if (search) {
+    const searchCondition = [{ name: { $regex: search, $options: "i" } }, { key: { $regex: search, $options: "i" } }];
+
+    // If already has $or from role filtering, combine with $and
+    if (query.$or) {
+      query = {
+        isDeleted: true,
+        $and: [
+          { $or: query.$or }, // Role filter
+          { $or: searchCondition }, // Search filter
+        ],
+      };
+    } else {
+      query.$or = searchCondition;
+    }
+  }
+
+  const projects = await Project.find(query)
     .populate({
       path: "members.userId",
+      select: "fullname email avatar",
+    })
+    .populate({
+      path: "teams.teamId",
+      model: "Group",
+      select: "name status",
+    })
+    .populate({
+      path: "teams.leaderId",
+      select: "fullname email avatar",
+    })
+    .populate({
+      path: "teams.members",
       select: "fullname email avatar",
     })
     .sort({ deletedAt: -1 })
@@ -239,6 +312,9 @@ const updateProjectByKey = async (projectKey, projectData, userId) => {
   project.description = projectData.description;
   project.startDate = projectData.startDate;
   project.endDate = projectData.endDate;
+  if (projectData.status) {
+    project.status = projectData.status;
+  }
 
   const updatedProject = await project.save();
 
@@ -379,9 +455,9 @@ const getProjectByKey = async (key) => {
   return project;
 };
 
-const getProjectMembers = async (projectKey) => {
+const getProjectMembers = async (projectKey, userId = null) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
-    .populate("members.userId", "fullname email avatar")
+    .populate("members.userId", "fullname email avatar role")
     .populate("teams.teamId", "name") // Populate để lấy tên group
     .populate("teams.leaderId", "fullname email avatar") // Lấy thông tin của leader
     .populate("teams.members", "fullname email avatar"); // Populate members đã được add vào team trong project
@@ -392,6 +468,9 @@ const getProjectMembers = async (projectKey) => {
     throw error;
   }
 
+  // Always return all members and teams (no filtering)
+  // Project Members page shows all members to everyone
+  // Only edit permissions are restricted (handled by middleware)
   return {
     members: project.members || [],
     teams: project.teams || [],
@@ -497,24 +576,36 @@ const removeMemberFromProject = async (projectKey, userIdToRemove) => {
     throw new Error("Project not found");
   }
 
+  // Kiểm tra user có tồn tại trong project không (kiểm tra cả members array và teams)
   const memberToRemove = project.members.find((m) => m.userId.equals(userIdToRemove));
-  if (!memberToRemove) {
+  const isInTeams = project.teams.some((t) => t.leaderId.equals(userIdToRemove) || t.members.some((m) => m.equals(userIdToRemove)));
+
+  if (!memberToRemove && !isInTeams) {
     throw new Error("Member not found in this project.");
   }
 
-  if (memberToRemove.role === "PROJECT_MANAGER") {
+  // Kiểm tra nếu user là PM trong members array
+  if (memberToRemove && memberToRemove.role === "PROJECT_MANAGER") {
     const pmCount = project.members.filter((m) => m.role === "PROJECT_MANAGER").length;
     if (pmCount <= 1) {
       throw new Error("Cannot remove the only Project Manager from the project.");
     }
   }
 
+  // Kiểm tra nếu user đang là leader của team nào
   const isLeadingTeam = project.teams.some((t) => t.leaderId.equals(userIdToRemove));
   if (isLeadingTeam) {
     throw new Error("Cannot remove user. They are currently leading a team. Please change the team leader first.");
   }
 
+  // Xóa user khỏi members array (nếu có)
   project.members = project.members.filter((m) => !m.userId.equals(userIdToRemove));
+
+  // Xóa user khỏi tất cả teams (nếu có)
+  project.teams.forEach((team) => {
+    team.members = team.members.filter((m) => !m.equals(userIdToRemove));
+  });
+
   await project.save();
   return project; // Trả về project đã cập nhật
 };

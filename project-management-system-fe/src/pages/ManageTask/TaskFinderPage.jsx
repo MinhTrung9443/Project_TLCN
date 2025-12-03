@@ -19,6 +19,10 @@ const TaskFinderPage = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [includeDone, setIncludeDone] = useState(false);
+  const [projectStatus, setProjectStatus] = useState("active"); // Default to active projects only
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [activeFilters, setActiveFilters] = useState({});
 
@@ -39,7 +43,7 @@ const TaskFinderPage = () => {
       try {
         const [projectsRes, usersRes, statusesRes] = await Promise.all([
           getProjects(),
-          userService.getAllUsers(1, 1000), // Get all users with large limit
+          userService.getUsers({ status: "active" }), // Get only active users
           statusService.getStatusList(),
         ]);
 
@@ -63,7 +67,9 @@ const TaskFinderPage = () => {
 
   const selectOptions = useMemo(
     () => ({
-      projects: filterData.projects.map((p) => ({ value: p._id, label: p.name })),
+      projects: filterData.projects
+        .filter((p) => !projectStatus || p.status === projectStatus) // Filter projects by status
+        .map((p) => ({ value: p._id, label: p.name, status: p.status })),
       users: filterData.users.map((u) => ({ value: u._id, label: u.fullname })),
       statuses: filterData.statuses.map((s) => ({ value: s._id, label: s.name })),
       priorities: filterData.priorities.map((p) => ({ value: p._id, label: p.name })),
@@ -71,13 +77,27 @@ const TaskFinderPage = () => {
       taskTypes: filterData.taskTypes.map((t) => ({ value: t._id, label: t.name })),
       sprints: filterData.sprints.map((sp) => ({ value: sp._id, label: sp.name })),
     }),
-    [filterData]
+    [filterData, projectStatus]
   );
 
-  const fetchTasks = async (filters, currentKeyword) => {
+  const fetchTasks = async (filters, currentKeyword, showDone, projStatus) => {
     setLoading(true);
     try {
-      const params = { ...filters, keyword: currentKeyword };
+      // Add statusCategory filter - include Done if checkbox is checked
+      const categories = showDone ? "To Do,In Progress,Done" : "To Do,In Progress";
+
+      // Filter to get project IDs based on status
+      const filteredProjectIds = projStatus
+        ? filterData.projects.filter((p) => p.status === projStatus).map((p) => p._id)
+        : filterData.projects.map((p) => p._id);
+
+      const params = {
+        ...filters,
+        keyword: currentKeyword,
+        statusCategory: categories,
+        projectStatus: projStatus || undefined, // Pass project status to backend
+      };
+
       const response = await searchTasks(_.pickBy(params, _.identity));
       setTasks(response.data);
     } catch (error) {
@@ -88,14 +108,15 @@ const TaskFinderPage = () => {
     }
   };
 
-  const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), []);
+  const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), [filterData.projects]);
 
   useEffect(() => {
-    debouncedFetch(activeFilters, keyword);
-  }, [keyword, debouncedFetch, activeFilters]); // Thêm activeFilters vào dependency array
+    debouncedFetch(activeFilters, keyword, includeDone, projectStatus);
+    setCurrentPage(1); // Reset to page 1 when search or filters change
+  }, [keyword, debouncedFetch, activeFilters, includeDone, projectStatus]); // Thêm activeFilters vào dependency array
 
   const handleTaskCreated = (newTask) => {
-    fetchTasks(activeFilters, keyword);
+    fetchTasks(activeFilters, keyword, includeDone, projectStatus);
   };
 
   const handleTaskUpdate = (updatedData) => {
@@ -170,6 +191,16 @@ const TaskFinderPage = () => {
     setActiveFilters({});
   };
 
+  const getPaginatedTasks = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return tasks.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    return Math.ceil(tasks.length / itemsPerPage);
+  };
+
   return (
     <>
       <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
@@ -186,6 +217,13 @@ const TaskFinderPage = () => {
 
           <div className="filters-container">
             <div className="filter-dropdowns">
+              <select className="filter-select" value={projectStatus} onChange={(e) => setProjectStatus(e.target.value)}>
+                <option value="">All Project Status</option>
+                <option value="active">Active Projects</option>
+                <option value="paused">Paused Projects</option>
+                <option value="completed">Completed Projects</option>
+              </select>
+
               <select
                 className="filter-select"
                 value={activeFilters.projectId || ""}
@@ -228,6 +266,11 @@ const TaskFinderPage = () => {
               <button className="btn-clear-filters" onClick={clearAllFilters}>
                 Clear Filters
               </button>
+
+              <label className="include-done-checkbox">
+                <input type="checkbox" checked={includeDone} onChange={(e) => setIncludeDone(e.target.checked)} />
+                <span>Include Done tasks</span>
+              </label>
             </div>
 
             <div className="right-side-filters">
@@ -242,11 +285,6 @@ const TaskFinderPage = () => {
           </div>
 
           <div className="task-list-container">
-            {!loading && (
-              <div className="task-list-summary">
-                Task List / {tasks.length} {tasks.length === 1 ? "Task" : "Tasks"}
-              </div>
-            )}
             <div className="task-list-header">
               <div className="task-cell task-key">Key</div>
               <div className="task-cell task-name">Name</div>
@@ -264,10 +302,27 @@ const TaskFinderPage = () => {
               ) : tasks.length === 0 ? (
                 <p className="info-text">No tasks found.</p>
               ) : (
-                tasks.map((task) => <TaskRow key={task._id} task={task} onTaskClick={handleTaskClick} />)
+                getPaginatedTasks().map((task) => <TaskRow key={task._id} task={task} onTaskClick={handleTaskClick} />)
               )}
             </div>
           </div>
+          {!loading && getTotalPages() > 1 && (
+            <div className="pagination-container">
+              <button className="pagination-btn" onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                Previous
+              </button>
+              <div className="pagination-info">
+                Page {currentPage} of {getTotalPages()}
+              </div>
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
+                disabled={currentPage === getTotalPages()}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
         <TaskDetailPanel
           key={selectedTask?._id}

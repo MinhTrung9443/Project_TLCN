@@ -4,7 +4,8 @@ const GanttController = {
   getGanttData: async (req, res) => {
     try {
       const { filter, groupby } = req.body;
-      const gantData = await gantService.getGanttData(filter, groupby);
+      const actor = req.user; // Get user from auth middleware
+      const gantData = await gantService.getGanttData(filter, groupby, actor);
       res.status(200).json({
         message: "Gantt data retrieved successfully",
         data: gantData,

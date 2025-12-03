@@ -62,8 +62,8 @@ const LogTimeModal = ({ isOpen, onClose, taskId, onTimeLogged }) => {
 
         <form onSubmit={handleSubmit} className="log-time-modal-body">
           <div className="form-group">
-            <label htmlFor="timeSpent">
-              Time Spent (hours) <span className="required">*</span>
+            <label htmlFor="timeSpent" className="required">
+              Time Spent (hours)
             </label>
             <input
               type="number"
@@ -80,8 +80,8 @@ const LogTimeModal = ({ isOpen, onClose, taskId, onTimeLogged }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="comment">
-              Work Description <span className="required">*</span>
+            <label htmlFor="comment" className="required">
+              Work Description
             </label>
             <textarea
               id="comment"

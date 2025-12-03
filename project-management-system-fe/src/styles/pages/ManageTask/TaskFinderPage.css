@@ -342,6 +342,38 @@
   border-color: #495057;
 }
 
+.include-done-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.include-done-checkbox:hover {
+  background-color: #f8f9fa;
+  border-color: #495057;
+}
+
+.include-done-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4f46e5;
+}
+
+.include-done-checkbox span {
+  cursor: pointer;
+}
+
 .right-side-filters {
   display: flex;
   gap: 0.5rem;
@@ -501,4 +533,42 @@
 
 .close-btn:hover {
   color: #172b4d;
+}
+
+/* Pagination */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+  margin-top: 20px;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  border: 1px solid #dfe1e6;
+  background-color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #42526e;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #0052cc;
+  color: white;
+  border-color: #0052cc;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #6b778c;
+  font-weight: 500;
 }

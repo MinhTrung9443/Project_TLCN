@@ -1,31 +1,46 @@
-import React from "react";
+import React, { useContext } from "react";
 import { NavLink, useParams } from "react-router-dom";
-import "../../styles/Setting/SettingMenu.css";
+import { ProjectContext } from "../../contexts/ProjectContext";
+import "../../components/Setting/SettingMenu.css";
 
 const ProjectSettingMenu = () => {
   const { projectKey } = useParams();
+  const { projectData } = useContext(ProjectContext);
 
-  const menuList = [
-    { path: "general", label: "General" },
-    { path: "members", label: "Project Members" },
-    { path: "tasktype", label: "Task Type" },
-    { path: "priority", label: "Priority" },
-    { path: "platform", label: "Platform" },
-    { path: "workflow", label: "Workflow" },
+  const menuItems = [
+    { path: "general", label: "General", icon: "settings" },
+    { path: "members", label: "Members", icon: "group" },
+    { path: "tasktype", label: "Task Type", icon: "task" },
+    { path: "priority", label: "Priority", icon: "flag" },
+    { path: "platform", label: "Platform", icon: "devices" },
+    { path: "workflow", label: "Workflow", icon: "account_tree" },
   ];
 
   return (
-    <nav className="setting-menu">
-      <ul>
-        {menuList.map((item) => (
-          <li key={item.path}>
-            <NavLink to={`/task-mgmt/projects/${projectKey}/settings/${item.path}`}>
-              <span>{item.label}</span>
-            </NavLink>
-          </li>
+    <div className="setting-menu-wrapper">
+      <div className="setting-menu-header">
+        <div className="header-info">
+          <h1 className="page-title">
+            <span className="material-symbols-outlined">settings</span>
+            {projectData?.name || "Project"} Settings
+          </h1>
+          <p className="page-subtitle">Configure project settings, members, and workflows</p>
+        </div>
+      </div>
+
+      <nav className="setting-tabs">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={`/task-mgmt/projects/${projectKey}/settings/${item.path}`}
+            className={({ isActive }) => `tab-item ${isActive ? "active" : ""}`}
+          >
+            <span className="material-symbols-outlined">{item.icon}</span>
+            <span className="tab-label">{item.label}</span>
+          </NavLink>
         ))}
-      </ul>
-    </nav>
+      </nav>
+    </div>
   );
 };
 

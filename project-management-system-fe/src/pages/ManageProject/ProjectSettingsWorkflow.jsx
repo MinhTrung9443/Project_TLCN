@@ -458,7 +458,7 @@ const ProjectSettingsWorkflow = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>Status Name *</label>
+                <label className="required">Status Name</label>
                 <input
                   type="text"
                   value={statusForm.name}
@@ -467,7 +467,7 @@ const ProjectSettingsWorkflow = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Category *</label>
+                <label className="required">Category</label>
                 <select value={statusForm.category} onChange={(e) => setStatusForm({ ...statusForm, category: e.target.value })}>
                   <option value="To Do">To Do</option>
                   <option value="In Progress">In Progress</option>
@@ -499,7 +499,7 @@ const ProjectSettingsWorkflow = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>From Status *</label>
+                <label className="required">From Status</label>
                 <select value={transitionForm.from} onChange={(e) => setTransitionForm({ ...transitionForm, from: e.target.value })}>
                   <option value="">Select source status</option>
                   {workflow.statuses?.map((status) => (
@@ -510,7 +510,7 @@ const ProjectSettingsWorkflow = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label>To Status *</label>
+                <label className="required">To Status</label>
                 <select value={transitionForm.to} onChange={(e) => setTransitionForm({ ...transitionForm, to: e.target.value })}>
                   <option value="">Select target status</option>
                   {workflow.statuses?.map((status) => (

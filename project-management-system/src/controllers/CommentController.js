@@ -1,4 +1,3 @@
-
 const commentService = require("../services/CommentService");
 
 const handleGetComments = async (req, res) => {
@@ -19,7 +18,25 @@ const handleCreateComment = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized: User not found." });
     }
     const userId = req.user.id;
-    const comment = await commentService.createComment({ ...req.body, taskId: taskId }, userId);
+
+    // Xử lý attachments từ files upload
+    const attachments = req.files
+      ? req.files.map((file) => ({
+          filename: file.originalname,
+          url: file.path,
+          public_id: file.filename,
+        }))
+      : [];
+
+    const comment = await commentService.createComment(
+      {
+        ...req.body,
+        taskId: taskId,
+        attachments: attachments,
+      },
+      userId
+    );
+
     res.status(201).json(comment);
   } catch (error) {
     console.error("Error in handleCreateComment:", error);
@@ -28,43 +45,43 @@ const handleCreateComment = async (req, res) => {
 };
 
 const handleUpdateComment = async (req, res) => {
-    try {
-        const { commentId } = req.params;
-        const { content } = req.body;
-        const userId = req.user.id;
+  try {
+    const { commentId } = req.params;
+    const { content } = req.body;
+    const userId = req.user.id;
 
-        const updatedComment = await commentService.updateComment(commentId, content, userId);
-        res.status(200).json(updatedComment);
-    } catch (error) {
-        console.error("Error updating comment:", error);
-        res.status(error.statusCode || 500).json({ message: error.message });
-    }
-}
+    const updatedComment = await commentService.updateComment(commentId, content, userId);
+    res.status(200).json(updatedComment);
+  } catch (error) {
+    console.error("Error updating comment:", error);
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
 
 const handleDeleteComment = async (req, res) => {
-    try {
-        const { commentId } = req.params;
-        const userId = req.user.id;
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id;
 
-        const result = await commentService.deleteComment(commentId, userId);
-        res.status(200).json(result);
-    } catch (error) {
-        console.error("Error deleting comment:", error);
-        res.status(error.statusCode || 500).json({ message: error.message });
-    }
+    const result = await commentService.deleteComment(commentId, userId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
 };
 const handleToggleReaction = async (req, res) => {
-    try {
-        const { commentId } = req.params;
-        const { emoji } = req.body;
-        const userId = req.user.id;
-        
-        const updatedComment = await commentService.toggleReaction(commentId, userId, emoji);
-        res.status(200).json(updatedComment);
-    } catch (error) {
-        console.error("Error toggling reaction:", error);
-        res.status(error.statusCode || 500).json({ message: error.message });
-    }
+  try {
+    const { commentId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.user.id;
+
+    const updatedComment = await commentService.toggleReaction(commentId, userId, emoji);
+    res.status(200).json(updatedComment);
+  } catch (error) {
+    console.error("Error toggling reaction:", error);
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
 };
 
 module.exports = {
@@ -73,5 +90,4 @@ module.exports = {
   handleUpdateComment,
   handleDeleteComment,
   handleToggleReaction,
-
 };

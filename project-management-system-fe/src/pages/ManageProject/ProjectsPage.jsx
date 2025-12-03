@@ -30,6 +30,8 @@ const ProjectsPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteAction, setDeleteAction] = useState(null);
   const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Dọn dẹp context khi vào trang
   useEffect(() => {
@@ -45,8 +47,8 @@ const ProjectsPage = () => {
           const response = await getProjects(currentSearchTerm);
           setProjects(response.data);
         } else {
-          // Tạm thời không tìm kiếm ở trang archived
-          const response = await getArchivedProjects();
+          // Tìm kiếm ở trang archived
+          const response = await getArchivedProjects(currentSearchTerm);
           setArchivedProjects(response.data);
         }
       } catch (error) {
@@ -61,11 +63,16 @@ const ProjectsPage = () => {
   useEffect(() => {
     const timerId = setTimeout(() => {
       fetchData(searchTerm);
+      setCurrentPage(1); // Reset to page 1 when search changes
     }, 300);
     return () => {
       clearTimeout(timerId);
     };
   }, [searchTerm, fetchData]);
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when view changes
+  }, [view]);
 
   const handleProjectCreated = () => {
     setSearchTerm("");
@@ -138,12 +145,29 @@ const ProjectsPage = () => {
 
   const handleFilterChange = (filterName, value) => {
     setFilters((prev) => ({ ...prev, [filterName]: value }));
+    setCurrentPage(1); // Reset to page 1 when filter changes
+  };
+
+  const getTotalMembers = (project) => {
+    // Tính tổng members từ project.members
+    let totalMembers = project.members ? project.members.length : 0;
+
+    // Thêm tất cả members từ các teams
+    if (project.teams && Array.isArray(project.teams)) {
+      project.teams.forEach((team) => {
+        if (team.members && Array.isArray(team.members)) {
+          totalMembers += team.members.length;
+        }
+      });
+    }
+
+    return totalMembers;
   };
 
   const getFilteredProjects = () => {
     const projectList = view === "active" ? projects : archivedProjects;
 
-    return projectList.filter((project) => {
+    const filtered = projectList.filter((project) => {
       // Filter by type
       if (filters.type && project.type !== filters.type) return false;
 
@@ -155,6 +179,20 @@ const ProjectsPage = () => {
 
       return true;
     });
+
+    return filtered;
+  };
+
+  const getPaginatedProjects = () => {
+    const filtered = getFilteredProjects();
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    const filtered = getFilteredProjects();
+    return Math.ceil(filtered.length / itemsPerPage);
   };
 
   // Get unique project managers for filter dropdown
@@ -170,9 +208,9 @@ const ProjectsPage = () => {
   };
 
   const renderProjects = () => {
-    const filteredProjects = getFilteredProjects();
+    const paginatedProjects = getPaginatedProjects();
 
-    return filteredProjects.map((project) => (
+    return paginatedProjects.map((project) => (
       <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{ cursor: view === "active" ? "pointer" : "default" }}>
         <td>
           <a
@@ -189,7 +227,7 @@ const ProjectsPage = () => {
         <td>{project.key}</td>
         <td>{project.type}</td>
         <td>{project.projectManager?.fullname || "N/A"}</td>
-        <td>{project.members.length}</td>
+        <td>{getTotalMembers(project)}</td>
         <td>{formatDate(view === "active" ? project.createdAt : project.deletedAt)}</td>
         <td>
           <span className={`status-badge ${view === "active" ? "status-active" : "status-archived"}`}>
@@ -249,15 +287,13 @@ const ProjectsPage = () => {
                 </button>
               )}
             </div>
-            {view === "active" && (
-              <input
-                type="search"
-                placeholder="Search by name or key..."
-                className="search-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            )}
+            <input
+              type="search"
+              placeholder="Search by name or key..."
+              className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
 
           {view === "active" && (
@@ -282,6 +318,29 @@ const ProjectsPage = () => {
                 <option value="active">Active</option>
                 <option value="paused">Paused</option>
                 <option value="completed">Completed</option>
+              </select>
+
+              <button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
+                Clear Filters
+              </button>
+            </div>
+          )}
+
+          {view === "archived" && (
+            <div className="projects-filters">
+              <select className="filter-select" value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
+                <option value="">All Types</option>
+                <option value="Scrum">Scrum</option>
+                <option value="Kanban">Kanban</option>
+              </select>
+
+              <select className="filter-select" value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
+                <option value="">All Project Managers</option>
+                {getProjectManagers().map((pm) => (
+                  <option key={pm._id} value={pm._id}>
+                    {pm.fullname}
+                  </option>
+                ))}
               </select>
 
               <button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
@@ -317,6 +376,24 @@ const ProjectsPage = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {!loading && getTotalPages() > 1 && (
+            <div className="pagination-container">
+              <button className="pagination-btn" onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                Previous
+              </button>
+              <div className="pagination-info">
+                Page {currentPage} of {getTotalPages()} ({getFilteredProjects().length} total projects)
+              </div>
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
+                disabled={currentPage === getTotalPages()}
+              >
+                Next
+              </button>
             </div>
           )}
         </div>

@@ -27,9 +27,9 @@ const LoginPage = () => {
     authService
       .login(formData)
       .then((response) => {
-      login(response.data.user, response.data.token); 
-      toast.success("Login successful");
-      navigate("/dashboard");
+        login(response.data.user, response.data.token);
+        toast.success("Login successful");
+        navigate("/dashboard");
       })
       .catch((error) => {
         console.error("Login failed:", error);
@@ -39,8 +39,7 @@ const LoginPage = () => {
 
   return (
     <div className="login-page-container">
-      <div className="login-image-panel">
-      </div>
+      <div className="login-image-panel"></div>
       <div className="login-form-panel">
         <div className="form-content">
           <img src={logo} alt="Logo" className="logo" />
@@ -49,24 +48,16 @@ const LoginPage = () => {
 
           <form onSubmit={handleLogin}>
             <div className="input-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="your.email@example.com"
-                required
-              />
+              <label htmlFor="email">
+                Email <span style={{ color: "red" }}>*</span>
+              </label>
+              <input type="email" id="email" name="email" placeholder="your.email@example.com" required />
             </div>
             <div className="input-group">
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                placeholder="Enter password"
-                required
-              />
+              <label htmlFor="password">
+                Password <span style={{ color: "red" }}>*</span>
+              </label>
+              <input type="password" id="password" name="password" placeholder="Enter password" required />
             </div>
             <Link to="/forgot-password" className="forgot-password">
               Forgot your password?

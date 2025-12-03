@@ -35,7 +35,7 @@ router.patch("/project/:projectKey/tasks/:taskId", protect, isProjectMember, han
 router.delete("/project/:projectKey/tasks/:taskId", protect, isManagerOrLeader, handleDeleteTask);
 router.get("/:taskId/history", protect, handleGetTaskHistory);
 router.get("/:taskId/comments", protect, handleGetComments);
-router.post("/:taskId/comments", protect, handleCreateComment);
+router.post("/:taskId/comments", protect, upload.array("attachments", 5), handleCreateComment);
 
 router.post("/:taskId/attachments", protect, upload.single("attachmentFile"), handleAddAttachment);
 router.delete("/:taskId/attachments/:attachmentId", protect, handleDeleteAttachment);
