@@ -106,22 +106,13 @@ Tạo file `.env` tại thư mục gốc backend (`project-management-system/`):
 
 ```env
 PORT=8080
-JWT_SECRET=suppersecretkeysuppersecretkeysuppersecretkeysuppersecretkeysuppersecretkey
-JWT_EXPIRES_IN=1h
-FRONTEND_URL=http://localhost:3000
-
-NODE_ENV=development
-MONGODB_URI=mongodb+srv://admin:admin123@minhtrung.mno0nlr.mongodb.net/project_management
-BCRYPT_SALT_ROUNDS=12
-
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USERNAME=minhtrungbttv@gmail.com
-EMAIL_PASSWORD=oavo nhgl nrud nwls
-
-CLOUDINARY_CLOUD_NAME=drgeypfqc
-CLOUDINARY_API_KEY=674294725223813
-CLOUDINARY_API_SECRET=qPbZ88t5XxRMsfiMypCtD0C9fH0
+MONGODB_URI=mongodb://localhost:27017/project_management
+JWT_SECRET=your-jwt-secret-key
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
 ```
 
 ### Bước 3: Cài đặt Dependencies
