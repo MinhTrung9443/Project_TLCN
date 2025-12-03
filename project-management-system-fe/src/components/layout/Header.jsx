@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import NotificationBell from "../common/NotificationBell";
+import { FaUser, FaSignOutAlt, FaBars } from "react-icons/fa";
+import logo from "../../assets/logo.png";
 import "../../styles/layout/Header.css";
 
 const Header = () => {
@@ -83,10 +85,20 @@ const Header = () => {
                     <strong>{user.fullname}</strong>
                     <span>{user.email}</span>
                   </div>
-                  <Link to="/my-profile" onClick={() => setDropdownOpen(false)}>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      navigate("/my-profile");
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    <FaUser className="dropdown-icon" />
                     My Profile
-                  </Link>
-                  <button onClick={handleLogout}>Log Out</button>
+                  </button>
+                  <button className="dropdown-item" onClick={handleLogout}>
+                    <FaSignOutAlt className="dropdown-icon" />
+                    Log Out
+                  </button>
                 </div>
               )}
             </div>

@@ -11,16 +11,18 @@
   width: 40px;
   height: 40px;
   background: transparent;
-  border: none;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #64748b;
+  color: #fff;
 }
 
 .notification-bell-button:hover {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #fff;
+  transform: scale(1.05);
 }
 
 .notification-bell-button .material-symbols-outlined {
