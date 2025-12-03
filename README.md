@@ -30,121 +30,127 @@ Project Management System là giải pháp Full-stack hỗ trợ các team vận
 ### 1. High-Level Architecture
 Mô hình Client-Server giao tiếp qua RESTful API và WebSocket.
 
-```text
-┌─────────────────────┐      HTTP/WebSocket      ┌─────────────────────┐
-│                     │ ────────────────────────► │                     │
-│   Frontend (React)  │                           │  Backend (Express)  │
-│   Port: 3000        │ ◄──────────────────────── │   Port: 8080        │
-│                     │                           │                     │
-└─────────────────────┘                           └─────────────────────┘
-                                                           │
-                                                           │ Mongoose ODM
-                                                           ▼
-                                                  ┌─────────────────────┐
-                                                  │                     │
-                                                  │   MongoDB Database  │
-                                                  │                     │
-                                                  └─────────────────────┘
+```mermaid
+graph LR
+    Client[🖥️ Frontend React] <-->|HTTP / WebSocket| Server[⚙️ Backend Express]
+    Server -->|Mongoose ODM| DB[(🗄️ MongoDB)]
+    
+    style Client fill:#61DAFB,stroke:#333,stroke-width:2px,color:black
+    style Server fill:#8CC84B,stroke:#333,stroke-width:2px,color:black
+    style DB fill:#4EA94B,stroke:#333,stroke-width:2px,color:white
+```
+
 ### 2. Luồng dữ liệu (Data Flow)
-┌─────────────────┐
-│   User Action   │
-│   (Frontend)    │
-└─────────┬───────┘
-          │ HTTP Request
-          ▼
-┌─────────────────┐
-│   API Routes    │
-│   (Express)     │
-└─────────┬───────┘
-          │ Route to Controller
-          ▼
-┌─────────────────┐
-│   Controllers   │
-│   (Validation)  │
-└─────────┬───────┘
-          │ Business Logic
-          ▼
-┌─────────────────┐
-│   Services      │
-│   (Core Logic)  │
-└─────────┬───────┘
-          │ Data Operations
-          ▼
-┌─────────────────┐
-│   Models        │
-│   (Mongoose)    │
-└─────────┬───────┘
-          │ Database Queries
-          ▼
-┌─────────────────┐
-│   MongoDB       │
-│   (Persistence) │
-└─────────────────┘
-🔧 Công nghệ sử dụng
-🎨 Frontend (Client)
-Công nghệ	Phiên bản	Mục đích
-React	19.1.1	UI Library
-React Router	7.8.2	Client-side routing
-Bootstrap	5.3.7	CSS Framework
-Axios	1.12.2	HTTP Client
-Socket.io Client	4.8.1	Giao tiếp thời gian thực
-React DnD	16.0.1	Kéo thả (Drag & Drop)
-TipTap	3.6.2	Rich Text Editor
-⚙️ Backend (Server)
-Công nghệ	Phiên bản	Mục đích
-Express.js	5.1.0	Web Framework
-Mongoose	8.18.0	MongoDB ODM
-Socket.io	4.8.1	Real-time Engine
-JWT	9.0.2	Authentication
-Cloudinary	1.41.3	Lưu trữ file/ảnh
-Nodemailer	7.0.6	Gửi email
-🚀 Cài đặt và chạy dự án
-Yêu cầu hệ thống
-Node.js >= 16.0.0
-MongoDB >= 4.4
-NPM >= 8.0.0
-Bước 1: Clone dự án
-code
-Bash
+
+```mermaid
+graph TD
+    User((👤 User Action)) -->|HTTP Request| API[📡 API Routes]
+    API -->|Route| Controller[🎮 Controllers]
+    Controller -->|Business Logic| Service[⚙️ Services]
+    Service -->|Data Operations| Model[🗃️ Models]
+    Model -->|Query| DB[(MongoDB)]
+    
+    subgraph Backend Logic
+    API
+    Controller
+    Service
+    Model
+    end
+```
+
+---
+
+## 🔧 Công nghệ sử dụng
+
+### 🎨 Frontend (Client)
+| Công nghệ | Phiên bản | Mục đích |
+| :--- | :---: | :--- |
+| **React** | `19.1.1` | UI Library |
+| **React Router** | `7.8.2` | Client-side routing |
+| **Bootstrap** | `5.3.7` | CSS Framework |
+| **Axios** | `1.12.2` | HTTP Client |
+| **Socket.io Client** | `4.8.1` | Giao tiếp thời gian thực |
+| **React DnD** | `16.0.1` | Kéo thả (Drag & Drop) |
+| **TipTap** | `3.6.2` | Rich Text Editor |
+| **Moment.js** | `2.30.1` | Xử lý ngày tháng |
+
+### ⚙️ Backend (Server)
+| Công nghệ | Phiên bản | Mục đích |
+| :--- | :---: | :--- |
+| **Express.js** | `5.1.0` | Web Framework |
+| **Mongoose** | `8.18.0` | MongoDB ODM |
+| **Socket.io** | `4.8.1` | Real-time Engine |
+| **JWT** | `9.0.2` | Authentication |
+| **BCrypt** | `6.0.0` | Mã hóa mật khẩu |
+| **Cloudinary** | `1.41.3` | Lưu trữ file/ảnh |
+| **Nodemailer** | `7.0.6` | Gửi email |
+| **Multer** | `2.0.2` | Upload file |
+
+---
+
+## 🚀 Cài đặt và chạy dự án
+
+### Yêu cầu hệ thống
+*   Node.js >= 16.0.0
+*   MongoDB >= 4.4
+*   NPM >= 8.0.0
+
+### Bước 1: Clone dự án
+```bash
 git clone <repository-url>
 cd project_tlcn
-Bước 2: Cấu hình môi trường
-Tạo file .env tại thư mục gốc project-management-system (Backend):
-code
-Env
+```
+
+### Bước 2: Cấu hình môi trường
+Tạo file `.env` tại thư mục gốc backend (`project-management-system/`):
+
+```env
 PORT=8080
-MONGODB_URI=mongodb://localhost:27017/project_management
-JWT_SECRET=your-secure-jwt-secret
-# Cloudinary Config
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-# Email Config
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password
-Bước 3: Cài đặt Dependencies
-Mở terminal tại thư mục gốc của dự án (project_tlcn):
-code
-Bash
-# Cài đặt cho Backend
+JWT_SECRET=suppersecretkeysuppersecretkeysuppersecretkeysuppersecretkeysuppersecretkey
+JWT_EXPIRES_IN=1h
+FRONTEND_URL=http://localhost:3000
+
+NODE_ENV=development
+MONGODB_URI=mongodb+srv://admin:admin123@minhtrung.mno0nlr.mongodb.net/project_management
+BCRYPT_SALT_ROUNDS=12
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USERNAME=minhtrungbttv@gmail.com
+EMAIL_PASSWORD=oavo nhgl nrud nwls
+
+CLOUDINARY_CLOUD_NAME=drgeypfqc
+CLOUDINARY_API_KEY=674294725223813
+CLOUDINARY_API_SECRET=qPbZ88t5XxRMsfiMypCtD0C9fH0
+```
+
+### Bước 3: Cài đặt Dependencies
+Bạn cần cài đặt thư viện cho cả Backend và Frontend.
+
+```bash
+# 1. Cài đặt cho Backend
 cd project-management-system
 npm install
 
-# Quay lại thư mục gốc và cài đặt cho Frontend
+# 2. Quay lại thư mục gốc và vào Frontend
 cd .. 
 cd project-management-system-fe
 npm install
-Bước 4: Chạy dự án
-Bạn cần mở 2 cửa sổ Terminal riêng biệt:
-Terminal 1 (Backend):
-code
-Bash
+```
+
+### Bước 4: Chạy dự án
+Bạn cần mở **2 cửa sổ Terminal** riêng biệt để chạy song song:
+
+**Terminal 1 (Backend):**
+```bash
 cd project-management-system
 npm start
 # Server sẽ chạy tại http://localhost:8080
-Terminal 2 (Frontend):
-code
-Bash
+```
+
+**Terminal 2 (Frontend):**
+```bash
 cd project-management-system-fe
 npm start
 # Client sẽ chạy tại http://localhost:3000
+```
