@@ -96,7 +96,7 @@ const Component = () => {
           </div>
           <div>
             <label className="user-profile-label">Gender</label>
-            <select className="user-profile-select" value={updateUser.gender || "male"} onChange={onInputChange} name="gender">
+            <select className="user-profile-select" value={updateUser.gender || "male"} onChange={onInputChange} disabled={!isAdmin} name="gender">
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
