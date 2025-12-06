@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import authService from "../services/AuthService.js";
 import { toast } from "react-toastify";
 
@@ -9,6 +9,7 @@ import "../styles/ForgotPassword.css";
 import logo from "../assets/logo.png";
 
 const ForgotPasswordPage = () => {
+  const navigate = useNavigate();
   const [isSentRequest, setIsSentRequest] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [otp, setOtp] = React.useState("");
@@ -53,7 +54,9 @@ const ForgotPasswordPage = () => {
       .resetPassword(formData)
       .then((response) => {
         toast.success("Password reset successfully");
-        setIsSentRequest(false);
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
       })
       .catch((error) => {
         console.error("Reset password failed:", error);
@@ -64,9 +67,7 @@ const ForgotPasswordPage = () => {
   return (
     <div className="forgot-password-page-container">
       {/* CỘT BÊN TRÁI (HÌNH ẢNH) - ĐÃ SỬA */}
-      <div className="forgot-password-image-panel">
-        {/* Phần này sẽ hiển thị ảnh nền được định nghĩa trong Login.css */}
-      </div>
+      <div className="forgot-password-image-panel">{/* Phần này sẽ hiển thị ảnh nền được định nghĩa trong Login.css */}</div>
 
       {/* CỘT BÊN PHẢI (FORM) */}
 
@@ -75,9 +76,7 @@ const ForgotPasswordPage = () => {
           <div className="form-content">
             <img src={logo} alt="Logo" className="logo" />
             <h2>Forgot Password</h2>
-            <p className="subtitle">
-              Please enter your email to reset your password.
-            </p>
+            <p className="subtitle">Please enter your email to reset your password.</p>
 
             <form onSubmit={handleForgotPassword}>
               <div className="input-group">
@@ -107,21 +106,11 @@ const ForgotPasswordPage = () => {
           <div className="form-content">
             <img src={logo} alt="Logo" className="logo" />
             <h2>New Password</h2>
-            <p className="subtitle">
-              Check your email for the OTP to reset your password.
-            </p>
+            <p className="subtitle">Check your email for the OTP to reset your password.</p>
             <form onSubmit={handleResetPassword}>
               <div className="input-group">
                 <label>OTP</label>
-                <input
-                  type="text"
-                  id="OTP"
-                  name="OTP"
-                  placeholder="Enter the OTP"
-                  required
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                />
+                <input type="text" id="OTP" name="OTP" placeholder="Enter the OTP" required value={otp} onChange={(e) => setOtp(e.target.value)} />
               </div>
 
               <div className="input-group">

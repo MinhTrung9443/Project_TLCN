@@ -292,7 +292,11 @@ const updateTask = async (taskId, updateData, userId) => {
     throw error;
   }
 
-  // 1. Lấy task hiện tại TRƯỚC KHI cập nhật để so sánh
+  // Ngăn chặn việc thay đổi reporterId và createdById
+  delete updateData.reporterId;
+  delete updateData.createdById;
+
+  // 1. Lấy task hiện tại TRƯỜC KHI cập nhật để so sánh
   const originalTask = await Task.findById(taskId).populate("projectId", "_id").populate("statusId", "_id").lean();
 
   if (!originalTask) {
