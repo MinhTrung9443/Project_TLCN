@@ -60,5 +60,15 @@ const SprintController = {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
     }
   },
+
+  handleGetSprintById: async (req, res) => {
+    try {
+      const { sprintId } = req.params;
+      const sprint = await sprintService.getSprintById(sprintId);
+      res.status(200).json(sprint);
+    } catch (error) {
+      res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+  },
 };
 module.exports = SprintController;

@@ -455,6 +455,20 @@ const getProjectByKey = async (key) => {
   return project;
 };
 
+const getProjectById = async (id) => {
+  const project = await Project.findOne({ _id: id, isDeleted: false }).populate({
+    path: "members.userId",
+    select: "fullname email avatar",
+  });
+
+  if (!project) {
+    const error = new Error("Project not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return project;
+};
+
 const getProjectMembers = async (projectKey, userId = null) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
     .populate("members.userId", "fullname email avatar role")
@@ -785,6 +799,7 @@ module.exports = {
   permanentlyDeleteProject,
   cloneProject,
   getProjectByKey,
+  getProjectById,
   getProjectMembers,
   addMemberToProject,
   addMembersFromGroupToProject,

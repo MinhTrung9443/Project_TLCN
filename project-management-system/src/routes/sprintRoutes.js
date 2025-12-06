@@ -11,5 +11,6 @@ router.delete("/:sprintId", protect, admin, sprintControlelr.handleDeleteSprint)
 // New routes for active sprint page
 router.get("/:projectKey/started", protect, sprintControlelr.handleGetStartedSprints);
 router.get("/tasks/:sprintId", protect, sprintControlelr.handleGetTasksBySprintWithStatus);
+router.get("/sprint/:sprintId", protect, sprintControlelr.handleGetSprintById);
 
 module.exports = router;

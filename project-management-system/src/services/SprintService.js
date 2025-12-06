@@ -254,6 +254,24 @@ const sprintService = {
       throw { statusCode: 500, message: "Server Error: " + error.message };
     }
   },
+
+  getSprintById: async (sprintId) => {
+    try {
+      const sprint = await Sprint.findById(sprintId).populate({
+        path: "projectId",
+        select: "key name",
+      });
+
+      if (!sprint) {
+        throw { statusCode: 404, message: "Sprint not found" };
+      }
+
+      return sprint;
+    } catch (error) {
+      if (error.statusCode) throw error;
+      throw { statusCode: 500, message: "Server Error: " + error.message };
+    }
+  },
 };
 
 module.exports = sprintService;
