@@ -212,7 +212,17 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
   const groupOptions = allGroups.map((g) => ({ value: g._id, label: g.name }));
 
   const groupOptionsForTeamMode = allGroups
-    .filter((g) => !existingTeamIds.includes(g._id)) // Lọc ra các team đã có trong dự án
+    .filter((g) => g.status === "active") // Chỉ lấy group đang active
+    .filter((g) => {
+      // Kiểm tra xem team này còn thành viên chưa join project không
+      const teamMembersNotInProject = allUsers.filter((u) => {
+        const belongsToGroup = g.members && g.members.includes(u._id);
+        const notInProject = !existingMemberIds.includes(u._id);
+        const notAdmin = u.role !== "admin";
+        return belongsToGroup && notInProject && notAdmin;
+      });
+      return teamMembersNotInProject.length > 0; // Chỉ hiển thị team còn member chưa join
+    })
     .map((g) => ({ value: g._id, label: g.name }));
 
   const leaderOptions = teamMembers.filter((m) => selectedTeamMemberIds.has(m._id)).map((u) => ({ value: u._id, label: u.fullname || u.username }));
@@ -245,6 +255,8 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                     setSelectedTemporaryGroup(null);
                   }}
                   isLoading={isLoadingData}
+                  menuPortalTarget={document.body}
+                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
                   formatOptionLabel={(option) => (
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       {option.userData?.avatar ? (
@@ -285,7 +297,14 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
               {selectedUser && userTeamOptions.length > 1 && (
                 <div className="form-group">
                   <label>User belongs to multiple teams - Select team for this project</label>
-                  <Select options={userTeamOptions} value={selectedUserTeam} onChange={setSelectedUserTeam} placeholder="Select team..." />
+                  <Select
+                    options={userTeamOptions}
+                    value={selectedUserTeam}
+                    onChange={setSelectedUserTeam}
+                    placeholder="Select team..."
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                  />
                   <small className="form-hint">This user will be added to the project under the selected team.</small>
                 </div>
               )}
@@ -311,22 +330,12 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                     value={selectedTemporaryGroup}
                     onChange={setSelectedTemporaryGroup}
                     placeholder="Select a group for this project..."
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
                   />
                   <small className="form-hint">This user will be temporarily assigned to the selected group in this project.</small>
                 </div>
               )}
-
-              <div className="form-group">
-                <label>Role</label>
-                <Select
-                  options={[
-                    { value: "MEMBER", label: "Member" },
-                    { value: "LEADER", label: "Leader" },
-                  ]}
-                  value={{ value: selectedRole, label: selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1).toLowerCase() }}
-                  onChange={(option) => setSelectedRole(option.value)}
-                />
-              </div>
             </>
           )}
 
@@ -334,7 +343,14 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
             <>
               <div className="form-group">
                 <label>Select a Team</label>
-                <Select options={groupOptionsForTeamMode} value={selectedGroup} onChange={setSelectedGroup} isLoading={isLoadingData} />
+                <Select
+                  options={groupOptionsForTeamMode}
+                  value={selectedGroup}
+                  onChange={setSelectedGroup}
+                  isLoading={isLoadingData}
+                  menuPortalTarget={document.body}
+                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                />
               </div>
 
               {selectedGroup && teamMembers.length === 0 && (
@@ -361,7 +377,24 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                             onChange={() => handleTeamMemberToggle(member._id)}
                           />
                           <label htmlFor={`member-${member._id}`}>
-                            <img src={member.avatar || "/default-avatar.png"} alt={member.fullname} className="item-avatar" />
+                            {member.avatar ? (
+                              <img src={member.avatar} alt={member.fullname} className="item-avatar" />
+                            ) : (
+                              <div
+                                className="item-avatar"
+                                style={{
+                                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                  color: "white",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "14px",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                {(member.fullname || member.username || "U").charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div className="member-info">
                               <span className="member-name">{member.fullname || member.username}</span>
                               {otherGroups.length > 0 && (
@@ -379,7 +412,14 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
               {selectedGroup && teamMembers.length > 0 && (
                 <div className="form-group">
                   <label>Select a Leader (from selected members)</label>
-                  <Select options={leaderOptions} value={selectedLeader} onChange={setSelectedLeader} isDisabled={leaderOptions.length === 0} />
+                  <Select
+                    options={leaderOptions}
+                    value={selectedLeader}
+                    onChange={setSelectedLeader}
+                    isDisabled={leaderOptions.length === 0}
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                  />
                 </div>
               )}
             </>
