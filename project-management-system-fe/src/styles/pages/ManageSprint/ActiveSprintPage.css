@@ -470,12 +470,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 500px;
+  height: 100%;
+  width: 100%;
+  min-height: calc(100vh - 140px);
 }
 
 .empty-state {
   text-align: center;
   color: #64748b;
+  background: white;
+  padding: 120px 100px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: calc(100% - 48px);
+  height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 24px;
 }
 
 .empty-state .material-symbols-outlined {

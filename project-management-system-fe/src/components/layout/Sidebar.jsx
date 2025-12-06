@@ -60,15 +60,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           isCollapsed ? "w-20" : "w-64"
         }`}
       >
-        <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
-          {/* Header của Sidebar */}
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="h-8 w-8 bg-primary-500 rounded-md flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined text-white text-xl">dashboard</span>
-            </div>
-            {!isCollapsed && <h2 className="text-lg font-semibold whitespace-nowrap">AppDash</h2>}
-          </div>
-
+        <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden" style={{ paddingTop: "80px" }}>
           {/* Navigation (giữ nguyên như cũ) */}
           <nav className="space-y-1">
             <NavLink

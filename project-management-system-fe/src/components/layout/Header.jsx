@@ -51,8 +51,8 @@ const Header = () => {
 
   return (
     <header className="header">
-      <div className="header-content">
-        <h1>
+      <div className="header-content" style={{ justifyContent: "space-between" }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "700", marginLeft: "1rem" }}>
           <Link to="/" className="header-title-link">
             Project Management System
           </Link>
