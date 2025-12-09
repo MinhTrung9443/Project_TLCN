@@ -56,7 +56,7 @@ const GanttPage = () => {
       leftSection.removeEventListener("scroll", handleLeftScroll);
       rightSection.removeEventListener("scroll", handleRightScroll);
     };
-  }, []);
+  }, [timeView, ganttData]); // Re-run when timeView or data changes
 
   // Fetch Gantt data
   useEffect(() => {
@@ -301,7 +301,7 @@ const GanttPage = () => {
       />
 
       {/* Gantt Chart */}
-      <div className="gantt-container" key={timeView}>
+      <div className="gantt-container">
         {/* Left Section - Fixed */}
         <GanttLeftSection
           projects={filteredGanttData}
