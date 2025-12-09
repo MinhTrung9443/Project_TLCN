@@ -10,6 +10,7 @@
   height: 70px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
+  border-radius: 0 0 0 20px;
 }
 
 .header-content {
@@ -130,6 +131,7 @@
   padding: 16px 20px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   border-bottom: 1px solid #e1e8ed;
+  border-radius: 12px 12px 0 0;
 }
 
 .dropdown-user-info strong {
@@ -158,6 +160,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border-radius: 0;
+}
+
+.dropdown-item:last-child {
+  border-radius: 0 0 12px 12px;
 }
 
 .dropdown-item:hover {

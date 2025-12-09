@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import socketService from "../../services/socketService";
 import notificationService from "../../services/notificationService";
+import { getProjectById } from "../../services/projectService";
+import sprintService from "../../services/sprintService";
 import { toast } from "react-toastify";
 import "./NotificationBell.css";
 
@@ -196,11 +198,36 @@ const NotificationBell = () => {
       await handleMarkAsRead(notification._id);
     }
 
-    // Navigate based on notification type
+    // Navigate based on notification type and relatedType
     if (notification.relatedType === "Task" && notification.relatedId) {
       navigate(`/task/${notification.relatedId}`);
-    } else if (notification.relatedType === "Project" && notification.relatedId) {
-      navigate(`/projects/${notification.relatedId}`);
+    } else if (notification.relatedType === "Project") {
+      // Project notifications: fetch project to get key from ID
+      try {
+        const response = await getProjectById(notification.relatedId);
+        const projectKey = response.data?.key;
+        if (projectKey) {
+          navigate(`/task-mgmt/projects/${projectKey}/settings/general`);
+        }
+      } catch (error) {
+        console.error("Error fetching project:", error);
+        toast.error("Could not navigate to project");
+      }
+    } else if (notification.relatedType === "Sprint") {
+      // Sprint notifications: fetch sprint to get project key from project ID
+      try {
+        const sprint = await sprintService.getSprintById(notification.relatedId);
+        const projectKey = sprint.projectId?.key;
+        if (projectKey) {
+          navigate(`/task-mgmt/projects/${projectKey}/backlog`);
+        }
+      } catch (error) {
+        console.error("Error fetching sprint:", error);
+        toast.error("Could not navigate to sprint");
+      }
+    } else if (notification.relatedType === "Group" && notification.relatedId) {
+      // Group notifications: relatedId is the group ID
+      navigate(`/organization/group/${notification.relatedId}`);
     }
 
     setIsOpen(false);

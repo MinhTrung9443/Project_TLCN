@@ -1,17 +1,56 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import "../../styles/layout/Sidebar.css";
 import { useAuth } from "../../contexts/AuthContext";
+import { getProjects } from "../../services/projectService";
 
 export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const { user } = useAuth();
   const { selectedProjectKey } = useContext(ProjectContext);
+  const [canViewAuditLog, setCanViewAuditLog] = useState(false);
 
   const getProjectPath = (path) => {
     if (!selectedProjectKey) return "#";
     return `/task-mgmt/projects/${selectedProjectKey}/${path}`;
   };
+
+  // Check if user can view Audit Log (Admin, PM, or Leader)
+  useEffect(() => {
+    if (!user) {
+      setCanViewAuditLog(false);
+      return;
+    }
+
+    // Admin always can view
+    if (user.role === "admin") {
+      setCanViewAuditLog(true);
+      return;
+    }
+
+    // Check if user is PM or Leader of any project
+    getProjects()
+      .then((res) => {
+        const projects = res.data || [];
+
+        const hasPermission = projects.some((project) => {
+          // Check if PM
+          const isPM = project.members?.some(
+            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+          );
+
+          // Check if Leader
+          const isLeader = project.teams?.some((team) => team.leaderId._id === user._id || team.leaderId === user._id);
+
+          return isPM || isLeader;
+        });
+
+        setCanViewAuditLog(hasPermission);
+      })
+      .catch(() => {
+        setCanViewAuditLog(false);
+      });
+  }, [user]);
 
   return (
     // BƯỚC 1: Thêm class `relative` vào container cha để định vị cho nút bấm mới
@@ -21,19 +60,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           isCollapsed ? "w-20" : "w-64"
         }`}
       >
-        <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
-          {/* Header của Sidebar */}
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="h-8 w-8 bg-primary-500 rounded-md flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined text-white text-xl">
-                dashboard
-              </span>
-            </div>
-            {!isCollapsed && (
-              <h2 className="text-lg font-semibold whitespace-nowrap">AppDash</h2>
-            )}
-          </div>
-
+        <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden" style={{ paddingTop: "80px" }}>
           {/* Navigation (giữ nguyên như cũ) */}
           <nav className="space-y-1">
             <NavLink
@@ -56,20 +83,78 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                   {!isCollapsed && <span className="whitespace-nowrap">Task Management</span>}
                 </div>
                 {!isCollapsed && (
-                  <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">
-                    expand_more
-                  </span>
+                  <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">expand_more</span>
                 )}
               </summary>
               {!isCollapsed && (
                 <div className="pl-10 mt-1 space-y-1">
                   {/* ... các NavLink con ... */}
-                  <NavLink to="/projects" className={({ isActive }) => `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">bar_chart</span><span className="whitespace-nowrap">Projects</span></NavLink>
-                  <NavLink to="/gantt" className={({ isActive }) => `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">calendar_month</span><span className="whitespace-nowrap">Gantt</span></NavLink>
-                  <NavLink to="/task-finder" className={({ isActive }) => `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">description</span><span className="whitespace-nowrap">Task Finder</span></NavLink>
-                  <NavLink to={getProjectPath("backlog")} className={({ isActive }) => `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">checklist</span><span className="whitespace-nowrap">Backlog {selectedProjectKey && `(${selectedProjectKey})`}</span></NavLink>
-                  <NavLink to={getProjectPath("active-sprint")} className={({ isActive }) => `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">view_kanban</span><span className="whitespace-nowrap">Active Sprint {selectedProjectKey && `(${selectedProjectKey})`}</span></NavLink>
-                  <NavLink to={getProjectPath("settings/general")} className={({ isActive }) => `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">settings</span><span className="whitespace-nowrap">Project Settings {selectedProjectKey && `(${selectedProjectKey})`}</span></NavLink>
+                  <NavLink
+                    to="/projects"
+                    className={({ isActive }) =>
+                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                      }`
+                    }
+                  >
+                    <span className="material-symbols-outlined mr-3 text-gray-500">bar_chart</span>
+                    <span className="whitespace-nowrap">Projects</span>
+                  </NavLink>
+                  <NavLink
+                    to="/gantt"
+                    className={({ isActive }) =>
+                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                      }`
+                    }
+                  >
+                    <span className="material-symbols-outlined mr-3 text-gray-500">calendar_month</span>
+                    <span className="whitespace-nowrap">Gantt</span>
+                  </NavLink>
+                  <NavLink
+                    to="/task-finder"
+                    className={({ isActive }) =>
+                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                      }`
+                    }
+                  >
+                    <span className="material-symbols-outlined mr-3 text-gray-500">description</span>
+                    <span className="whitespace-nowrap">Task Finder</span>
+                  </NavLink>
+                  <NavLink
+                    to={getProjectPath("backlog")}
+                    className={({ isActive }) =>
+                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                      }`
+                    }
+                  >
+                    <span className="material-symbols-outlined mr-3 text-gray-500">checklist</span>
+                    <span className="whitespace-nowrap">Backlog {selectedProjectKey && `(${selectedProjectKey})`}</span>
+                  </NavLink>
+                  <NavLink
+                    to={getProjectPath("active-sprint")}
+                    className={({ isActive }) =>
+                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                      }`
+                    }
+                  >
+                    <span className="material-symbols-outlined mr-3 text-gray-500">view_kanban</span>
+                    <span className="whitespace-nowrap">Active Sprint {selectedProjectKey && `(${selectedProjectKey})`}</span>
+                  </NavLink>
+                  <NavLink
+                    to={getProjectPath("settings/general")}
+                    className={({ isActive }) =>
+                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                      }`
+                    }
+                  >
+                    <span className="material-symbols-outlined mr-3 text-gray-500">settings</span>
+                    <span className="whitespace-nowrap">Project Settings {selectedProjectKey && `(${selectedProjectKey})`}</span>
+                  </NavLink>
                 </div>
               )}
             </details>
@@ -82,22 +167,64 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                   {!isCollapsed && <span className="whitespace-nowrap">Organization</span>}
                 </div>
                 {!isCollapsed && (
-                  <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">
-                    expand_more
-                  </span>
+                  <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">expand_more</span>
                 )}
               </summary>
               {!isCollapsed && (
                 <div className="pl-10 mt-1 space-y-1">
-                  <NavLink to="/Organization/group" className={({ isActive }) => `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">group</span><span className="whitespace-nowrap">Group</span></NavLink>
-                  <NavLink to="/Organization/user" className={({ isActive }) => `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">person</span><span className="whitespace-nowrap">User</span></NavLink>
+                  <NavLink
+                    to="/Organization/group"
+                    className={({ isActive }) =>
+                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                      }`
+                    }
+                  >
+                    <span className="material-symbols-outlined mr-3 text-gray-500">group</span>
+                    <span className="whitespace-nowrap">Group</span>
+                  </NavLink>
+                  <NavLink
+                    to="/Organization/user"
+                    className={({ isActive }) =>
+                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                      }`
+                    }
+                  >
+                    <span className="material-symbols-outlined mr-3 text-gray-500">person</span>
+                    <span className="whitespace-nowrap">User</span>
+                  </NavLink>
                 </div>
               )}
             </details>
 
             {/* --- Other Links --- */}
-            <NavLink to="/audit-log" className={({ isActive }) => `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">receipt_long</span>{!isCollapsed && <span className="whitespace-nowrap">Audit Log</span>}</NavLink>
-            {user.role === "admin" && (<NavLink to="/settings/TaskTypes" className={({ isActive }) => `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${ isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100" }`}><span className="material-symbols-outlined mr-3 text-gray-500">settings</span>{!isCollapsed && <span className="whitespace-nowrap">Settings</span>}</NavLink>)}
+            {canViewAuditLog && (
+              <NavLink
+                to="/audit-log"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                    isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                  }`
+                }
+              >
+                <span className="material-symbols-outlined mr-3 text-gray-500">receipt_long</span>
+                {!isCollapsed && <span className="whitespace-nowrap">Audit Log</span>}
+              </NavLink>
+            )}
+            {user.role === "admin" && (
+              <NavLink
+                to="/settings/TaskTypes"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                    isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                  }`
+                }
+              >
+                <span className="material-symbols-outlined mr-3 text-gray-500">settings</span>
+                {!isCollapsed && <span className="whitespace-nowrap">Settings</span>}
+              </NavLink>
+            )}
           </nav>
         </div>
 
@@ -111,9 +238,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         className="absolute top-1/2 -translate-y-1/2 -right-3 w-6 h-6 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 focus:outline-none z-10"
         aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
-        <span className="material-symbols-outlined text-base">
-          {isCollapsed ? "chevron_right" : "chevron_left"}
-        </span>
+        <span className="material-symbols-outlined text-base">{isCollapsed ? "chevron_right" : "chevron_left"}</span>
       </button>
     </div>
   );

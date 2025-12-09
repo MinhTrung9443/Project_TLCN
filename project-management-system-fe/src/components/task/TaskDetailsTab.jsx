@@ -6,23 +6,24 @@ import LinkedTasksTab from "./LinkedTasksTab";
 import LogTimeModal from "./LogTimeModal";
 import TimeLogList from "./TimeLogList";
 const statusCategoryStyles = {
-  'To Do': {
-    backgroundColor: '#dfe1e6', // Xám
-    color: '#42526E',
+  "To Do": {
+    backgroundColor: "#dfe1e6", // Xám
+    color: "#42526E",
   },
-  'In Progress': {
-    backgroundColor: '#deebff', // Xanh dương nhạt
-    color: '#0747A6',
+  "In Progress": {
+    backgroundColor: "#deebff", // Xanh dương nhạt
+    color: "#0747A6",
   },
-  'Done': {
-    backgroundColor: '#e3fcef', // Xanh lá nhạt
-    color: '#0B875B',
+  Done: {
+    backgroundColor: "#e3fcef", // Xanh lá nhạt
+    color: "#0B875B",
   },
   // Thêm màu cho các category khác nếu có
-  'default': { // Màu mặc định nếu không khớp
-    backgroundColor: '#dfe1e6',
-    color: '#42526E',
-  }
+  default: {
+    // Màu mặc định nếu không khớp
+    backgroundColor: "#dfe1e6",
+    color: "#42526E",
+  },
 };
 const TaskDetailsTab = ({
   editableTask,
@@ -63,59 +64,63 @@ const TaskDetailsTab = ({
     return options.find((opt) => opt.value === idToFind);
   };
 
-  const statusOptions = Array.isArray(statuses) ? statuses.map(status => ({
-    value: status._id,
-    label: status.name,
-    category: status.category,
-  })) : [];
+  const statusOptions = Array.isArray(statuses)
+    ? statuses.map((status) => ({
+        value: status._id,
+        label: status.name,
+        category: status.category,
+      }))
+    : [];
 
   const currentStatusId = editableTask.statusId?._id || editableTask.statusId;
-  const selectedStatusOption = statusOptions.find(opt => opt.value === currentStatusId);
+  const selectedStatusOption = statusOptions.find((opt) => opt.value === currentStatusId);
 
   const formatOptionLabel = ({ label, category }) => {
     const style = statusCategoryStyles[category] || statusCategoryStyles.default;
     return (
-      <div style={{ display: 'inline-block' }}>
-        <span style={{
-          ...style,
-          borderRadius: '3px',
-          padding: '3px 8px',
-          fontWeight: 600,
-          fontSize: '12px',
-          textTransform: 'uppercase', // In hoa cho đẹp
-        }}>
+      <div style={{ display: "inline-block" }}>
+        <span
+          style={{
+            ...style,
+            borderRadius: "3px",
+            padding: "3px 8px",
+            fontWeight: 600,
+            fontSize: "12px",
+            textTransform: "uppercase", // In hoa cho đẹp
+          }}
+        >
           {label}
         </span>
       </div>
     );
   };
 
-
   const customSelectStyles = {
     control: (provided, state) => ({
       ...provided,
-      border: '1px solid #e2e8f0', // Thêm viền
-      borderRadius: '8px',         // Bo góc
-      boxShadow: state.isFocused ? '0 0 0 1px #6366f1' : 'none', // Hiệu ứng khi focus
-      '&:hover': {
-        borderColor: '#cbd5e1'   // Viền đậm hơn khi hover
+      border: "1px solid #e2e8f0", // Thêm viền
+      borderRadius: "8px", // Bo góc
+      boxShadow: state.isFocused ? "0 0 0 1px #6366f1" : "none", // Hiệu ứng khi focus
+      "&:hover": {
+        borderColor: "#cbd5e1", // Viền đậm hơn khi hover
       },
-      minHeight: '42px', // Chiều cao đồng bộ
-      backgroundColor: 'white',
+      minHeight: "42px", // Chiều cao đồng bộ
+      backgroundColor: "white",
     }),
     option: (provided, state) => ({
       ...provided,
-      backgroundColor: state.isSelected ? '#6366f1' : state.isFocused ? '#f1f5f9' : 'white',
-      color: state.isSelected ? 'white' : 'inherit',
-      cursor: 'pointer',
+      backgroundColor: state.isSelected ? "#6366f1" : state.isFocused ? "#f1f5f9" : "white",
+      color: state.isSelected ? "white" : "inherit",
+      cursor: "pointer",
     }),
-    singleValue: (provided) => ({ // Style cho giá trị đang được chọn
-        ...provided,
-        paddingLeft: '4px',
+    singleValue: (provided) => ({
+      // Style cho giá trị đang được chọn
+      ...provided,
+      paddingLeft: "4px",
     }),
     valueContainer: (provided) => ({
-        ...provided,
-        padding: '2px 4px',
+      ...provided,
+      padding: "2px 4px",
     }),
   };
 
@@ -140,92 +145,93 @@ const TaskDetailsTab = ({
       </div>
 
       <div className="panel-section detail-grid-editable">
-          <div className="detail-item-editable">
-    <strong>Status</strong>
-    <Select
-              value={selectedStatusOption}
-              options={statusOptions}
-              onChange={(option) => handleUpdate("statusId", option.value)}
-              formatOptionLabel={formatOptionLabel}
-              styles={customSelectStyles} // Áp dụng style custom ở đây
-              placeholder={statusOptions.length === 0 ? "Loading..." : "Select..."}
-            />
-      </div>
-          <div className="detail-item-editable">
-            <strong>Assignee</strong>
-            <Select
-              value={findOption(projectMembers, editableTask.assigneeId)}
-              options={projectMembers} // Sử dụng danh sách members
-              onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
-              isClearable
-              placeholder="Select..."
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Reporter</strong>
-            <Select
-              value={findOption(projectMembers, editableTask.reporterId)}
-              options={projectMembers} // Sử dụng danh sách members
-              onChange={(option) => handleUpdate("reporterId", option.value)}
-              placeholder="Select..."
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Type</strong>
-            <Select
-              value={findOption(projectTaskTypes, editableTask.taskTypeId)}
-              options={projectTaskTypes}
-              onChange={(option) => handleUpdate("taskTypeId", option.value)}
-              placeholder={projectTaskTypes.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Priority</strong>
-            <Select
-              value={findOption(projectPriorities, editableTask.priorityId?._id)}
-              options={projectPriorities}
-              onChange={(option) => handleUpdate("priorityId", option.value)}
-              placeholder={projectPriorities.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Sprint</strong>
-            <Select
-              value={findOption(projectSprints, editableTask.sprintId?._id)}
-              options={projectSprints}
-              onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
-              isClearable
-              placeholder={!editableTask ? "" : (projectSprints.length === 0 && editableTask.projectId) ? "Loading..." : "Backlog"}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Platform</strong>
-            <Select
-              value={findOption(projectPlatforms, editableTask.platformId?._id)}
-              options={projectPlatforms}
-              onChange={(option) => handleUpdate("platformId", option.value)}
-              placeholder={projectPlatforms.length === 0 ? "Loading..." : "Select..."}
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Start Date</strong>
-            <input
-              type="date"
-              value={editableTask.startDate ? new Date(editableTask.startDate).toISOString().split("T")[0] : ""}
-              onChange={(e) => handleUpdate("startDate", e.target.value)}
-              className="editable-input"
-            />
-          </div>
-          <div className="detail-item-editable">
-            <strong>Due Date</strong>
-            <input
-              type="date"
-              value={editableTask.dueDate ? new Date(editableTask.dueDate).toISOString().split("T")[0] : ""}
-              onChange={(e) => handleUpdate("dueDate", e.target.value)}
-              className="editable-input"
-            />
-          </div>
+        <div className="detail-item-editable">
+          <strong>Status</strong>
+          <Select
+            value={selectedStatusOption}
+            options={statusOptions}
+            onChange={(option) => handleUpdate("statusId", option.value)}
+            formatOptionLabel={formatOptionLabel}
+            styles={customSelectStyles} // Áp dụng style custom ở đây
+            placeholder={statusOptions.length === 0 ? "Loading..." : "Select..."}
+          />
         </div>
+        <div className="detail-item-editable">
+          <strong>Assignee</strong>
+          <Select
+            value={findOption(projectMembers, editableTask.assigneeId)}
+            options={projectMembers} // Sử dụng danh sách members
+            onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
+            isClearable
+            placeholder="Select..."
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Reporter</strong>
+          <input
+            type="text"
+            value={editableTask.reporterId?.fullname || "N/A"}
+            className="editable-input"
+            disabled
+            style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Type</strong>
+          <Select
+            value={findOption(projectTaskTypes, editableTask.taskTypeId)}
+            options={projectTaskTypes}
+            onChange={(option) => handleUpdate("taskTypeId", option.value)}
+            placeholder={projectTaskTypes.length === 0 ? "Loading..." : "Select..."}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Priority</strong>
+          <Select
+            value={findOption(projectPriorities, editableTask.priorityId?._id)}
+            options={projectPriorities}
+            onChange={(option) => handleUpdate("priorityId", option.value)}
+            placeholder={projectPriorities.length === 0 ? "Loading..." : "Select..."}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Sprint</strong>
+          <Select
+            value={findOption(projectSprints, editableTask.sprintId?._id)}
+            options={projectSprints}
+            onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
+            isClearable
+            placeholder={!editableTask ? "" : projectSprints.length === 0 && editableTask.projectId ? "Loading..." : "Backlog"}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Platform</strong>
+          <Select
+            value={findOption(projectPlatforms, editableTask.platformId?._id)}
+            options={projectPlatforms}
+            onChange={(option) => handleUpdate("platformId", option.value)}
+            placeholder={projectPlatforms.length === 0 ? "Loading..." : "Select..."}
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Start Date</strong>
+          <input
+            type="date"
+            value={editableTask.startDate ? new Date(editableTask.startDate).toISOString().split("T")[0] : ""}
+            onChange={(e) => handleUpdate("startDate", e.target.value)}
+            className="editable-input"
+          />
+        </div>
+        <div className="detail-item-editable">
+          <strong>Due Date</strong>
+          <input
+            type="date"
+            value={editableTask.dueDate ? new Date(editableTask.dueDate).toISOString().split("T")[0] : ""}
+            onChange={(e) => handleUpdate("dueDate", e.target.value)}
+            className="editable-input"
+          />
+        </div>
+      </div>
 
       {/* Time Tracking Section */}
       <div className="panel-section">

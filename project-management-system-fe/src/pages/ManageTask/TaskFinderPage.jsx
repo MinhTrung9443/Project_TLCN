@@ -174,10 +174,18 @@ const TaskFinderPage = () => {
     if (!user) return false;
     if (user.role === "admin") return true;
 
-    // Check if user is PM or LEADER in any project
-    return filterData.projects.some((project) =>
-      project.members?.some((member) => member.userId._id === user._id && (member.role === "PROJECT_MANAGER" || member.role === "LEADER"))
-    );
+    // Check if user is PM or Leader in any project
+    return filterData.projects.some((project) => {
+      // Check if PM
+      const isPM = project.members?.some(
+        (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+      );
+
+      // Check if Leader
+      const isLeader = project.teams?.some((team) => team.leaderId._id === user._id || team.leaderId === user._id);
+
+      return isPM || isLeader;
+    });
   }, [user, filterData.projects]);
 
   const handleFilterChange = (filterName, value) => {

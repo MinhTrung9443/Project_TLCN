@@ -96,7 +96,7 @@ const Component = () => {
           </div>
           <div>
             <label className="user-profile-label">Gender</label>
-            <select className="user-profile-select" value={updateUser.gender || "male"} onChange={onInputChange} name="gender">
+            <select className="user-profile-select" value={updateUser.gender || "male"} onChange={onInputChange} disabled={!isAdmin} name="gender">
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
@@ -122,10 +122,7 @@ const Component = () => {
 
           <div>
             <label className="user-profile-label">Role</label>
-            <select className="user-profile-select" value={updateUser.role || "user"} onChange={onInputChange} disabled={!isAdmin} name="role">
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
+            <input className="user-profile-input" value={updateUser.role === "admin" ? "Admin" : "User"} readOnly name="role" />
           </div>
           <div>
             <label className="user-profile-label">Groups</label>

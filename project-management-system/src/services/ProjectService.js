@@ -455,6 +455,20 @@ const getProjectByKey = async (key) => {
   return project;
 };
 
+const getProjectById = async (id) => {
+  const project = await Project.findOne({ _id: id, isDeleted: false }).populate({
+    path: "members.userId",
+    select: "fullname email avatar",
+  });
+
+  if (!project) {
+    const error = new Error("Project not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return project;
+};
+
 const getProjectMembers = async (projectKey, userId = null) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
     .populate("members.userId", "fullname email avatar role")
@@ -495,7 +509,7 @@ const addMemberToProject = async (projectKey, { userId, role, teamId }, actor) =
     throw error;
   }
 
-  // Nếu có teamId, thêm user vào team (ĐỂU KHÔNG thêm vào project.members)
+  // Nếu có teamId, thêm user vào team (KHÔNG thêm vào project.members)
   if (teamId) {
     // Kiểm tra xem team đã có trong project chưa
     let team = project.teams.find((t) => t.teamId.equals(teamId));
@@ -503,10 +517,21 @@ const addMemberToProject = async (projectKey, { userId, role, teamId }, actor) =
     if (team) {
       // Team đã có trong project
 
-      // Nếu user được thêm với role LEADER, cập nhật leaderId của team
+      // Nếu user được thêm với role LEADER
       if (role === "LEADER") {
+        // Nếu team đã có leader cũ, chuyển leader cũ xuống làm member
+        if (team.leaderId && !team.leaderId.equals(userId)) {
+          const oldLeaderId = team.leaderId;
+          // Thêm leader cũ vào members nếu chưa có
+          if (!team.members.some((m) => m.equals(oldLeaderId))) {
+            team.members.push(oldLeaderId);
+          }
+        }
+
+        // Cập nhật leader mới
         team.leaderId = userId;
-        // Nếu user đang nằm trong members, xóa khỏi members (vì giờ là leader rồi)
+
+        // Nếu user mới đang nằm trong members, xóa khỏi members (vì giờ là leader rồi)
         team.members = team.members.filter((m) => !m.equals(userId));
       } else {
         // Nếu role là MEMBER, thêm vào members (nếu chưa có)
@@ -785,6 +810,7 @@ module.exports = {
   permanentlyDeleteProject,
   cloneProject,
   getProjectByKey,
+  getProjectById,
   getProjectMembers,
   addMemberToProject,
   addMembersFromGroupToProject,

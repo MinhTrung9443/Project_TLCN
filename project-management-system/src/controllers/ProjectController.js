@@ -127,6 +127,16 @@ const handleGetProjectByKey = async (req, res) => {
   }
 };
 
+const handleGetProjectById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const project = await projectService.getProjectById(id);
+    res.status(200).json(project);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
+};
+
 const handleGetProjectMembers = async (req, res) => {
   try {
     const { projectKey } = req.params;
@@ -225,6 +235,7 @@ module.exports = {
   // Members
   handleGetAllProjects,
   handleGetProjectByKey,
+  handleGetProjectById,
   handleGetProjectMembers,
 
   handleRemoveMember,

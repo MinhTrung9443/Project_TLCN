@@ -42,10 +42,18 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
 
           // Filter projects based on user role
           if (user.role !== "admin") {
-            // Non-admin users can only create tasks in projects where they are PM or LEADER
-            availableProjects = res.data.filter((project) =>
-              project.members?.some((member) => member.userId._id === user._id && (member.role === "PROJECT_MANAGER" || member.role === "LEADER"))
-            );
+            // Non-admin users can only create tasks in projects where they are PM or Leader
+            availableProjects = res.data.filter((project) => {
+              // Check if PM
+              const isPM = project.members?.some(
+                (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+              );
+
+              // Check if Leader
+              const isLeader = project.teams?.some((team) => team.leaderId._id === user._id || team.leaderId === user._id);
+
+              return isPM || isLeader;
+            });
           }
 
           setProjects(availableProjects);

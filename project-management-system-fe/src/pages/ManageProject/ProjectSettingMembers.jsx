@@ -83,12 +83,11 @@ const ProjectSettingMembers = () => {
       // Individual members: chỉ những người trong rawMembers và KHÔNG có trong teams
       const individualMembers = rawMembers.filter((m) => !memberIdsInTeams.has(m.userId._id.toString()));
 
-      // Tách PM ra khỏi individual members
-      const pmMembers = individualMembers.filter((m) => m.role === "PROJECT_MANAGER");
+      // Không hiển thị PM trong bảng nữa vì đã hiển thị ở trên
       const otherIndividualMembers = individualMembers.filter((m) => m.role !== "PROJECT_MANAGER");
 
-      // Sắp xếp: PM đầu tiên, sau đó teams, cuối cùng là individual members khác
-      setDisplayList([...pmMembers, ...teamsWithMembers, ...otherIndividualMembers]);
+      // Sắp xếp: teams trước, sau đó là individual members
+      setDisplayList([...teamsWithMembers, ...otherIndividualMembers]);
     }
   }, [rawMembers, rawTeams, loading]);
 
@@ -142,8 +141,31 @@ const ProjectSettingMembers = () => {
     setAddMemberToTeamModalOpen(true);
   };
 
+  // Tìm PM từ rawMembers
+  const projectManager = rawMembers.find((m) => m.role === "PROJECT_MANAGER");
+
   return (
     <div className="project-members-container">
+      {/* Hiển thị thông tin PM */}
+      {projectManager && (
+        <div className="pm-info-section">
+          <h3>Project Manager</h3>
+          <div className="pm-card">
+            {projectManager.userId.avatar ? (
+              <img src={projectManager.userId.avatar} alt="" className="pm-avatar" />
+            ) : (
+              <div className="pm-avatar avatar-placeholder">
+                {(projectManager.userId.fullname || projectManager.userId.username || "PM").charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="pm-details">
+              <div className="pm-name">{projectManager.userId.fullname}</div>
+              <div className="pm-email">{projectManager.userId.email}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {canManageMembers && (
         <div className="members-actions-header">
           <button onClick={() => setIsAddModalOpen(true)} className="btn btn-primary">

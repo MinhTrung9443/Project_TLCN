@@ -22,7 +22,7 @@ const formatDateForInput = (dateString) => {
 const ProjectSettingsGeneral = () => {
   const { user } = useAuth();
   // Chỉ lấy những gì cần thiết từ Context. Không cần gọi setProjectKey ở đây nữa.
-  const { projectData, userProjectRole } = useContext(ProjectContext);
+  const { projectData, userProjectRole, setProject } = useContext(ProjectContext);
   const { projectKey } = useParams(); // Vẫn cần để gọi API update
   const [allUsers, setAllUsers] = useState([]);
   const [errors, setErrors] = useState({});
@@ -127,11 +127,21 @@ const ProjectSettingsGeneral = () => {
     setIsSaving(true);
     try {
       const payload = { ...formData, startDate: formData.startDate || null, endDate: formData.endDate || null };
-      await updateProjectByKey(projectKey, payload);
+      const response = await updateProjectByKey(projectKey, payload);
       toast.success("Project updated successfully!");
 
       // Cập nhật initialData sau khi save thành công
       setInitialData(formData);
+
+      // Cập nhật lại projectData trong context với dữ liệu mới từ API
+      if (response.data) {
+        setProject(response.data);
+      }
+
+      // Nếu key thay đổi, redirect đến URL mới
+      if (formData.key !== projectKey) {
+        window.location.href = `/task-mgmt/projects/${formData.key}/settings/general`;
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update project.");
     } finally {
