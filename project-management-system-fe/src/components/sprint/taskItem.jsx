@@ -69,9 +69,15 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
           {task.statusId?.name === "Done" && <span className="material-symbols-outlined task-status-done">check_circle</span>}
         </div>
         {/* Assignee Avatar */}
-        <div className="task-assignee" title="Assignee">
-          {task.assigneeId && task.assigneeId.avatar ? (
-            <img src={task.assigneeId.avatar} alt="avatar" className="task-assignee-avatar" />
+        <div className="task-assignee" title={task.assigneeId ? task.assigneeId.fullname || task.assigneeId.username : "Unassigned"}>
+          {task.assigneeId ? (
+            task.assigneeId.avatar ? (
+              <img src={task.assigneeId.avatar} alt="avatar" className="task-assignee-avatar" />
+            ) : (
+              <div className="task-assignee-avatar-placeholder">
+                {(task.assigneeId.fullname || task.assigneeId.username || "U").charAt(0).toUpperCase()}
+              </div>
+            )
           ) : (
             <span className="material-symbols-outlined task-assignee-icon">person</span>
           )}

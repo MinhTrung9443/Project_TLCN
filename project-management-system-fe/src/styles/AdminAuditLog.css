@@ -508,63 +508,131 @@
 
 /* PM Card Special Styling */
 .team-card.pm-card {
-  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-  border: 2px solid #8b5cf6;
+  background: white;
+  border: 2px solid #e0e7ff;
+  position: relative;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.12);
 }
 
 .team-card.pm-card:hover {
-  border-color: #6d28d9;
-  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.2);
+  border-color: #c7d2fe;
 }
 
 .pm-header {
-  position: relative;
-  padding-left: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.pm-header h4 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  flex: 1;
 }
 
 .pm-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
 }
 
 .pm-avatar-section {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 16px 0;
+  flex-shrink: 0;
 }
 
 .pm-avatar {
-  width: 80px;
-  height: 80px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  border: 3px solid #8b5cf6;
+  border: 3px solid #667eea;
   object-fit: cover;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 .pm-avatar-placeholder {
-  width: 80px;
-  height: 80px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 700;
-  border: 3px solid white;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  border: 3px solid #e0e7ff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.pm-card .team-stats-summary {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.pm-card .stat-row {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.pm-card .stat-row .stat-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.pm-card .stat-row .stat-value {
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.pm-card .progress-bar-mini {
+  background: #e0e7ff;
+  margin: 12px 0;
+}
+
+.pm-card .progress-fill-mini {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.pm-card .view-team-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  font-weight: 700;
+  border: none;
+  margin-top: auto;
+  padding: 12px;
+  transition: all 0.3s ease;
+}
+
+.pm-card .view-team-btn:hover {
+  background: linear-gradient(135deg, #5568d3, #6d28d9);
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+}
+
+.pm-card .view-team-btn .material-symbols-outlined {
+  color: white;
 }
 
 .team-header {

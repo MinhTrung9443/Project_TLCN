@@ -281,14 +281,14 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
             >
               <div className="team-header pm-header">
                 <div className="pm-badge">PM</div>
+                <div className="pm-avatar-section">
+                  {pmAvatar ? (
+                    <img src={pmAvatar} alt={pmName} className="pm-avatar" />
+                  ) : (
+                    <div className="pm-avatar-placeholder">{(pmName?.[0] || "P").toUpperCase()}</div>
+                  )}
+                </div>
                 <h4>{pmName}</h4>
-              </div>
-              <div className="pm-avatar-section">
-                {pmAvatar ? (
-                  <img src={pmAvatar} alt={pmName} className="pm-avatar" />
-                ) : (
-                  <div className="pm-avatar-placeholder">{pmName?.[0] || "P"}</div>
-                )}
               </div>
               <div className="team-stats-summary">
                 <div className="stat-row">
