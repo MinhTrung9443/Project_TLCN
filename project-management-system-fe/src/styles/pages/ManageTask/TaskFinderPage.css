@@ -11,7 +11,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 32px 24px 24px 24px;
+  padding: 16px 12px 12px 12px;
   overflow: auto;
 }
 
@@ -27,7 +27,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 12px;
 }
 
 .task-finder-header h1 {
@@ -56,7 +56,10 @@
 .task-list-container {
   flex-grow: 1; /* Cho phép nó chiếm hết không gian còn lại */
   overflow: auto; /* Tự động thêm thanh cuộn DỌC và NGANG nếu cần */
-  padding: 0 24px 24px 24px;
+  padding: 0;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Base styles for rows and headers */
@@ -64,16 +67,19 @@
 .task-row {
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 12px;
   border-bottom: 1px solid #dfe1e6;
-  min-height: 50px;
+  min-height: 44px;
 }
 
 .task-list-header {
   background-color: #f4f5f7;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #5e6c84;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .task-row {
@@ -86,12 +92,13 @@
 
 /* Cell styles */
 .task-cell {
-  padding: 8px;
+  padding: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
+  font-size: 13px;
 }
 
 /* Specific column widths */
@@ -305,28 +312,29 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 1rem;
+  padding: 8px 10px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #e0e0e0;
-  gap: 1rem;
+  gap: 0.75rem;
+  margin-bottom: 8px;
 }
 
 .filter-dropdowns {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-items: center;
   flex-grow: 1;
 }
 
 .filter-select {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid #ced4da;
   border-radius: 6px;
   background-color: white;
   cursor: pointer;
-  font-size: 14px;
-  min-width: 160px;
+  font-size: 13px;
+  min-width: 150px;
   transition: all 0.2s;
 }
 
@@ -341,12 +349,12 @@
 }
 
 .btn-clear-filters {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: 1px solid #ced4da;
   border-radius: 6px;
   background-color: white;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #495057;
   transition: all 0.2s;
@@ -360,13 +368,13 @@
 .include-done-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 6px 12px;
   background-color: white;
   border: 1px solid #ced4da;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #495057;
   transition: all 0.2s;
@@ -466,10 +474,11 @@
 }
 
 .keyword-search-input {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid #ced4da;
   border-radius: 4px;
-  min-width: 250px;
+  font-size: 13px;
+  min-width: 220px;
 }
 
 .panel-header {
@@ -555,20 +564,22 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  padding: 20px 0;
-  margin-top: 20px;
+  gap: 3px;
+  padding: 0;
+  margin: 0;
 }
 
 .pagination-btn {
-  padding: 8px 16px;
+  padding: 1px 4px;
   border: 1px solid #dfe1e6;
   background-color: white;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 400;
+  font-size: 10px;
   color: #42526e;
   transition: all 0.2s;
+  line-height: 1.2;
 }
 
 .pagination-btn:hover:not(:disabled) {
@@ -583,7 +594,9 @@
 }
 
 .pagination-info {
-  font-size: 14px;
+  font-size: 10px;
   color: #6b778c;
-  font-weight: 500;
+  font-weight: 400;
+  padding: 0 1px;
+  line-height: 1.2;
 }

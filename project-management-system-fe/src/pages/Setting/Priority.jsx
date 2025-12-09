@@ -6,6 +6,7 @@ import priorityService from "../../services/priorityService";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
 import { useDrag, useDrop } from "react-dnd";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
 import { useAuth } from "../../contexts/AuthContext";
 // DANH SÁCH ICON CHO PRIORITY
@@ -120,6 +121,8 @@ export const SettingsPriorities = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPriority, setCurrentPriority] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [priorityToDelete, setPriorityToDelete] = useState(null);
 
   const fetchPriorities = useCallback(async () => {
     try {
@@ -144,15 +147,21 @@ export const SettingsPriorities = () => {
 
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const handleDelete = async (priorityId) => {
-    if (window.confirm("Are you sure you want to delete this priority? This might affect projects using it.")) {
-      try {
-        await priorityService.deletePriority(priorityId);
-        toast.success("Priority deleted successfully!");
-        fetchPriorities();
-      } catch (error) {
-        toast.error("Failed to delete priority.");
-      }
+  const handleDeleteClick = (priorityId) => {
+    const priority = priorities.find((p) => p._id === priorityId);
+    setPriorityToDelete(priority);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await priorityService.deletePriority(priorityToDelete._id);
+      toast.success("Priority deleted successfully!");
+      setIsDeleteModalOpen(false);
+      setPriorityToDelete(null);
+      fetchPriorities();
+    } catch (error) {
+      toast.error("Failed to delete priority.");
     }
   };
 
@@ -237,7 +246,7 @@ export const SettingsPriorities = () => {
               index={index}
               moveItem={movePriority}
               openEditModal={handleOpenModal}
-              onDelete={handleDelete}
+              onDelete={handleDeleteClick}
             />
           ))}
         </div>
@@ -270,6 +279,17 @@ export const SettingsPriorities = () => {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setPriorityToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Priority"
+        message={`Are you sure you want to delete "${priorityToDelete?.name}"? This might affect projects using it.`}
+      />
     </DndProvider>
   );
 };

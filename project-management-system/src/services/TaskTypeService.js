@@ -78,6 +78,9 @@ class TaskTypeService {
       }
 
       // 3. Nếu không trùng, tiến hành cập nhật
+      taskTypeToUpdate.name = data.name;
+      taskTypeToUpdate.description = data.description;
+      taskTypeToUpdate.icon = data.icon;
       await taskTypeToUpdate.save();
       await logAction({
         userId,

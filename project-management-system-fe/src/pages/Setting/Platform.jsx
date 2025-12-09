@@ -4,6 +4,7 @@ import platformService from "../../services/platformService"; // Service cho Pla
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
 import { useAuth } from "../../contexts/AuthContext";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
 
 const PREDEFINED_PLATFORM_ICONS = [
@@ -54,6 +55,8 @@ export const SettingsPlatforms = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPlatform, setCurrentPlatform] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [platformToDelete, setPlatformToDelete] = useState(null);
 
   const fetchPlatforms = useCallback(async () => {
     try {
@@ -111,26 +114,27 @@ export const SettingsPlatforms = () => {
     }
   };
 
-  const handleDelete = async (platformId) => {
-    if (window.confirm("Are you sure you want to delete this platform?")) {
-      try {
-        await platformService.deletePlatform(platformId);
-        toast.success("Platform deleted successfully!");
-        fetchPlatforms();
-      } catch (error) {
-        toast.error("Failed to delete platform.");
-      }
+  const handleDeleteClick = (e, platform) => {
+    e.stopPropagation();
+    setPlatformToDelete(platform);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await platformService.deletePlatform(platformToDelete._id || platformToDelete);
+      toast.success("Platform deleted successfully!");
+      setIsDeleteModalOpen(false);
+      setPlatformToDelete(null);
+      fetchPlatforms();
+    } catch (error) {
+      toast.error("Failed to delete platform.");
     }
   };
 
   const handleEditClick = (e, platform) => {
     e.stopPropagation();
     handleOpenModal(platform);
-  };
-
-  const handleDeleteClick = (e, platformId) => {
-    e.stopPropagation();
-    handleDelete(platformId);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -168,7 +172,7 @@ export const SettingsPlatforms = () => {
                   <button className="btn-edit" onClick={(e) => handleEditClick(e, p)}>
                     <FaIcons.FaPencilAlt />
                   </button>
-                  <button className="btn-delete" onClick={(e) => handleDeleteClick(e, p._id)}>
+                  <button className="btn-delete" onClick={(e) => handleDeleteClick(e, p)}>
                     <FaIcons.FaTrash />
                   </button>
                 </div>
@@ -214,6 +218,17 @@ export const SettingsPlatforms = () => {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setPlatformToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Platform"
+        message={`Are you sure you want to delete "${platformToDelete?.name}"?`}
+      />
     </div>
   );
 };
