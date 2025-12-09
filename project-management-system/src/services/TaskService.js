@@ -305,6 +305,17 @@ const updateTask = async (taskId, updateData, userId) => {
     throw error;
   }
 
+  // Check if statusId is being updated to "Done" category, then auto-set progress to 100%
+  if (updateData.statusId && originalTask.projectId) {
+    const workflow = await Workflow.findOne({ projectId: originalTask.projectId._id });
+    if (workflow && workflow.statuses) {
+      const newStatus = workflow.statuses.find((s) => s._id.toString() === updateData.statusId.toString());
+      if (newStatus && newStatus.category && newStatus.category.toLowerCase() === "done") {
+        updateData.progress = 100;
+      }
+    }
+  }
+
   // 2. Kiểm tra xem task đã Done chưa
   if (originalTask.statusId && originalTask.projectId) {
     const workflow = await Workflow.findOne({ projectId: originalTask.projectId._id });
