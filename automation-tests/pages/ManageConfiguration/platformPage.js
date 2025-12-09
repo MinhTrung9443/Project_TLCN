@@ -10,6 +10,9 @@ class PlatformPage {
         this.namePlatform = page.getByLabel('Name');
         this.iconPlatform = page.locator('.icon-picker-container');
         this.saveButton = page.getByRole('button', {name:'SAVE'});
+
+        //Delete Platform
+        this.DeleteConfirm = page.locator('button', {hasText:'Yes'});
     }
     async goToSettings(){
         await this.navigateToSettings.click();
@@ -32,7 +35,7 @@ class PlatformPage {
     async deletePlatform(oldPlatform){
         const row = this.page.locator('.settings-list-row', {hasText: oldPlatform});
         await row.locator('.btn-delete').click();
-        
+        await this.DeleteConfirm.click();
     }
 }
 module.exports = {PlatformPage};
