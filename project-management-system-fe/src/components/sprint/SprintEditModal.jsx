@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/pages/ManageSprint/SprintEditModal.css";
+import { toast } from "react-toastify";
 
 const SprintEditModal = ({ isOpen, sprint, onClose, onSave }) => {
   const [form, setForm] = useState({
@@ -27,6 +28,22 @@ const SprintEditModal = ({ isOpen, sprint, onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate dates - compare only dates, not time
+    if (form.startDate && form.endDate) {
+      const startDate = new Date(form.startDate);
+      const endDate = new Date(form.endDate);
+
+      // Set time to 00:00:00 for both dates to compare only dates
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
+
+      if (startDate > endDate) {
+        toast.error("Start date cannot be after end date");
+        return;
+      }
+    }
+
     onSave({ ...form });
   };
 

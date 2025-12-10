@@ -131,11 +131,13 @@ const BacklogPage = () => {
     if (sprintToDelete) {
       try {
         await sprintService.deleteSprint(sprintToDelete._id);
-        fetchSprintList();
+        toast.success("Sprint deleted successfully!");
+        await fetchSprintList();
         setShowDeleteModal(false);
         setSprintToDelete(null);
       } catch (error) {
         console.error("Error deleting sprint:", error);
+        toast.error(error.response?.data?.message || "Failed to delete sprint");
       }
     }
   };

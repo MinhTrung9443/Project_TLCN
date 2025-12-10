@@ -34,7 +34,7 @@ const SprintController = {
   handleDeleteSprint: async (req, res) => {
     try {
       const { sprintId } = req.params;
-      await sprintService.deleteSprint(sprintId);
+      await sprintService.deleteSprint(sprintId, req.user.id);
       res.status(200).json({ message: "Sprint deleted successfully" });
     } catch (error) {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });

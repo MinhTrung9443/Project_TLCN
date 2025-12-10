@@ -114,6 +114,20 @@ const sprintService = {
           throw { statusCode: 400, message: "Invalid sprint status" };
         }
       }
+
+      // Validate dates - compare only dates, not time
+      if (sprintData.startDate && sprintData.endDate) {
+        const startDate = new Date(sprintData.startDate);
+        const endDate = new Date(sprintData.endDate);
+
+        // Set time to 00:00:00 for both dates to compare only dates
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+
+        if (startDate > endDate) {
+          throw { statusCode: 400, message: "Start date cannot be after end date" };
+        }
+      }
     } catch (error) {
       if (error.statusCode) throw error;
       throw { statusCode: 500, message: "Server Error" };
