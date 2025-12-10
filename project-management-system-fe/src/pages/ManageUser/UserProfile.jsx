@@ -1,4 +1,5 @@
 import "../../styles/pages/ManageUser/UserProfile.css";
+import "../../styles/pages/MyProfilePage.css";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import userService from "../../services/userService";
@@ -61,99 +62,116 @@ const Component = () => {
   };
 
   return (
-    <div id="webcrumbs">
-      <div className="user-profile-container">
-        {/* Avatar section */}
-        <div className="user-profile-avatar">
-          {updateUser.avatar ? (
-            <img src={updateUser.avatar} alt="Avatar" className="user-profile-avatar-img" />
-          ) : (
-            <div className="user-profile-avatar-img">{updateUser.fullname ? updateUser.fullname.charAt(0).toUpperCase() : "U"}</div>
-          )}
-        </div>
-
-        {/* Info section */}
-        <form className="user-profile-info" onSubmit={handleUpdateUser}>
-          <div className="user-profile-title">
-            <span className="material-symbols-outlined mr-2">person</span>
-            Basic Info
-          </div>
-          <div>
-            <label className="user-profile-label required">Full Name</label>
-            <input className="user-profile-input" value={updateUser.fullname || ""} onChange={onInputChange} name="fullname" />
-          </div>
-          <div>
-            <label className="user-profile-label required">Username</label>
-            <input className="user-profile-input" value={updateUser.username || ""} readOnly name="username" />
-          </div>
-          <div>
-            <label className="user-profile-label required">Email</label>
-            <input className="user-profile-input" value={updateUser.email || ""} readOnly name="email" />
-          </div>
-          <div>
-            <label className="user-profile-label">Phone</label>
-            <input className="user-profile-input" value={updateUser.phone || ""} onChange={onInputChange} name="phone" />
-          </div>
-          <div>
-            <label className="user-profile-label">Gender</label>
-            <select className="user-profile-select" value={updateUser.gender || "male"} onChange={onInputChange} disabled={!isAdmin} name="gender">
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="user-profile-label">Status</label>
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={updateUser.status === "active"}
-                disabled={!isAdmin}
-                onChange={() =>
-                  setUpdateUser((prev) => ({
-                    ...prev,
-                    status: prev.status === "active" ? "inactive" : "active",
-                  }))
-                }
-              />
-              <span className="slider"></span>
-            </label>
+    <div className="profile-page-container">
+      <form className="profile-form" onSubmit={handleUpdateUser}>
+        <div className="profile-main-content">
+          <div className="profile-tabs">
+            <span className="tab-item active">
+              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px" }}>
+                person
+              </span>
+              Basic Info
+            </span>
           </div>
 
-          <div>
-            <label className="user-profile-label">Role</label>
-            <input className="user-profile-input" value={updateUser.role === "admin" ? "Admin" : "User"} readOnly name="role" />
+          <div className="form-section">
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="required">Full Name</label>
+                <input className="user-profile-input" value={updateUser.fullname || ""} onChange={onInputChange} name="fullname" />
+              </div>
+              <div className="form-group">
+                <label className="required">Username</label>
+                <input className="user-profile-input" value={updateUser.username || ""} readOnly name="username" />
+              </div>
+              <div className="form-group">
+                <label className="required">Email</label>
+                <input className="user-profile-input" value={updateUser.email || ""} readOnly name="email" />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input className="user-profile-input" value={updateUser.phone || ""} onChange={onInputChange} name="phone" />
+              </div>
+              <div className="form-group">
+                <label>Gender</label>
+                <select
+                  className="user-profile-select"
+                  value={updateUser.gender || "male"}
+                  onChange={onInputChange}
+                  disabled={!isAdmin}
+                  name="gender"
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Status</label>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={updateUser.status === "active"}
+                    disabled={!isAdmin}
+                    onChange={() =>
+                      setUpdateUser((prev) => ({
+                        ...prev,
+                        status: prev.status === "active" ? "inactive" : "active",
+                      }))
+                    }
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+              <div className="form-group">
+                <label>Role</label>
+                <input className="user-profile-input" value={updateUser.role === "admin" ? "Admin" : "User"} readOnly name="role" />
+              </div>
+              <div className="form-group">
+                <label>Groups</label>
+                <input
+                  readOnly
+                  className="user-profile-input"
+                  value={Array.isArray(updateUser.group) ? updateUser.group.join(", ") : updateUser.group || ""}
+                  name="group"
+                />
+              </div>
+              <div className="form-group">
+                <label>Last Login</label>
+                <input
+                  className="user-profile-input"
+                  value={updateUser.lastLogin ? new Date(updateUser.lastLogin).toLocaleString() : ""}
+                  readOnly
+                  name="lastLogin"
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="user-profile-label">Groups</label>
-            <input
-              readOnly
-              className="user-profile-input"
-              value={Array.isArray(updateUser.group) ? updateUser.group.join(", ") : updateUser.group || ""}
-              name="group"
-            />
-          </div>
-          <div>
-            <label className="user-profile-label">Last Login</label>
-            <input
-              className="user-profile-input"
-              value={updateUser.lastLogin ? new Date(updateUser.lastLogin).toLocaleString() : ""}
-              readOnly
-              name="lastLogin"
-            />
-          </div>
-          <div className="user-profile-actions">
-            <button className="user-profile-btn-cancel" type="button" onClick={handleCancel} disabled={!isAdmin || !hasChanges()}>
+
+          <div className="form-actions">
+            <button className="btn-cancel" type="button" onClick={handleCancel} disabled={!isAdmin || !hasChanges()}>
               Cancel
             </button>
             {isAdmin && (
-              <button className="user-profile-btn-save" type="submit" disabled={!hasChanges()}>
+              <button className="btn-save" type="submit" disabled={!hasChanges()}>
                 Save
               </button>
             )}
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div className="profile-sidebar">
+          <div className="avatar-section">
+            <div className="avatar-display">
+              {updateUser.avatar ? (
+                <img src={updateUser.avatar} alt="Avatar" className="avatar-img-preview" />
+              ) : (
+                <div className="avatar-placeholder">{updateUser.fullname ? updateUser.fullname.charAt(0).toUpperCase() : "U"}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
   );
 };
