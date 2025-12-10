@@ -92,29 +92,6 @@ const MenuBar = ({ editor }) => {
       >
         <span className="material-symbols-outlined">format_align_right</span>
       </button>
-      <span className="divider"></span>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className={`icon-button ${editor.isActive("bulletList") ? "is-active" : ""}`}
-        title="Bullet List"
-      >
-        <span className="material-symbols-outlined">format_list_bulleted</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className={`icon-button ${editor.isActive("orderedList") ? "is-active" : ""}`}
-        title="Numbered List"
-      >
-        <span className="material-symbols-outlined">format_list_numbered</span>
-      </button>
-      <span className="divider"></span>
-
-      <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={handleImageUpload} />
-      <button type="button" onClick={() => fileInputRef.current.click()} className="icon-button" title="Insert Image">
-        <span className="material-symbols-outlined">image</span>
-      </button>
     </div>
   );
 };

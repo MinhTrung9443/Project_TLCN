@@ -21,7 +21,7 @@ const sprintService = {
 
   getSprintById: async (sprintId) => {
     try {
-      const response = await apiClient.get(`/sprints/${sprintId}`);
+      const response = await apiClient.get(`/sprints/id/${sprintId}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -73,13 +73,12 @@ const sprintService = {
     }
   },
   getSprintList: async () => {
-  try {
-    const response = await apiClient.get(`/sprints/list`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-},
-
+    try {
+      const response = await apiClient.get(`/sprints/list`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 export default sprintService;

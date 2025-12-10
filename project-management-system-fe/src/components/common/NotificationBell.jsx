@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import socketService from "../../services/socketService";
 import notificationService from "../../services/notificationService";
 import { getProjectById } from "../../services/projectService";
 import sprintService from "../../services/sprintService";
 import { toast } from "react-toastify";
+import { ProjectContext } from "../../contexts/ProjectContext";
 import "./NotificationBell.css";
 
 const NotificationBell = () => {
@@ -18,6 +19,7 @@ const NotificationBell = () => {
   const dropdownRef = useRef(null);
   const listRef = useRef(null);
   const navigate = useNavigate();
+  const { setProject } = useContext(ProjectContext);
 
   // Fetch initial notifications
   useEffect(() => {
@@ -205,8 +207,11 @@ const NotificationBell = () => {
       // Project notifications: fetch project to get key from ID
       try {
         const response = await getProjectById(notification.relatedId);
-        const projectKey = response.data?.key;
+        const project = response.data;
+        const projectKey = project?.key;
         if (projectKey) {
+          // Set project data to context before navigating
+          setProject(project);
           navigate(`/task-mgmt/projects/${projectKey}/settings/general`);
         }
       } catch (error) {
@@ -217,8 +222,16 @@ const NotificationBell = () => {
       // Sprint notifications: fetch sprint to get project key from project ID
       try {
         const sprint = await sprintService.getSprintById(notification.relatedId);
-        const projectKey = sprint.projectId?.key;
+        const projectId = sprint.projectId?._id || sprint.projectId;
+
+        // Fetch full project data to set context
+        const response = await getProjectById(projectId);
+        const project = response.data;
+        const projectKey = project?.key;
+
         if (projectKey) {
+          // Set project data to context before navigating
+          setProject(project);
           navigate(`/task-mgmt/projects/${projectKey}/backlog`);
         }
       } catch (error) {
