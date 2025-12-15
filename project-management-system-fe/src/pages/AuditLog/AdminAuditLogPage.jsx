@@ -5,6 +5,8 @@ import performanceService from "../../services/performanceService";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import PerformancePanel from "../../components/common/PerformancePanel";
+import * as XLSX from "xlsx";
+import { toast } from "react-toastify";
 import "../../styles/AdminAuditLog.css";
 
 const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
@@ -31,6 +33,11 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   const [filterUserId, setFilterUserId] = useState("");
   const [filterAction, setFilterAction] = useState("");
   const [filterEntity, setFilterEntity] = useState("");
+
+  // Date range for export
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   // Kiểm tra quyền truy cập - Chỉ admin và PM được xem
   useEffect(() => {
@@ -84,6 +91,28 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
       }
     });
   }, [user, navigate, selectedProjectId]);
+
+  // Set default export dates based on selected project
+  useEffect(() => {
+    if (!selectedProjectId || projects.length === 0) return;
+
+    const currentProject = projects.find((p) => (p._id || p.id) === selectedProjectId);
+    if (!currentProject) return;
+
+    // Format dates to YYYY-MM-DD for date input
+    const formatDate = (date) => {
+      if (!date) return "";
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return "";
+      return d.toISOString().split("T")[0];
+    };
+
+    const startDate = formatDate(currentProject.startDate);
+    const endDate = formatDate(currentProject.endDate);
+
+    if (startDate) setExportStartDate(startDate);
+    if (endDate) setExportEndDate(endDate);
+  }, [selectedProjectId, projects]);
 
   // Fetch team statistics when project is selected
   useEffect(() => {
@@ -575,6 +604,193 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
       .finally(() => setLoadingLogs(false));
   }, [selectedProjectId, page, limit, filterUserId, filterAction, filterEntity]);
 
+  // Export to Excel function
+  const exportToExcel = async () => {
+    if (!selectedProjectId) {
+      toast.error("Please select a project first");
+      return;
+    }
+
+    if (!exportStartDate || !exportEndDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+
+    if (new Date(exportStartDate) > new Date(exportEndDate)) {
+      toast.error("Start date must be before end date");
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      const currentProject = getCurrentProject();
+
+      if (!currentProject) {
+        toast.error("Project not found");
+        return;
+      }
+
+      // Collect all members from all teams
+      const allMembers = new Map();
+
+      // Get all teams and their members
+      for (const team of currentProject.teams || []) {
+        const teamId = team.teamId?._id || team._id;
+        const teamName = team.teamId?.name || "Unknown Team";
+
+        // Get members from team
+        const members = [...(team.members || [])];
+
+        // Add leader if not in members
+        const leader = team.leaderId;
+        if (leader) {
+          const leaderId = leader._id || leader;
+          const leaderExists = members.some((m) => (m._id || m) === leaderId);
+          if (!leaderExists) {
+            members.unshift(leader);
+          }
+        }
+
+        // Fetch performance for each member
+        for (const member of members) {
+          const memberId = member._id || member;
+
+          if (!allMembers.has(memberId)) {
+            try {
+              const params = {
+                startDate: exportStartDate,
+                endDate: exportEndDate,
+              };
+
+              const response = await performanceService.getUserPerformance(memberId, selectedProjectId, params);
+              console.log(`Response for member ${member.fullname || member.name}:`, response);
+              const perfData = response.data || response;
+              console.log("Perf data:", perfData);
+              const summary = perfData.summary || {};
+              console.log("Summary:", summary);
+
+              allMembers.set(memberId, {
+                fullname: member.fullname || member.name || "Unknown",
+                team: teamName,
+                totalTasks: summary.totalTasks || 0,
+                completedTasks: summary.completedTasks || 0,
+                inProgressTasks: summary.inProgressTasks || 0,
+                todoTasks: summary.todoTasks || 0,
+                estimatedTime: summary.totalEstimatedTime || 0,
+                actualTime: summary.totalActualTime || 0,
+                spi: summary.overallSPI !== null ? summary.overallSPI.toFixed(2) : "N/A",
+              });
+            } catch (error) {
+              console.error(`Error fetching performance for member ${memberId}:`, error);
+              allMembers.set(memberId, {
+                fullname: member.fullname || member.name || "Unknown",
+                team: teamName,
+                totalTasks: 0,
+                completedTasks: 0,
+                inProgressTasks: 0,
+                todoTasks: 0,
+                estimatedTime: 0,
+                actualTime: 0,
+                spi: "N/A",
+              });
+            }
+          }
+        }
+      }
+
+      // Also get PM performance
+      const projectManagers = (currentProject.members || []).filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
+
+      for (const pm of projectManagers) {
+        const pmId = pm._id || pm;
+        const pmName = pm.fullname || pm.name || "Project Manager";
+
+        if (!allMembers.has(pmId)) {
+          try {
+            const params = {
+              startDate: exportStartDate,
+              endDate: exportEndDate,
+            };
+
+            const response = await performanceService.getUserPerformance(pmId, selectedProjectId, params);
+            console.log(`Response for PM ${pmName}:`, response);
+            const perfData = response.data || response;
+            console.log("PM Perf data:", perfData);
+            const summary = perfData.summary || {};
+            console.log("PM Summary:", summary);
+
+            allMembers.set(pmId, {
+              fullname: pmName,
+              team: "Project Manager",
+              totalTasks: summary.totalTasks || 0,
+              completedTasks: summary.completedTasks || 0,
+              inProgressTasks: summary.inProgressTasks || 0,
+              todoTasks: summary.todoTasks || 0,
+              estimatedTime: summary.totalEstimatedTime || 0,
+              actualTime: summary.totalActualTime || 0,
+              spi: summary.overallSPI !== null ? summary.overallSPI.toFixed(2) : "N/A",
+            });
+          } catch (error) {
+            console.error(`Error fetching performance for PM ${pmId}:`, error);
+          }
+        }
+      }
+
+      // Prepare data for Excel
+      const excelData = [];
+      let index = 1;
+
+      for (const [memberId, data] of allMembers) {
+        excelData.push({
+          STT: index++,
+          "Họ và Tên": data.fullname,
+          Team: data.team,
+          "Tasks Được Giao": data.totalTasks,
+          "Tasks Hoàn Thành": data.completedTasks,
+          "Tasks In Progress": data.inProgressTasks,
+          "Tasks To Do": data.todoTasks,
+          "Thời Gian Ước Tính (giờ)": data.estimatedTime.toFixed(2),
+          "Thời Gian Thực Tế (giờ)": data.actualTime.toFixed(2),
+          "Hiệu Xuất (SPI)": data.spi,
+        });
+      }
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      ws["!cols"] = [
+        { wch: 5 }, // STT
+        { wch: 25 }, // Họ và Tên
+        { wch: 20 }, // Team
+        { wch: 15 }, // Tasks Được Giao
+        { wch: 18 }, // Tasks Hoàn Thành
+        { wch: 18 }, // Tasks In Progress
+        { wch: 15 }, // Tasks To Do
+        { wch: 22 }, // Thời Gian Ước Tính
+        { wch: 22 }, // Thời Gian Thực Tế
+        { wch: 18 }, // Hiệu Xuất
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "Performance Report");
+
+      // Generate filename
+      const projectName = currentProject.name || "Project";
+      const filename = `${projectName}_Performance_${exportStartDate}_to_${exportEndDate}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(wb, filename);
+
+      toast.success("Excel file exported successfully!");
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Failed to export to Excel");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="audit-log-container">
@@ -719,6 +935,54 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
               );
             })}
           </div>
+        </div>
+      </div>
+
+      {/* Export to Excel Section */}
+      <div className="export-section-card">
+        <div className="export-header">
+          <h3 className="card-title">
+            <span className="material-symbols-outlined">file_download</span>
+            Export Performance Report
+          </h3>
+          <p className="export-subtitle">Export detailed team member performance data to Excel</p>
+        </div>
+        <div className="export-controls">
+          <div className="export-date-range">
+            <div className="export-date-group">
+              <label htmlFor="exportStartDate">From:</label>
+              <input
+                type="date"
+                id="exportStartDate"
+                value={exportStartDate}
+                onChange={(e) => setExportStartDate(e.target.value)}
+                className="export-date-input"
+              />
+            </div>
+            <div className="export-date-group">
+              <label htmlFor="exportEndDate">To:</label>
+              <input
+                type="date"
+                id="exportEndDate"
+                value={exportEndDate}
+                onChange={(e) => setExportEndDate(e.target.value)}
+                className="export-date-input"
+              />
+            </div>
+          </div>
+          <button className="export-excel-btn" onClick={exportToExcel} disabled={isExporting || !exportStartDate || !exportEndDate}>
+            {isExporting ? (
+              <>
+                <span className="spinner-small"></span>
+                Exporting...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined">download</span>
+                Export to Excel
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -912,6 +1176,8 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
           userName={selectedUser.name}
           userAvatar={selectedUser.avatar}
           projectId={selectedProjectId}
+          defaultStartDate={exportStartDate}
+          defaultEndDate={exportEndDate}
           onClose={() => setSelectedUser(null)}
         />
       )}

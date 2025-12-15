@@ -2,6 +2,7 @@ const Task = require("../models/Task");
 const TimeLog = require("../models/TimeLog");
 const User = require("../models/User");
 const Project = require("../models/Project");
+const Workflow = require("../models/Workflow");
 const mongoose = require("mongoose");
 
 const performanceService = {
@@ -58,7 +59,6 @@ const performanceService = {
       const taskFilter = {
         projectId,
         assigneeId: userId,
-        actualTime: { $gt: 0 }, // Chỉ lấy task đã có time log
       };
 
       if (startDate || endDate) {
@@ -68,15 +68,26 @@ const performanceService = {
       }
 
       // Lấy tất cả tasks của user
-      const tasks = await Task.find(taskFilter)
-        .populate("statusId", "name category")
-        .populate("taskTypeId", "name icon")
-        .populate("priorityId", "name")
-        .sort({ updatedAt: -1 });
+      const tasks = await Task.find(taskFilter).populate("taskTypeId", "name icon").populate("priorityId", "name").sort({ updatedAt: -1 });
+
+      // Lấy workflow của project để get status details
+      const workflow = await Workflow.findOne({ projectId });
+
+      // Tạo map của statuses từ workflow
+      const statusMap = new Map();
+      if (workflow && workflow.statuses) {
+        workflow.statuses.forEach((status) => {
+          statusMap.set(status._id.toString(), status);
+        });
+      }
 
       // Tính toán SPI cho từng task
       const tasksWithSPI = tasks.map((task) => {
         const spiData = performanceService.calculateTaskSPI(task);
+        const statusData = statusMap.get(task.statusId.toString());
+
+        console.log(`Task ${task.key}: statusId=${task.statusId.toString()}, mapped status=${statusData?.name} (${statusData?.category})`);
+
         return {
           _id: task._id,
           key: task.key,
@@ -84,7 +95,7 @@ const performanceService = {
           estimatedTime: task.estimatedTime,
           actualTime: task.actualTime,
           progress: task.progress,
-          status: task.statusId,
+          status: statusData || { _id: task.statusId, name: "Unknown", category: "To Do" },
           taskType: task.taskTypeId,
           priority: task.priorityId,
           spi: spiData ? spiData.spi : null,
@@ -99,16 +110,22 @@ const performanceService = {
       let totalEarnedValue = 0;
       let completedTasks = 0;
       let inProgressTasks = 0;
+      let todoTasks = 0;
 
       tasksWithSPI.forEach((task) => {
         totalEstimatedTime += task.estimatedTime || 0;
         totalActualTime += task.actualTime || 0;
         totalEarnedValue += task.earnedValue || 0;
 
-        if (task.isCompleted) {
+        // Count based on status category
+        const category = task.status?.category;
+
+        if (category === "Done") {
           completedTasks++;
-        } else if (task.progress > 0) {
+        } else if (category === "In Progress") {
           inProgressTasks++;
+        } else if (category === "To Do") {
+          todoTasks++;
         }
       });
 
@@ -132,6 +149,7 @@ const performanceService = {
           totalTasks: tasks.length,
           completedTasks,
           inProgressTasks,
+          todoTasks,
           totalEstimatedTime: parseFloat(totalEstimatedTime.toFixed(2)),
           totalActualTime: parseFloat(totalActualTime.toFixed(2)),
           totalEarnedValue: parseFloat(totalEarnedValue.toFixed(2)),

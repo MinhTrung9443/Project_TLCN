@@ -3,10 +3,14 @@ import performanceService from "../../services/performanceService";
 import { toast } from "react-toastify";
 import "../../styles/components/PerformancePanel.css";
 
-const PerformancePanel = ({ userId, userName, userAvatar, projectId, onClose }) => {
+const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStartDate, defaultEndDate, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [performance, setPerformance] = useState(null);
   const [activeTab, setActiveTab] = useState("overview"); // overview, tasks, timelogs
+
+  // Date range state - initialize with default values immediately
+  const [startDate, setStartDate] = useState(defaultStartDate || "");
+  const [endDate, setEndDate] = useState(defaultEndDate || "");
 
   useEffect(() => {
     // Validate userId và projectId trước khi fetch
@@ -17,12 +21,16 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, onClose }) 
       return;
     }
     fetchPerformanceData();
-  }, [userId, projectId]);
+  }, [userId, projectId, startDate, endDate]);
 
   const fetchPerformanceData = async () => {
     try {
       setLoading(true);
-      const response = await performanceService.getUserPerformance(userId, projectId);
+      const params = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+
+      const response = await performanceService.getUserPerformance(userId, projectId, params);
       setPerformance(response.data);
     } catch (error) {
       console.error("Error fetching performance data:", error);
@@ -98,6 +106,30 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, onClose }) 
           <button className="close-btn-performance" onClick={onClose}>
             <span className="material-symbols-outlined">close</span>
           </button>
+        </div>
+
+        {/* Date Range Filter */}
+        <div className="performance-date-filter">
+          <div className="date-filter-group">
+            <label htmlFor="startDate">From:</label>
+            <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="date-input" />
+          </div>
+          <div className="date-filter-group">
+            <label htmlFor="endDate">To:</label>
+            <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="date-input" />
+          </div>
+          {(startDate || endDate) && (
+            <button
+              className="clear-filter-btn"
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            >
+              <span className="material-symbols-outlined">clear</span>
+              Clear
+            </button>
+          )}
         </div>
 
         {/* Tabs */}
