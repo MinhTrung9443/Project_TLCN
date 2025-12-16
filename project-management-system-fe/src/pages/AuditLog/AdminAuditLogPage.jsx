@@ -678,7 +678,10 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
                 todoTasks: summary.todoTasks || 0,
                 estimatedTime: summary.totalEstimatedTime || 0,
                 actualTime: summary.totalActualTime || 0,
-                spi: summary.overallSPI !== null ? summary.overallSPI.toFixed(2) : "N/A",
+                efficiency: summary.overallEfficiency !== null ? summary.overallEfficiency.toFixed(2) : "N/A",
+                onTimePercentage: summary.onTimePercentage !== null ? summary.onTimePercentage.toFixed(2) : "N/A",
+                onTimeCount: summary.onTimeCount || 0,
+                tasksWithDueDate: summary.tasksWithDueDate || 0,
               });
             } catch (error) {
               console.error(`Error fetching performance for member ${memberId}:`, error);
@@ -691,7 +694,10 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
                 todoTasks: 0,
                 estimatedTime: 0,
                 actualTime: 0,
-                spi: "N/A",
+                efficiency: "N/A",
+                onTimePercentage: "N/A",
+                onTimeCount: 0,
+                tasksWithDueDate: 0,
               });
             }
           }
@@ -728,7 +734,10 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
               todoTasks: summary.todoTasks || 0,
               estimatedTime: summary.totalEstimatedTime || 0,
               actualTime: summary.totalActualTime || 0,
-              spi: summary.overallSPI !== null ? summary.overallSPI.toFixed(2) : "N/A",
+              efficiency: summary.overallEfficiency !== null ? summary.overallEfficiency.toFixed(2) : "N/A",
+              onTimePercentage: summary.onTimePercentage !== null ? summary.onTimePercentage.toFixed(2) : "N/A",
+              onTimeCount: summary.onTimeCount || 0,
+              tasksWithDueDate: summary.tasksWithDueDate || 0,
             });
           } catch (error) {
             console.error(`Error fetching performance for PM ${pmId}:`, error);
@@ -751,7 +760,9 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
           "Tasks To Do": data.todoTasks,
           "Thời Gian Ước Tính (giờ)": data.estimatedTime.toFixed(2),
           "Thời Gian Thực Tế (giờ)": data.actualTime.toFixed(2),
-          "Hiệu Xuất (SPI)": data.spi,
+          "Hiệu Suất (%)": data.efficiency,
+          "Hoàn Thành Đúng Hạn": `${data.onTimeCount}/${data.tasksWithDueDate}`,
+          "% Đúng Hạn": data.onTimePercentage !== "N/A" ? `${data.onTimePercentage}%` : "N/A",
         });
       }
 
@@ -770,7 +781,9 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         { wch: 15 }, // Tasks To Do
         { wch: 22 }, // Thời Gian Ước Tính
         { wch: 22 }, // Thời Gian Thực Tế
-        { wch: 18 }, // Hiệu Xuất
+        { wch: 18 }, // Hiệu Suất
+        { wch: 20 }, // Hoàn Thành Đúng Hạn
+        { wch: 15 }, // % Đúng Hạn
       ];
 
       XLSX.utils.book_append_sheet(wb, ws, "Performance Report");

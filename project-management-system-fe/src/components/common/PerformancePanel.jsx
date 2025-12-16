@@ -55,11 +55,11 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
     }
   };
 
-  const getSPIColor = (spi) => {
-    if (spi === null || spi === undefined) return "#6b7280";
-    if (spi >= 1.2) return "#10b981";
-    if (spi >= 1.0) return "#3b82f6";
-    if (spi >= 0.8) return "#f59e0b";
+  const getEfficiencyColor = (efficiency) => {
+    if (efficiency === null || efficiency === undefined) return "#6b7280";
+    if (efficiency >= 100) return "#10b981";
+    if (efficiency >= 80) return "#3b82f6";
+    if (efficiency >= 60) return "#f59e0b";
     return "#ef4444";
   };
 
@@ -148,22 +148,25 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
         <div className="performance-content">
           {activeTab === "overview" && (
             <div className="overview-tab">
-              {/* Overall SPI Card */}
+              {/* Overall Efficiency Card */}
               <div className="spi-card-large">
-                <div className="spi-label">Overall SPI (Schedule Performance Index)</div>
-                <div className="spi-value-large" style={{ color: getSPIColor(summary.overallSPI) }}>
-                  {summary.overallSPI !== null ? summary.overallSPI.toFixed(2) : "N/A"}
+                <div className="spi-label">Overall Efficiency</div>
+                <div className="spi-value-large" style={{ color: getEfficiencyColor(summary.overallEfficiency) }}>
+                  {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
                 </div>
                 <div className="spi-rating" style={{ backgroundColor: getRatingColor(summary.performanceRating) }}>
                   {summary.performanceRating}
                 </div>
                 <div className="spi-formula">
                   <p>
-                    SPI = <span className="formula-highlight">Earned Value</span> / <span className="formula-highlight">Actual Time</span>
+                    Efficiency = (<span className="formula-highlight">Total Est</span> / <span className="formula-highlight">Total Act</span>) × 100%
                   </p>
                   <p className="formula-detail">
-                    SPI = ({summary.totalEarnedValue}h) / ({summary.totalActualTime}h) ={" "}
-                    {summary.overallSPI !== null ? summary.overallSPI.toFixed(2) : "N/A"}
+                    Efficiency = ({summary.totalEstimatedTime}h) / ({summary.totalActualTime}h) × 100% ={" "}
+                    {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
+                  </p>
+                  <p className="formula-note" style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px" }}>
+                    * Chỉ tính cho các task đã hoàn thành (Done)
                   </p>
                 </div>
               </div>
@@ -195,18 +198,6 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
                 </div>
 
                 <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#d1fae5" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#10b981" }}>
-                      trending_up
-                    </span>
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Earned Value</div>
-                    <div className="stat-value">{formatHours(summary.totalEarnedValue)}</div>
-                  </div>
-                </div>
-
-                <div className="stat-card">
                   <div className="stat-icon" style={{ backgroundColor: "#dbeafe" }}>
                     <span className="material-symbols-outlined" style={{ color: "#3b82f6" }}>
                       speed
@@ -215,6 +206,21 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
                   <div className="stat-content">
                     <div className="stat-label">Efficiency</div>
                     <div className="stat-value">{summary.efficiency}</div>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ backgroundColor: "#d1fae5" }}>
+                    <span className="material-symbols-outlined" style={{ color: "#10b981" }}>
+                      check_circle_outline
+                    </span>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">On-Time Completion</div>
+                    <div className="stat-value">{summary.onTimePercentage !== null ? `${summary.onTimePercentage.toFixed(0)}%` : "N/A"}</div>
+                    <div className="stat-detail" style={{ fontSize: "11px", color: "#6b7280", marginTop: "4px" }}>
+                      {summary.onTimeCount || 0} / {summary.tasksWithDueDate || 0} tasks
+                    </div>
                   </div>
                 </div>
 
@@ -247,19 +253,28 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
               <div className="performance-info-box">
                 <h4>
                   <span className="material-symbols-outlined">info</span>
-                  Understanding SPI
+                  Understanding Efficiency
                 </h4>
                 <ul>
                   <li>
-                    <strong>SPI &gt; 1.0:</strong> Ahead of schedule - working faster than estimated
+                    <strong>Efficiency ≥ 100%:</strong> Excellent - Completed faster than estimated
                   </li>
                   <li>
-                    <strong>SPI = 1.0:</strong> On schedule - working at estimated pace
+                    <strong>Efficiency ≥ 80%:</strong> Good - Close to estimated time
                   </li>
                   <li>
-                    <strong>SPI &lt; 1.0:</strong> Behind schedule - taking longer than estimated
+                    <strong>Efficiency ≥ 60%:</strong> Average - Slightly over estimated time
+                  </li>
+                  <li>
+                    <strong>Efficiency &lt; 60%:</strong> Needs Improvement - Significantly over estimated time
                   </li>
                 </ul>
+                <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#f0f9ff", borderRadius: "6px" }}>
+                  <strong style={{ color: "#0284c7" }}>On-Time Completion:</strong>
+                  <p style={{ fontSize: "13px", color: "#475569", marginTop: "4px" }}>
+                    Percentage of completed tasks finished before or on their due date
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -269,7 +284,7 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
               {tasks.length === 0 ? (
                 <div className="empty-state">
                   <span className="material-symbols-outlined">inbox</span>
-                  <p>No tasks with logged time found</p>
+                  <p>No completed tasks found</p>
                 </div>
               ) : (
                 <div className="tasks-list">
@@ -280,11 +295,22 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
                           <span className="task-key">{task.key}</span>
                           <span className="task-name">{task.name}</span>
                         </div>
-                        {task.spi !== null && (
-                          <div className="task-spi-badge" style={{ backgroundColor: getSPIColor(task.spi) }}>
-                            SPI: {task.spi.toFixed(2)}
-                          </div>
-                        )}
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                          {task.isOnTime !== null && (
+                            <div
+                              className="task-spi-badge"
+                              style={{ backgroundColor: task.isOnTime ? "#10b981" : "#ef4444" }}
+                              title={task.isOnTime ? "Completed on time" : "Completed late"}
+                            >
+                              {task.isOnTime ? "On Time" : "Late"}
+                            </div>
+                          )}
+                          {task.efficiency !== null && (
+                            <div className="task-spi-badge" style={{ backgroundColor: getEfficiencyColor(task.efficiency) }}>
+                              {task.efficiency.toFixed(0)}%
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="task-performance-details">
                         <div className="task-detail-item">
@@ -295,15 +321,17 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
                           <span className="material-symbols-outlined">timelapse</span>
                           <span>Act: {formatHours(task.actualTime)}</span>
                         </div>
-                        <div className="task-detail-item">
-                          <span className="material-symbols-outlined">trending_up</span>
-                          <span>EV: {formatHours(task.earnedValue)}</span>
-                        </div>
+                        {task.dueDate && (
+                          <div className="task-detail-item">
+                            <span className="material-symbols-outlined">event</span>
+                            <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                          </div>
+                        )}
                         <div className="task-detail-item">
                           <div className="progress-bar-mini">
-                            <div className="progress-fill-mini" style={{ width: `${task.progress}%` }}></div>
+                            <div className="progress-fill-mini" style={{ width: "100%" }}></div>
                           </div>
-                          <span>{task.progress}%</span>
+                          <span>100%</span>
                         </div>
                       </div>
                     </div>

@@ -3,35 +3,68 @@ const TimeLog = require("../models/TimeLog");
 const User = require("../models/User");
 const Project = require("../models/Project");
 const Workflow = require("../models/Workflow");
+const TaskHistory = require("../models/TaskHistory");
 const mongoose = require("mongoose");
 
 const performanceService = {
   /**
-   * Tính toán SPI (Schedule Performance Index) cho một task
-   * SPI = (estimatedTime × progress) / actualTime
-   * SPI > 1.0: Hiệu suất tốt
-   * SPI = 1.0: Đúng kế hoạch
-   * SPI < 1.0: Chậm tiến độ
+   * Tính toán hiệu suất cho một task (chỉ áp dụng cho task Done)
+   * Efficiency = (estimatedTime / actualTime) * 100%
+   * > 100%: Hoàn thành nhanh hơn dự kiến
+   * = 100%: Đúng kế hoạch
+   * < 100%: Chậm hơn dự kiến
    */
-  calculateTaskSPI: (task) => {
+  calculateTaskEfficiency: (task) => {
     if (!task.actualTime || task.actualTime === 0) {
       return null; // Chưa có dữ liệu
     }
 
     const estimatedTime = task.estimatedTime || 0;
-    const progress = task.progress || 0;
     const actualTime = task.actualTime || 0;
 
-    // SPI = (T_est × P_act) / T_act
-    const spi = (estimatedTime * progress) / (actualTime * 100);
+    // Efficiency = (Est / Act) * 100%
+    const efficiency = (estimatedTime / actualTime) * 100;
 
     return {
-      spi: parseFloat(spi.toFixed(2)),
+      efficiency: parseFloat(efficiency.toFixed(2)),
       estimatedTime,
       actualTime,
-      progress,
-      earnedValue: (estimatedTime * progress) / 100, // Công việc đã hoàn thành tính theo giờ
     };
+  },
+
+  /**
+   * Kiểm tra task có hoàn thành đúng hạn không
+   * Lấy ngày hoàn thành từ TaskHistory khi status chuyển sang Done
+   */
+  isCompletedOnTime: async (task, workflow) => {
+    if (!task.dueDate) {
+      return null; // Không có due date
+    }
+
+    // Tìm tất cả các status có category "Done" trong workflow
+    const doneStatusIds = workflow.statuses.filter((status) => status.category === "Done").map((status) => status._id.toString());
+
+    if (doneStatusIds.length === 0) {
+      return null;
+    }
+
+    // Tìm lần đầu tiên task được chuyển sang status Done trong history
+    const doneHistory = await TaskHistory.findOne({
+      taskId: task._id,
+      fieldName: "statusId",
+      newValue: { $in: doneStatusIds },
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    if (!doneHistory) {
+      return null; // Không tìm thấy history chuyển sang Done
+    }
+
+    const completedDate = new Date(doneHistory.createdAt);
+    const dueDate = new Date(task.dueDate);
+
+    return completedDate <= dueDate;
   },
 
   /**
@@ -68,7 +101,7 @@ const performanceService = {
       }
 
       // Lấy tất cả tasks của user
-      const tasks = await Task.find(taskFilter).populate("taskTypeId", "name icon").populate("priorityId", "name").sort({ updatedAt: -1 });
+      const allTasks = await Task.find(taskFilter).populate("taskTypeId", "name icon").populate("priorityId", "name").sort({ updatedAt: -1 });
 
       // Lấy workflow của project để get status details
       const workflow = await Workflow.findOne({ projectId });
@@ -81,45 +114,49 @@ const performanceService = {
         });
       }
 
-      // Tính toán SPI cho từng task
-      const tasksWithSPI = tasks.map((task) => {
-        const spiData = performanceService.calculateTaskSPI(task);
+      // Map tasks với status info
+      const tasksWithStatus = allTasks.map((task) => {
         const statusData = statusMap.get(task.statusId.toString());
-
-        console.log(`Task ${task.key}: statusId=${task.statusId.toString()}, mapped status=${statusData?.name} (${statusData?.category})`);
-
         return {
-          _id: task._id,
-          key: task.key,
-          name: task.name,
-          estimatedTime: task.estimatedTime,
-          actualTime: task.actualTime,
-          progress: task.progress,
-          status: statusData || { _id: task.statusId, name: "Unknown", category: "To Do" },
-          taskType: task.taskTypeId,
-          priority: task.priorityId,
-          spi: spiData ? spiData.spi : null,
-          earnedValue: spiData ? spiData.earnedValue : 0,
-          isCompleted: task.progress === 100,
+          ...task.toObject(),
+          statusInfo: statusData || { _id: task.statusId, name: "Unknown", category: "To Do" },
         };
       });
 
-      // Tính toán tổng hợp
-      let totalEstimatedTime = 0;
-      let totalActualTime = 0;
-      let totalEarnedValue = 0;
+      // Lọc chỉ lấy tasks Done để tính hiệu suất
+      const doneTasks = tasksWithStatus.filter((task) => task.statusInfo.category === "Done");
+
+      // Tính toán efficiency cho từng task Done (sử dụng async/await cho isCompletedOnTime)
+      const tasksWithEfficiency = await Promise.all(
+        doneTasks.map(async (task) => {
+          const efficiencyData = performanceService.calculateTaskEfficiency(task);
+          const isOnTime = await performanceService.isCompletedOnTime(task, workflow);
+
+          return {
+            _id: task._id,
+            key: task.key,
+            name: task.name,
+            estimatedTime: task.estimatedTime,
+            actualTime: task.actualTime,
+            progress: task.progress,
+            status: task.statusInfo,
+            taskType: task.taskTypeId,
+            priority: task.priorityId,
+            efficiency: efficiencyData ? efficiencyData.efficiency : null,
+            isOnTime: isOnTime,
+            dueDate: task.dueDate,
+            completedAt: task.completedAt || task.updatedAt,
+          };
+        })
+      );
+
+      // Tính toán tổng hợp cho tất cả tasks
       let completedTasks = 0;
       let inProgressTasks = 0;
       let todoTasks = 0;
 
-      tasksWithSPI.forEach((task) => {
-        totalEstimatedTime += task.estimatedTime || 0;
-        totalActualTime += task.actualTime || 0;
-        totalEarnedValue += task.earnedValue || 0;
-
-        // Count based on status category
-        const category = task.status?.category;
-
+      tasksWithStatus.forEach((task) => {
+        const category = task.statusInfo?.category;
         if (category === "Done") {
           completedTasks++;
         } else if (category === "In Progress") {
@@ -129,33 +166,57 @@ const performanceService = {
         }
       });
 
-      // SPI tổng thể = Tổng Earned Value / Tổng Actual Time
-      const overallSPI = totalActualTime > 0 ? parseFloat((totalEarnedValue / totalActualTime).toFixed(2)) : null;
+      // Tính toán hiệu suất chỉ từ Done tasks
+      let totalEstimatedTime = 0;
+      let totalActualTime = 0;
+      let onTimeCount = 0;
+      let tasksWithDueDate = 0;
+
+      tasksWithEfficiency.forEach((task) => {
+        totalEstimatedTime += task.estimatedTime || 0;
+        totalActualTime += task.actualTime || 0;
+
+        // Count on-time completion
+        if (task.isOnTime !== null) {
+          tasksWithDueDate++;
+          if (task.isOnTime) {
+            onTimeCount++;
+          }
+        }
+      });
+
+      // Hiệu suất tổng thể = (Tổng Est / Tổng Act) * 100%
+      const overallEfficiency = totalActualTime > 0 ? parseFloat(((totalEstimatedTime / totalActualTime) * 100).toFixed(2)) : null;
+
+      // % hoàn thành đúng tiến độ
+      const onTimePercentage = tasksWithDueDate > 0 ? parseFloat(((onTimeCount / tasksWithDueDate) * 100).toFixed(2)) : null;
 
       // Phân loại hiệu suất
       let performanceRating = "No Data";
-      if (overallSPI !== null) {
-        if (overallSPI >= 1.2) performanceRating = "Excellent";
-        else if (overallSPI >= 1.0) performanceRating = "Good";
-        else if (overallSPI >= 0.8) performanceRating = "Average";
+      if (overallEfficiency !== null) {
+        if (overallEfficiency >= 100) performanceRating = "Excellent";
+        else if (overallEfficiency >= 80) performanceRating = "Good";
+        else if (overallEfficiency >= 60) performanceRating = "Average";
         else performanceRating = "Needs Improvement";
       }
 
       return {
         userId,
         projectId,
-        tasks: tasksWithSPI,
+        tasks: tasksWithEfficiency,
         summary: {
-          totalTasks: tasks.length,
+          totalTasks: allTasks.length,
           completedTasks,
           inProgressTasks,
           todoTasks,
           totalEstimatedTime: parseFloat(totalEstimatedTime.toFixed(2)),
           totalActualTime: parseFloat(totalActualTime.toFixed(2)),
-          totalEarnedValue: parseFloat(totalEarnedValue.toFixed(2)),
-          overallSPI,
+          overallEfficiency,
+          onTimeCount,
+          tasksWithDueDate,
+          onTimePercentage,
           performanceRating,
-          efficiency: overallSPI ? `${(overallSPI * 100).toFixed(0)}%` : "N/A",
+          efficiency: overallEfficiency ? `${overallEfficiency.toFixed(0)}%` : "N/A",
         },
       };
     } catch (error) {

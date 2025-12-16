@@ -269,6 +269,44 @@ const TaskDetailsTab = ({
           </div>
         </div>
 
+        {/* Time Remaining Bar */}
+        {editableTask.estimatedTime > 0 && (
+          <div className="time-remaining-section">
+            <div className="time-remaining-header">
+              <strong>Time Remaining</strong>
+              <span className="time-remaining-text">
+                {(() => {
+                  const remaining = (editableTask.estimatedTime || 0) - (editableTask.actualTime || 0);
+                  const isOvertime = remaining < 0;
+                  const absRemaining = Math.abs(remaining);
+                  const hours = Math.floor(absRemaining);
+                  const minutes = Math.round((absRemaining - hours) * 60);
+
+                  return (
+                    <span style={{ color: isOvertime ? "#ef4444" : "#10b981", fontWeight: "600" }}>
+                      {isOvertime ? "+" : ""}
+                      {hours}h {minutes > 0 ? `${minutes}m` : ""} {isOvertime ? "over budget" : "remaining"}
+                    </span>
+                  );
+                })()}
+              </span>
+            </div>
+            <div className="time-remaining-bar">
+              <div
+                className="time-spent-fill"
+                style={{
+                  width: `${Math.min(((editableTask.actualTime || 0) / (editableTask.estimatedTime || 1)) * 100, 100)}%`,
+                  backgroundColor: (editableTask.actualTime || 0) > (editableTask.estimatedTime || 0) ? "#ef4444" : "#3b82f6",
+                }}
+              ></div>
+            </div>
+            <div className="time-remaining-labels">
+              <span className="time-label">Spent: {editableTask.actualTime || 0}h</span>
+              <span className="time-label">Budget: {editableTask.estimatedTime || 0}h</span>
+            </div>
+          </div>
+        )}
+
         {/* Time Logs List */}
         <TimeLogList key={timeLogsKey} taskId={editableTask._id} onTimeLogsUpdate={handleTimeLogsUpdate} />
       </div>
