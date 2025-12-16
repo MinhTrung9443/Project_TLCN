@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { ProjectContext } from "../contexts/ProjectContext";
 import { getDashboardOverview, getDashboardActivity } from "../services/dashboardService";
+import { getProjectById } from "../services/projectService";
+import sprintService from "../services/sprintService";
+import { toast } from "react-toastify";
 import "../styles/pages/DashboardPage.css";
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { setProject } = useContext(ProjectContext);
   const [overview, setOverview] = useState(null);
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +29,36 @@ const DashboardPage = () => {
       })
       .finally(() => setLoading(false));
   }, [user]);
+
+  // Handle clicking on entity links in recent activity
+  const handleEntityClick = async (log, e) => {
+    e.preventDefault();
+
+    if (log.entityType === "sprint" && log.relatedId) {
+      // Sprint: fetch sprint to get project and navigate to backlog (tương tự NotificationBell)
+      try {
+        const sprint = await sprintService.getSprintById(log.relatedId);
+        const projectId = sprint.projectId?._id || sprint.projectId;
+
+        // Fetch full project data to set context
+        const response = await getProjectById(projectId);
+        const project = response.data;
+        const projectKey = project?.key;
+
+        if (projectKey) {
+          // Set project data to context before navigating
+          setProject(project);
+          navigate(`/task-mgmt/projects/${projectKey}/backlog`);
+        }
+      } catch (error) {
+        console.error("Error navigating to sprint:", error);
+        toast.error("Could not navigate to sprint");
+      }
+    } else if (log.entityUrl) {
+      // For other entities with URL, just navigate
+      navigate(log.entityUrl);
+    }
+  };
 
   if (!user || loading) {
     return (
@@ -206,7 +241,7 @@ const DashboardPage = () => {
                     <span className="user-name">{log.user.name}</span>
                     <span className="action-text">{log.action}</span>
                     {log.entityUrl ? (
-                      <a href={log.entityUrl} className="entity-link">
+                      <a href={log.entityUrl} className="entity-link" onClick={(e) => handleEntityClick(log, e)} style={{ cursor: "pointer" }}>
                         {log.entityKey}
                       </a>
                     ) : log.entityKey ? (

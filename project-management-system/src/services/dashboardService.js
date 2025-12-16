@@ -1,6 +1,8 @@
 const Task = require("../models/Task");
 const Project = require("../models/Project");
 const AuditLog = require("../models/AuditLog");
+const TimeLog = require("../models/TimeLog");
+const Sprint = require("../models/Sprint");
 
 const dashboardService = {
   async getUserOverview(userId) {
@@ -73,28 +75,64 @@ const dashboardService = {
       .lean();
 
     // Chuẩn hóa dữ liệu trả về cho Recent Activity đúng format UI
-    const recentActivity = auditLogs.map((log) => {
-      // Xác định loại entity
-      let entityType = log.tableName?.toLowerCase() || "task";
-      let entityKey = log.newData?.key || log.newData?.code || log.recordId || log.newData?._id || log.oldData?._id || "";
-      let entityName = log.newData?.name || log.newData?.title || log.oldData?.name || log.oldData?.title || "";
-      let entityUrl = null;
-      if (entityType === "task") entityUrl = `/task/${entityKey}`;
-      else if (entityType === "project") entityUrl = `/projects/${entityKey}`;
-      // ...có thể mở rộng cho các loại entity khác
-      return {
-        user: {
-          name: log.userId?.fullname || "Unknown",
-          avatar: log.userId?.avatar || null,
-        },
-        action: log.action || "activity",
-        entityType,
-        entityKey,
-        entityName,
-        createdAt: log.createdAt,
-        entityUrl,
-      };
-    });
+    const recentActivity = await Promise.all(
+      auditLogs.map(async (log) => {
+        // Xác định loại entity
+        let entityType = log.tableName?.toLowerCase() || "task";
+        let entityKey = log.newData?.key || log.newData?.code || log.recordId || log.newData?._id || log.oldData?._id || "";
+        let entityName = log.newData?.name || log.newData?.title || log.oldData?.name || log.oldData?.title || "";
+        let entityUrl = null;
+
+        // Xử lý TimeLog - lấy task key từ taskId
+        if (entityType === "timelog" && log.recordId) {
+          try {
+            const timeLog = await TimeLog.findById(log.recordId).select("taskId").lean();
+            if (timeLog && timeLog.taskId) {
+              const task = await Task.findById(timeLog.taskId).select("key").lean();
+              if (task) {
+                entityKey = task.key;
+                entityUrl = `/task/${entityKey}`;
+              }
+            }
+          } catch (err) {
+            console.log("Error fetching TimeLog task:", err.message);
+          }
+        } else if (entityType === "sprint" && log.recordId) {
+          // Xử lý Sprint - lấy project key từ projectId
+          try {
+            const sprint = await Sprint.findById(log.recordId).select("projectId name").lean();
+            if (sprint && sprint.projectId) {
+              const project = await Project.findById(sprint.projectId).select("key").lean();
+              if (project) {
+                entityKey = sprint.name; // Hiển thị tên sprint
+                entityUrl = `/task-mgmt/projects/${project.key}/backlog`;
+              }
+            }
+          } catch (err) {
+            console.log("Error fetching Sprint project:", err.message);
+          }
+        } else if (entityType === "task") {
+          entityUrl = `/task/${entityKey}`;
+        } else if (entityType === "project") {
+          entityUrl = `/projects/${entityKey}`;
+        }
+        // ...có thể mở rộng cho các loại entity khác
+
+        return {
+          user: {
+            name: log.userId?.fullname || "Unknown",
+            avatar: log.userId?.avatar || null,
+          },
+          action: log.action || "activity",
+          entityType,
+          entityKey,
+          entityName,
+          createdAt: log.createdAt,
+          entityUrl,
+          relatedId: log.recordId, // Thêm relatedId để frontend có thể fetch data nếu cần
+        };
+      })
+    );
 
     return {
       total,
