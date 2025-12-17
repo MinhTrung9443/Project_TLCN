@@ -4,7 +4,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ProjectContext } from "../../contexts/ProjectContext";
-import { updateProjectByKey } from "../../services/projectService"; // Service API để cập nhật
+import { updateProjectByKey, getProjectByKey } from "../../services/projectService"; // Service API để cập nhật
 import "../../styles/pages/ManageProject/ProjectSettings_General.css";
 import { useAuth } from "../../contexts/AuthContext";
 import userService from "../../services/userService"; // <-- Thêm import này
@@ -127,15 +127,15 @@ const ProjectSettingsGeneral = () => {
     setIsSaving(true);
     try {
       const payload = { ...formData, startDate: formData.startDate || null, endDate: formData.endDate || null };
-      const response = await updateProjectByKey(projectKey, payload);
+      await updateProjectByKey(projectKey, payload);
       toast.success("Project updated successfully!");
 
-      // Cập nhật initialData sau khi save thành công
-      setInitialData(formData);
+      // Fetch lại project data đầy đủ sau khi update để có members được populate
+      const refreshedProject = await getProjectByKey(projectKey);
 
       // Cập nhật lại projectData trong context với dữ liệu mới từ API
-      if (response.data) {
-        setProject(response.data);
+      if (refreshedProject.data) {
+        setProject(refreshedProject.data);
       }
 
       // Nếu key thay đổi, redirect đến URL mới
