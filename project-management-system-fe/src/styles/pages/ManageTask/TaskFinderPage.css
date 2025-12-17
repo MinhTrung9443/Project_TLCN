@@ -566,7 +566,7 @@
   align-items: center;
   gap: 3px;
   padding: 0;
-  margin: 0;
+  margin: 20px 0 0 0; /* Thêm margin-top để tách khỏi list */
 }
 
 .pagination-btn {

@@ -97,7 +97,45 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
 
       try {
         const res = await getCreateTaskFormData(selectedProject.key);
-        setSettings(res.data);
+
+        // Filter members based on user role
+        let filteredMembers = res.data.members;
+
+        if (user.role !== "admin") {
+          // Check if user is PM
+          const isPM = selectedProject.members?.some(
+            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+          );
+
+          if (!isPM) {
+            // User is a Leader - can only assign to their team members
+            const userLeadTeams = selectedProject.teams?.filter((team) => team.leaderId._id === user._id || team.leaderId === user._id) || [];
+
+            // Get all team member IDs
+            const teamMemberIds = [];
+            userLeadTeams.forEach((team) => {
+              if (team.members && Array.isArray(team.members)) {
+                team.members.forEach((member) => {
+                  const memberId = member._id || member;
+                  if (!teamMemberIds.includes(memberId.toString())) {
+                    teamMemberIds.push(memberId.toString());
+                  }
+                });
+              }
+            });
+
+            // Filter members to only show team members
+            filteredMembers = res.data.members.filter((m) => {
+              const userId = m.userId._id || m.userId;
+              return teamMemberIds.includes(userId.toString());
+            });
+          }
+        }
+
+        setSettings({
+          ...res.data,
+          members: filteredMembers,
+        });
 
         // Tự động chọn priority là Medium nếu có
         if (res.data.priorities && res.data.priorities.length > 0) {
@@ -109,7 +147,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
       }
     };
     fetchSettingsForProject();
-  }, [formData.projectId, projects]);
+  }, [formData.projectId, projects, user.role, user._id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

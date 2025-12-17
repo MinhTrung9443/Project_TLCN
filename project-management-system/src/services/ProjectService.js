@@ -555,13 +555,27 @@ const addMemberToProject = async (projectKey, { userId, role, teamId }, actor) =
 
   await project.save();
 
+  // Xác định role thực tế để gửi notification
+  let actualRole = role;
+  if (teamId) {
+    const team = project.teams.find((t) => t.teamId.equals(teamId));
+    if (team) {
+      // Kiểm tra xem user có phải là leader không
+      if (team.leaderId && team.leaderId.equals(userId)) {
+        actualRole = "LEADER";
+      } else {
+        actualRole = "MEMBER";
+      }
+    }
+  }
+
   try {
     await notificationService.notifyProjectMemberAdded({
       projectId: project._id,
       projectName: project.name,
       newMemberId: userId,
       addedByName: actor.fullname, // Dùng tên của người thêm
-      role: role,
+      role: actualRole, // Dùng role thực tế
     });
   } catch (notificationError) {
     console.error("Failed to send notification:", notificationError);
@@ -683,6 +697,14 @@ const changeMemberRole = async (projectKey, userId, newRole) => {
     throw new Error("Member not found in this project.");
   }
 
+  // Lưu oldRole trước khi thay đổi
+  let oldRole = null;
+  if (memberIndex > -1) {
+    oldRole = project.members[memberIndex].role;
+  } else if (userTeam) {
+    oldRole = userTeam.leaderId.equals(userId) ? "LEADER" : "MEMBER";
+  }
+
   // Nếu có trong members array, kiểm tra PM
   if (memberIndex > -1) {
     const memberToChange = project.members[memberIndex];
@@ -729,6 +751,21 @@ const changeMemberRole = async (projectKey, userId, newRole) => {
   // Cập nhật role trong members array (nếu user là individual member)
   if (memberIndex > -1) {
     project.members[memberIndex].role = newRole;
+  }
+
+  // Gửi notification về việc thay đổi role (cho cả individual member và team member)
+  if (oldRole && oldRole !== newRole) {
+    try {
+      await notificationService.notifyProjectRoleChanged({
+        projectId: project._id,
+        projectName: project.name,
+        memberId: userId,
+        oldRole: oldRole,
+        newRole: newRole,
+      });
+    } catch (notificationError) {
+      console.error("Failed to send role change notification:", notificationError);
+    }
   }
 
   await project.save();

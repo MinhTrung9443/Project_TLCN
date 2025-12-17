@@ -36,7 +36,7 @@ const NotificationBell = () => {
 
       // Show toast with full information
       const toastOptions = {
-        position: "top-right",
+        position: "bottom-right",
         autoClose: 8000,
         hideProgressBar: false,
         closeOnClick: true,

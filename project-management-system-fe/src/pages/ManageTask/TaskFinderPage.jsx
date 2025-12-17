@@ -165,10 +165,6 @@ const TaskFinderPage = () => {
     }
   };
 
-  const handleTaskClone = (taskId) => {
-    console.log("Cloning task with ID:", taskId);
-  };
-
   // Check if user can create tasks
   const canCreateTask = useMemo(() => {
     if (!user) return false;
@@ -338,7 +334,6 @@ const TaskFinderPage = () => {
           onClose={() => setSelectedTask(null)}
           onTaskUpdate={handleTaskUpdate}
           onTaskDelete={handleTaskDelete}
-          onTaskClone={handleTaskClone}
           statuses={selectOptions.statuses}
           platforms={selectOptions.platforms}
           priorities={selectOptions.priorities}

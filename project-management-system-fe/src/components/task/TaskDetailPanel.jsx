@@ -27,7 +27,7 @@ const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaFileAlt", color: "#00B8D9" },
 ];
 
-const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClone, statuses = [] }) => {
+const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [] }) => {
   const [editableTask, setEditableTask] = useState(task);
   const [activeTab, setActiveTab] = useState("Details");
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
@@ -238,10 +238,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     setIsDeleteTaskModalOpen(false);
   };
 
-  const handleClone = () => {
-    onTaskClone(editableTask._id);
-    toast.info("Clone function not implemented yet.");
-  };
   const handleAddAttachment = () => {
     fileInputRef.current.click();
   };
@@ -322,7 +318,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
           </div>
         </div>
         <div className="panel-header-right">
-          <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onClone={handleClone} onAddAttachment={handleAddAttachment} />
+          <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
           <button onClick={onClose} className="close-btn">
             &times;
           </button>

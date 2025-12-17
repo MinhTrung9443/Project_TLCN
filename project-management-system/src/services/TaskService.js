@@ -140,34 +140,44 @@ const searchTasks = async (queryParams, user) => {
   // Apply role-based filtering
   if (user && user.role !== "admin") {
     const userId = user._id || user.id;
+    const userIdString = userId.toString();
 
-    // Get user's projects to check their roles
+    // Get user's projects - check both members and teams
     const userProjects = await Project.find({
-      "members.userId": userId,
+      $or: [{ "members.userId": userId }, { "teams.leaderId": userId }, { "teams.members": userId }],
       isDeleted: false,
     }).lean();
 
     // Categorize projects by user's role
     const pmProjectIds = [];
-    const leaderProjectIds = [];
+    const leaderTeamMemberIds = new Set(); // Use Set to avoid duplicates
     const memberProjectIds = [];
 
     for (const project of userProjects) {
-      const member = project.members.find((m) => m.userId.toString() === userId.toString());
+      // Check role in project.members
+      const member = project.members.find((m) => m.userId.toString() === userIdString);
       if (member) {
         if (member.role === "PROJECT_MANAGER") {
           pmProjectIds.push(project._id);
-        } else if (member.role === "LEADER") {
-          leaderProjectIds.push(project._id);
         } else {
           memberProjectIds.push(project._id);
         }
       }
 
-      // Check in teams
+      // Check if user is a team leader and collect team member IDs
       for (const team of project.teams || []) {
-        if (team.leaderId && team.leaderId.toString() === userId.toString()) {
-          leaderProjectIds.push(project._id);
+        if (team.leaderId && team.leaderId.toString() === userIdString) {
+          // Add the leader themselves to the list
+          leaderTeamMemberIds.add(userIdString);
+
+          // Leader can see all tasks assigned to their team members
+          if (team.members && Array.isArray(team.members)) {
+            team.members.forEach((memberId) => {
+              // Handle both ObjectId and string formats
+              const memberIdString = typeof memberId === "object" && memberId._id ? memberId._id.toString() : memberId.toString();
+              leaderTeamMemberIds.add(memberIdString);
+            });
+          }
         }
       }
     }
@@ -180,16 +190,15 @@ const searchTasks = async (queryParams, user) => {
       roleConditions.push({ projectId: { $in: pmProjectIds } });
     }
 
-    // LEADER: tasks they created (reporterId) in their projects
-    if (leaderProjectIds.length > 0) {
-      roleConditions.push({
-        projectId: { $in: leaderProjectIds },
-        reporterId: userId,
-      });
+    // LEADER: tasks assigned to team members they lead (including themselves)
+    if (leaderTeamMemberIds.size > 0) {
+      roleConditions.push({ assigneeId: { $in: Array.from(leaderTeamMemberIds) } });
     }
 
-    // MEMBER: tasks assigned to them
-    roleConditions.push({ assigneeId: userId });
+    // MEMBER: tasks assigned to them (if not already covered by other roles)
+    if (pmProjectIds.length === 0 && leaderTeamMemberIds.size === 0) {
+      roleConditions.push({ assigneeId: userId });
+    }
 
     // Combine all conditions with $or
     if (roleConditions.length > 0) {

@@ -345,19 +345,6 @@ const ProjectSettingsWorkflow = () => {
 
                     return (
                       <g key={group.category}>
-                        {/* Category label */}
-                        <text
-                          x={groupStartX + (group.statuses.length * spacing) / 2}
-                          y={80}
-                          textAnchor="middle"
-                          fill="#64748b"
-                          fontSize="13"
-                          fontWeight="600"
-                          letterSpacing="1"
-                        >
-                          {group.category.toUpperCase()}
-                        </text>
-
                         {/* Render statuses in this category */}
                         {group.statuses.map((status, statusIndex) => {
                           const x = currentX + statusIndex * spacing;
