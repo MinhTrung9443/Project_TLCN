@@ -1,59 +1,59 @@
 // File: app.js (Backend)
 
 const express = require("express");
-const cors = require("cors"); // Chỉ cần require một lần
+const cors = require("cors");
 const path = require("path");
+
 const app = express();
 
-// --- Import các routes ---
+// --- Import routes ---
 const appRoute = require("./routes/appRoute");
 const userRoute = require("./routes/userRoutes");
 const groupRoute = require("./routes/groupRoute");
-const taskTypeRoute = require("./routes/taskTypeRoute.js");
-const priorityRoute = require("./routes/priorityRoute.js");
-const platformRoute = require("./routes/platformRoute.js");
+const taskTypeRoute = require("./routes/taskTypeRoute");
+const priorityRoute = require("./routes/priorityRoute");
+const platformRoute = require("./routes/platformRoute");
 const projectRoute = require("./routes/projectRoute");
 const taskRoutes = require("./routes/taskRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
-const sprintRoute = require("./routes/sprintRoutes.js");
-const workflowRoutes = require("./routes/workflowRoutes.js");
-const ganttRoutes = require("./routes/ganttRoutes.js");
-const commentRoutes = require("./routes/commentRoute.js");
+const sprintRoute = require("./routes/sprintRoutes");
+const workflowRoutes = require("./routes/workflowRoutes");
+const ganttRoutes = require("./routes/ganttRoutes");
+const commentRoutes = require("./routes/commentRoute");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const timeLogRoutes = require("./routes/timeLogRoutes");
 const performanceRoutes = require("./routes/performanceRoutes");
 
+// ===== CORS CHUẨN CHỈNH – LOCAL + DEPLOY =====
+const allowedOrigins = ["http://localhost:3000", process.env.CLIENT_URL];
+
 const corsOptions = {
-  origin: "http://localhost:3000",
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: (origin, callback) => {
+    // Cho phép Postman / server-to-server
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// --- Sử dụng Middlewares ---
-
-// Sử dụng cấu hình CORS cho tất cả các request
 app.use(cors(corsOptions));
+// ===========================================
 
-// Bật xử lý pre-flight và set headers CORS thủ công
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
+app.use(express.json());
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-  next();
-});
-app.use(express.json()); // Để parse body của request dạng JSON
 const uploadsPath = path.join(__dirname, "public", "uploads");
 
-// --- Đăng ký các routes ---
+// --- Routes ---
 app.use("/api", appRoute);
 app.use("/api/users", userRoute);
 app.use("/api/groups", groupRoute);

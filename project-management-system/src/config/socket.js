@@ -11,7 +11,7 @@ class SocketManager {
   initialize(server) {
     this.io = new Server(server, {
       cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:3000",
+        origin: ["http://localhost:3000", process.env.CLIENT_URL],
         credentials: true,
       },
       pingTimeout: 60000,
