@@ -4,7 +4,7 @@ const app = require("./app");
 const connectDB = require("./config/database.js");
 const socketManager = require("./config/socket");
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // Kết nối database
 connectDB();
