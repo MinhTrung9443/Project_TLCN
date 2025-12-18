@@ -61,8 +61,17 @@ const createTask = async (taskData, userId) => {
     }
   }
 
-  const taskCount = await Task.countDocuments({ projectId: taskData.projectId });
-  const taskKey = `${project.key.toUpperCase()}-${taskCount + 1}`;
+  // Tạo key duy nhất cho task, kiểm tra trùng lặp
+  let taskCount = await Task.countDocuments({ projectId: taskData.projectId });
+  let taskKey = `${project.key.toUpperCase()}-${taskCount + 1}`;
+
+  // Kiểm tra xem key đã tồn tại chưa, nếu có thì tăng số lên
+  let existingTask = await Task.findOne({ key: taskKey });
+  while (existingTask) {
+    taskCount++;
+    taskKey = `${project.key.toUpperCase()}-${taskCount + 1}`;
+    existingTask = await Task.findOne({ key: taskKey });
+  }
 
   const newTask = new Task({
     ...taskData,
