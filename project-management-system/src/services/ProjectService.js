@@ -591,16 +591,87 @@ const addMembersFromGroupToProject = async (projectKey, data, actor) => {
   const group = await Group.findById(groupId);
   if (!group) throw new Error("Group not found");
 
-  const teamExists = project.teams.some((t) => t.teamId.equals(groupId));
-  if (teamExists) throw new Error("This team is already in the project.");
+  // Kiểm tra xem team đã tồn tại trong project chưa
+  const existingTeam = project.teams.find((t) => t.teamId.equals(groupId));
 
-  // Thêm team vào project (KHÔNG thêm members vào project.members)
+  if (existingTeam) {
+    // Team đã tồn tại → chỉ thêm members mới vào
+    let hasLeaderConflict = false;
+
+    // Kiểm tra nếu có leaderId mới được chỉ định và khác với leader hiện tại
+    if (leaderId && !existingTeam.leaderId.equals(leaderId)) {
+      hasLeaderConflict = true;
+    }
+
+    memberIds.forEach((memberId) => {
+      const memberIdStr = memberId.toString();
+
+      // Kiểm tra xem member đã là leader của team này chưa
+      if (existingTeam.leaderId.toString() === memberIdStr) {
+        return; // Bỏ qua vì đã là leader rồi
+      }
+
+      // Kiểm tra xem member đã có trong team.members chưa
+      const alreadyInTeam = existingTeam.members.some((m) => m.toString() === memberIdStr);
+      if (!alreadyInTeam) {
+        existingTeam.members.push(memberId);
+      }
+    });
+
+    // Xóa các members mới khỏi project.members nếu họ đang ở đó (không thuộc team)
+    memberIds.forEach((memberId) => {
+      project.members = project.members.filter((m) => !m.userId.equals(memberId));
+    });
+
+    await project.save();
+    await logAction({ userId: actor._id, action: "add_members_to_existing_team" /* ... */ });
+
+    // Trả về kèm thông báo nếu có conflict về leader
+    return {
+      project,
+      hasLeaderConflict,
+      message: hasLeaderConflict
+        ? "Members added successfully. Note: This team already has a leader. If you want to change the leader, please use the 'Change Leader' option."
+        : null,
+    };
+  }
+
+  // Team chưa tồn tại → tạo team mới
+  // Nếu không có leaderId được chỉ định, tìm leader từ project.members hoặc từ các teams hiện có
+  let finalLeaderId = leaderId;
+  if (!finalLeaderId) {
+    // Tìm member nào trong memberIds đang là LEADER trong project.members
+    const existingLeaderInMembers = project.members.find(
+      (m) => m.role === "LEADER" && memberIds.some((mid) => mid.toString() === m.userId.toString())
+    );
+
+    // Hoặc tìm member nào đang là leaderId trong một team khác
+    const existingLeaderInTeams = project.teams.find((t) => memberIds.some((mid) => mid.toString() === t.leaderId.toString()));
+
+    if (existingLeaderInMembers) {
+      finalLeaderId = existingLeaderInMembers.userId;
+      // Xóa leader khỏi project.members vì giờ họ sẽ ở trong team mới
+      project.members = project.members.filter((m) => !m.userId.equals(finalLeaderId));
+    } else if (existingLeaderInTeams) {
+      // Nếu người này đang là leader của team khác, không thể dùng làm leader cho team mới
+      throw new Error("Cannot add team: a member is already leading another team. Please select a different leader.");
+    } else {
+      throw new Error("No leader specified and no existing LEADER found in the selected members.");
+    }
+  }
+
+  // Thêm team mới vào project (KHÔNG thêm members vào project.members)
   // Leader KHÔNG nằm trong members array
-  const membersWithoutLeader = memberIds.filter((id) => id.toString() !== leaderId.toString());
+  const membersWithoutLeader = memberIds.filter((id) => id.toString() !== finalLeaderId.toString());
+
+  // Xóa các members khỏi project.members nếu họ đang ở đó
+  membersWithoutLeader.forEach((memberId) => {
+    project.members = project.members.filter((m) => !m.userId.equals(memberId));
+  });
 
   project.teams.push({
     teamId: groupId,
-    leaderId: leaderId,
+    leaderId: finalLeaderId,
     members: membersWithoutLeader, // Chỉ lưu members, không bao gồm leader
   });
 

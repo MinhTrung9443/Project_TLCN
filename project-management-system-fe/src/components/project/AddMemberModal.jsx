@@ -145,24 +145,28 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
           return;
         }
 
-        if (!selectedLeader) {
-          toast.warn("Please select a leader for the team.");
-          setIsSaving(false);
-          return;
-        }
-
         if (selectedTeamMemberIds.size === 0) {
           toast.warn("Please select at least one member to add from the team.");
           setIsSaving(false);
           return;
         }
 
-        await addMembersFromGroupToProject(projectKey, {
+        // Leader là optional - nếu không chọn, backend sẽ tự động tìm member có role LEADER trong project
+
+        const response = await addMembersFromGroupToProject(projectKey, {
           groupId: selectedGroup.value,
-          leaderId: selectedLeader.value,
+          leaderId: selectedLeader?.value || null,
           memberIds: Array.from(selectedTeamMemberIds),
         });
-        toast.success("Team members added successfully!");
+
+        // Kiểm tra nếu có conflict về leader
+        if (response.data?.hasLeaderConflict) {
+          toast.warning(
+            response.data.message || "This team already has a leader. If you want to change the leader, please use the 'Change Leader' option."
+          );
+        } else {
+          toast.success("Team members added successfully!");
+        }
       }
       onMemberAdded();
       handleClose();
@@ -411,15 +415,20 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
 
               {selectedGroup && teamMembers.length > 0 && (
                 <div className="form-group">
-                  <label>Select a Leader (from selected members)</label>
+                  <label>Select a Leader (optional - auto-detect if left blank)</label>
                   <Select
                     options={leaderOptions}
                     value={selectedLeader}
                     onChange={setSelectedLeader}
                     isDisabled={leaderOptions.length === 0}
+                    isClearable={true}
+                    placeholder="Select leader or leave blank to auto-detect..."
                     menuPortalTarget={document.body}
                     styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
                   />
+                  <small className="form-hint">
+                    If not selected, the system will automatically use an existing LEADER from the project (if available).
+                  </small>
                 </div>
               )}
             </>
