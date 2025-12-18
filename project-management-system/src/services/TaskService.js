@@ -159,7 +159,7 @@ const searchTasks = async (queryParams, user) => {
 
     // Categorize projects by user's role
     const pmProjectIds = [];
-    const leaderTeamMemberIds = new Set(); // Use Set to avoid duplicates
+    let isLeader = false;
     const memberProjectIds = [];
 
     for (const project of userProjects) {
@@ -173,20 +173,11 @@ const searchTasks = async (queryParams, user) => {
         }
       }
 
-      // Check if user is a team leader and collect team member IDs
+      // Check if user is a team leader
       for (const team of project.teams || []) {
         if (team.leaderId && team.leaderId.toString() === userIdString) {
-          // Add the leader themselves to the list
-          leaderTeamMemberIds.add(userIdString);
-
-          // Leader can see all tasks assigned to their team members
-          if (team.members && Array.isArray(team.members)) {
-            team.members.forEach((memberId) => {
-              // Handle both ObjectId and string formats
-              const memberIdString = typeof memberId === "object" && memberId._id ? memberId._id.toString() : memberId.toString();
-              leaderTeamMemberIds.add(memberIdString);
-            });
-          }
+          isLeader = true;
+          break;
         }
       }
     }
@@ -199,13 +190,13 @@ const searchTasks = async (queryParams, user) => {
       roleConditions.push({ projectId: { $in: pmProjectIds } });
     }
 
-    // LEADER: tasks assigned to team members they lead (including themselves)
-    if (leaderTeamMemberIds.size > 0) {
-      roleConditions.push({ assigneeId: { $in: Array.from(leaderTeamMemberIds) } });
+    // LEADER: all tasks they created
+    if (isLeader) {
+      roleConditions.push({ createdById: userId });
     }
 
     // MEMBER: tasks assigned to them (if not already covered by other roles)
-    if (pmProjectIds.length === 0 && leaderTeamMemberIds.size === 0) {
+    if (pmProjectIds.length === 0 && !isLeader) {
       roleConditions.push({ assigneeId: userId });
     }
 

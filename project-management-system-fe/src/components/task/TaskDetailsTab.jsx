@@ -59,9 +59,22 @@ const TaskDetailsTab = ({
   };
 
   const findOption = (options, field) => {
+    console.log("findOption - options:", options);
+    console.log("findOption - field:", field);
     if (!field) return null;
-    const idToFind = typeof field === "object" ? field._id : field;
-    return options.find((opt) => opt.value === idToFind);
+    // Xử lý trường hợp field là object (có _id) hoặc là string ID
+    let idToFind;
+    if (typeof field === "object" && field !== null) {
+      idToFind = field._id || field;
+    } else {
+      idToFind = field;
+    }
+    // Convert to string để so sánh
+    const idString = idToFind?.toString();
+    console.log("findOption - Looking for ID:", idString);
+    const result = options.find((opt) => opt.value?.toString() === idString);
+    console.log("findOption - Found result:", result);
+    return result;
   };
 
   const statusOptions = Array.isArray(statuses)
