@@ -29,7 +29,7 @@ const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaFileAlt", color: "#00B8D9" },
 ];
 
-const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [] }) => {
+const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [], showCloseButton = true }) => {
   const { user } = useAuth();
   const { userProjectRole } = useContext(ProjectContext);
   const [editableTask, setEditableTask] = useState(task);
@@ -388,9 +388,11 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         </div>
         <div className="panel-header-right">
           <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
-          <button onClick={onClose} className="close-btn">
-            &times;
-          </button>
+          {showCloseButton && (
+            <button onClick={onClose} className="close-btn">
+              &times;
+            </button>
+          )}
         </div>
       </header>
       <main className="panel-body">

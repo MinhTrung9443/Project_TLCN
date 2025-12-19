@@ -104,6 +104,7 @@ const TaskDetailPage = () => {
         onTaskUpdate={handleTaskUpdate}
         onTaskDelete={handleTaskDelete}
         onClose={() => {}} // onClose không cần thiết trong view này
+        showCloseButton={false} // Hide close button on dedicated page
         // onTaskClone có thể được giữ lại
       />
     </div>
