@@ -35,7 +35,7 @@ const sprintService = {
       const sprints = await Sprint.find({ projectId: project._id }).sort({ createdAt: 1 }).lean();
 
       // Lấy tất cả task trong project
-      const tasks = await Task.find({ projectId: project._id }).populate("assigneeId").populate("priorityId").lean();
+      const tasks = await Task.find({ projectId: project._id }).populate("assigneeId").populate("priorityId").populate("taskTypeId").lean();
 
       // Hàm xử lý status cho task
       const enrichTaskStatus = async (t) => {
