@@ -5,11 +5,13 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { updateTaskStatus } from "../../services/taskService";
 import sprintService from "../../services/sprintService";
+import { getProjectByKey } from "../../services/projectService";
 import { toast } from "react-toastify";
 import { useSprintData } from "../../hooks/useSprintData";
 import BoardColumn from "../../components/sprint/BoardColumn";
 import SprintSelector from "../../components/sprint/SprintSelector";
 import { isTransitionAllowed, getTransitionErrorMessage } from "../../utils/workflowTransitions";
+import { useAuth } from "../../contexts/AuthContext";
 import "../../styles/pages/ManageSprint/ActiveSprintPage.css";
 
 const ActiveSprintPage = () => {
@@ -17,6 +19,8 @@ const ActiveSprintPage = () => {
   const { selectedProjectKey } = useContext(ProjectContext);
   const [searchParams] = useSearchParams();
   const [isCompleting, setIsCompleting] = useState(false);
+  const [userProjectRole, setUserProjectRole] = useState(null);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const effectiveProjectKey = projectKey || selectedProjectKey;
@@ -26,6 +30,23 @@ const ActiveSprintPage = () => {
     effectiveProjectKey,
     searchParams
   );
+
+  // Fetch user project role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!effectiveProjectKey || !user) return;
+      try {
+        const projectRes = await getProjectByKey(effectiveProjectKey);
+        const project = projectRes.data;
+        const userId = user._id;
+        const member = project.members?.find((m) => m.userId?._id === userId || m.userId === userId);
+        setUserProjectRole(member?.role || null);
+      } catch (error) {
+        console.error("Failed to fetch user role:", error);
+      }
+    };
+    fetchUserRole();
+  }, [effectiveProjectKey, user]);
 
   // Debug: Log workflow when it changes
   useEffect(() => {
@@ -111,6 +132,8 @@ const ActiveSprintPage = () => {
     }
   };
 
+  const canManageSprints = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
+
   if (loading) {
     return (
       <div className="active-sprint-loading">
@@ -138,7 +161,7 @@ const ActiveSprintPage = () => {
         <div className="active-sprint-header">
           <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
 
-          {currentSprint && (
+          {currentSprint && canManageSprints && (
             <button className="btn-complete-sprint" onClick={handleCompleteSprint} disabled={isCompleting}>
               <span className="material-symbols-outlined">check_circle</span>
               {isCompleting ? "Completing..." : "Complete Sprint"}

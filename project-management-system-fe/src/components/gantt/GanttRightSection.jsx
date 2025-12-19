@@ -4,7 +4,7 @@ import GanttProjectBar from "./GanttProjectBar";
 import GanttSprintBar from "./GanttSprintBar";
 import GanttTaskBar from "./GanttTaskBar";
 
-const GanttRightSection = ({ projects, backlogTasks = [], groupBy, expandedItems, timelineColumns, calculateBarPosition, rightSectionRef }) => {
+const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, calculateBarPosition, rightSectionRef }) => {
   // Safety check
   if (!Array.isArray(projects)) {
     return (
@@ -63,7 +63,6 @@ const GanttRightSection = ({ projects, backlogTasks = [], groupBy, expandedItems
               const isExpanded = expandedItems.has(project.id);
               const hasSprints = hasSprint && project.sprints?.length > 0;
               const hasTasks = hasTask && project.tasks?.length > 0;
-              const hasBacklogTasks = hasTask && project.backlogTasks?.length > 0;
               const barStyle = calculateBarPosition(project.startDate, project.endDate);
 
               return (
@@ -93,14 +92,6 @@ const GanttRightSection = ({ projects, backlogTasks = [], groupBy, expandedItems
                                 })}
                             </React.Fragment>
                           );
-                        })}
-
-                      {/* Backlog Task Bars (tasks without sprint) */}
-                      {hasBacklogTasks &&
-                        hasSprint &&
-                        project.backlogTasks.map((task) => {
-                          const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
-                          return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
                         })}
 
                       {/* Task Bars directly under Project (when groupBy has task but not sprint) */}
@@ -147,16 +138,6 @@ const GanttRightSection = ({ projects, backlogTasks = [], groupBy, expandedItems
 
             return null;
           })}
-
-          {/* Backlog Task Bars at the end (for sprint-task groupby without project) */}
-          {!hasProject &&
-            hasSprint &&
-            hasTask &&
-            backlogTasks.length > 0 &&
-            backlogTasks.map((task) => {
-              const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
-              return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
-            })}
         </div>
       </div>
     </div>

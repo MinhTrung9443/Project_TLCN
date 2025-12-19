@@ -349,7 +349,7 @@
 }
 
 .btn-clear-filters {
-  padding: 6px 12px;
+  padding: 6px 8px;
   border: 1px solid #ced4da;
   border-radius: 6px;
   background-color: white;
@@ -358,6 +358,14 @@
   font-weight: 500;
   color: #495057;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+}
+
+.btn-clear-filters .material-symbols-outlined {
+  font-size: 20px;
 }
 
 .btn-clear-filters:hover {
@@ -566,7 +574,7 @@
   align-items: center;
   gap: 3px;
   padding: 0;
-  margin: 0;
+  margin: 20px 0 0 0; /* Thêm margin-top để tách khỏi list */
 }
 
 .pagination-btn {

@@ -155,6 +155,11 @@ const ProjectsPage = () => {
     // Thêm tất cả members từ các teams
     if (project.teams && Array.isArray(project.teams)) {
       project.teams.forEach((team) => {
+        // Đếm leader (nếu có)
+        if (team.leaderId) {
+          totalMembers += 1;
+        }
+        // Đếm members trong team
         if (team.members && Array.isArray(team.members)) {
           totalMembers += team.members.length;
         }

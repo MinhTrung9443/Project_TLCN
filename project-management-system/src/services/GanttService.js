@@ -207,7 +207,6 @@ class GanttService {
         endDate: project.endDate,
         status: project.status,
         sprints: [],
-        backlogTasks: [],
       };
 
       // Get tasks for each sprint
@@ -226,12 +225,23 @@ class GanttService {
         });
       }
 
-      // Get backlog tasks (tasks without sprint)
+      // Get backlog tasks (tasks without sprint) and add as a pseudo-sprint
       const backlogTaskQuery = { ...taskQuery, sprintId: null };
 
       const backlogTasks = await Task.find(backlogTaskQuery).sort({ createdAt: -1 });
 
-      projectData.backlogTasks = backlogTasks.map((t) => this.formatTask(t));
+      // Add backlog as a special sprint at the same level as other sprints
+      if (backlogTasks.length > 0) {
+        projectData.sprints.push({
+          id: `backlog-${project._id}`,
+          name: "Backlog",
+          startDate: project.startDate,
+          endDate: project.endDate,
+          status: "backlog",
+          isBacklog: true,
+          tasks: backlogTasks.map((t) => this.formatTask(t)),
+        });
+      }
 
       result.push(projectData);
     }

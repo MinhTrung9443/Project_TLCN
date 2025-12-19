@@ -3,7 +3,7 @@ import GanttProjectRow from "./GanttProjectRow";
 import GanttSprintRow from "./GanttSprintRow";
 import GanttTaskRow from "./GanttTaskRow";
 
-const GanttLeftSection = ({ projects, backlogTasks = [], groupBy, expandedItems, toggleExpand, leftSectionRef }) => {
+const GanttLeftSection = ({ projects, groupBy, expandedItems, toggleExpand, leftSectionRef }) => {
   // Safety check
   if (!Array.isArray(projects)) {
     return (
@@ -39,17 +39,11 @@ const GanttLeftSection = ({ projects, backlogTasks = [], groupBy, expandedItems,
             const isExpanded = expandedItems.has(project.id);
             const hasSprints = hasSprint && project.sprints?.length > 0;
             const hasTasks = hasTask && project.tasks?.length > 0;
-            const hasBacklogTasks = hasTask && project.backlogTasks?.length > 0;
 
             return (
               <React.Fragment key={project.id}>
                 {/* Project Row */}
-                <GanttProjectRow
-                  project={project}
-                  isExpanded={isExpanded}
-                  hasSprints={hasSprints || hasTasks || hasBacklogTasks}
-                  toggleExpand={toggleExpand}
-                />
+                <GanttProjectRow project={project} isExpanded={isExpanded} hasSprints={hasSprints || hasTasks} toggleExpand={toggleExpand} />
 
                 {isExpanded && (
                   <>
@@ -68,9 +62,6 @@ const GanttLeftSection = ({ projects, backlogTasks = [], groupBy, expandedItems,
                           </React.Fragment>
                         );
                       })}
-
-                    {/* Backlog Tasks (tasks without sprint) */}
-                    {hasBacklogTasks && hasSprint && project.backlogTasks.map((task) => <GanttTaskRow key={task.id} task={task} />)}
 
                     {/* Task Rows directly under Project (when groupBy has task but not sprint) */}
                     {hasTasks && !hasSprint && project.tasks.map((task) => <GanttTaskRow key={task.id} task={task} />)}
@@ -104,15 +95,6 @@ const GanttLeftSection = ({ projects, backlogTasks = [], groupBy, expandedItems,
 
           return null;
         })}
-
-        {/* Backlog Tasks at the end (for sprint-task groupby without project) */}
-        {!hasProject && hasSprint && hasTask && backlogTasks.length > 0 && (
-          <>
-            {backlogTasks.map((task) => (
-              <GanttTaskRow key={task.id} task={task} />
-            ))}
-          </>
-        )}
       </div>
     </div>
   );

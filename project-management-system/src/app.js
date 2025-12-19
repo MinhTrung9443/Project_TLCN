@@ -27,27 +27,16 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const timeLogRoutes = require("./routes/timeLogRoutes");
 const performanceRoutes = require("./routes/performanceRoutes");
 
-// ===== CORS CHUẨN CHỈNH – LOCAL + DEPLOY =====
-const allowedOrigins = ["http://localhost:3000", process.env.CLIENT_URL];
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Cho phép Postman / server-to-server
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
-app.use(cors(corsOptions));
-// ===========================================
+// ===== CORS – Cho phép mọi origin =====
+app.use(
+  cors({
+    origin: true, // Cho phép tất cả origins
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+// ========================================
 
 app.use(express.json());
 

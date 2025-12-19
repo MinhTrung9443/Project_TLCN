@@ -93,8 +93,8 @@ const handleAddGroupToProject = async (req, res) => {
     const { projectKey } = req.params;
     const { groupId, leaderId, memberIds } = req.body;
 
-    if (!groupId || !leaderId || !memberIds || !Array.isArray(memberIds)) {
-      return res.status(400).json({ message: "Group ID, Leader ID, and a list of Member IDs are required." });
+    if (!groupId || !memberIds || !Array.isArray(memberIds)) {
+      return res.status(400).json({ message: "Group ID and a list of Member IDs are required." });
     }
 
     const result = await projectService.addMembersFromGroupToProject(projectKey, { groupId, leaderId, memberIds }, req.user);

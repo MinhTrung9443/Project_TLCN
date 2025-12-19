@@ -97,7 +97,45 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
 
       try {
         const res = await getCreateTaskFormData(selectedProject.key);
-        setSettings(res.data);
+
+        // Filter members based on user role
+        let filteredMembers = res.data.members;
+
+        if (user.role !== "admin") {
+          // Check if user is PM
+          const isPM = selectedProject.members?.some(
+            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+          );
+
+          if (!isPM) {
+            // User is a Leader - can only assign to their team members
+            const userLeadTeams = selectedProject.teams?.filter((team) => team.leaderId._id === user._id || team.leaderId === user._id) || [];
+
+            // Get all team member IDs
+            const teamMemberIds = [];
+            userLeadTeams.forEach((team) => {
+              if (team.members && Array.isArray(team.members)) {
+                team.members.forEach((member) => {
+                  const memberId = member._id || member;
+                  if (!teamMemberIds.includes(memberId.toString())) {
+                    teamMemberIds.push(memberId.toString());
+                  }
+                });
+              }
+            });
+
+            // Filter members to only show team members
+            filteredMembers = res.data.members.filter((m) => {
+              const userId = m.userId._id || m.userId;
+              return teamMemberIds.includes(userId.toString());
+            });
+          }
+        }
+
+        setSettings({
+          ...res.data,
+          members: filteredMembers,
+        });
 
         // Tự động chọn priority là Medium nếu có
         if (res.data.priorities && res.data.priorities.length > 0) {
@@ -109,7 +147,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
       }
     };
     fetchSettingsForProject();
-  }, [formData.projectId, projects]);
+  }, [formData.projectId, projects, user.role, user._id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -138,13 +176,48 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
     if (!formData.taskTypeId) newErrors.taskTypeId = "Type is required.";
     if (!formData.name.trim()) newErrors.name = "Task Name is required.";
     if (!formData.priorityId) newErrors.priorityId = "Priority is required.";
+
+    // Validate task dates within sprint dates if sprint is provided
+    if (sprint && formData.dueDate) {
+      const taskDueDate = new Date(formData.dueDate);
+      const sprintStartDate = new Date(sprint.startDate);
+      const sprintEndDate = new Date(sprint.endDate);
+
+      // Set all times to start of day for accurate date-only comparison
+      taskDueDate.setHours(0, 0, 0, 0);
+      sprintStartDate.setHours(0, 0, 0, 0);
+      sprintEndDate.setHours(0, 0, 0, 0);
+
+      if (taskDueDate < sprintStartDate || taskDueDate > sprintEndDate) {
+        newErrors.dueDate = `Due date must be between ${sprintStartDate.toLocaleDateString()} and ${sprintEndDate.toLocaleDateString()}`;
+      }
+    }
+
+    if (sprint && formData.startDate) {
+      const taskStartDate = new Date(formData.startDate);
+      const sprintStartDate = new Date(sprint.startDate);
+      const sprintEndDate = new Date(sprint.endDate);
+
+      // Set all times to start of day for accurate date-only comparison
+      taskStartDate.setHours(0, 0, 0, 0);
+      sprintStartDate.setHours(0, 0, 0, 0);
+      sprintEndDate.setHours(0, 0, 0, 0);
+
+      if (taskStartDate < sprintStartDate || taskStartDate > sprintEndDate) {
+        newErrors.startDate = `Start date must be between ${sprintStartDate.toLocaleDateString()} and ${sprintEndDate.toLocaleDateString()}`;
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.error("Please fix the validation errors before submitting.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -256,6 +329,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
               <div className="form-group">
                 <label htmlFor="dueDate">Due Date</label>
                 <input type="date" id="dueDate" name="dueDate" value={formData.dueDate} onChange={handleInputChange} />
+                {errors.dueDate && <p className="error-text">{errors.dueDate}</p>}
               </div>
             </div>
 

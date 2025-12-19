@@ -34,25 +34,20 @@ class UserService {
     }
   }
 
-   async getAllUsers(page = 1, limit = 20) {
+  async getAllUsers(page = 1, limit = 20) {
     // Nếu không có page và limit, chúng ta muốn lấy hết
     // Kiểm tra xem req.query có rỗng không
     const hasPagination = page && limit && !isNaN(page) && !isNaN(limit);
 
     if (hasPagination) {
-        const skip = (page - 1) * limit;
-        const users = await User.find()
-            .select('-password')
-            .skip(skip)
-            .limit(limit)
-            .populate("group", "name -_id")
-            .lean();
-        // ... (trả về kết quả phân trang)
-        return users; // Giả sử trả về mảng
+      const skip = (page - 1) * limit;
+      const users = await User.find().select("-password").skip(skip).limit(limit).populate("group", "name -_id").lean();
+      // ... (trả về kết quả phân trang)
+      return users; // Giả sử trả về mảng
     } else {
-        // Nếu không có tham số phân trang, lấy TẤT CẢ user
-        const users = await User.find().select('-password').lean();
-        return users;
+      // Nếu không có tham số phân trang, lấy TẤT CẢ user
+      const users = await User.find().select("-password").lean();
+      return users;
     }
   }
 
@@ -111,7 +106,14 @@ class UserService {
       $or: [{ username }, { email }],
     });
     if (existingUser) {
-      throw new Error("User already exists");
+      // Check which field is duplicate
+      if (existingUser.username === username && existingUser.email === email) {
+        throw new Error("Username and Email already exist");
+      } else if (existingUser.username === username) {
+        throw new Error("Username already exists");
+      } else {
+        throw new Error("Email already exists");
+      }
     }
     const newUser = new User(userData);
     await newUser.save();

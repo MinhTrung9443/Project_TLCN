@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { toast } from "react-toastify";
 import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment, getAllowedStatuses } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
+import { useAuth } from "../../contexts/AuthContext";
+import { ProjectContext } from "../../contexts/ProjectContext";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import platformService from "../../services/platformService";
@@ -27,7 +29,9 @@ const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaFileAlt", color: "#00B8D9" },
 ];
 
-const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClone, statuses = [] }) => {
+const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [], showCloseButton = true }) => {
+  const { user } = useAuth();
+  const { userProjectRole } = useContext(ProjectContext);
   const [editableTask, setEditableTask] = useState(task);
   const [activeTab, setActiveTab] = useState("Details");
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
@@ -53,6 +57,8 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
   const [allowedStatuses, setAllowedStatuses] = useState([]);
 
   useEffect(() => {
+    console.log("TaskDetailPanel - Received task:", task);
+    console.log("TaskDetailPanel - task.assigneeId:", task?.assigneeId);
     setEditableTask(task);
     setProjectMembers([]);
     setProjectTaskTypes([]);
@@ -89,11 +95,52 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       const fetchMembers = async () => {
         try {
           const res = await getProjectMember(projectKey);
-          const memberOptions = res.data.members.map((member) => ({
+          console.log("TaskDetailPanel - Project members response:", res.data);
+
+          // Lấy members từ project.members
+          const individualMembers = res.data.members.map((member) => ({
             value: member.userId._id,
             label: member.userId.fullname,
           }));
-          setProjectMembers(memberOptions);
+
+          // Lấy team leaders và team members từ teams
+          const teamMembers = [];
+          if (res.data.teams && Array.isArray(res.data.teams)) {
+            res.data.teams.forEach((team) => {
+              // Add team leader
+              if (team.leaderId) {
+                const leaderId = team.leaderId._id || team.leaderId;
+                const leaderName = team.leaderId.fullname || team.leaderId.username || "Unknown";
+                // Check if not already in list
+                if (!teamMembers.find((m) => m.value === leaderId) && !individualMembers.find((m) => m.value === leaderId)) {
+                  teamMembers.push({
+                    value: leaderId,
+                    label: leaderName,
+                  });
+                }
+              }
+
+              // Add team members
+              if (team.members && Array.isArray(team.members)) {
+                team.members.forEach((member) => {
+                  const memberId = member._id || member;
+                  const memberName = member.fullname || member.username || "Unknown";
+                  // Check if not already in list
+                  if (!teamMembers.find((m) => m.value === memberId) && !individualMembers.find((m) => m.value === memberId)) {
+                    teamMembers.push({
+                      value: memberId,
+                      label: memberName,
+                    });
+                  }
+                });
+              }
+            });
+          }
+
+          // Combine all members
+          const allMembers = [...individualMembers, ...teamMembers];
+          console.log("TaskDetailPanel - Formatted memberOptions:", allMembers);
+          setProjectMembers(allMembers);
         } catch (error) {
           toast.error(`Could not load project members.`);
           setProjectMembers([]);
@@ -136,7 +183,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
               }
             }
           }
-          const formattedSprints = activeSprints.map((s) => ({ value: s._id, label: s.name }));
+          const formattedSprints = activeSprints.map((s) => ({ value: s._id, label: s.name, startDate: s.startDate, endDate: s.endDate }));
           setProjectSprints(formattedSprints);
         } catch (error) {
           toast.error(`Could not load sprints for project ${projectKey}.`);
@@ -183,6 +230,28 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
       if (startDateOnly > dueDateOnly) {
         toast.error("Start Date cannot be after Due Date.");
         return;
+      }
+    }
+
+    // Validate sprint dates when changing sprintId
+    if (fieldName === "sprintId" && updateValue && newStartDate && newDueDate) {
+      const selectedSprint = projectSprints.find((s) => s.value === updateValue);
+      if (selectedSprint && selectedSprint.startDate && selectedSprint.endDate) {
+        const taskStart = new Date(newStartDate).setHours(0, 0, 0, 0);
+        const taskEnd = new Date(newDueDate).setHours(0, 0, 0, 0);
+        const sprintStart = new Date(selectedSprint.startDate).setHours(0, 0, 0, 0);
+        const sprintEnd = new Date(selectedSprint.endDate).setHours(0, 0, 0, 0);
+
+        if (taskStart < sprintStart || taskEnd > sprintEnd) {
+          toast.error(
+            `Task dates (${new Date(newStartDate).toLocaleDateString()} - ${new Date(
+              newDueDate
+            ).toLocaleDateString()}) must be within sprint dates (${new Date(selectedSprint.startDate).toLocaleDateString()} - ${new Date(
+              selectedSprint.endDate
+            ).toLocaleDateString()})`
+          );
+          return;
+        }
       }
     }
 
@@ -238,10 +307,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
     setIsDeleteTaskModalOpen(false);
   };
 
-  const handleClone = () => {
-    onTaskClone(editableTask._id);
-    toast.info("Clone function not implemented yet.");
-  };
   const handleAddAttachment = () => {
     fileInputRef.current.click();
   };
@@ -322,10 +387,12 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
           </div>
         </div>
         <div className="panel-header-right">
-          <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onClone={handleClone} onAddAttachment={handleAddAttachment} />
-          <button onClick={onClose} className="close-btn">
-            &times;
-          </button>
+          <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
+          {showCloseButton && (
+            <button onClick={onClose} className="close-btn">
+              &times;
+            </button>
+          )}
         </div>
       </header>
       <main className="panel-body">
@@ -364,6 +431,8 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, onTaskClon
                 setSelectedAttachmentId(attachmentId);
                 setIsDeleteAttachmentModalOpen(true);
               }}
+              userProjectRole={userProjectRole}
+              user={user}
             />
           )}
           {activeTab === "Comments" && <CommentsTab taskId={editableTask._id} />}

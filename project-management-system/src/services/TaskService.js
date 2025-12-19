@@ -61,8 +61,17 @@ const createTask = async (taskData, userId) => {
     }
   }
 
-  const taskCount = await Task.countDocuments({ projectId: taskData.projectId });
-  const taskKey = `${project.key.toUpperCase()}-${taskCount + 1}`;
+  // Tạo key duy nhất cho task, kiểm tra trùng lặp
+  let taskCount = await Task.countDocuments({ projectId: taskData.projectId });
+  let taskKey = `${project.key.toUpperCase()}-${taskCount + 1}`;
+
+  // Kiểm tra xem key đã tồn tại chưa, nếu có thì tăng số lên
+  let existingTask = await Task.findOne({ key: taskKey });
+  while (existingTask) {
+    taskCount++;
+    taskKey = `${project.key.toUpperCase()}-${taskCount + 1}`;
+    existingTask = await Task.findOne({ key: taskKey });
+  }
 
   const newTask = new Task({
     ...taskData,
@@ -140,34 +149,35 @@ const searchTasks = async (queryParams, user) => {
   // Apply role-based filtering
   if (user && user.role !== "admin") {
     const userId = user._id || user.id;
+    const userIdString = userId.toString();
 
-    // Get user's projects to check their roles
+    // Get user's projects - check both members and teams
     const userProjects = await Project.find({
-      "members.userId": userId,
+      $or: [{ "members.userId": userId }, { "teams.leaderId": userId }, { "teams.members": userId }],
       isDeleted: false,
     }).lean();
 
     // Categorize projects by user's role
     const pmProjectIds = [];
-    const leaderProjectIds = [];
+    let isLeader = false;
     const memberProjectIds = [];
 
     for (const project of userProjects) {
-      const member = project.members.find((m) => m.userId.toString() === userId.toString());
+      // Check role in project.members
+      const member = project.members.find((m) => m.userId.toString() === userIdString);
       if (member) {
         if (member.role === "PROJECT_MANAGER") {
           pmProjectIds.push(project._id);
-        } else if (member.role === "LEADER") {
-          leaderProjectIds.push(project._id);
         } else {
           memberProjectIds.push(project._id);
         }
       }
 
-      // Check in teams
+      // Check if user is a team leader
       for (const team of project.teams || []) {
-        if (team.leaderId && team.leaderId.toString() === userId.toString()) {
-          leaderProjectIds.push(project._id);
+        if (team.leaderId && team.leaderId.toString() === userIdString) {
+          isLeader = true;
+          break;
         }
       }
     }
@@ -180,16 +190,17 @@ const searchTasks = async (queryParams, user) => {
       roleConditions.push({ projectId: { $in: pmProjectIds } });
     }
 
-    // LEADER: tasks they created (reporterId) in their projects
-    if (leaderProjectIds.length > 0) {
+    // LEADER: all tasks they created OR tasks assigned to them
+    if (isLeader) {
       roleConditions.push({
-        projectId: { $in: leaderProjectIds },
-        reporterId: userId,
+        $or: [{ createdById: userId }, { assigneeId: userId }],
       });
     }
 
-    // MEMBER: tasks assigned to them
-    roleConditions.push({ assigneeId: userId });
+    // MEMBER: tasks assigned to them (if not already covered by other roles)
+    if (pmProjectIds.length === 0 && !isLeader) {
+      roleConditions.push({ assigneeId: userId });
+    }
 
     // Combine all conditions with $or
     if (roleConditions.length > 0) {
@@ -303,6 +314,28 @@ const updateTask = async (taskId, updateData, userId) => {
     const error = new Error("Task not found");
     error.statusCode = 404;
     throw error;
+  }
+
+  // Check if assigneeId is being changed - only admin, PM, or LEADER can change it
+  if (updateData.assigneeId !== undefined && updateData.assigneeId !== originalTask.assigneeId?.toString()) {
+    const project = await Project.findById(originalTask.projectId._id);
+    const user = await User.findById(userId);
+
+    // Check if user is admin
+    if (user.role !== "admin") {
+      // Check if user is PM in this project
+      const member = project.members.find((m) => m.userId.toString() === userId);
+      const isPM = member && member.role === "PROJECT_MANAGER";
+
+      // Check if user is LEADER in this project
+      const isLeader = project.teams.some((team) => team.leaderId.toString() === userId);
+
+      if (!isPM && !isLeader) {
+        const error = new Error("Forbidden: Only Project Manager or Team Leader can change assignee");
+        error.statusCode = 403;
+        throw error;
+      }
+    }
   }
 
   // Check if statusId is being updated to "Done" category, then auto-set progress to 100%

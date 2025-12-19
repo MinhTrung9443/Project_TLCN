@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../../styles/pages/ManageSprint/SprintEditModal.css";
 import { toast } from "react-toastify";
 
-const SprintEditModal = ({ isOpen, sprint, onClose, onSave }) => {
+const SprintEditModal = ({ isOpen, sprint, onClose, onSave, project }) => {
   const [form, setForm] = useState({
     name: sprint?.name || "",
     description: sprint?.description || "",
@@ -40,6 +40,37 @@ const SprintEditModal = ({ isOpen, sprint, onClose, onSave }) => {
 
       if (startDate > endDate) {
         toast.error("Start date cannot be after end date");
+        return;
+      }
+    }
+
+    // Validate sprint dates within project dates
+    if (project && form.startDate) {
+      const sprintStartDate = new Date(form.startDate);
+      const projectStartDate = new Date(project.startDate);
+      const projectEndDate = new Date(project.endDate);
+
+      sprintStartDate.setHours(0, 0, 0, 0);
+      projectStartDate.setHours(0, 0, 0, 0);
+      projectEndDate.setHours(0, 0, 0, 0);
+
+      if (sprintStartDate < projectStartDate || sprintStartDate > projectEndDate) {
+        toast.error(`Sprint start date must be between ${projectStartDate.toLocaleDateString()} and ${projectEndDate.toLocaleDateString()}`);
+        return;
+      }
+    }
+
+    if (project && form.endDate) {
+      const sprintEndDate = new Date(form.endDate);
+      const projectStartDate = new Date(project.startDate);
+      const projectEndDate = new Date(project.endDate);
+
+      sprintEndDate.setHours(0, 0, 0, 0);
+      projectStartDate.setHours(0, 0, 0, 0);
+      projectEndDate.setHours(0, 0, 0, 0);
+
+      if (sprintEndDate < projectStartDate || sprintEndDate > projectEndDate) {
+        toast.error(`Sprint end date must be between ${projectStartDate.toLocaleDateString()} and ${projectEndDate.toLocaleDateString()}`);
         return;
       }
     }

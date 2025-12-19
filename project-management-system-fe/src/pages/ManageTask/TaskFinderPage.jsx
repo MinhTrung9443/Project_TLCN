@@ -165,10 +165,6 @@ const TaskFinderPage = () => {
     }
   };
 
-  const handleTaskClone = (taskId) => {
-    console.log("Cloning task with ID:", taskId);
-  };
-
   // Check if user can create tasks
   const canCreateTask = useMemo(() => {
     if (!user) return false;
@@ -271,8 +267,8 @@ const TaskFinderPage = () => {
                 ))}
               </select>
 
-              <button className="btn-clear-filters" onClick={clearAllFilters}>
-                Clear Filters
+              <button className="btn-clear-filters" onClick={clearAllFilters} title="Clear Filters">
+                <span className="material-symbols-outlined">filter_alt_off</span>
               </button>
 
               <label className="include-done-checkbox">
@@ -338,7 +334,6 @@ const TaskFinderPage = () => {
           onClose={() => setSelectedTask(null)}
           onTaskUpdate={handleTaskUpdate}
           onTaskDelete={handleTaskDelete}
-          onTaskClone={handleTaskClone}
           statuses={selectOptions.statuses}
           platforms={selectOptions.platforms}
           priorities={selectOptions.priorities}

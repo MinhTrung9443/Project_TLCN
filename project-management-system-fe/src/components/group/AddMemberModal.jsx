@@ -10,11 +10,13 @@ const AddMemberModal = ({ isOpen, onClose, onAdd, users }) => {
     setSelectedUserId("");
   };
 
-  const userOptions = users.map((user) => ({
-    value: user._id,
-    label: `${user.fullName || user.fullname} (${user.email})`,
-    userData: user,
-  }));
+  const userOptions = users
+    .filter((user) => user.role !== "admin") // Lọc bỏ admin
+    .map((user) => ({
+      value: user._id,
+      label: `${user.fullName || user.fullname} (${user.email})`,
+      userData: user,
+    }));
 
   const formatOptionLabel = ({ label, userData }) => (
     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

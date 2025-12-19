@@ -1,10 +1,10 @@
 // File: src/components/common/ActionsMenu.jsx
 
 import React, { useState, useEffect, useRef } from "react";
-import { FaEllipsisV, FaTrash, FaClone, FaPaperclip } from "react-icons/fa";
+import { FaEllipsisV, FaTrash, FaPaperclip } from "react-icons/fa";
 import "../common/ActionsMenu.css"; // Sẽ tạo file này
 
-const ActionsMenu = ({ onDelete, onClone, onAddAttachment }) => {
+const ActionsMenu = ({ onDelete, onAddAttachment }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -33,10 +33,6 @@ const ActionsMenu = ({ onDelete, onClone, onAddAttachment }) => {
       </button>
       {isOpen && (
         <ul className="actions-menu-dropdown">
-          <li onClick={() => handleActionClick(onClone)}>
-            <FaClone />
-            <span>Clone Task</span>
-          </li>
           <li onClick={() => handleActionClick(onAddAttachment)}>
             <FaPaperclip />
             <span>Add Attachment</span>

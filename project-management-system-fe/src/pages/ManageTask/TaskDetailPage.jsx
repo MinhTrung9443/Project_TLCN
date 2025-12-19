@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getTaskByKey } from "../../services/taskService";
+import { getTaskByKey, deleteTask } from "../../services/taskService";
 import TaskDetailPanel from "../../components/task/TaskDetailPanel";
 import "../../styles/pages/ManageTask/TaskDetailPage.css"; // Tạo file CSS mới nếu cần
 
@@ -67,9 +67,21 @@ const TaskDetailPage = () => {
   };
 
   // Xử lý khi xóa task, điều hướng người dùng đi
-  const handleTaskDelete = () => {
-    toast.success(`Task ${taskKey} deleted.`);
-    navigate("/task-finder");
+  const handleTaskDelete = async () => {
+    const projectKey = task?.projectId?.key;
+
+    if (!projectKey) {
+      toast.error("Cannot delete task: missing project information");
+      return;
+    }
+
+    try {
+      await deleteTask(projectKey, task._id);
+      toast.success(`Task ${taskKey} deleted successfully!`);
+      navigate("/task-finder");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete task.");
+    }
   };
 
   if (loading) {
@@ -92,6 +104,7 @@ const TaskDetailPage = () => {
         onTaskUpdate={handleTaskUpdate}
         onTaskDelete={handleTaskDelete}
         onClose={() => {}} // onClose không cần thiết trong view này
+        showCloseButton={false} // Hide close button on dedicated page
         // onTaskClone có thể được giữ lại
       />
     </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import platformService from "../../services/platformService"; // Service mới cho platform
+import platformService from "../../services/platformService";
+import { getProjectByKey } from "../../services/projectService";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
 import { useAuth } from "../../contexts/AuthContext";
@@ -54,18 +55,25 @@ const ProjectSettingPlatform = () => {
   const [currentPlatform, setCurrentPlatform] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePlatformId, setDeletePlatformId] = useState(null);
+  const [userProjectRole, setUserProjectRole] = useState(null);
 
   const fetchPlatforms = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await platformService.getAllPlatforms(projectKey);
-      setPlatforms(response.data);
+      const [platformsRes, projectRes] = await Promise.all([platformService.getAllPlatforms(projectKey), getProjectByKey(projectKey)]);
+      setPlatforms(platformsRes.data);
+
+      // Determine user's role in project
+      const project = projectRes.data;
+      const userId = user?._id;
+      const member = project.members?.find((m) => m.userId?._id === userId || m.userId === userId);
+      setUserProjectRole(member?.role || null);
     } catch (error) {
       toast.error("Failed to fetch platforms.");
     } finally {
       setLoading(false);
     }
-  }, [projectKey]);
+  }, [projectKey, user]);
 
   useEffect(() => {
     fetchPlatforms();
@@ -126,6 +134,9 @@ const ProjectSettingPlatform = () => {
   const handleIconSelect = (iconName) => {
     setCurrentPlatform((prev) => ({ ...prev, icon: iconName }));
   };
+
+  const canEdit = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
+
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -134,7 +145,7 @@ const ProjectSettingPlatform = () => {
         <div className="header-col col-icon">Icon</div>
         <div className="header-col col-name">Platform Name</div>
         <div className="header-col col-description">Description</div>
-        {user.role === "admin" && (
+        {canEdit && (
           <div className="header-col col-actions">
             <button className="btn-add-icon" onClick={() => handleOpenModal()}>
               <VscIcons.VscAdd />
@@ -154,7 +165,7 @@ const ProjectSettingPlatform = () => {
               </div>
               <div className="row-col col-name">{p.name}</div>
               <div className="row-col col-description">{p.description || "-"}</div>
-              {user.role === "admin" && (
+              {canEdit && (
                 <div className="row-col col-actions">
                   <button className="btn-edit" onClick={() => handleOpenModal(p)}>
                     <FaIcons.FaPencilAlt />

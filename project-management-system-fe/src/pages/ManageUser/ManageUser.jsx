@@ -105,7 +105,8 @@ const Component = () => {
       e.target.reset();
     } catch (error) {
       console.error("Error creating user:", error);
-      toast.error("Failed to create user");
+      const errorMessage = error.response?.data?.message || error.message || "Failed to create user";
+      toast.error(errorMessage);
       return;
     }
   };
