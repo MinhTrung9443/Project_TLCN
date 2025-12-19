@@ -267,8 +267,8 @@ const TaskFinderPage = () => {
                 ))}
               </select>
 
-              <button className="btn-clear-filters" onClick={clearAllFilters}>
-                Clear Filters
+              <button className="btn-clear-filters" onClick={clearAllFilters} title="Clear Filters">
+                <span className="material-symbols-outlined">filter_alt_off</span>
               </button>
 
               <label className="include-done-checkbox">
