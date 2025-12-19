@@ -67,6 +67,29 @@ const BacklogPage = () => {
   const handleDrop = async (draggedItem, target) => {
     const { task, source } = draggedItem;
     console.log(`Dropped task: ${task.name} from ${source} to ${target}`);
+
+    // Validate task dates against sprint dates if moving to a sprint
+    if (target !== "backlog" && task.startDate && task.dueDate) {
+      const targetSprint = sprintList.find((s) => s._id === target);
+      if (targetSprint && targetSprint.startDate && targetSprint.endDate) {
+        const taskStart = new Date(task.startDate).setHours(0, 0, 0, 0);
+        const taskEnd = new Date(task.dueDate).setHours(0, 0, 0, 0);
+        const sprintStart = new Date(targetSprint.startDate).setHours(0, 0, 0, 0);
+        const sprintEnd = new Date(targetSprint.endDate).setHours(0, 0, 0, 0);
+
+        if (taskStart < sprintStart || taskEnd > sprintEnd) {
+          toast.error(
+            `Task dates (${new Date(task.startDate).toLocaleDateString()} - ${new Date(
+              task.dueDate
+            ).toLocaleDateString()}) must be within sprint dates (${new Date(targetSprint.startDate).toLocaleDateString()} - ${new Date(
+              targetSprint.endDate
+            ).toLocaleDateString()})`
+          );
+          return;
+        }
+      }
+    }
+
     try {
       await updateTaskSprint(selectedProjectKey, task._id, target === "backlog" ? null : target);
       fetchSprintList();

@@ -183,7 +183,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
               }
             }
           }
-          const formattedSprints = activeSprints.map((s) => ({ value: s._id, label: s.name }));
+          const formattedSprints = activeSprints.map((s) => ({ value: s._id, label: s.name, startDate: s.startDate, endDate: s.endDate }));
           setProjectSprints(formattedSprints);
         } catch (error) {
           toast.error(`Could not load sprints for project ${projectKey}.`);
@@ -230,6 +230,28 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
       if (startDateOnly > dueDateOnly) {
         toast.error("Start Date cannot be after Due Date.");
         return;
+      }
+    }
+
+    // Validate sprint dates when changing sprintId
+    if (fieldName === "sprintId" && updateValue && newStartDate && newDueDate) {
+      const selectedSprint = projectSprints.find((s) => s.value === updateValue);
+      if (selectedSprint && selectedSprint.startDate && selectedSprint.endDate) {
+        const taskStart = new Date(newStartDate).setHours(0, 0, 0, 0);
+        const taskEnd = new Date(newDueDate).setHours(0, 0, 0, 0);
+        const sprintStart = new Date(selectedSprint.startDate).setHours(0, 0, 0, 0);
+        const sprintEnd = new Date(selectedSprint.endDate).setHours(0, 0, 0, 0);
+
+        if (taskStart < sprintStart || taskEnd > sprintEnd) {
+          toast.error(
+            `Task dates (${new Date(newStartDate).toLocaleDateString()} - ${new Date(
+              newDueDate
+            ).toLocaleDateString()}) must be within sprint dates (${new Date(selectedSprint.startDate).toLocaleDateString()} - ${new Date(
+              selectedSprint.endDate
+            ).toLocaleDateString()})`
+          );
+          return;
+        }
       }
     }
 
