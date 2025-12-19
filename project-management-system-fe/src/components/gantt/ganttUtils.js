@@ -13,15 +13,10 @@ export const formatDate = (dateString) => {
 // Calculate earliest start date and latest end date from gantt data
 export const calculateDateRange = (items, backlogTasks = [], timeView = "weeks") => {
   if (!Array.isArray(items) || items.length === 0) {
-    // Check if backlogTasks has data
-    if (Array.isArray(backlogTasks) && backlogTasks.length > 0) {
-      items = backlogTasks;
-    } else {
-      return {
-        startDate: new Date("2025-02-01"),
-        endDate: new Date("2025-12-31"),
-      };
-    }
+    return {
+      startDate: new Date("2025-02-01"),
+      endDate: new Date("2025-12-31"),
+    };
   }
 
   let minDate = null;
@@ -45,7 +40,7 @@ export const calculateDateRange = (items, backlogTasks = [], timeView = "weeks")
   // Iterate through items (could be projects, sprints, or tasks)
   items.forEach((item) => {
     // Item could be a project
-    if (item.sprints || item.backlogTasks || item.tasks) {
+    if (item.sprints || item.tasks) {
       const project = item;
       updateDates(project.startDate, project.endDate);
 
@@ -60,13 +55,6 @@ export const calculateDateRange = (items, backlogTasks = [], timeView = "weeks")
               updateDates(task.startDate, task.dueDate);
             });
           }
-        });
-      }
-
-      // Check backlog tasks if exists
-      if (project.backlogTasks && Array.isArray(project.backlogTasks)) {
-        project.backlogTasks.forEach((task) => {
-          updateDates(task.startDate, task.dueDate);
         });
       }
 
@@ -95,13 +83,6 @@ export const calculateDateRange = (items, backlogTasks = [], timeView = "weeks")
       updateDates(task.startDate, task.dueDate);
     }
   });
-
-  // Process backlogTasks separately
-  if (Array.isArray(backlogTasks) && backlogTasks.length > 0) {
-    backlogTasks.forEach((task) => {
-      updateDates(task.startDate, task.dueDate);
-    });
-  }
 
   // If no valid dates found, use defaults
   if (!minDate) minDate = new Date("2025-02-01");

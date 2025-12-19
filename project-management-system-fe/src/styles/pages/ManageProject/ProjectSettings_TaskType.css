@@ -403,3 +403,13 @@
     font-size: 12px;
   }
 }
+
+/* Readonly mode - when user cannot edit */
+.settings-list-container.readonly .settings-list-header {
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.settings-list-container.readonly .settings-list-row {
+  justify-content: flex-start;
+}

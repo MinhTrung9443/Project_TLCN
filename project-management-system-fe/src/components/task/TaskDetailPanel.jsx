@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { toast } from "react-toastify";
 import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment, getAllowedStatuses } from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
+import { useAuth } from "../../contexts/AuthContext";
+import { ProjectContext } from "../../contexts/ProjectContext";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import platformService from "../../services/platformService";
@@ -28,6 +30,8 @@ const PREDEFINED_TASKTYPE_ICONS = [
 ];
 
 const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [] }) => {
+  const { user } = useAuth();
+  const { userProjectRole } = useContext(ProjectContext);
   const [editableTask, setEditableTask] = useState(task);
   const [activeTab, setActiveTab] = useState("Details");
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
@@ -403,6 +407,8 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
                 setSelectedAttachmentId(attachmentId);
                 setIsDeleteAttachmentModalOpen(true);
               }}
+              userProjectRole={userProjectRole}
+              user={user}
             />
           )}
           {activeTab === "Comments" && <CommentsTab taskId={editableTask._id} />}

@@ -83,27 +83,27 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDelet
 
   return (
     <div ref={ref} className="settings-list-row" style={{ opacity: isDragging ? 0.5 : 1 }}>
-      <div className="row-col col-drag-handle" ref={handleRef}>
-        {canEdit && <FaGripVertical />}
-      </div>
+      {canEdit && (
+        <div className="row-col col-drag-handle" ref={handleRef}>
+          <FaGripVertical />
+        </div>
+      )}
       <div className="row-col col-icon">
         <span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || "#7A869A" }}>
           <IconComponent name={item.icon} />
         </span>
       </div>
       <div className="row-col col-name">{item.name}</div>
-      <div className="row-col col-actions">
-        {canEdit && (
-          <>
-            <button className="btn-edit" onClick={handleEditClick}>
-              <FaIcons.FaPencilAlt />
-            </button>
-            <button className="btn-delete" onClick={handleDeleteClick}>
-              <FaIcons.FaTrash />
-            </button>
-          </>
-        )}
-      </div>
+      {canEdit && (
+        <div className="row-col col-actions">
+          <button className="btn-edit" onClick={handleEditClick}>
+            <FaIcons.FaPencilAlt />
+          </button>
+          <button className="btn-delete" onClick={handleDeleteClick}>
+            <FaIcons.FaTrash />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -237,9 +237,9 @@ const ProjectSettingPriority = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="settings-list-container">
+      <div className={`settings-list-container ${!canEdit ? "readonly" : ""}`}>
         <div className="settings-list-header">
-          <div className="header-col col-drag-handle"></div>
+          {canEdit && <div className="header-col col-drag-handle"></div>}
           <div className="header-col col-icon">Icon</div>
           <div className="header-col col-name">Priority Name</div>
           {canEdit && (

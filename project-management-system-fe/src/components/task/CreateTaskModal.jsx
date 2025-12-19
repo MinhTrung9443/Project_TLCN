@@ -176,13 +176,48 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
     if (!formData.taskTypeId) newErrors.taskTypeId = "Type is required.";
     if (!formData.name.trim()) newErrors.name = "Task Name is required.";
     if (!formData.priorityId) newErrors.priorityId = "Priority is required.";
+
+    // Validate task dates within sprint dates if sprint is provided
+    if (sprint && formData.dueDate) {
+      const taskDueDate = new Date(formData.dueDate);
+      const sprintStartDate = new Date(sprint.startDate);
+      const sprintEndDate = new Date(sprint.endDate);
+
+      // Set all times to start of day for accurate date-only comparison
+      taskDueDate.setHours(0, 0, 0, 0);
+      sprintStartDate.setHours(0, 0, 0, 0);
+      sprintEndDate.setHours(0, 0, 0, 0);
+
+      if (taskDueDate < sprintStartDate || taskDueDate > sprintEndDate) {
+        newErrors.dueDate = `Due date must be between ${sprintStartDate.toLocaleDateString()} and ${sprintEndDate.toLocaleDateString()}`;
+      }
+    }
+
+    if (sprint && formData.startDate) {
+      const taskStartDate = new Date(formData.startDate);
+      const sprintStartDate = new Date(sprint.startDate);
+      const sprintEndDate = new Date(sprint.endDate);
+
+      // Set all times to start of day for accurate date-only comparison
+      taskStartDate.setHours(0, 0, 0, 0);
+      sprintStartDate.setHours(0, 0, 0, 0);
+      sprintEndDate.setHours(0, 0, 0, 0);
+
+      if (taskStartDate < sprintStartDate || taskStartDate > sprintEndDate) {
+        newErrors.startDate = `Start date must be between ${sprintStartDate.toLocaleDateString()} and ${sprintEndDate.toLocaleDateString()}`;
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.error("Please fix the validation errors before submitting.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -294,6 +329,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
               <div className="form-group">
                 <label htmlFor="dueDate">Due Date</label>
                 <input type="date" id="dueDate" name="dueDate" value={formData.dueDate} onChange={handleInputChange} />
+                {errors.dueDate && <p className="error-text">{errors.dueDate}</p>}
               </div>
             </div>
 

@@ -223,6 +223,7 @@ const BacklogPage = () => {
         <SprintEditModal
           isOpen={editModalOpen}
           sprint={sprintToEdit}
+          project={projectData}
           onClose={() => {
             setEditModalOpen(false);
             setSprintToEdit(null);

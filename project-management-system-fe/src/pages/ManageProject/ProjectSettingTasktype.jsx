@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import typeTaskService from "../../services/typeTaskService";
+import { getProjectByKey } from "../../services/projectService";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
@@ -56,18 +57,25 @@ const ProjectSettingTaskType = () => {
   const [currentTaskType, setCurrentTaskType] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTaskTypeId, setDeleteTaskTypeId] = useState(null);
+  const [userProjectRole, setUserProjectRole] = useState(null);
 
   const fetchTaskTypes = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await typeTaskService.getAllTypeTask(projectKey);
-      setTaskTypes(response.data);
+      const [taskTypesRes, projectRes] = await Promise.all([typeTaskService.getAllTypeTask(projectKey), getProjectByKey(projectKey)]);
+      setTaskTypes(taskTypesRes.data);
+
+      // Determine user's role in project
+      const project = projectRes.data;
+      const userId = user?._id;
+      const member = project.members?.find((m) => m.userId?._id === userId || m.userId === userId);
+      setUserProjectRole(member?.role || null);
     } catch (error) {
       toast.error("Failed to fetch task types.");
     } finally {
       setLoading(false);
     }
-  }, [projectKey]);
+  }, [projectKey, user]);
 
   useEffect(() => {
     fetchTaskTypes();
@@ -125,6 +133,8 @@ const ProjectSettingTaskType = () => {
     }
   };
 
+  const canEdit = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
+
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -133,7 +143,7 @@ const ProjectSettingTaskType = () => {
         <div className="header-col col-icon">Icon</div>
         <div className="header-col col-name">Task Type</div>
         <div className="header-col col-description">Description</div>
-        {user.role === "admin" && (
+        {canEdit && (
           <div className="header-col col-actions">
             <button className="btn-add-icon" onClick={() => handleOpenModal()}>
               <VscIcons.VscAdd />
@@ -154,7 +164,7 @@ const ProjectSettingTaskType = () => {
               </div>
               <div className="row-col col-name">{tt.name}</div>
               <div className="row-col col-description">{tt.description || "-"}</div>
-              {user.role === "admin" && (
+              {canEdit && (
                 <div className="row-col col-actions">
                   <button className="btn-edit" onClick={() => handleOpenModal(tt)}>
                     <FaIcons.FaPencilAlt />

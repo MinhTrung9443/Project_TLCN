@@ -40,6 +40,8 @@ const TaskDetailsTab = ({
   allProjectTasks,
   onLinkTask,
   onUnlinkTask,
+  userProjectRole,
+  user,
 }) => {
   const [showLogTimeModal, setShowLogTimeModal] = useState(false);
   const [timeLogsKey, setTimeLogsKey] = useState(0);
@@ -59,8 +61,6 @@ const TaskDetailsTab = ({
   };
 
   const findOption = (options, field) => {
-    console.log("findOption - options:", options);
-    console.log("findOption - field:", field);
     if (!field) return null;
     // Xử lý trường hợp field là object (có _id) hoặc là string ID
     let idToFind;
@@ -71,9 +71,7 @@ const TaskDetailsTab = ({
     }
     // Convert to string để so sánh
     const idString = idToFind?.toString();
-    console.log("findOption - Looking for ID:", idString);
     const result = options.find((opt) => opt.value?.toString() === idString);
-    console.log("findOption - Found result:", result);
     return result;
   };
 
@@ -177,6 +175,7 @@ const TaskDetailsTab = ({
             onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
             isClearable
             placeholder="Select..."
+            isDisabled={user?.role !== "admin" && userProjectRole === "MEMBER"}
           />
         </div>
         <div className="detail-item-editable">

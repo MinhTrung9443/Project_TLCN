@@ -28,7 +28,6 @@ const GanttPage = () => {
   const [groupBy, setGroupBy] = useState(["project", "sprint", "task"]);
   const [timeView, setTimeView] = useState("weeks"); // weeks, months, years
   const [ganttData, setGanttData] = useState([]);
-  const [backlogTasks, setBacklogTasks] = useState([]);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showGroupByPanel, setShowGroupByPanel] = useState(false);
@@ -71,14 +70,12 @@ const GanttPage = () => {
         const response = await ganttService.getGanttData(filterWithStatus, groupBy);
         console.log("Gantt Data Response:", response);
 
-        // API trả về { message, data: { type, data, backlogTasks } }
+        // API trả về { message, data: { type, data } }
         const ganttResult = response.data || response;
         setGanttData(ganttResult.data || []);
-        setBacklogTasks(ganttResult.backlogTasks || []);
       } catch (error) {
         console.error("Error fetching gantt data:", error);
         setGanttData([]);
-        setBacklogTasks([]);
       }
     };
 
@@ -107,8 +104,8 @@ const GanttPage = () => {
     });
   };
 
-  // Generate timeline columns, include backlogTasks in date range calculation
-  const dateRange = calculateDateRange(ganttData, backlogTasks, timeView);
+  // Generate timeline columns
+  const dateRange = calculateDateRange(ganttData, [], timeView);
   const timelineColumns = generateTimelineColumns(timeView, dateRange.startDate, dateRange.endDate);
 
   // Filter data based on search keyword
@@ -149,36 +146,15 @@ const GanttPage = () => {
             .filter((sprint) => sprint.name?.toLowerCase().includes(lowerKeyword) || (sprint.tasks && sprint.tasks.length > 0));
         }
 
-        // Filter backlog tasks
-        if (filteredItem.backlogTasks) {
-          filteredItem.backlogTasks = filteredItem.backlogTasks.filter(
-            (task) =>
-              task.key?.toLowerCase().includes(lowerKeyword) ||
-              task.name?.toLowerCase().includes(lowerKeyword) ||
-              task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword)
-          );
-        }
-
         return filteredItem;
       })
       .filter(
         (item) =>
-          item.name?.toLowerCase().includes(lowerKeyword) ||
-          (item.tasks && item.tasks.length > 0) ||
-          (item.sprints && item.sprints.length > 0) ||
-          (item.backlogTasks && item.backlogTasks.length > 0)
+          item.name?.toLowerCase().includes(lowerKeyword) || (item.tasks && item.tasks.length > 0) || (item.sprints && item.sprints.length > 0)
       );
   };
 
   const filteredGanttData = filterBySearch(ganttData, searchKeyword);
-  const filteredBacklogTasks = searchKeyword
-    ? backlogTasks.filter(
-        (task) =>
-          task.key?.toLowerCase().includes(searchKeyword.toLowerCase().trim()) ||
-          task.name?.toLowerCase().includes(searchKeyword.toLowerCase().trim()) ||
-          task.assigneeId?.fullname?.toLowerCase().includes(searchKeyword.toLowerCase().trim())
-      )
-    : backlogTasks;
 
   // Calculate bar position wrapper
   const calculatePosition = (startDate, endDate) => {
@@ -248,32 +224,6 @@ const GanttPage = () => {
     // Count tasks in ganttData
     countTasks(ganttData);
 
-    // Count backlog tasks
-    backlogTasks.forEach((task) => {
-      stats.total++;
-
-      const statusName = task.statusId?.name?.toLowerCase() || "";
-      const statusCategory = task.statusId?.category?.toLowerCase() || "";
-      const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-
-      if (statusCategory === "done") {
-        stats.done++;
-      } else if (statusCategory === "in progress") {
-        stats.inProgress++;
-      } else if (dueDate && dueDate < today && statusCategory !== "done") {
-        stats.delay++;
-      } else if (dueDate) {
-        const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-        if (daysUntilDue >= 0 && daysUntilDue <= 3 && statusCategory !== "done") {
-          stats.atRisk++;
-        }
-      }
-
-      if (!task.startDate && !task.endDate) {
-        stats.unplanned++;
-      }
-    });
-
     return stats;
   };
 
@@ -305,7 +255,6 @@ const GanttPage = () => {
         {/* Left Section - Fixed */}
         <GanttLeftSection
           projects={filteredGanttData}
-          backlogTasks={filteredBacklogTasks}
           groupBy={groupBy}
           expandedItems={expandedItems}
           toggleExpand={toggleExpand}
@@ -315,7 +264,6 @@ const GanttPage = () => {
         {/* Right Section - Scrollable */}
         <GanttRightSection
           projects={filteredGanttData}
-          backlogTasks={filteredBacklogTasks}
           groupBy={groupBy}
           expandedItems={expandedItems}
           timelineColumns={timelineColumns}
