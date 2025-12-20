@@ -58,13 +58,20 @@ class GroupController {
   async addMember(req, res) {
     try {
       const { id: groupId } = req.params;
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
+      const { userId, userIds } = req.body;
+
+      // Support both single userId and multiple userIds
+      const idsToAdd = userIds || (userId ? [userId] : []);
+
+      if (!idsToAdd || idsToAdd.length === 0) {
+        return res.status(400).json({ message: "User ID(s) required" });
       }
-      const updatedGroup = await groupService.addMember(groupId, userId);
+
+      const currentUserId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+      const updatedGroup = await groupService.addMembers(groupId, idsToAdd, currentUserId);
+
       res.status(200).json({
-        message: "Member added successfully",
+        message: `${idsToAdd.length} member(s) added successfully`,
         data: updatedGroup,
       });
     } catch (error) {

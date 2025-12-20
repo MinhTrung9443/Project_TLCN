@@ -51,18 +51,19 @@ const GroupMembersPage = () => {
       toast.error("Failed to fetch users list.");
     }
   };
-  const handleAddMember = async (userIdToAdd) => {
-    if (!userIdToAdd) {
-      toast.warn("Please select a user to add.");
+  const handleAddMember = async (userIdsToAdd) => {
+    if (!userIdsToAdd || (Array.isArray(userIdsToAdd) && userIdsToAdd.length === 0)) {
+      toast.warn("Please select at least one user to add.");
       return;
     }
     try {
-      await groupService.addMemberToGroup(groupId, userIdToAdd);
-      toast.success("Member added successfully!");
+      await groupService.addMemberToGroup(groupId, userIdsToAdd);
+      const count = Array.isArray(userIdsToAdd) ? userIdsToAdd.length : 1;
+      toast.success(`${count} member(s) added successfully!`);
       setIsAddModalOpen(false);
       fetchMembersAndGroup();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to add member.");
+      toast.error(error.response?.data?.message || "Failed to add member(s).");
     }
   };
 
