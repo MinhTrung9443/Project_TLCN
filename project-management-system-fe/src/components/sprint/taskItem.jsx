@@ -12,6 +12,19 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
     { name: "FaFire", color: "#E94F37" },
     { name: "FaExclamationTriangle", color: "#FFB300" },
   ];
+  const PREDEFINED_TASKTYPE_ICONS = [
+  { name: "FaTasks", color: "#4BADE8" },
+  { name: "FaStar", color: "#2ECC71" },
+  { name: "FaCheckSquare", color: "#5297FF" },
+  { name: "FaRegWindowMaximize", color: "#00A8A2" },
+  { name: "FaBug", color: "#E44D42" },
+  { name: "FaArrowUp", color: "#F57C00" },
+  { name: "FaBullseye", color: "#654DF7" },
+  { name: "FaQuestionCircle", color: "#7A869A" },
+  { name: "FaRegClone", color: "#4BADE8" },
+  { name: "FaEquals", color: "#DE350B" },
+  { name: "FaFileAlt", color: "#00B8D9" },
+  ];
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: "task",
@@ -24,6 +37,7 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
     }),
     [task, source, canDragDrop]
   );
+  const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find((i) => i.name === task.taskTypeId?.icon);
 
   return (
     <div
@@ -45,6 +59,17 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
             <span className="material-symbols-outlined task-icon-normal">task_alt</span>
           )}
         </div>
+        {typeIconInfo ? (
+          <span className="icon-wrapper-list-small" style={{ backgroundColor: typeIconInfo.color }} title={task.taskTypeId?.name}>
+            <IconComponent name={task.taskTypeId.icon} />
+          </span>
+        ) : (
+          <span className="icon-wrapper-list-small" style={{ backgroundColor: "#ccc" }}>
+             <span className="material-symbols-outlined" style={{fontSize: '14px'}}>help</span>
+          </span>
+        )}
+
+        <span className="task-key-display">{task.key || "No-Key"}</span>
         <span className="task-name" title={task.name}>
           {task.name}
         </span>
