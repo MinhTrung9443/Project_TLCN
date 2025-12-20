@@ -146,70 +146,76 @@ const searchTasks = async (queryParams, user) => {
   if (priorityId) query.priorityId = priorityId;
   if (taskTypeId) query.taskTypeId = taskTypeId;
 
-  // Apply role-based filtering
+  // Phân quyền theo từng project
   if (user && user.role !== "admin") {
     const userId = user._id || user.id;
-    const userIdString = userId.toString();
+    // Lấy tất cả project liên quan đến user
+    const projects = await Project.find({
+      $or: [{ "members.userId": userId }, { "teams.leaderId": userId }, { "teams.members.userId": userId }],
+    });
 
-    // Get user's projects - check both members and teams
-    const userProjects = await Project.find({
-      $or: [{ "members.userId": userId }, { "teams.leaderId": userId }, { "teams.members": userId }],
-      isDeleted: false,
-    }).lean();
-
-    // Categorize projects by user's role
-    const pmProjectIds = [];
-    let isLeader = false;
-    const memberProjectIds = [];
-
-    for (const project of userProjects) {
-      // Check role in project.members
-      const member = project.members.find((m) => m.userId.toString() === userIdString);
+    // Tạo map projectId -> role của user trong project đó
+    const projectRoleMap = {};
+    for (const project of projects) {
+      // Check PM
+      const member = (project.members || []).find((m) => m.userId.toString() === userId.toString());
+      if (member && member.role === "PROJECT_MANAGER") {
+        projectRoleMap[project._id] = "PROJECT_MANAGER";
+        continue;
+      }
+      // Check leader
+      const isLeader = (project.teams || []).some((team) => team.leaderId?.toString() === userId.toString());
+      if (isLeader) {
+        projectRoleMap[project._id] = "TEAM_LEADER";
+        continue;
+      }
+      // Member thường
       if (member) {
-        if (member.role === "PROJECT_MANAGER") {
-          pmProjectIds.push(project._id);
-        } else {
-          memberProjectIds.push(project._id);
-        }
+        projectRoleMap[project._id] = "MEMBER";
       }
+    }
 
-      // Check if user is a team leader
-      for (const team of project.teams || []) {
-        if (team.leaderId && team.leaderId.toString() === userIdString) {
-          isLeader = true;
-          break;
+    // Lấy tất cả team mà user là leader, và memberId của các team đó
+    let leadMemberIds = new Set();
+    for (const project of projects) {
+      if (projectRoleMap[project._id] === "TEAM_LEADER") {
+        for (const team of project.teams || []) {
+          if (team.leaderId?.toString() === userId.toString()) {
+            (team.members || []).forEach((m) => leadMemberIds.add(m.toString()));
+          }
         }
       }
     }
 
-    // Build query based on role
-    const roleConditions = [];
-
-    // PM: all tasks in projects they manage
+    // Xây dựng query
+    const orConditions = [];
+    // PM: thấy mọi task trong project mình là PM
+    const pmProjectIds = Object.keys(projectRoleMap).filter((pid) => projectRoleMap[pid] === "PROJECT_MANAGER");
     if (pmProjectIds.length > 0) {
-      roleConditions.push({ projectId: { $in: pmProjectIds } });
+      orConditions.push({ projectId: { $in: pmProjectIds } });
     }
-
-    // LEADER: all tasks they created OR tasks assigned to them
-    if (isLeader) {
-      roleConditions.push({
-        $or: [{ createdById: userId }, { assigneeId: userId }],
+    // Leader: thấy task của thành viên nhóm mình lead (ở project mình lead)
+    const leaderProjectIds = Object.keys(projectRoleMap).filter((pid) => projectRoleMap[pid] === "TEAM_LEADER");
+    if (leaderProjectIds.length > 0 && leadMemberIds.size > 0) {
+      orConditions.push({
+        $and: [
+          { projectId: { $in: leaderProjectIds } },
+          {
+            $or: [{ assigneeId: { $in: Array.from(leadMemberIds) } }, { reporterId: { $in: Array.from(leadMemberIds) } }],
+          },
+        ],
       });
     }
+    // Luôn thấy task mình được assign hoặc mình là reporter
+    orConditions.push({ assigneeId: userId });
+    orConditions.push({ reporterId: userId });
 
-    // MEMBER: tasks assigned to them (if not already covered by other roles)
-    if (pmProjectIds.length === 0 && !isLeader) {
-      roleConditions.push({ assigneeId: userId });
-    }
-
-    // Combine all conditions with $or
-    if (roleConditions.length > 0) {
+    if (orConditions.length > 0) {
       if (query.$or) {
-        // If there's already $or (from keyword search), combine them
-        query.$and = [{ $or: query.$or }, { $or: roleConditions }];
+        query.$and = [{ $or: query.$or }, { $or: orConditions }];
         delete query.$or;
       } else {
-        query.$or = roleConditions;
+        query.$or = orConditions;
       }
     }
   }
