@@ -287,6 +287,13 @@ const updateProjectByKey = async (projectKey, projectData, userId) => {
     throw error;
   }
 
+  // Prevent updating completed projects (except to change status back)
+  if (project.status === "completed" && projectData.status !== "active" && projectData.status !== "paused") {
+    const error = new Error("Cannot modify a completed project. Change status first if you need to reopen it.");
+    error.statusCode = 403;
+    throw error;
+  }
+
   const oldProject = project.toObject();
 
   const newManagerId = projectData.projectManagerId;

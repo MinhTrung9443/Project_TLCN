@@ -1,4 +1,5 @@
 const taskTypeService = require("../services/TaskTypeService.js");
+const { isProjectCompletedByKey } = require("../utils/projectValidation");
 
 class TaskTypeController {
   // Create a new task type
@@ -6,6 +7,12 @@ class TaskTypeController {
     try {
       const { name, description, icon, projectKey } = req.body;
       const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+
+      // Check if project is completed
+      if (projectKey && (await isProjectCompletedByKey(projectKey))) {
+        return res.status(403).json({ error: "Cannot create task types in a completed project" });
+      }
+
       const newTaskType = await taskTypeService.createTaskType(
         {
           name,
@@ -52,6 +59,14 @@ class TaskTypeController {
       const { id } = req.params;
       const { name, description, icon, projectId } = req.body;
       const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+
+      // Check if task type belongs to a completed project
+      const TaskType = require("../models/TaskType");
+      const taskType = await TaskType.findById(id).populate("projectId");
+      if (taskType && taskType.projectId && taskType.projectId.status === "completed") {
+        return res.status(403).json({ error: "Cannot update task types in a completed project" });
+      }
+
       const updatedTaskType = await taskTypeService.updateTaskType(
         id,
         {
@@ -75,6 +90,14 @@ class TaskTypeController {
   async deleteTaskType(req, res) {
     try {
       const { id } = req.params;
+
+      // Check if task type belongs to a completed project
+      const TaskType = require("../models/TaskType");
+      const taskType = await TaskType.findById(id).populate("projectId");
+      if (taskType && taskType.projectId && taskType.projectId.status === "completed") {
+        return res.status(403).json({ error: "Cannot delete task types in a completed project" });
+      }
+
       await taskTypeService.deleteTaskType(id);
       res.status(200).json({ message: "Task type deleted successfully" });
     } catch (error) {

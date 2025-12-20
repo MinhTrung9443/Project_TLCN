@@ -182,9 +182,10 @@ const BacklogPage = () => {
   }, [selectedProjectKey]);
 
   // Permission checks
-  const canManageSprints = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
-  const canCreateTask = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER";
-  const canDragDrop = canManageSprints;
+  const isProjectCompleted = projectData?.status === "completed";
+  const canManageSprints = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER");
+  const canCreateTask = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER");
+  const canDragDrop = !isProjectCompleted && canManageSprints;
 
   return (
     <DndProvider backend={HTML5Backend}>

@@ -56,6 +56,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
             });
           }
 
+          // Filter out completed projects - only show active projects
+          availableProjects = availableProjects.filter((project) => project.status !== "completed");
+
           setProjects(availableProjects);
           if (defaultProjectId) {
             setFormData((prev) => ({
@@ -137,6 +140,11 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
           members: filteredMembers,
         });
 
+        // Tự động chọn task type đầu tiên nếu có
+        if (res.data.taskTypes && res.data.taskTypes.length > 0) {
+          setFormData((prev) => ({ ...prev, taskTypeId: res.data.taskTypes[0]._id }));
+        }
+
         // Tự động chọn priority là Medium nếu có
         if (res.data.priorities && res.data.priorities.length > 0) {
           const defaultPriority = res.data.priorities.find((p) => p.name.toLowerCase() === "medium") || res.data.priorities[0];
@@ -177,13 +185,86 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
     if (!formData.name.trim()) newErrors.name = "Task Name is required.";
     if (!formData.priorityId) newErrors.priorityId = "Priority is required.";
 
-    // Validate task dates within sprint dates if sprint is provided
-    if (sprint && formData.dueDate) {
+    // Due date is required
+    if (!formData.dueDate) {
+      newErrors.dueDate = "Due date is required.";
+    }
+
+    // Get selected project
+    const selectedProject = projects.find((p) => p._id === formData.projectId);
+
+    // Debug logging
+    console.log("=== VALIDATION DEBUG ===");
+    console.log("Selected Project:", selectedProject);
+    console.log("Project startDate:", selectedProject?.startDate);
+    console.log("Project endDate:", selectedProject?.endDate);
+    console.log("Task dueDate:", formData.dueDate);
+    console.log("Task startDate:", formData.startDate);
+    console.log("Sprint:", sprint);
+
+    // Validate start date <= due date if both are provided
+    if (formData.startDate && formData.dueDate) {
+      const startDate = new Date(formData.startDate).setHours(0, 0, 0, 0);
+      const dueDate = new Date(formData.dueDate).setHours(0, 0, 0, 0);
+      if (startDate > dueDate) {
+        newErrors.startDate = "Start date must be before or equal to due date.";
+      }
+    }
+
+    // Validate due date with project dates (ALWAYS - highest priority)
+    if (formData.dueDate && selectedProject) {
+      const taskDueDate = new Date(formData.dueDate);
+      taskDueDate.setHours(0, 0, 0, 0);
+
+      if (selectedProject.startDate) {
+        const projectStartDate = new Date(selectedProject.startDate);
+        projectStartDate.setHours(0, 0, 0, 0);
+        console.log("Comparing task due date", taskDueDate, "with project start", projectStartDate);
+        if (taskDueDate < projectStartDate) {
+          console.log("ERROR: Task due date before project start!");
+          newErrors.dueDate = `Due date must be on or after project start date (${projectStartDate.toLocaleDateString()})`;
+        }
+      }
+
+      if (selectedProject.endDate && !newErrors.dueDate) {
+        const projectEndDate = new Date(selectedProject.endDate);
+        projectEndDate.setHours(0, 0, 0, 0);
+        console.log("Comparing task due date", taskDueDate, "with project end date", projectEndDate);
+        if (taskDueDate > projectEndDate) {
+          console.log("ERROR: Task due date after project end date!");
+          newErrors.dueDate = `Due date must be on or before project end date (${projectEndDate.toLocaleDateString()})`;
+        }
+      }
+    }
+
+    // Validate start date with project dates if provided
+    if (formData.startDate && selectedProject && !newErrors.startDate) {
+      const taskStartDate = new Date(formData.startDate);
+      taskStartDate.setHours(0, 0, 0, 0);
+
+      if (selectedProject.startDate) {
+        const projectStartDate = new Date(selectedProject.startDate);
+        projectStartDate.setHours(0, 0, 0, 0);
+        if (taskStartDate < projectStartDate) {
+          newErrors.startDate = `Start date must be on or after project start date (${projectStartDate.toLocaleDateString()})`;
+        }
+      }
+
+      if (selectedProject.endDate && !newErrors.startDate) {
+        const projectEndDate = new Date(selectedProject.endDate);
+        projectEndDate.setHours(0, 0, 0, 0);
+        if (taskStartDate > projectEndDate) {
+          newErrors.startDate = `Start date must be on or before project end date (${projectEndDate.toLocaleDateString()})`;
+        }
+      }
+    }
+
+    // Additional validation: if creating in a sprint, validate with sprint dates
+    if (sprint && formData.dueDate && !newErrors.dueDate) {
       const taskDueDate = new Date(formData.dueDate);
       const sprintStartDate = new Date(sprint.startDate);
       const sprintEndDate = new Date(sprint.endDate);
 
-      // Set all times to start of day for accurate date-only comparison
       taskDueDate.setHours(0, 0, 0, 0);
       sprintStartDate.setHours(0, 0, 0, 0);
       sprintEndDate.setHours(0, 0, 0, 0);
@@ -193,12 +274,11 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
       }
     }
 
-    if (sprint && formData.startDate) {
+    if (sprint && formData.startDate && !newErrors.startDate) {
       const taskStartDate = new Date(formData.startDate);
       const sprintStartDate = new Date(sprint.startDate);
       const sprintEndDate = new Date(sprint.endDate);
 
-      // Set all times to start of day for accurate date-only comparison
       taskStartDate.setHours(0, 0, 0, 0);
       sprintStartDate.setHours(0, 0, 0, 0);
       sprintEndDate.setHours(0, 0, 0, 0);
@@ -207,6 +287,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
         newErrors.startDate = `Start date must be between ${sprintStartDate.toLocaleDateString()} and ${sprintEndDate.toLocaleDateString()}`;
       }
     }
+
+    console.log("Validation Errors:", newErrors);
+    console.log("=== END VALIDATION ===");
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
