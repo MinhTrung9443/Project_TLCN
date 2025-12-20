@@ -132,6 +132,52 @@ class GroupService {
     return group;
   }
 
+  async addMembers(groupId, userIds, addedBy = null) {
+    // Validate all users exist and are active
+    const users = await User.find({ _id: { $in: userIds } });
+
+    if (users.length !== userIds.length) {
+      throw createError(404, "One or more users not found");
+    }
+
+    const inactiveUsers = users.filter((u) => u.status !== "active");
+    if (inactiveUsers.length > 0) {
+      throw createError(400, "Only active users can be added to a group");
+    }
+
+    // Add all members to group
+    const group = await Group.findByIdAndUpdate(groupId, { $addToSet: { members: { $each: userIds } } }, { new: true });
+
+    if (!group) {
+      throw createError(404, "Group not found");
+    }
+
+    // Update all users to include this group
+    await User.updateMany({ _id: { $in: userIds } }, { $addToSet: { group: groupId } });
+
+    // Send notifications to all new members
+    try {
+      let addedByName = "Group Admin";
+      if (addedBy) {
+        const adder = await User.findById(addedBy);
+        addedByName = adder?.fullname || "Group Admin";
+      }
+
+      for (const userId of userIds) {
+        await notificationService.notifyGroupMemberAdded({
+          groupId: group._id,
+          groupName: group.name,
+          newMemberId: userId,
+          addedByName,
+        });
+      }
+    } catch (notificationError) {
+      console.error("Failed to send group member added notifications:", notificationError);
+    }
+
+    return group;
+  }
+
   async getMembers(groupId, filters = {}) {
     const group = await Group.findById(groupId).populate({
       path: "members",

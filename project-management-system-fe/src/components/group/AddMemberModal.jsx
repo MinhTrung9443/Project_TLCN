@@ -3,11 +3,11 @@ import Select from "react-select";
 import "../../styles/pages/AddMemberModal.css";
 
 const AddMemberModal = ({ isOpen, onClose, onAdd, users }) => {
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
 
   const handleAddClick = () => {
-    onAdd(selectedUserId);
-    setSelectedUserId("");
+    onAdd(selectedUserIds);
+    setSelectedUserIds([]);
   };
 
   const userOptions = users
@@ -62,11 +62,12 @@ const AddMemberModal = ({ isOpen, onClose, onAdd, users }) => {
         <h2 className="modal-header">Add Members</h2>
         <p>Members</p>
         <Select
-          value={userOptions.find((opt) => opt.value === selectedUserId) || null}
-          onChange={(option) => setSelectedUserId(option?.value || "")}
+          value={userOptions.filter((opt) => selectedUserIds.includes(opt.value))}
+          onChange={(options) => setSelectedUserIds(options ? options.map((opt) => opt.value) : [])}
           options={userOptions}
           formatOptionLabel={formatOptionLabel}
-          placeholder="Select a member"
+          placeholder="Select members"
+          isMulti
           isClearable
           menuPlacement="auto"
           menuPortalTarget={document.body}

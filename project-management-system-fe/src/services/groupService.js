@@ -24,8 +24,10 @@ const getGroupMembers = (groupId, params) => {
   return apiClient.get(`/groups/${groupId}/members`, { params });
 };
 
-const addMemberToGroup = (groupId, userId) => {
-  return apiClient.post(`/groups/${groupId}/members`, { userId });
+const addMemberToGroup = (groupId, userIds) => {
+  // Support both single userId and array of userIds
+  const payload = Array.isArray(userIds) ? { userIds } : { userId: userIds };
+  return apiClient.post(`/groups/${groupId}/members`, payload);
 };
 
 const removeMemberFromGroup = (groupId, userId) => {
