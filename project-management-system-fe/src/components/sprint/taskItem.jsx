@@ -13,17 +13,17 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
     { name: "FaExclamationTriangle", color: "#FFB300" },
   ];
   const PREDEFINED_TASKTYPE_ICONS = [
-  { name: "FaTasks", color: "#4BADE8" },
-  { name: "FaStar", color: "#2ECC71" },
-  { name: "FaCheckSquare", color: "#5297FF" },
-  { name: "FaRegWindowMaximize", color: "#00A8A2" },
-  { name: "FaBug", color: "#E44D42" },
-  { name: "FaArrowUp", color: "#F57C00" },
-  { name: "FaBullseye", color: "#654DF7" },
-  { name: "FaQuestionCircle", color: "#7A869A" },
-  { name: "FaRegClone", color: "#4BADE8" },
-  { name: "FaEquals", color: "#DE350B" },
-  { name: "FaFileAlt", color: "#00B8D9" },
+    { name: "FaTasks", color: "#4BADE8" },
+    { name: "FaStar", color: "#2ECC71" },
+    { name: "FaCheckSquare", color: "#5297FF" },
+    { name: "FaRegWindowMaximize", color: "#00A8A2" },
+    { name: "FaBug", color: "#E44D42" },
+    { name: "FaArrowUp", color: "#F57C00" },
+    { name: "FaBullseye", color: "#654DF7" },
+    { name: "FaQuestionCircle", color: "#7A869A" },
+    { name: "FaRegClone", color: "#4BADE8" },
+    { name: "FaEquals", color: "#DE350B" },
+    { name: "FaFileAlt", color: "#00B8D9" },
   ];
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -47,25 +47,15 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
       style={{ cursor: "pointer" }}
     >
       <div className="task-item-left">
-        <div
-          className={`task-status-icon ${task.isBug ? "task-status-bug" : task.isChecked ? "task-status-done" : "task-status-normal"}`}
-          title={task.isBug ? "Bug" : task.isChecked ? "Done" : "Task"}
-        >
-          {task.isBug ? (
-            <span className="material-symbols-outlined task-icon-bug">bug_report</span>
-          ) : task.isChecked ? (
-            <span className="material-symbols-outlined task-icon-done">check_circle</span>
-          ) : (
-            <span className="material-symbols-outlined task-icon-normal">task_alt</span>
-          )}
-        </div>
         {typeIconInfo ? (
           <span className="icon-wrapper-list-small" style={{ backgroundColor: typeIconInfo.color }} title={task.taskTypeId?.name}>
             <IconComponent name={task.taskTypeId.icon} />
           </span>
         ) : (
           <span className="icon-wrapper-list-small" style={{ backgroundColor: "#ccc" }}>
-             <span className="material-symbols-outlined" style={{fontSize: '14px'}}>help</span>
+            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
+              help
+            </span>
           </span>
         )}
 
