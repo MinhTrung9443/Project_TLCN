@@ -77,7 +77,7 @@ const SprintItem = ({
               {sprint.name}
             </span>
             <span className="sprint-task-badge">{sprint.tasks?.length || 0} Tasks</span>
-            {!isKanbanBoard && canManageSprints && (
+            {!isKanbanBoard && canManageSprints && sprint.status !== "Completed" && (
               <div className="sprint-header-menu" ref={openMenuId === sprint._id ? menuRef : null}>
                 <button onClick={() => handleMenuToggle(sprint._id)} className="sprint-menu-btn">
                   <span className="material-symbols-outlined">more_horiz</span>
@@ -157,7 +157,7 @@ const SprintItem = ({
                 <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} canDragDrop={canDragDrop} onTaskClick={onTaskClick} />
               </div>
               <div className="sprint-create-task-row">
-                {canCreateTask && (
+                {canCreateTask && sprint.status !== "Completed" && (
                   <>
                     <button className="sprint-add-btn">
                       <span className="material-symbols-outlined">add_circle</span>
