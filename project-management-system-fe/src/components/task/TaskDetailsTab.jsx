@@ -267,6 +267,8 @@ const TaskDetailsTab = ({
               onBlur={(e) => handleUpdate("estimatedTime", parseFloat(e.target.value) || 0)}
               className="editable-input"
               placeholder="0"
+              disabled={user?.role !== "admin" && userProjectRole === "MEMBER"}
+              style={user?.role !== "admin" && userProjectRole === "MEMBER" ? { backgroundColor: "#f1f5f9", cursor: "not-allowed" } : {}}
             />
           </div>
           <div className="detail-item-editable">

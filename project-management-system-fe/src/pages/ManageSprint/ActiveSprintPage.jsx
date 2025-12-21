@@ -39,8 +39,42 @@ const ActiveSprintPage = () => {
         const projectRes = await getProjectByKey(effectiveProjectKey);
         const project = projectRes.data;
         const userId = user._id;
-        const member = project.members?.find((m) => m.userId?._id === userId || m.userId === userId);
-        setUserProjectRole(member?.role || null);
+        let role = null;
+        if (user.role === "admin") {
+          role = "ADMIN";
+        } else {
+          // Check PM
+          const member = project.members?.find((m) => {
+            const memId = m.userId?._id || m.userId;
+            return memId === userId;
+          });
+          if (member && member.role === "PROJECT_MANAGER") {
+            role = "PROJECT_MANAGER";
+          } else {
+            // Check LEADER trong các team
+            const isLeader = (project.teams || []).some((team) => {
+              const leaderId = team.leaderId?._id || team.leaderId;
+              return leaderId === userId;
+            });
+            if (isLeader) {
+              role = "LEADER";
+            } else {
+              // Check là member trong bất kỳ team nào
+              const isTeamMember = (project.teams || []).some((team) =>
+                (team.members || []).some((m) => {
+                  const memId = m?._id || m;
+                  return memId === userId;
+                })
+              );
+              if (isTeamMember) {
+                role = "MEMBER";
+              } else {
+                role = null;
+              }
+            }
+          }
+        }
+        setUserProjectRole(role);
       } catch (error) {
         console.error("Failed to fetch user role:", error);
       }
@@ -132,7 +166,7 @@ const ActiveSprintPage = () => {
     }
   };
 
-  const canManageSprints = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
+  const canManageSprints = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER";
 
   if (loading) {
     return (

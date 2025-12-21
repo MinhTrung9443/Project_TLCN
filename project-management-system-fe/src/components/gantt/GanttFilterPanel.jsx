@@ -4,11 +4,20 @@ import { groupService } from "../../services/groupService";
 import userService from "../../services/userService";
 import "../../styles/components/gantt/GanttFilterPanel.css";
 
+// Handle date range filter
+// Đặt function này sau import, trong component
+
 const GanttFilterPanel = ({ filter, setFilter, showFilterPanel, filterRef }) => {
   const [projects, setProjects] = useState([]);
   const [groups, setGroups] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Handle date range filter
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+    setFilter((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Fetch data
   useEffect(() => {
@@ -93,12 +102,16 @@ const GanttFilterPanel = ({ filter, setFilter, showFilterPanel, filterRef }) => 
 
   // Clear all filters
   const handleClearAll = () => {
-    setFilter({
+    setFilter((prev) => ({
+      ...prev,
       projectIds: [],
       groupIds: [],
       assigneeIds: [],
       includeUnassigned: false,
-    });
+      startDate: "",
+      endDate: "",
+      // statusFilter: prev.statusFilter || 'active', // preserve statusFilter if present
+    }));
   };
 
   // Select all projects
@@ -158,6 +171,31 @@ const GanttFilterPanel = ({ filter, setFilter, showFilterPanel, filterRef }) => 
         </div>
       ) : (
         <div className="gantt-filter-panel-content">
+          {/* Date Range Section */}
+          <div className="gantt-filter-section">
+            <div className="gantt-filter-section-header">
+              <h4>Date Range</h4>
+            </div>
+            <div className="gantt-filter-list gantt-filter-list-row">
+              <input
+                type="date"
+                name="startDate"
+                value={filter.startDate || ""}
+                onChange={handleDateChange}
+                className="gantt-filter-date"
+                placeholder="Start date"
+              />
+              <span className="gantt-filter-date-to">to</span>
+              <input
+                type="date"
+                name="endDate"
+                value={filter.endDate || ""}
+                onChange={handleDateChange}
+                className="gantt-filter-date"
+                placeholder="End date"
+              />
+            </div>
+          </div>
           {/* Projects Section */}
           <div className="gantt-filter-section">
             <div className="gantt-filter-section-header">

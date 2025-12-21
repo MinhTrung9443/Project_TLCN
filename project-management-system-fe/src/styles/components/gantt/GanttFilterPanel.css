@@ -1,3 +1,31 @@
+/* Date Range Picker */
+.gantt-filter-date {
+  width: 130px;
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1e293b;
+  background: #f8fafc;
+  transition: border 0.2s;
+}
+.gantt-filter-date:focus {
+  border: 1.5px solid #6366f1;
+  outline: none;
+  background: #fff;
+}
+.gantt-filter-date::-webkit-input-placeholder {
+  color: #94a3b8;
+}
+.gantt-filter-date::-moz-placeholder {
+  color: #94a3b8;
+}
+.gantt-filter-date:-ms-input-placeholder {
+  color: #94a3b8;
+}
+.gantt-filter-date::placeholder {
+  color: #94a3b8;
+}
 /* Gantt Filter Panel */
 .gantt-filter-panel {
   position: absolute;
@@ -157,10 +185,25 @@
 }
 
 /* Filter List */
+
 .gantt-filter-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* For date range row */
+.gantt-filter-list-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 12px;
+}
+
+.gantt-filter-date-to {
+  align-self: center;
+  font-size: 15px;
+  color: #334155;
+  margin: 0 2px;
 }
 
 .gantt-filter-empty {

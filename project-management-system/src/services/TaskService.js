@@ -322,22 +322,20 @@ const updateTask = async (taskId, updateData, userId) => {
     throw error;
   }
 
-  // Check if assigneeId is being changed - only admin, PM, or LEADER can change it
-  if (updateData.assigneeId !== undefined && updateData.assigneeId !== originalTask.assigneeId?.toString()) {
+  // Check if assigneeId or estimatedTime is being changed - only admin, PM, or LEADER can change
+  if (
+    (updateData.assigneeId !== undefined && updateData.assigneeId !== originalTask.assigneeId?.toString()) ||
+    (updateData.estimatedTime !== undefined && updateData.estimatedTime !== originalTask.estimatedTime)
+  ) {
     const project = await Project.findById(originalTask.projectId._id);
     const user = await User.findById(userId);
 
-    // Check if user is admin
     if (user.role !== "admin") {
-      // Check if user is PM in this project
       const member = project.members.find((m) => m.userId.toString() === userId);
       const isPM = member && member.role === "PROJECT_MANAGER";
-
-      // Check if user is LEADER in this project
       const isLeader = project.teams.some((team) => team.leaderId.toString() === userId);
-
       if (!isPM && !isLeader) {
-        const error = new Error("Forbidden: Only Project Manager or Team Leader can change assignee");
+        const error = new Error("Forbidden: Only Project Manager or Team Leader can change assignee or estimated time");
         error.statusCode = 403;
         throw error;
       }
@@ -464,12 +462,58 @@ const updateTask = async (taskId, updateData, userId) => {
 const changeTaskSprint = async (taskId, sprintId, userId) => {
   const updateData = { sprintId: sprintId || null };
 
+  // Lấy task và project
+  const task = await Task.findById(taskId).populate("projectId");
+  if (!task) {
+    const error = new Error("Task not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  const project = task.projectId;
+  if (!project) {
+    const error = new Error("Project not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  if (project.status === "completed") {
+    const error = new Error("Cannot change sprint for tasks in a completed project");
+    error.statusCode = 403;
+    throw error;
+  }
+
   // Nếu add vào sprint (sprintId có giá trị), cập nhật startDate theo sprint
+  let sprint = null;
   if (sprintId) {
     const Sprint = require("../models/Sprint");
-    const sprint = await Sprint.findById(sprintId);
+    sprint = await Sprint.findById(sprintId);
     if (sprint && sprint.startDate) {
       updateData.startDate = sprint.startDate;
+    }
+  }
+
+  // Validate ngày: task phải nằm trong khoảng ngày của project
+  if (project.startDate && task.dueDate && new Date(task.dueDate) < new Date(project.startDate)) {
+    const error = new Error("Task due date cannot be before project start date");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (project.endDate && task.dueDate && new Date(task.dueDate) > new Date(project.endDate)) {
+    const error = new Error("Task due date cannot be after project end date");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Nếu có sprint, validate ngày task phải nằm trong khoảng sprint
+  if (sprint) {
+    if (sprint.startDate && task.dueDate && new Date(task.dueDate) < new Date(sprint.startDate)) {
+      const error = new Error("Task due date cannot be before sprint start date");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (sprint.endDate && task.dueDate && new Date(task.dueDate) > new Date(sprint.endDate)) {
+      const error = new Error("Task due date cannot be after sprint end date");
+      error.statusCode = 400;
+      throw error;
     }
   }
 

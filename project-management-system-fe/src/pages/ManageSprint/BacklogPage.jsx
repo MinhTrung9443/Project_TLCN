@@ -37,9 +37,45 @@ const BacklogPage = () => {
       setProjectType(response.data.type);
       setProjectData(response.data);
 
-      // Find user's role in this project
-      const member = response.data.members?.find((m) => m.userId._id === user._id);
-      setUserProjectRole(member?.role || null);
+      // Xác định vai trò của user trong project (ưu tiên: admin > PM > LEADER > MEMBER)
+      let role = null;
+      const userId = user._id;
+      if (user.role === "admin") {
+        role = "ADMIN";
+      } else {
+        // Check PM
+        const member = response.data.members?.find((m) => {
+          const memId = m.userId?._id || m.userId;
+          return memId === userId;
+        });
+        if (member && member.role === "PROJECT_MANAGER") {
+          role = "PROJECT_MANAGER";
+        } else {
+          // Check LEADER trong các team
+          const isLeader = (response.data.teams || []).some((team) => {
+            const leaderId = team.leaderId?._id || team.leaderId;
+            return leaderId === userId;
+          });
+          if (isLeader) {
+            role = "LEADER";
+          } else {
+            // Check là member trong bất kỳ team nào
+            const isTeamMember = (response.data.teams || []).some((team) =>
+              (team.members || []).some((m) => {
+                const memId = m?._id || m;
+                return memId === userId;
+              })
+            );
+            if (isTeamMember) {
+              role = "MEMBER";
+            } else {
+              role = null;
+            }
+          }
+        }
+      }
+      console.log("Determined user project role:", role);
+      setUserProjectRole(role);
     } catch (error) {
       console.error("Error fetching project details:", error);
     }
@@ -94,6 +130,8 @@ const BacklogPage = () => {
       await updateTaskSprint(selectedProjectKey, task._id, target === "backlog" ? null : target);
       fetchSprintList();
     } catch (error) {
+      const msg = error?.response?.data?.message || "Có lỗi xảy ra khi cập nhật sprint cho task!";
+      toast.error(msg);
       console.error("Error updating task sprint:", error);
     }
   };
@@ -183,7 +221,7 @@ const BacklogPage = () => {
 
   // Permission checks
   const isProjectCompleted = projectData?.status === "completed";
-  const canManageSprints = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER");
+  const canManageSprints = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER");
   const canCreateTask = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER");
   const canDragDrop = !isProjectCompleted && canManageSprints;
 
