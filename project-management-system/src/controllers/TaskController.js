@@ -3,6 +3,7 @@ const Workflow = require("../models/Workflow");
 const workflowService = require("../services/WorkflowService");
 const projectService = require("../services/ProjectService");
 const Task = require("../models/Task");
+const { isProjectCompletedById, isProjectCompletedByKey } = require("../utils/projectValidation");
 
 const handleGetTasksByProjectKey = async (req, res) => {
   try {
@@ -21,6 +22,11 @@ const handleCreateTask = async (req, res) => {
     }
     const userId = req.user.id;
     const taskData = { ...req.body, reporterId: userId, createdById: userId };
+
+    // Check if project is completed
+    if (await isProjectCompletedById(taskData.projectId)) {
+      return res.status(403).json({ message: "Cannot create tasks in a completed project" });
+    }
 
     if (!taskData.statusId) {
       const defaultWorkflow = await Workflow.findOne({ projectId: taskData.projectId });
@@ -48,6 +54,12 @@ const changeSprint = async (req, res) => {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+
+    // Check if project is completed
+    if (await isProjectCompletedByKey(projectKey)) {
+      return res.status(403).json({ message: "Cannot change sprint in a completed project" });
+    }
+
     const updatedTask = await taskService.changeTaskSprint(taskId, sprintId, req.user.id);
     res.status(200).json(updatedTask);
   } catch (error) {
@@ -89,6 +101,12 @@ const handleUpdateTask = async (req, res) => {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized: User not found." });
     }
+
+    // Check if project is completed
+    if (await isProjectCompletedByKey(projectKey)) {
+      return res.status(403).json({ message: "Cannot update tasks in a completed project" });
+    }
+
     const userId = req.user.id;
     const updatedTask = await taskService.updateTask(taskId, req.body, userId);
     res.status(200).json(updatedTask);

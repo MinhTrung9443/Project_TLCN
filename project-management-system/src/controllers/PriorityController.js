@@ -1,4 +1,5 @@
 const priorityService = require("../services/PriorityService.js");
+const { isProjectCompletedByKey } = require("../utils/projectValidation");
 
 class PriorityController {
   async getAllPriorities(req, res) {
@@ -14,6 +15,12 @@ class PriorityController {
   async createPriority(req, res) {
     try {
       const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
+
+      // Check if project is completed
+      if (req.body.projectKey && (await isProjectCompletedByKey(req.body.projectKey))) {
+        return res.status(403).json({ message: "Cannot create priorities in a completed project" });
+      }
+
       const priority = await priorityService.createPriority(req.body, userId);
       res.status(200).json(priority);
     } catch (error) {
@@ -24,8 +31,16 @@ class PriorityController {
   async updatePriority(req, res) {
     try {
       const userId = req.user && (req.user.id || req.user._id) ? req.user.id || req.user._id : undefined;
-      const priority = await priorityService.updatePriority(req.params.id, req.body, userId);
-      res.status(200).json(priority);
+
+      // Check if priority belongs to a completed project
+      const Priority = require("../models/Priority");
+      const priority = await Priority.findById(req.params.id).populate("projectId");
+      if (priority && priority.projectId && priority.projectId.status === "completed") {
+        return res.status(403).json({ message: "Cannot update priorities in a completed project" });
+      }
+
+      const updatedPriority = await priorityService.updatePriority(req.params.id, req.body, userId);
+      res.status(200).json(updatedPriority);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -33,6 +48,13 @@ class PriorityController {
 
   async deletePriority(req, res) {
     try {
+      // Check if priority belongs to a completed project
+      const Priority = require("../models/Priority");
+      const priority = await Priority.findById(req.params.id).populate("projectId");
+      if (priority && priority.projectId && priority.projectId.status === "completed") {
+        return res.status(403).json({ message: "Cannot delete priorities in a completed project" });
+      }
+
       await priorityService.deletePriority(req.params.id);
       res.status(204).send();
     } catch (error) {

@@ -1,4 +1,5 @@
 const platformService = require("../services/platformService.js");
+const { isProjectCompletedByKey } = require("../utils/projectValidation");
 
 class PlatformController {
   async getAllPlatforms(req, res) {
@@ -18,6 +19,12 @@ class PlatformController {
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized: userId missing" });
       }
+
+      // Check if project is completed
+      if (platformData.projectKey && (await isProjectCompletedByKey(platformData.projectKey))) {
+        return res.status(403).json({ message: "Cannot create platforms in a completed project" });
+      }
+
       const newPlatform = await platformService.createPlatform(platformData, userId);
       res.status(201).json({
         message: "Platform created successfully",
@@ -35,6 +42,14 @@ class PlatformController {
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized: userId missing" });
       }
+
+      // Check if platform belongs to a completed project
+      const Platform = require("../models/Platform");
+      const platform = await Platform.findById(platformId).populate("projectId");
+      if (platform && platform.projectId && platform.projectId.status === "completed") {
+        return res.status(403).json({ message: "Cannot update platforms in a completed project" });
+      }
+
       const updatedPlatform = await platformService.updatePlatform(platformId, updateData, userId);
       res.status(200).json({
         message: "Platform updated successfully",
@@ -47,6 +62,14 @@ class PlatformController {
   async deletePlatform(req, res) {
     try {
       const platformId = req.params.id;
+
+      // Check if platform belongs to a completed project
+      const Platform = require("../models/Platform");
+      const platform = await Platform.findById(platformId).populate("projectId");
+      if (platform && platform.projectId && platform.projectId.status === "completed") {
+        return res.status(403).json({ message: "Cannot delete platforms in a completed project" });
+      }
+
       await platformService.deletePlatform(platformId);
       res.status(200).json({ message: "Platform deleted successfully" });
     } catch (error) {

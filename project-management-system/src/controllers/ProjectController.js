@@ -1,4 +1,5 @@
 const projectService = require("../services/ProjectService");
+const { isProjectCompletedByKey } = require("../utils/projectValidation");
 
 const handleCreateProject = async (req, res) => {
   try {
@@ -81,6 +82,12 @@ const handleAddMemberToProject = async (req, res) => {
   try {
     const { projectKey } = req.params;
     const { userId, role, teamId } = req.body;
+
+    // Check if project is completed
+    if (await isProjectCompletedByKey(projectKey)) {
+      return res.status(403).json({ message: "Cannot add members to a completed project" });
+    }
+
     const result = await projectService.addMemberToProject(projectKey, { userId, role, teamId }, req.user);
     res.status(200).json(result);
   } catch (error) {
@@ -151,6 +158,12 @@ const handleGetProjectMembers = async (req, res) => {
 const handleRemoveMember = async (req, res) => {
   try {
     const { projectKey, userId } = req.params;
+
+    // Check if project is completed
+    if (await isProjectCompletedByKey(projectKey)) {
+      return res.status(403).json({ message: "Cannot remove members from a completed project" });
+    }
+
     const updatedProject = await projectService.removeMemberFromProject(projectKey, userId);
     res.status(200).json(updatedProject);
   } catch (error) {
@@ -175,6 +188,12 @@ const handleChangeMemberRole = async (req, res) => {
     if (!newRole) {
       return res.status(400).json({ message: "newRole is required." });
     }
+
+    // Check if project is completed
+    if (await isProjectCompletedByKey(projectKey)) {
+      return res.status(403).json({ message: "Cannot change member roles in a completed project" });
+    }
+
     const updatedProject = await projectService.changeMemberRole(projectKey, userId, newRole);
     res.status(200).json(updatedProject);
   } catch (error) {

@@ -33,6 +33,7 @@ const Component = () => {
   const [deleteUserData, setDeleteUserData] = useState(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const usersPerPage = 10;
 
   useEffect(() => {
@@ -129,12 +130,33 @@ const Component = () => {
       <div className="user-table-container overflow-x-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-700">User List</h2>
-          {user.role === "admin" && (
-            <button className="create-user-btn" onClick={() => setShowCreatePopup(true)}>
-              <span className="material-symbols-outlined align-middle mr-2">person_add</span>
-              Create User
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            <div className="search-box" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <span className="material-symbols-outlined" style={{ position: 'absolute', left: '10px', color: '#666' }}>search</span>
+              <input
+                type="text"
+                placeholder="Search by name or username..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: '8px 12px 8px 40px',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  width: '250px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+            {user.role === "admin" && (
+              <button className="create-user-btn" onClick={() => setShowCreatePopup(true)}>
+                <span className="material-symbols-outlined align-middle mr-2">person_add</span>
+                Create User
+              </button>
+            )}
+          </div>
         </div>
         <table className="user-table min-w-full border-collapse">
           <thead>
@@ -157,7 +179,16 @@ const Component = () => {
             </tr>
           </thead>
           <tbody>
-            {users.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage).map((eachUser) => (
+            {users
+              .filter((u) => {
+                const search = searchTerm.toLowerCase();
+                return (
+                  u.fullname.toLowerCase().includes(search) ||
+                  u.username.toLowerCase().includes(search)
+                );
+              })
+              .slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage)
+              .map((eachUser) => (
               <tr key={eachUser._id}>
                 <td>
                   {eachUser.avatar ? (
@@ -215,20 +246,32 @@ const Component = () => {
         </table>
 
         {/* Pagination */}
-        {users.length > usersPerPage && (
+        {users.filter((u) => {
+          const search = searchTerm.toLowerCase();
+          return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
+        }).length > usersPerPage && (
           <div className="pagination">
             <button className="pagination-btn" onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
               <span className="material-symbols-outlined">chevron_left</span>
             </button>
 
             <div className="pagination-info">
-              Page {currentPage} of {Math.ceil(users.length / usersPerPage)}
+              Page {currentPage} of {Math.ceil(users.filter((u) => {
+                const search = searchTerm.toLowerCase();
+                return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
+              }).length / usersPerPage)}
             </div>
 
             <button
               className="pagination-btn"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(users.length / usersPerPage)))}
-              disabled={currentPage === Math.ceil(users.length / usersPerPage)}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(users.filter((u) => {
+                const search = searchTerm.toLowerCase();
+                return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
+              }).length / usersPerPage)))}
+              disabled={currentPage === Math.ceil(users.filter((u) => {
+                const search = searchTerm.toLowerCase();
+                return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
+              }).length / usersPerPage)}
             >
               <span className="material-symbols-outlined">chevron_right</span>
             </button>

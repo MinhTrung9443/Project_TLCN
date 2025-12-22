@@ -19,7 +19,7 @@ const ProjectsPage = () => {
   const [filters, setFilters] = useState({
     type: "",
     projectManager: "",
-    status: "",
+    status: "active",
   });
   const [projects, setProjects] = useState([]);
   const [archivedProjects, setArchivedProjects] = useState([]);

@@ -22,6 +22,8 @@ const GanttPage = () => {
     assigneeIds: [],
     includeUnassigned: false,
     statusFilter: "active", // Default to active projects only
+    startDate: "",
+    endDate: "",
   });
 
   const [statusFilter, setStatusFilter] = useState("active"); // 'active', 'all', 'completed', 'archived'
@@ -66,7 +68,9 @@ const GanttPage = () => {
           ...filter,
           statusFilter: statusFilter,
         };
-
+        // Nếu có startDate/endDate thì truyền cho API, nếu rỗng thì bỏ
+        if (!filterWithStatus.startDate) delete filterWithStatus.startDate;
+        if (!filterWithStatus.endDate) delete filterWithStatus.endDate;
         const response = await ganttService.getGanttData(filterWithStatus, groupBy);
         console.log("Gantt Data Response:", response);
 

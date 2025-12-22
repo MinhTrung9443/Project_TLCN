@@ -56,25 +56,25 @@ class GanttService {
         result = { type: "none", data: [] };
       } else if (groupby.includes("project") && !groupby.includes("sprint") && !groupby.includes("task")) {
         // Only PROJECT
-        result = await this.getProjectsOnly(projectIds, assigneeIds, statusFilter);
+        result = await this.getProjectsOnly(projectIds, assigneeIds, statusFilter, filter);
       } else if (groupby.includes("project") && groupby.includes("sprint") && !groupby.includes("task")) {
         // PROJECT + SPRINT
-        result = await this.getProjectsWithSprints(projectIds, assigneeIds, statusFilter);
+        result = await this.getProjectsWithSprints(projectIds, assigneeIds, statusFilter, filter);
       } else if (groupby.includes("project") && groupby.includes("sprint") && groupby.includes("task")) {
         // PROJECT + SPRINT + TASK
-        result = await this.getProjectsWithSprintsAndTasks(projectIds, assigneeIds, statusFilter);
+        result = await this.getProjectsWithSprintsAndTasks(projectIds, assigneeIds, statusFilter, filter);
       } else if (groupby.includes("project") && !groupby.includes("sprint") && groupby.includes("task")) {
         // PROJECT + TASK (no sprint)
-        result = await this.getProjectsWithTasks(projectIds, assigneeIds, statusFilter);
+        result = await this.getProjectsWithTasks(projectIds, assigneeIds, statusFilter, filter);
       } else if (!groupby.includes("project") && groupby.includes("sprint") && !groupby.includes("task")) {
         // Only SPRINT (no project)
-        result = await this.getSprintsOnly(projectIds, assigneeIds, statusFilter);
+        result = await this.getSprintsOnly(projectIds, assigneeIds, statusFilter, filter);
       } else if (!groupby.includes("project") && groupby.includes("sprint") && groupby.includes("task")) {
         // SPRINT + TASK (no project)
-        result = await this.getSprintsWithTasks(projectIds, assigneeIds, statusFilter);
+        result = await this.getSprintsWithTasks(projectIds, assigneeIds, statusFilter, filter);
       } else if (!groupby.includes("project") && !groupby.includes("sprint") && groupby.includes("task")) {
         // Only TASK (no project, no sprint)
-        result = await this.getTasksOnly(projectIds, assigneeIds, statusFilter);
+        result = await this.getTasksOnly(projectIds, assigneeIds, statusFilter, filter);
       } else {
         // Default
         result = { type: "default", data: [] };
@@ -89,11 +89,9 @@ class GanttService {
   // 1. GROUP BY: Project only
   async getProjectsOnly(projectIds, assigneeIds, statusFilter = "active") {
     let query = { isDeleted: false };
-
     if (projectIds.length > 0) {
       query._id = { $in: projectIds };
     }
-
     // Apply status filter
     if (statusFilter === "active") {
       query.status = "active";
@@ -102,10 +100,15 @@ class GanttService {
     } else if (statusFilter === "paused") {
       query.status = "paused";
     }
-    // 'all' - no status filter
-
+    // Date filter: only filter projects by their start/endDate
+    if (filter.startDate) {
+      query.startDate = { $gte: new Date(filter.startDate) };
+    }
+    if (filter.endDate) {
+      query.endDate = query.endDate || {};
+      query.endDate.$lte = new Date(filter.endDate);
+    }
     const projects = await Project.find(query).sort({ createdAt: -1 });
-
     return {
       type: "project",
       data: projects.map((p) => ({
@@ -122,11 +125,9 @@ class GanttService {
   // 2. GROUP BY: Project + Sprint
   async getProjectsWithSprints(projectIds, assigneeIds, statusFilter = "active") {
     let projectQuery = { isDeleted: false };
-
     if (projectIds.length > 0) {
       projectQuery._id = { $in: projectIds };
     }
-
     // Apply status filter
     if (statusFilter === "active") {
       projectQuery.status = "active";
@@ -135,15 +136,19 @@ class GanttService {
     } else if (statusFilter === "paused") {
       projectQuery.status = "paused";
     }
-
+    // Date filter: only filter projects by their start/endDate
+    if (filter.startDate) {
+      projectQuery.startDate = { $gte: new Date(filter.startDate) };
+    }
+    if (filter.endDate) {
+      projectQuery.endDate = projectQuery.endDate || {};
+      projectQuery.endDate.$lte = new Date(filter.endDate);
+    }
     const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
-
     const result = [];
-
     for (const project of projects) {
       // Get sprints of this project
       const sprints = await Sprint.find({ projectId: project._id }).sort({ startDate: 1 });
-
       result.push({
         id: project._id,
         name: project.name,
@@ -160,7 +165,6 @@ class GanttService {
         })),
       });
     }
-
     return {
       type: "project-sprint",
       data: result,
@@ -170,11 +174,11 @@ class GanttService {
   // 3. GROUP BY: Project + Sprint + Task
   async getProjectsWithSprintsAndTasks(projectIds, assigneeIds, statusFilter = "active") {
     let projectQuery = { isDeleted: false };
-
+    // Lấy filter ngày từ arguments nếu có
+    const filter = arguments[3] || {};
     if (projectIds.length > 0) {
       projectQuery._id = { $in: projectIds };
     }
-
     // Apply status filter
     if (statusFilter === "active") {
       projectQuery.status = "active";
@@ -183,22 +187,24 @@ class GanttService {
     } else if (statusFilter === "paused") {
       projectQuery.status = "paused";
     }
-
+    // Date filter: only filter projects by their start/endDate
+    if (filter.startDate) {
+      projectQuery.startDate = { $gte: new Date(filter.startDate) };
+    }
+    if (filter.endDate) {
+      projectQuery.endDate = projectQuery.endDate || {};
+      projectQuery.endDate.$lte = new Date(filter.endDate);
+    }
     const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
-
     const result = [];
-
     for (const project of projects) {
       // Get sprints of this project
       const sprints = await Sprint.find({ projectId: project._id }).sort({ startDate: 1 });
-
       // Build task query
       let taskQuery = { projectId: project._id };
-
       if (assigneeIds.length > 0) {
         taskQuery.assigneeId = { $in: assigneeIds };
       }
-
       const projectData = {
         id: project._id,
         name: project.name,
@@ -208,13 +214,10 @@ class GanttService {
         status: project.status,
         sprints: [],
       };
-
       // Get tasks for each sprint
       for (const sprint of sprints) {
-        const sprintTaskQuery = { ...taskQuery, sprintId: sprint._id };
-
+        let sprintTaskQuery = { ...taskQuery, sprintId: sprint._id };
         const sprintTasks = await Task.find(sprintTaskQuery).sort({ createdAt: -1 });
-
         projectData.sprints.push({
           id: sprint._id,
           name: sprint.name,
@@ -224,12 +227,9 @@ class GanttService {
           tasks: sprintTasks.map((t) => this.formatTask(t)),
         });
       }
-
       // Get backlog tasks (tasks without sprint) and add as a pseudo-sprint
       const backlogTaskQuery = { ...taskQuery, sprintId: null };
-
       const backlogTasks = await Task.find(backlogTaskQuery).sort({ createdAt: -1 });
-
       // Add backlog as a special sprint at the same level as other sprints
       if (backlogTasks.length > 0) {
         projectData.sprints.push({
@@ -242,10 +242,8 @@ class GanttService {
           tasks: backlogTasks.map((t) => this.formatTask(t)),
         });
       }
-
       result.push(projectData);
     }
-
     return {
       type: "project-sprint-task",
       data: result,
@@ -274,6 +272,14 @@ class GanttService {
       let taskQuery = { projectId: project._id };
       if (assigneeIds.length > 0) {
         taskQuery.assigneeId = { $in: assigneeIds };
+      }
+      // Lọc theo ngày nếu có
+      if (filter.startDate) {
+        taskQuery.startDate = { $gte: new Date(filter.startDate) };
+      }
+      if (filter.endDate) {
+        taskQuery.dueDate = taskQuery.dueDate || {};
+        taskQuery.dueDate.$lte = new Date(filter.endDate);
       }
       const projectData = {
         id: project._id,
@@ -336,9 +342,15 @@ class GanttService {
     for (const sprint of sprints) {
       // Build task query for this sprint
       let taskQuery = { sprintId: sprint._id };
-
       if (assigneeIds.length > 0) {
         taskQuery.assigneeId = { $in: assigneeIds };
+      }
+      if (filter.startDate) {
+        taskQuery.startDate = { $gte: new Date(filter.startDate) };
+      }
+      if (filter.endDate) {
+        taskQuery.dueDate = taskQuery.dueDate || {};
+        taskQuery.dueDate.$lte = new Date(filter.endDate);
       }
 
       const tasks = await Task.find(taskQuery).sort({ createdAt: -1 });
@@ -361,11 +373,16 @@ class GanttService {
         projectId: projectId,
         sprintId: null,
       };
-
       if (assigneeIds.length > 0) {
         backlogTaskQuery.assigneeId = { $in: assigneeIds };
       }
-
+      if (filter.startDate) {
+        backlogTaskQuery.startDate = { $gte: new Date(filter.startDate) };
+      }
+      if (filter.endDate) {
+        backlogTaskQuery.dueDate = backlogTaskQuery.dueDate || {};
+        backlogTaskQuery.dueDate.$lte = new Date(filter.endDate);
+      }
       const tasks = await Task.find(backlogTaskQuery).sort({ createdAt: -1 });
       backlogTasks.push(...tasks.map((t) => this.formatTask(t)));
     }
@@ -380,15 +397,19 @@ class GanttService {
   // 7. GROUP BY: Task only (no project, no sprint)
   async getTasksOnly(projectIds, assigneeIds, statusFilter = "active") {
     let taskQuery = {};
-
     if (projectIds.length > 0) {
       taskQuery.projectId = { $in: projectIds };
     }
-
     if (assigneeIds.length > 0) {
       taskQuery.assigneeId = { $in: assigneeIds };
     }
-
+    if (filter.startDate) {
+      taskQuery.startDate = { $gte: new Date(filter.startDate) };
+    }
+    if (filter.endDate) {
+      taskQuery.dueDate = taskQuery.dueDate || {};
+      taskQuery.dueDate.$lte = new Date(filter.endDate);
+    }
     const tasks = await Task.find(taskQuery).sort({ createdAt: -1 });
 
     return {
