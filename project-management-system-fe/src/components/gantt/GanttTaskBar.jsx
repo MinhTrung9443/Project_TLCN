@@ -23,36 +23,35 @@ const GanttTaskBar = ({ task, barStyle }) => {
   const getStatusClass = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const statusCategory = task.statusId?.category?.toLowerCase() || task.status?.category?.toLowerCase() || "";
+    const statusCategory = (task.status?.category || task.statusId?.category || "").toString().toLowerCase();
     const dueDate = new Date(endDate);
+    const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
-    // Done
+    // If task is marked done AND lastLogTime exists and lastLogTime <= dueDate => completed on time (green)
     if (statusCategory === "done") {
-      return "status-done";
+      if (task.lastLogTime) {
+        const lastLog = new Date(task.lastLogTime);
+        lastLog.setHours(0, 0, 0, 0);
+        if (lastLog <= dueDate) return "status-done"; // completed on time
+      }
+      // If done but no lastLog or lastLog after dueDate, fall through to check overdue
     }
 
-    // In Progress
-    if (statusCategory === "in progress") {
-      return "status-in-progress";
-    }
-
-    // Delay - past due date and not done
-    if (dueDate < today && statusCategory !== "done") {
+    // Overdue (past due) -> red (regardless of done)
+    if (dueDate < today) {
       return "status-delay";
     }
 
-    // At Risk - due soon (within 3 days) and not done
-    const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-    if (daysUntilDue >= 0 && daysUntilDue <= 3 && statusCategory !== "done") {
+    // Upcoming due (within 3 days) -> orange
+    if (daysUntilDue >= 0 && daysUntilDue <= 3) {
       return "status-at-risk";
     }
 
-    // Not started
-    if (statusCategory === "to do" || statusCategory === "todo") {
-      return "status-not-started";
-    }
+    // Default: use in-progress or not-started mapping
+    if (statusCategory === "to do" || statusCategory === "todo") return "status-not-started";
+    if (statusCategory === "in progress" || statusCategory === "in-progress") return "status-in-progress";
 
-    return "status-in-progress"; // Default
+    return "status-in-progress";
   };
 
   const tooltip = `${formatDate(task.startDate)} - ${formatDate(endDate)}`;

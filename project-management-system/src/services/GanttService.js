@@ -1,5 +1,6 @@
 const Project = require("../models/Project");
 const Task = require("../models/Task");
+const TimeLog = require("../models/TimeLog");
 const Sprint = require("../models/Sprint");
 const Group = require("../models/Group");
 const User = require("../models/User");
@@ -224,7 +225,7 @@ class GanttService {
           startDate: sprint.startDate,
           endDate: sprint.endDate,
           status: sprint.status,
-          tasks: sprintTasks.map((t) => this.formatTask(t)),
+          tasks: await Promise.all(sprintTasks.map((t) => this.formatTask(t))),
         });
       }
       // Get backlog tasks (tasks without sprint) and add as a pseudo-sprint
@@ -239,7 +240,7 @@ class GanttService {
           endDate: project.endDate,
           status: "backlog",
           isBacklog: true,
-          tasks: backlogTasks.map((t) => this.formatTask(t)),
+          tasks: await Promise.all(backlogTasks.map((t) => this.formatTask(t))),
         });
       }
       result.push(projectData);
@@ -293,7 +294,7 @@ class GanttService {
 
       // Get all tasks of the project
       const tasks = await Task.find(taskQuery).sort({ createdAt: -1 });
-      projectData.tasks = tasks.map((t) => this.formatTask(t));
+      projectData.tasks = await Promise.all(tasks.map((t) => this.formatTask(t)));
       result.push(projectData);
     }
     return {
@@ -362,7 +363,7 @@ class GanttService {
         endDate: sprint.endDate,
         status: sprint.status,
         projectId: sprint.projectId,
-        tasks: tasks.map((t) => this.formatTask(t)),
+        tasks: await Promise.all(tasks.map((t) => this.formatTask(t))),
       });
     }
 
@@ -384,7 +385,7 @@ class GanttService {
         backlogTaskQuery.dueDate.$lte = new Date(filter.endDate);
       }
       const tasks = await Task.find(backlogTaskQuery).sort({ createdAt: -1 });
-      backlogTasks.push(...tasks.map((t) => this.formatTask(t)));
+      backlogTasks.push(...(await Promise.all(tasks.map((t) => this.formatTask(t)))));
     }
 
     return {
@@ -414,12 +415,14 @@ class GanttService {
 
     return {
       type: "task",
-      data: tasks.map((t) => this.formatTask(t)),
+      data: await Promise.all(tasks.map((t) => this.formatTask(t))),
     };
   }
 
   // Helper: Format task object
-  formatTask(task) {
+  async formatTask(task) {
+    let lastLog = await TimeLog.findOne({ taskId: task._id }).sort({ createdAt: -1 }).select("createdAt").lean();
+    const lastLogTime = lastLog ? lastLog.createdAt : null;
     return {
       id: task._id,
       key: task.key,
@@ -435,6 +438,7 @@ class GanttService {
       estimatedTime: task.estimatedTime,
       actualTime: task.actualTime,
       progress: task.progress,
+      lastLogTime,
     };
   }
 }

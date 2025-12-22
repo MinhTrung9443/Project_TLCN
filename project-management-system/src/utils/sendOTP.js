@@ -19,14 +19,13 @@ const sendOTP = async (options) => {
   });
 
   // 2) Render HTML based on a pug template
-  const html = pug.renderFile(
-    path.join(__dirname, `../views/emails/${options.template}.pug`),
-    {
-      firstName: options.firstName,
-      subject: options.subject,
-      otp: options.otp,
-    }
-  );
+  // Pass template locals: allow templates to use username, password, loginUrl, etc.
+  const templateData = { ...options };
+  // Remove fields that are not needed as locals
+  delete templateData.email;
+  delete templateData.template;
+
+  const html = pug.renderFile(path.join(__dirname, `../views/emails/${options.template}.pug`), templateData);
 
   // 3) Define the email options
   const mailOptions = {
@@ -41,9 +40,7 @@ const sendOTP = async (options) => {
   try {
     await transporter.sendMail(mailOptions);
   } catch (error) {
-    throw new InternalServerError(
-      "There was an error sending the email. Try again later!"
-    );
+    throw new InternalServerError("There was an error sending the email. Try again later!");
   }
 };
 

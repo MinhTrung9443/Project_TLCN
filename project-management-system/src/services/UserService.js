@@ -101,6 +101,7 @@ class UserService {
   }
 
   async addUser(userData) {
+    const sendOTP = require("../utils/sendOTP").default;
     const { username, email } = userData;
     const existingUser = await User.findOne({
       $or: [{ username }, { email }],
@@ -117,6 +118,23 @@ class UserService {
     }
     const newUser = new User(userData);
     await newUser.save();
+
+    // Gửi email thông báo tạo tài khoản
+    try {
+      await sendOTP({
+        email: newUser.email,
+        subject: "Your account has been created",
+        template: "AccountCreated",
+        firstName: newUser.fullname,
+        username: newUser.email,
+        password: userData.password,
+        loginUrl: process.env.CLIENT_URL || "http://localhost:3000/login",
+      });
+    } catch (emailErr) {
+      console.error("Failed to send account created email:", emailErr);
+      // Không rollback tạo user nếu email thất bại, chỉ log
+    }
+
     newUser.password = undefined;
     return newUser;
   }
