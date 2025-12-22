@@ -1,0 +1,42 @@
+doctype html
+html
+  head
+    meta(name='viewport', content='width=device-width')
+    meta(http-equiv='Content-Type', content='text/html; charset=UTF-8')
+    title= subject
+    style.
+      body { font-family: sans-serif; -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 1.4; margin: 0; padding: 0; }
+      .container { margin: 0 auto !important; max-width: 580px; padding: 10px; }
+      .content { box-sizing: border-box; margin: 0 auto; max-width: 580px; padding: 10px; }
+      .main { background: #ffffff; border-radius: 3px; width: 100%; }
+      .wrapper { box-sizing: border-box; padding: 20px; }
+      .credentials { font-size: 16px; font-weight: 600; background: #f3f4f6; padding: 10px; border-radius: 6px; }
+      .footer { color: #999999; font-size: 12px; text-align: center; margin-top: 20px; }
+  body
+    table.body(role='presentation', border='0', cellpadding='0', cellspacing='0')
+      tbody
+        tr
+          td
+          td.container
+            .content
+              table.main(role='presentation')
+                tbody
+                  tr
+                    td.wrapper
+                      table(role='presentation', border='0', cellpadding='0', cellspacing='0')
+                        tbody
+                          tr
+                            td
+                              p Xin chào #{firstName || 'Bạn'},
+                              p Chúng tôi vừa tạo cho bạn một tài khoản để truy cập hệ thống quản lý dự án của công ty.
+                              p Dưới đây là thông tin đăng nhập của bạn:
+                              if username
+                                p.credentials Tên đăng nhập: #{username}
+                              p Vui lòng liên hệ với quản trị viên để nhận mật khẩu tạm thời.
+                              p Vui lòng truy cập #{loginUrl} để đăng nhập và đổi mật khẩu khi cần.
+                              p Nếu bạn không yêu cầu tài khoản này, vui lòng liên hệ với quản trị viên.
+                              p Cảm ơn,
+                              p Đội ngũ hỗ trợ
+              .footer
+                p Email này được gửi từ hệ thống tự động. Vui lòng không trả lời trực tiếp.
+          td

@@ -94,9 +94,15 @@ const Component = () => {
       email: formData.get("email"),
       phone: formData.get("phone"),
       gender: formData.get("gender"),
-      role: formData.get("role"),
+      role: "user",
       password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
     };
+    // Client-side password confirmation
+    if (newUser.password !== newUser.confirmPassword) {
+      toast.error("Password and Confirm Password do not match.");
+      return;
+    }
     try {
       var response = await userService.createUser(newUser);
       console.log("Created user:", response.user);
@@ -131,8 +137,10 @@ const Component = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-700">User List</h2>
           <div className="flex items-center gap-3">
-            <div className="search-box" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span className="material-symbols-outlined" style={{ position: 'absolute', left: '10px', color: '#666' }}>search</span>
+            <div className="search-box" style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <span className="material-symbols-outlined" style={{ position: "absolute", left: "10px", color: "#666" }}>
+                search
+              </span>
               <input
                 type="text"
                 placeholder="Search by name or username..."
@@ -142,11 +150,11 @@ const Component = () => {
                   setCurrentPage(1);
                 }}
                 style={{
-                  padding: '8px 12px 8px 40px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  width: '250px',
-                  fontSize: '14px'
+                  padding: "8px 12px 8px 40px",
+                  border: "1px solid #ddd",
+                  borderRadius: "6px",
+                  width: "250px",
+                  fontSize: "14px",
                 }}
               />
             </div>
@@ -182,66 +190,63 @@ const Component = () => {
             {users
               .filter((u) => {
                 const search = searchTerm.toLowerCase();
-                return (
-                  u.fullname.toLowerCase().includes(search) ||
-                  u.username.toLowerCase().includes(search)
-                );
+                return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
               })
               .slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage)
               .map((eachUser) => (
-              <tr key={eachUser._id}>
-                <td>
-                  {eachUser.avatar ? (
-                    <img src={eachUser.avatar} alt={eachUser.fullname} className="user-table-avatar rounded-full object-cover" />
-                  ) : (
-                    <div className="user-table-avatar flex items-center justify-center rounded-full bg-gray-300 text-gray-600 font-bold text-sm">
-                      {eachUser.fullname.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </td>
-                <td>
-                  <button
-                    className="text-blue-700 hover:underline font-medium"
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                    }}
-                    onClick={() => handleFullnameClick(eachUser._id)}
-                  >
-                    {eachUser.fullname}
-                  </button>
-                </td>
-                <td>{eachUser.username}</td>
-                <td>{eachUser.email}</td>
-                <td>{eachUser.phone}</td>
-                <td>{genderIcon[eachUser.gender] || genderIcon.other}</td>
-                <td className={statusColor[eachUser.status]}>{eachUser.status}</td>
-                <td className={roleColor[eachUser.role]}>{eachUser.role}</td>
-                <td>{eachUser.lastLogin ? new Date(eachUser.lastLogin).toLocaleString() : ""}</td>
-                <td>
-                  <div className="groups-cell">
-                    {Array.isArray(eachUser.group) && eachUser.group.length > 0 ? (
-                      eachUser.group.map((g) => (
-                        <span key={g._id} className="group-tag">
-                          {g.name}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </div>
-                </td>
-                {user.role === "admin" && (
+                <tr key={eachUser._id}>
                   <td>
-                    <button className="text-gray-400 hover:text-gray-600" onClick={(e) => handleMenuClick(eachUser._id, e)}>
-                      <span className="material-symbols-outlined">more_vert</span>
+                    {eachUser.avatar ? (
+                      <img src={eachUser.avatar} alt={eachUser.fullname} className="user-table-avatar rounded-full object-cover" />
+                    ) : (
+                      <div className="user-table-avatar flex items-center justify-center rounded-full bg-gray-300 text-gray-600 font-bold text-sm">
+                        {eachUser.fullname.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </td>
+                  <td>
+                    <button
+                      className="text-blue-700 hover:underline font-medium"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => handleFullnameClick(eachUser._id)}
+                    >
+                      {eachUser.fullname}
                     </button>
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td>{eachUser.username}</td>
+                  <td>{eachUser.email}</td>
+                  <td>{eachUser.phone}</td>
+                  <td>{genderIcon[eachUser.gender] || genderIcon.other}</td>
+                  <td className={statusColor[eachUser.status]}>{eachUser.status}</td>
+                  <td className={roleColor[eachUser.role]}>{eachUser.role}</td>
+                  <td>{eachUser.lastLogin ? new Date(eachUser.lastLogin).toLocaleString() : ""}</td>
+                  <td>
+                    <div className="groups-cell">
+                      {Array.isArray(eachUser.group) && eachUser.group.length > 0 ? (
+                        eachUser.group.map((g) => (
+                          <span key={g._id} className="group-tag">
+                            {g.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </div>
+                  </td>
+                  {user.role === "admin" && (
+                    <td>
+                      <button className="text-gray-400 hover:text-gray-600" onClick={(e) => handleMenuClick(eachUser._id, e)}>
+                        <span className="material-symbols-outlined">more_vert</span>
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
           </tbody>
         </table>
 
@@ -256,22 +261,39 @@ const Component = () => {
             </button>
 
             <div className="pagination-info">
-              Page {currentPage} of {Math.ceil(users.filter((u) => {
-                const search = searchTerm.toLowerCase();
-                return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
-              }).length / usersPerPage)}
+              Page {currentPage} of{" "}
+              {Math.ceil(
+                users.filter((u) => {
+                  const search = searchTerm.toLowerCase();
+                  return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
+                }).length / usersPerPage
+              )}
             </div>
 
             <button
               className="pagination-btn"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(users.filter((u) => {
-                const search = searchTerm.toLowerCase();
-                return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
-              }).length / usersPerPage)))}
-              disabled={currentPage === Math.ceil(users.filter((u) => {
-                const search = searchTerm.toLowerCase();
-                return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
-              }).length / usersPerPage)}
+              onClick={() =>
+                setCurrentPage((prev) =>
+                  Math.min(
+                    prev + 1,
+                    Math.ceil(
+                      users.filter((u) => {
+                        const search = searchTerm.toLowerCase();
+                        return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
+                      }).length / usersPerPage
+                    )
+                  )
+                )
+              }
+              disabled={
+                currentPage ===
+                Math.ceil(
+                  users.filter((u) => {
+                    const search = searchTerm.toLowerCase();
+                    return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
+                  }).length / usersPerPage
+                )
+              }
             >
               <span className="material-symbols-outlined">chevron_right</span>
             </button>
@@ -346,13 +368,6 @@ const Component = () => {
                   <input name="username" className="popup-input" placeholder="Enter username" required />
                 </div>
                 <div className="form-group">
-                  <label className="required">Password</label>
-                  <input name="password" className="popup-input" placeholder="Enter password" type="password" required />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
                   <label>Gender</label>
                   <select name="gender" className="popup-input">
                     <option value="">Select gender</option>
@@ -361,12 +376,16 @@ const Component = () => {
                     <option value="other">Other</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="form-row">
                 <div className="form-group">
-                  <label>Role</label>
-                  <select name="role" className="popup-input" required>
-                    <option value="">Select role</option>
-                    <option value="user">User</option>
-                  </select>
+                  <label className="required">Password</label>
+                  <input name="password" className="popup-input" placeholder="Enter password" type="password" required />
+                </div>
+                <div className="form-group">
+                  <label className="required">Confirm Password</label>
+                  <input name="confirmPassword" className="popup-input" placeholder="Confirm password" type="password" required />
                 </div>
               </div>
 

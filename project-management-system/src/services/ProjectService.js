@@ -733,28 +733,7 @@ const removeTeamFromProject = async (projectKey, teamIdToRemove) => {
     throw new Error("Project not found");
   }
 
-  const teamRelationToRemove = project.teams.find((t) => t.teamId._id.equals(teamIdToRemove));
-  if (!teamRelationToRemove) {
-    throw new Error("Team not found in this project.");
-  }
-
-  const memberIdsInTeamToRemove = teamRelationToRemove.teamId.members.map((id) => id.toString());
-
-  const pmsInTeam = project.members.filter(
-    (member) => member.role === "PROJECT_MANAGER" && memberIdsInTeamToRemove.includes(member.userId.toString())
-  );
-
-  const totalPMsInProject = project.members.filter((m) => m.role === "PROJECT_MANAGER").length;
-
-  if (pmsInTeam.length > 0 && pmsInTeam.length >= totalPMsInProject) {
-    throw new Error(
-      "Cannot remove this team. Doing so would remove the only Project Manager(s) from the project. Please assign a new Project Manager first."
-    );
-  }
-
   project.teams = project.teams.filter((t) => !t.teamId._id.equals(teamIdToRemove));
-
-  project.members = project.members.filter((m) => !memberIdsInTeamToRemove.includes(m.userId.toString()));
 
   await project.save();
   return project;
