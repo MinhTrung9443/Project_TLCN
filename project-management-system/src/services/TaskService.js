@@ -390,22 +390,41 @@ const updateTask = async (taskId, updateData, userId) => {
     console.error(historyError);
   }
 
-  await updatedTask.populate([
-    { path: "projectId", select: "name key" },
-    { path: "taskTypeId", select: "name icon" },
-    { path: "priorityId", select: "name icon" },
-    { path: "assigneeId", select: "fullname avatar" },
-    { path: "reporterId", select: "fullname avatar" },
-    { path: "createdById", select: "fullname avatar" },
-    { path: "statusId", select: "name color" },
-    { path: "sprintId", select: "name" },
-    { path: "platformId", select: "name icon" },
-    {
+  // Re-fetch the updated task as a plain object with all fields populated, using .lean()
+  let populatedTask = await Task.findById(updatedTask._id)
+    .populate({ path: "projectId", select: "name key" })
+    .populate({ path: "taskTypeId", select: "name icon" })
+    .populate({ path: "priorityId", select: "name icon" })
+    .populate({ path: "assigneeId", select: "fullname avatar" })
+    .populate({ path: "reporterId", select: "fullname avatar" })
+    .populate({ path: "createdById", select: "fullname avatar" })
+    .populate({ path: "statusId", select: "name color" })
+    .populate({ path: "sprintId", select: "name" })
+    .populate({ path: "platformId", select: "name icon" })
+    .populate({
       path: "linkedTasks.taskId",
       select: "key name taskTypeId",
       populate: { path: "taskTypeId", select: "name icon" },
-    },
-  ]);
+    })
+    .lean();
+
+  // Ensure statusId is a full object from workflow (with name, category, ...)
+  if (populatedTask && populatedTask.projectId && populatedTask.statusId) {
+    let projectIdObj = populatedTask.projectId;
+    if (typeof projectIdObj === "string" || projectIdObj instanceof mongoose.Types.ObjectId) {
+      projectIdObj = await Project.findById(populatedTask.projectId);
+    }
+    const workflow = await Workflow.findOne({ projectId: projectIdObj._id });
+    if (workflow && workflow.statuses) {
+      const statusObject = workflow.statuses.find(
+        (s) => s._id.toString() === populatedTask.statusId._id?.toString() || s._id.toString() === populatedTask.statusId.toString()
+      );
+      if (statusObject) {
+        populatedTask.statusId = statusObject;
+      }
+    }
+  }
+  return populatedTask;
 
   await logAction({
     userId,
@@ -456,6 +475,21 @@ const updateTask = async (taskId, updateData, userId) => {
     console.error("Failed to send task update notification:", notificationError);
   }
 
+  // --- Ensure statusId is a full object (with name, category, etc.) ---
+  if (updatedTask && updatedTask.projectId && updatedTask.statusId) {
+    // Populate projectId if not populated
+    let projectIdObj = updatedTask.projectId;
+    if (typeof projectIdObj === "string" || projectIdObj instanceof mongoose.Types.ObjectId) {
+      projectIdObj = await Project.findById(updatedTask.projectId);
+    }
+    const workflow = await Workflow.findOne({ projectId: projectIdObj._id });
+    if (workflow && workflow.statuses) {
+      const statusObject = workflow.statuses.find((s) => s._id.toString() === updatedTask.statusId.toString());
+      if (statusObject) {
+        updatedTask.statusId = statusObject;
+      }
+    }
+  }
   return updatedTask;
 };
 
