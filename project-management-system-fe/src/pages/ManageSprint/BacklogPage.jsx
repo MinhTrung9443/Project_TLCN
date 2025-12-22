@@ -221,7 +221,7 @@ const BacklogPage = () => {
 
   // Permission checks
   const isProjectCompleted = projectData?.status === "completed";
-  const canManageSprints = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER");
+  const canManageSprints = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER");
   const canCreateTask = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER");
   const canDragDrop = !isProjectCompleted && canManageSprints;
 

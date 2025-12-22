@@ -166,7 +166,7 @@ const ActiveSprintPage = () => {
     }
   };
 
-  const canManageSprints = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER";
+  const canManageSprints = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
 
   if (loading) {
     return (
