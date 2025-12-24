@@ -321,7 +321,7 @@ const ProjectsPage = () => {
               <select className="filter-select" value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
                 <option value="">All Statuses</option>
                 <option value="active">Active</option>
-                <option value="paused">Paused</option>
+                {/* <option value="paused">Paused</option> */}
                 <option value="completed">Completed</option>
               </select>
 

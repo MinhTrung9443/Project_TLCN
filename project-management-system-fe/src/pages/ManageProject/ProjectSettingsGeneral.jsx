@@ -191,7 +191,7 @@ const ProjectSettingsGeneral = () => {
         <label>Status</label>
         <select name="status" value={formData.status} onChange={handleChange} disabled={!canEditGeneralInfo}>
           <option value="active">Active</option>
-          <option value="paused">Paused</option>
+          {/* <option value="paused">Paused</option> */}
           <option value="completed">Completed</option>
         </select>
       </div>
