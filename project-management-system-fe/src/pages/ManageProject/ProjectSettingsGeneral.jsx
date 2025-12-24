@@ -184,11 +184,8 @@ const ProjectSettingsGeneral = () => {
       </div>
       <div className="form-group">
         <label>Type</label>
-        {/* Type cũng nên do Admin quyết định */}
-        <select name="type" value={formData.type} onChange={handleChange} disabled={!canEditSensitiveInfo}>
-          <option value="Scrum">Scrum</option>
-          <option value="Kanban">Kanban</option>
-        </select>
+        {/* Hiển thị input nhưng disabled, không cho chỉnh sửa */}
+        <input name="type" value={formData.type} disabled className="form-control" />
       </div>
       <div className="form-group">
         <label>Status</label>
