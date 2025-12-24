@@ -8,7 +8,6 @@ import CreateProjectModal from "../../components/project/CreateProjectModal";
 import ProjectActionsMenu from "../../components/project/ProjectActionsMenu";
 import ArchivedProjectActionsMenu from "../../components/project/ArchivedProjectActionsMenu";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import CloneProjectModal from "../../components/project/CloneProjectModal";
 import "../../styles/pages/ManageProject/ProjectsPage.css";
 
 const ProjectsPage = () => {
@@ -29,7 +28,6 @@ const ProjectsPage = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteAction, setDeleteAction] = useState(null);
-  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -79,10 +77,6 @@ const ProjectsPage = () => {
     fetchData("");
   };
 
-  const handleProjectCloned = () => {
-    fetchData(searchTerm);
-  };
-
   const openArchiveModal = (project) => {
     setSelectedProject(project);
     setDeleteAction("archive");
@@ -93,11 +87,6 @@ const ProjectsPage = () => {
     setSelectedProject(project);
     setDeleteAction("permanent");
     setIsDeleteModalOpen(true);
-  };
-
-  const openCloneModal = (project) => {
-    setSelectedProject(project);
-    setIsCloneModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -241,7 +230,7 @@ const ProjectsPage = () => {
         </td>
         <td>
           {view === "active" ? (
-            <ProjectActionsMenu project={project} onDelete={openArchiveModal} onClone={openCloneModal} />
+            <ProjectActionsMenu project={project} onDelete={openArchiveModal} />
           ) : (
             <ArchivedProjectActionsMenu project={project} onRestore={handleRestore} onDelete={openPermanentDeleteModal} />
           )}
@@ -261,13 +250,6 @@ const ProjectsPage = () => {
         message={`Are you sure you want to ${deleteAction === "archive" ? "archive" : "permanently delete"} the project "${
           selectedProject?.name
         }"? This action cannot be undone.`}
-      />
-
-      <CloneProjectModal
-        isOpen={isCloneModalOpen}
-        onClose={() => setIsCloneModalOpen(false)}
-        sourceProject={selectedProject}
-        onProjectCloned={handleProjectCloned}
       />
 
       <div className="projects-page-container">

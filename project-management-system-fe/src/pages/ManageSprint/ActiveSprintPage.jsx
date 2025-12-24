@@ -16,7 +16,7 @@ import "../../styles/pages/ManageSprint/ActiveSprintPage.css";
 
 const ActiveSprintPage = () => {
   const { projectKey } = useParams();
-  const { selectedProjectKey } = useContext(ProjectContext);
+  const { selectedProjectKey, projectData } = useContext(ProjectContext);
   const [searchParams] = useSearchParams();
   const [isCompleting, setIsCompleting] = useState(false);
   const [userProjectRole, setUserProjectRole] = useState(null);
@@ -168,6 +168,9 @@ const ActiveSprintPage = () => {
 
   const canManageSprints = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
 
+  // Ẩn nút Complete Sprint nếu project là Kanban
+  const isKanbanProject = projectData?.type === "Kanban";
+
   if (loading) {
     return (
       <div className="active-sprint-loading">
@@ -195,7 +198,7 @@ const ActiveSprintPage = () => {
         <div className="active-sprint-header">
           <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
 
-          {currentSprint && canManageSprints && (
+          {currentSprint && canManageSprints && !isKanbanProject && (
             <button className="btn-complete-sprint" onClick={handleCompleteSprint} disabled={isCompleting}>
               <span className="material-symbols-outlined">check_circle</span>
               {isCompleting ? "Completing..." : "Complete Sprint"}

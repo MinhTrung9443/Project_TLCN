@@ -47,16 +47,6 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
           </li>
           <li>
             <button
-              onClick={() => {
-                onClone(project);
-                setIsOpen(false);
-              }}
-            >
-              Clone Project
-            </button>
-          </li>
-          <li>
-            <button
               className="delete-option"
               onClick={() => {
                 onDelete(project);
