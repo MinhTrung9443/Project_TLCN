@@ -52,6 +52,12 @@ const createTask = async (taskData, userId) => {
     throw error;
   }
 
+  if (project.status === "completed") {
+    const error = new Error("Cannot create tasks in a completed project");
+    error.statusCode = 403;
+    throw error;
+  }
+
   // Nếu task được tạo trong sprint và chưa có startDate, lấy startDate từ sprint
   if (sprintId && !taskData.startDate) {
     const Sprint = require("../models/Sprint");

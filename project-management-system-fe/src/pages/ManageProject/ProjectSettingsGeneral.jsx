@@ -130,8 +130,9 @@ const ProjectSettingsGeneral = () => {
       await updateProjectByKey(projectKey, payload);
       toast.success("Project updated successfully!");
 
-      // Fetch lại project data đầy đủ sau khi update để có members được populate
-      const refreshedProject = await getProjectByKey(projectKey);
+      // Nếu key thay đổi, dùng key mới để fetch lại project
+      const fetchKey = formData.key !== projectKey ? formData.key : projectKey;
+      const refreshedProject = await getProjectByKey(fetchKey);
 
       // Cập nhật lại projectData trong context với dữ liệu mới từ API
       if (refreshedProject.data) {

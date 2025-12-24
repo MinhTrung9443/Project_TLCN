@@ -288,7 +288,7 @@ const ProjectsPage = () => {
               </button>
               {user?.role === "admin" && (
                 <button className={`toggle-btn ${view === "archived" ? "active" : ""}`} onClick={() => setView("archived")}>
-                  Archived Projects
+                  Delete Project
                 </button>
               )}
             </div>

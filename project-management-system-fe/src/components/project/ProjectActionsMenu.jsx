@@ -1,9 +1,9 @@
 // src/components/project/ProjectActionsMenu.jsx
 
-import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { ProjectContext } from '../../contexts/ProjectContext';
+import React, { useState, useRef, useEffect, useContext } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { ProjectContext } from "../../contexts/ProjectContext";
 
 const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
   const { user } = useAuth();
@@ -17,18 +17,18 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const handleSettingsClick = () => {
     setSelectedProjectKey(project.key.toUpperCase());
-    setIsOpen(false); 
+    setIsOpen(false);
   };
-  
-  if (!user || user.role !== 'admin') {
+
+  if (!user || user.role !== "admin") {
     return null;
   }
 
@@ -41,18 +41,30 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
       {isOpen && (
         <ul className="actions-dropdown">
           <li>
-            <Link 
-              to={`/task-mgmt/projects/${project.key}/settings/general`} 
-              onClick={handleSettingsClick}
-            >
+            <Link to={`/task-mgmt/projects/${project.key}/settings/general`} onClick={handleSettingsClick}>
               Project Settings
             </Link>
           </li>
           <li>
-            <button onClick={() => { onClone(project); setIsOpen(false); }}>Clone Project</button>
+            <button
+              onClick={() => {
+                onClone(project);
+                setIsOpen(false);
+              }}
+            >
+              Clone Project
+            </button>
           </li>
           <li>
-            <button className="delete-option" onClick={() => { onDelete(project); setIsOpen(false); }}>Archived Project</button>
+            <button
+              className="delete-option"
+              onClick={() => {
+                onDelete(project);
+                setIsOpen(false);
+              }}
+            >
+              Delete Project
+            </button>
           </li>
         </ul>
       )}

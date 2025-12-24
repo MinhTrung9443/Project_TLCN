@@ -1,5 +1,5 @@
 // pages/ProjectsPage.js
-const { expect } = require('@playwright/test');
+const { expect } = require("@playwright/test");
 
 class ProjectsPage {
   constructor(page) {
@@ -7,28 +7,27 @@ class ProjectsPage {
 
     // --- LOCATORS ---
     // Nút điều hướng "Projects" ở sidebar
-    this.projectsLink = page.getByRole('link', { name: 'Projects' });
+    this.projectsLink = page.getByRole("link", { name: "Projects" });
 
     // --- CREATE PROJECT ---
-    this.createProjectBtn = page.getByRole('button', { name: 'CREATE PROJECT' });
+    this.createProjectBtn = page.getByRole("button", { name: "CREATE PROJECT" });
     // Modal tạo project
     this.modal = page.locator('.modal-container, [role="dialog"]');
     // Các trường trong form
-    this.projectNameInput = this.modal.getByRole('textbox', { name: 'Project Name *' });
-    this.projectKeyInput = this.modal.getByLabel('Key');
-    this.projectManagerDropdown = this.modal.locator('#projectManagerId');
-    this.createBtnInModal = this.modal.getByRole('button', { name: 'Create' });
+    this.projectNameInput = this.modal.getByRole("textbox", { name: "Project Name *" });
+    this.projectKeyInput = this.modal.getByLabel("Key");
+    this.projectManagerDropdown = this.modal.locator("#projectManagerId");
+    this.createBtnInModal = this.modal.getByRole("button", { name: "Create" });
 
-    // --- ARCHIVE PROJECT ---
+    // --- DELETE PROJECT ---
     this.projectRow = (projectName) => page.locator(`tr:has-text("${projectName}")`);
-    this.actionsMenuBtn = (projectName) => this.projectRow(projectName).locator('.actions-trigger-btn');
-    this.confirmArchiveBtn = page.locator('button.confirm-button');
+    this.actionsMenuBtn = (projectName) => this.projectRow(projectName).locator(".actions-trigger-btn");
+    this.confirmDeleteBtn = page.locator("button.confirm-button");
 
-
-    // Tab "Archived Projects"
-    this.archivedTab = page.getByRole('button', { name: 'Archived Projects' });
+    // Tab "Delete Project"
+    this.deleteTab = page.getByRole("button", { name: "Delete Project" });
     // Toast message
-    this.successToast = page.locator('.Toastify');
+    this.successToast = page.locator(".Toastify");
   }
 
   // --- ACTIONS ---
@@ -40,44 +39,44 @@ class ProjectsPage {
 
   async createProject(projectData) {
     await this.createProjectBtn.click();
-     await this.modal.waitFor({ state: 'visible' });
+    await this.modal.waitFor({ state: "visible" });
     await this.projectNameInput.fill(projectData.name);
     await this.projectKeyInput.fill(projectData.key);
-    
+
     // Chọn Project Manager
     await this.projectManagerDropdown.click();
-    await this.projectManagerDropdown.selectOption({ label: projectData.manager });    
+    await this.projectManagerDropdown.selectOption({ label: projectData.manager });
     await this.createBtnInModal.click();
   }
 
- async archiveProject(projectName) {
+  async deleteProject(projectName) {
     // 1. Mở menu 3 chấm của đúng project đó
     const projectActionsMenu = this.actionsMenuBtn(projectName);
     await projectActionsMenu.click();
-    const archiveLink = this.page.locator('.actions-dropdown:visible').locator('button:has-text("Archived Project")');
-    
-    await archiveLink.waitFor({ state: 'visible' });
-    await archiveLink.click();
-    
-    await this.confirmArchiveBtn.waitFor({ state: 'visible' });
-    await this.confirmArchiveBtn.click();
+    const deleteLink = this.page.locator(".actions-dropdown:visible").locator('button:has-text("Delete Project")');
+
+    await deleteLink.waitFor({ state: "visible" });
+    await deleteLink.click();
+
+    await this.confirmDeleteBtn.waitFor({ state: "visible" });
+    await this.confirmDeleteBtn.click();
   }
 
   async verifyProjectCreated(projectName) {
-    await expect(this.successToast).toContainText('Project created successfully!');
-    await this.successToast.waitFor({ state: 'hidden' });
+    await expect(this.successToast).toContainText("Project created successfully!");
+    await this.successToast.waitFor({ state: "hidden" });
     await expect(this.projectRow(projectName)).toBeVisible();
   }
-  
-  async verifyProjectArchived(projectName) {
-    await expect(this.successToast).toContainText('Project archived successfully!');
-    await this.successToast.waitFor({ state: 'hidden' });
-    
+
+  async verifyProjectDeleted(projectName) {
+    await expect(this.successToast).toContainText("Project deleted successfully!");
+    await this.successToast.waitFor({ state: "hidden" });
+
     // Kiểm tra project không còn ở tab "All Projects"
     await expect(this.projectRow(projectName)).toBeHidden();
-    
-    // Chuyển qua tab "Archived" và kiểm tra
-    await this.archivedTab.click();
+
+    // Chuyển qua tab "Delete Project" và kiểm tra
+    await this.deleteTab.click();
     await expect(this.projectRow(projectName)).toBeVisible();
   }
 }

@@ -8,8 +8,8 @@ const sprintService = {
   getSprintsByProjectKey: async (projectKey) => {
     try {
       // Tìm project
-      const project = await Project.findOne({ key: projectKey, status: "active" });
-      if (!project) throw { statusCode: 404, message: "Project not found or inactive" };
+      const project = await Project.findOne({ key: projectKey});
+      if (!project) throw { statusCode: 404, message: "Project not found" };
 
       // Nếu là project Kanban, kiểm tra và tạo Kanban Board sprint nếu chưa có
       if (project.type === "Kanban") {
@@ -217,8 +217,8 @@ const sprintService = {
   // Get started sprints by project key
   getStartedSprintsByProjectKey: async (projectKey) => {
     try {
-      const project = await Project.findOne({ key: projectKey, status: "active" });
-      if (!project) throw { statusCode: 404, message: "Project not found or inactive" };
+      const project = await Project.findOne({ key: projectKey});
+      if (!project) throw { statusCode: 404, message: "Project not found" };
 
       const startedSprints = await Sprint.find({
         projectId: project._id,
