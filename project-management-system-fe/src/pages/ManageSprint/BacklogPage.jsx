@@ -107,9 +107,11 @@ const BacklogPage = () => {
     // Validate task dates against sprint dates if moving to a sprint
     if (target !== "backlog" && task.startDate && task.dueDate) {
       const targetSprint = sprintList.find((s) => s._id === target);
+      // Nếu sprint không có ngày bắt đầu hoặc kết thúc thì bỏ qua validate
       if (targetSprint && targetSprint.startDate && targetSprint.endDate) {
         const taskStart = new Date(task.startDate).setHours(0, 0, 0, 0);
         const taskEnd = new Date(task.dueDate).setHours(0, 0, 0, 0);
+
         const sprintStart = new Date(targetSprint.startDate).setHours(0, 0, 0, 0);
         const sprintEnd = new Date(targetSprint.endDate).setHours(0, 0, 0, 0);
 
