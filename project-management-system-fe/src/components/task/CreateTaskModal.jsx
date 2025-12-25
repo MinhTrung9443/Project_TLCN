@@ -304,7 +304,6 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
 
     setLoading(true);
     try {
-      // [SỬA LẠI Ở ĐÂY]
       // 1. Tìm project đã chọn từ danh sách projects
       const selectedProject = projects.find((p) => p._id === formData.projectId);
 
@@ -390,7 +389,6 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
 
             <div className="form-group">
               <label>Description</label>
-              {/* THAY THẾ <textarea> BẰNG COMPONENT MỚI CỦA BẠN */}
               <RichTextEditor value={formData.description} onChange={handleDescriptionChange} />
             </div>
 
@@ -410,7 +408,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                 {errors.priorityId && <p className="error-text">{errors.priorityId}</p>}
               </div>
               <div className="form-group">
-                <label htmlFor="dueDate">Due Date</label>
+                <label className="required" htmlFor="dueDate">Due Date</label>
                 <input type="date" id="dueDate" name="dueDate" value={formData.dueDate} onChange={handleInputChange} />
                 {errors.dueDate && <p className="error-text">{errors.dueDate}</p>}
               </div>

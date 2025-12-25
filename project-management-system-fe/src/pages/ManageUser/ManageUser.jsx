@@ -66,7 +66,7 @@ const Component = () => {
   }, []);
 
   const handleFullnameClick = (id) => {
-    navigate(`/Organization/User/${id}`);
+    navigate(`/app/Organization/User/${id}`);
   };
 
   const handleMenuClick = (id, event) => {
@@ -307,7 +307,7 @@ const Component = () => {
           <button
             onClick={() => {
               handleClosePopup();
-              navigate(`/Organization/User/${popupUserId}`);
+              navigate(`/app/Organization/User/${popupUserId}`);
             }}
           >
             <span className="material-symbols-outlined align-middle mr-2">edit</span>
@@ -358,7 +358,7 @@ const Component = () => {
               </div>
 
               <div className="form-group">
-                <label className="required">Address</label>
+                <label>Address</label>
                 <input name="address" className="popup-input" placeholder="Enter address" />
               </div>
 

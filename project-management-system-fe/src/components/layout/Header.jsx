@@ -54,7 +54,7 @@ const Header = () => {
       <div className="header-content" style={{ justifyContent: "space-between" }}>
         <h1 style={{ fontSize: "1.5rem", fontWeight: "700", marginLeft: "1rem" }}>
           <Link to="/" className="header-title-link">
-            Project Management System
+            ZENTASK
           </Link>
         </h1>
         <nav>
@@ -68,8 +68,8 @@ const Header = () => {
                     alt="Avatar"
                     className="avatar-img"
                     style={{
-                      width: "40px",
-                      height: "40px",
+                      width: "50px",
+                      height: "50px",
                       borderRadius: "50%",
                       objectFit: "cover",
                     }}
@@ -88,7 +88,7 @@ const Header = () => {
                   <button
                     className="dropdown-item"
                     onClick={() => {
-                      navigate("/my-profile");
+                      navigate("/app/my-profile");
                       setDropdownOpen(false);
                     }}
                   >

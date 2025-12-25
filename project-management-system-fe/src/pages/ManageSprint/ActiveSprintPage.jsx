@@ -157,7 +157,7 @@ const ActiveSprintPage = () => {
       toast.success("Sprint completed successfully!");
 
       // Navigate back to sprint list with project context preserved
-      navigate(`/task-mgmt/projects/${effectiveProjectKey}/active-sprint`);
+      navigate(`/app/task-mgmt/projects/${effectiveProjectKey}/active-sprint`);
     } catch (error) {
       console.error("Error completing sprint:", error);
       toast.error("Failed to complete sprint");

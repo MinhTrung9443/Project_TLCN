@@ -213,7 +213,7 @@ const GroupListPage = () => {
               </div>
 
               <div className="group-card-footer">
-                <button className="view-members-btn" onClick={() => navigate(`/organization/group/${group._id}`)}>
+                <button className="view-members-btn" onClick={() => navigate(`/app/organization/group/${group._id}`)}>
                   View Members
                   <span className="arrow-icon">→</span>
                 </button>

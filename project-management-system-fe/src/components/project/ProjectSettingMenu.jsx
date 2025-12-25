@@ -32,7 +32,7 @@ const ProjectSettingMenu = () => {
         {menuItems.map((item) => (
           <NavLink
             key={item.path}
-            to={`/task-mgmt/projects/${projectKey}/settings/${item.path}`}
+            to={`/app/task-mgmt/projects/${projectKey}/settings/${item.path}`}
             className={({ isActive }) => `tab-item ${isActive ? "active" : ""}`}
           >
             <span className="material-symbols-outlined">{item.icon}</span>

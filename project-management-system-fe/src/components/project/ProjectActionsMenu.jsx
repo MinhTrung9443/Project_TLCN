@@ -41,7 +41,7 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
       {isOpen && (
         <ul className="actions-dropdown">
           <li>
-            <Link to={`/task-mgmt/projects/${project.key}/settings/general`} onClick={handleSettingsClick}>
+            <Link to={`/app/task-mgmt/projects/${project.key}/settings/general`} onClick={handleSettingsClick}>
               Project Settings
             </Link>
           </li>

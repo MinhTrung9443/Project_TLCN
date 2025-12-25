@@ -6,13 +6,13 @@
 }
 
 .layout-body {
+  margin-top: 60px;
   display: flex;
   flex-grow: 1;
   overflow: hidden;
 }
 
 .main-content {
-  margin-top: 60px;
   flex-grow: 1;
   overflow-y: auto;
   background-color: #f4f7f9;

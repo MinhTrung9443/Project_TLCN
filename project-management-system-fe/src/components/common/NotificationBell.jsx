@@ -202,7 +202,7 @@ const NotificationBell = () => {
 
     // Navigate based on notification type and relatedType
     if (notification.relatedType === "Task" && notification.relatedId) {
-      navigate(`/task/${notification.relatedId}`);
+      navigate(`/app/task/${notification.relatedId}`);
     } else if (notification.relatedType === "Project") {
       // Project notifications: fetch project to get key from ID
       try {
@@ -212,7 +212,7 @@ const NotificationBell = () => {
         if (projectKey) {
           // Set project data to context before navigating
           setProject(project);
-          navigate(`/task-mgmt/projects/${projectKey}/settings/general`);
+          navigate(`/app/task-mgmt/projects/${projectKey}/settings/general`);
         }
       } catch (error) {
         console.error("Error fetching project:", error);
@@ -232,7 +232,7 @@ const NotificationBell = () => {
         if (projectKey) {
           // Set project data to context before navigating
           setProject(project);
-          navigate(`/task-mgmt/projects/${projectKey}/backlog`);
+          navigate(`/app/task-mgmt/projects/${projectKey}/backlog`);
         }
       } catch (error) {
         console.error("Error fetching sprint:", error);
@@ -240,7 +240,7 @@ const NotificationBell = () => {
       }
     } else if (notification.relatedType === "Group" && notification.relatedId) {
       // Group notifications: relatedId is the group ID
-      navigate(`/organization/group/${notification.relatedId}`);
+      navigate(`/app/organization/group/${notification.relatedId}`);
     }
 
     setIsOpen(false);

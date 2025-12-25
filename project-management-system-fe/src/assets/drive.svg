@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="274.019" height="274.019" viewBox="0 0 274.019 274.019">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-2 {
+        fill: #fecf29;
+      }
+
+      .cls-3 {
+        fill: #05ad60;
+      }
+
+      .cls-4 {
+        fill: #356ab6;
+      }
+
+      .cls-5 {
+        filter: url(#Rectangle_2929);
+      }
+    </style>
+    <filter id="Rectangle_2929" x="0" y="0" width="274.019" height="274.019" filterUnits="userSpaceOnUse">
+      <feOffset dy="3" input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="12.5" result="blur"/>
+      <feFlood flood-opacity="0.122"/>
+      <feComposite operator="in" in2="blur"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g id="Group_18998" data-name="Group 18998" transform="translate(37.5 34.5)">
+    <g class="cls-5" transform="matrix(1, 0, 0, 1, -37.5, -34.5)">
+      <rect id="Rectangle_2929-2" data-name="Rectangle 2929" class="cls-1" width="140.727" height="140.727" rx="25" transform="translate(137.01 34.5) rotate(45)"/>
+    </g>
+    <g id="Group_18947" data-name="Group 18947" transform="translate(63.28 68.127)">
+      <path id="Path_34818" data-name="Path 34818" class="cls-2" d="M32.82,45.181H56.973L32.82,3.338H8.667Z" transform="translate(15.486 -3.338)"/>
+      <path id="Path_34819" data-name="Path 34819" class="cls-3" d="M26.153,3.338,2,45.181,14.077,66.1,38.23,24.26Z" transform="translate(-2 -3.338)"/>
+      <path id="Path_34820" data-name="Path 34820" class="cls-4" d="M17.41,14.887,5.334,35.809H53.639L65.715,14.887Z" transform="translate(6.744 26.956)"/>
+    </g>
+  </g>
+</svg>

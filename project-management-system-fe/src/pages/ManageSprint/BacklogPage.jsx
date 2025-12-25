@@ -164,7 +164,7 @@ const BacklogPage = () => {
       toast.success("Sprint started successfully!");
 
       // Navigate to active sprint page with sprint ID
-      navigate(`/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
+      navigate(`/app/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
     } catch (error) {
       console.error("Error starting sprint:", error);
     }
@@ -172,7 +172,7 @@ const BacklogPage = () => {
 
   const handleSprintNameClick = (sprint) => {
     if (sprint.status === "Started") {
-      navigate(`/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
+      navigate(`/app/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
     }
   };
 
@@ -211,7 +211,7 @@ const BacklogPage = () => {
   };
 
   const handleTaskClick = (task) => {
-    navigate(`/task/${task.key}`);
+    navigate(`/app/task/${task.key}`);
   };
 
   useEffect(() => {

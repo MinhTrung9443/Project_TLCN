@@ -30,10 +30,10 @@ const LoginPage = () => {
         login(response.data.user, response.data.token);
         toast.success("Login successful");
         if (user && user.role === "admin") {
-          navigate("/audit-log");
+          navigate("/app/audit-log");
           return;
         }
-        navigate("/dashboard");
+        navigate("/app/dashboard");
       })
       .catch((error) => {
         console.error("Login failed:", error);

@@ -15,7 +15,7 @@ const GlobalSettingsPage = () => {
   const navigate = useNavigate();
 
   const handleTabChange = (newTab) => {
-    navigate(`/settings/${newTab.toLowerCase()}`);
+    navigate(`/app/settings/${newTab.toLowerCase()}`);
   };
 
   // Hàm render nội dung dựa vào `tabName`

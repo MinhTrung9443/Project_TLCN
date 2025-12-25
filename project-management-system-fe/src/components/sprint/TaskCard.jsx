@@ -38,7 +38,7 @@ const TaskCard = ({ task, onStatusChange }) => {
   const handleCardClick = (e) => {
     // Prevent navigation when dragging
     if (isDragging) return;
-    navigate(`/task/${task.key}`);
+    navigate(`/app/task/${task.key}`);
   };
 
   const getTypeIcon = () => {

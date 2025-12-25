@@ -128,7 +128,7 @@ const ProjectsPage = () => {
 
   const handleProjectSelect = (project) => {
     if (view === "active") {
-      navigate(`/task-mgmt/projects/${project.key}/settings/general`);
+      navigate(`/app/task-mgmt/projects/${project.key}/settings/general`);
     }
   };
 

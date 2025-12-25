@@ -80,7 +80,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         // Nếu không có project nào mà user là PM hoặc Leader, redirect về dashboard
         if (availableProjects.length === 0) {
           alert("Bạn không có quyền truy cập trang này. Chỉ Admin, Project Manager và Team Leader mới có thể xem Audit Log.");
-          navigate("/dashboard");
+          navigate("/app/dashboard");
           return;
         }
       }
