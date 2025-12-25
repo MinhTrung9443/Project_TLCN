@@ -168,6 +168,7 @@ const ProjectSettingsGeneral = () => {
     return <div>Loading general settings...</div>;
   }
   const managerOptions = canChangeManager ? allUsers : projectData.members.map((m) => m.userId) || [];
+  const selectedManager = managerOptions.find((u) => u._id === formData.projectManagerId) || null;
 
   return (
     <form onSubmit={handleSubmit} className="settings-content-form">
@@ -230,6 +231,15 @@ const ProjectSettingsGeneral = () => {
           ))}
         </select>
         {errors.projectManagerId && <p className="error-text">{errors.projectManagerId}</p>}
+      {selectedManager && (
+          <div className="manager-preview">
+            <div className="mp-avatar">{(selectedManager.fullname || "")[0] || "U"}</div>
+            <div className="mp-meta">
+              <div className="mp-name">{selectedManager.fullname}</div>
+              <div className="mp-email">{selectedManager.email}</div>
+            </div>
+          </div>
+        )}
       </div>
       {canSaveChanges && (
         <div className="form-actions">

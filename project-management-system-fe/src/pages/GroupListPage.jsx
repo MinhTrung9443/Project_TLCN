@@ -104,6 +104,26 @@ const GroupListPage = () => {
     setIsConfirmOpen(true);
   };
 
+  // small animated counter component
+  const CountUp = ({ end = 0, duration = 700 }) => {
+    const [value, setValue] = useState(0);
+    useEffect(() => {
+      let start = 0;
+      const diff = Math.max(0, Number(end) - start);
+      if (diff === 0) return void setValue(Number(end));
+      let startTime = null;
+      const step = (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        setValue(Math.round(start + diff * progress));
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      const rafId = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(rafId);
+    }, [end, duration]);
+    return <span className="stat-number">{value}</span>;
+  };
+
   const handleDeleteConfirm = async () => {
     try {
       await groupService.deleteGroup(deletingGroupId);
@@ -148,7 +168,10 @@ const GroupListPage = () => {
               <div className="group-card-header">
                 <div className="group-name-section">
                   <h3 className="group-name">{group.name}</h3>
-                  <span className={`status-badge ${group.status}`}>{group.status === "active" ? "Active" : "Inactive"}</span>
+                  <span className={`status-badge ${group.status}`}>
+                    <span className="status-dot" aria-hidden></span>
+                    {group.status === "active" ? "Active" : "Inactive"}
+                  </span>
                 </div>
                 {isAdmin && (
                   <div className="action-menu-container" ref={openActionMenu === group._id ? menuRef : null}>
@@ -199,14 +222,14 @@ const GroupListPage = () => {
                 <div className="stat-item">
                   <div className="stat-icon active-icon">👥</div>
                   <div className="stat-content">
-                    <span className="stat-number">{group.totalActives || 0}</span>
+                    <CountUp end={group.totalActives || 0} />
                     <span className="stat-label">Active Members</span>
                   </div>
                 </div>
                 <div className="stat-item">
                   <div className="stat-icon inactive-icon">💤</div>
                   <div className="stat-content">
-                    <span className="stat-number">{group.totalInactives || 0}</span>
+                    <CountUp end={group.totalInactives || 0} />
                     <span className="stat-label">Inactive Members</span>
                   </div>
                 </div>

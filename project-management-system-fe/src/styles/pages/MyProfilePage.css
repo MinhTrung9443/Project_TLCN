@@ -1,5 +1,7 @@
 .profile-page-container {
   padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .profile-form {
@@ -45,6 +47,19 @@
   margin-bottom: 32px;
 }
 
+.profile-title {
+  font-size: 1.75rem; /* 28px - Tăng kích thước cho tiêu đề chính */
+  font-weight: 700; /* In đậm, rõ ràng */
+  color: #111827; /* Màu đen-xám đậm, dễ đọc hơn màu đen thuần */
+  margin: 0; /* Xóa margin mặc định của h1 */
+  line-height: 1.2; /* Cải thiện khoảng cách dòng */
+}
+
+.profile-sub {
+  font-size: 0.95rem; /* 15px - Kích thước vừa phải cho phụ đề */
+  color: #6b7280; /* Màu xám nhẹ, tạo sự phân cấp */
+  margin: 4px 0 0 0; /* Khoảng cách nhỏ với tiêu đề trên */
+}
 .section-title {
   font-size: 1.25rem;
   margin-bottom: 20px;
@@ -58,7 +73,14 @@
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
 }
-
+.profile-header {
+  display: flex; /* Bật Flexbox để căn chỉnh dễ dàng */
+  justify-content: space-between; /* Đẩy các item ra 2 phía */
+  align-items: center; /* Căn giữa theo chiều dọc */
+  padding-bottom: 16px; /* Tạo khoảng đệm dưới */
+  margin-bottom: 24px; /* Khoảng cách với form bên dưới */
+  border-bottom: 1px solid #e5e7eb; /* Đường kẻ phân cách tinh tế */
+}
 .form-group {
   display: flex;
   flex-direction: column;
@@ -83,7 +105,8 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: #0b3d91;
+  box-shadow: 0 6px 18px rgba(11,61,145,0.06);
 }
 
 .form-group input:disabled {
@@ -123,13 +146,13 @@
   width: 16px;
   left: 4px;
   bottom: 4px;
-  background-color: #6366f1;
+  background-color: #0b3d91;
   transition: 0.3s;
   border-radius: 50%;
 }
 
 .toggle-switch input:checked + .slider {
-  background-color: #6366f1;
+  background-color: #0b3d91;
 }
 
 .toggle-switch input:checked + .slider:before {
@@ -153,14 +176,15 @@
   font-weight: 500;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  background-color: #3b82f6;
+  transition: background-color 0.2s, transform 120ms ease;
+  background-color: #0b3d91;
   color: white;
   border: none;
 }
 
 .btn-save:hover:not(:disabled) {
-  background-color: #2563eb;
+  background-color: #072b66;
+  transform: translateY(-2px);
 }
 
 .btn-cancel {
@@ -218,16 +242,17 @@
 .btn-upload-avatar {
   width: 100%;
   padding: 12px;
-  background-color: #34495e;
+  background-color: #0b3d91;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
+  transition: background-color 0.2s; /* Thêm hiệu ứng mượt */
 }
 
 .btn-upload-avatar:hover {
-  background-color: #2c3e50;
+  background-color: #072b66;
 }
 .avatar-section {
   background-color: #fff;
@@ -238,20 +263,20 @@
 }
 
 .avatar-display {
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  background-color: #ff8c00;
+  background: linear-gradient(135deg,#7c3aed,#a78bfa);
   color: white;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 5rem;
-  font-weight: bold;
-  margin: 0 auto 24px auto;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 auto 18px auto;
   overflow: hidden; /* Cực kỳ quan trọng để cắt ảnh thành hình tròn */
-  border: 3px solid #fff;
-  box-shadow: 0 0 0 2px #e0e0e0;
+  border: 4px solid #fff;
+  box-shadow: 0 8px 24px rgba(12,31,72,0.06);
 }
 
 /* THÊM MỚI: CSS cho thẻ img */
@@ -282,3 +307,9 @@
   background-color: #95a5a6;
   cursor: not-allowed;
 }
+
+.sidebar-info { margin-top:16px; text-align:left; }
+.info-row { display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid rgba(15,23,42,0.02); }
+.info-label { color:#6b7280; font-size:13px; }
+.info-value { color:#0f172a; font-weight:700; }
+.info-value.small { font-weight:600; font-size:13px; color:#374151; }

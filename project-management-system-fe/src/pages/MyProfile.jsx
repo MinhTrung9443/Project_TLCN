@@ -126,6 +126,12 @@ const MyProfilePage = () => {
 
   return (
     <div className="profile-page-container">
+      <div className="profile-header">
+        <div className="header-left">
+          <h1 className="profile-title">My Profile</h1>
+          <p className="profile-sub">Manage your personal details and account settings</p>
+        </div>
+      </div>
       <form onSubmit={handleSubmit} className="profile-form">
         <div className="profile-main-content">
           <div className="profile-tabs">
@@ -204,6 +210,16 @@ const MyProfilePage = () => {
             <button type="button" className="btn-upload-avatar" onClick={handleAvatarClick} disabled={isUploading}>
               {isUploading ? "Uploading..." : "Upload Avatar"}
             </button>
+            <div className="sidebar-info">
+              <div className="info-row">
+                <div className="info-label">Role</div>
+                <div className="info-value">{user?.role || "Member"}</div>
+              </div>
+              <div className="info-row">
+                <div className="info-label">Email</div>
+                <div className="info-value small">{user?.email}</div>
+              </div>
+            </div>
           </div>
         </div>
       </form>
