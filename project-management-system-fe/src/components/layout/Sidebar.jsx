@@ -63,17 +63,20 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden" style={{ paddingTop: "80px" }}>
           {/* Navigation (giữ nguyên như cũ) */}
           <nav className="space-y-1">
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
-                  isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                }`
-              }
-            >
-              <span className="material-symbols-outlined mr-3 text-gray-500">dashboard</span>
-              {!isCollapsed && <span className="whitespace-nowrap">Dashboard</span>}
-            </NavLink>
+            {/* Ẩn Dashboard nếu là admin */}
+            {user.role !== "admin" && (
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                    isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                  }`
+                }
+              >
+                <span className="material-symbols-outlined mr-3 text-gray-500">dashboard</span>
+                {!isCollapsed && <span className="whitespace-nowrap">Dashboard</span>}
+              </NavLink>
+            )}
 
             {/* --- Task Management Section --- */}
             <details className="group" open>

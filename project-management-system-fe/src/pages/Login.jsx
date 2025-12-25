@@ -9,7 +9,7 @@ import "../styles/Login.css";
 import logo from "../assets/logo.png";
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = (event) => {
@@ -29,6 +29,10 @@ const LoginPage = () => {
       .then((response) => {
         login(response.data.user, response.data.token);
         toast.success("Login successful");
+        if (user && user.role === "admin") {
+          navigate("/audit-log");
+          return;
+        }
         navigate("/dashboard");
       })
       .catch((error) => {
