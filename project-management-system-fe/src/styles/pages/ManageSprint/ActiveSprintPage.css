@@ -3,22 +3,32 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #f8fafc;
+  background: #f1f5f9; 
   overflow: hidden;
 }
 
+/* Active Sprint Header - Floating Style */
 .active-sprint-header {
-  padding: 20px 24px;
+  margin: 20px 24px 0 24px; 
+  
+  border-radius: 12px;
+  
+  /* Style nền và viền */
   background: white;
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0; /* Đổi từ border-bottom sang border bao quanh */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Shadow mềm hơn */
+  
+  /* Layout bên trong giữ nguyên */
+  padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  
+  position: relative; 
+  z-index: 10;
 }
 
-/* Complete Sprint Button */
 .btn-complete-sprint {
   display: flex;
   align-items: center;
@@ -118,19 +128,22 @@
 .sprint-option:last-child {
   border-bottom: none;
 }
-
-/* Board Layout */
 .active-sprint-board {
   display: flex;
   gap: 24px;
-  padding: 24px;
+  
+  padding: 24px 32px 32px 32px; 
+  
   flex: 1;
   overflow-x: auto;
   overflow-y: hidden;
   min-height: 0;
+  
+  /* Scroll mượt */
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
 }
+
 
 /* Custom Scrollbar */
 .active-sprint-board::-webkit-scrollbar {
@@ -152,20 +165,26 @@
   background: #94a3b8;
 }
 
-/* Column Styles */
 .board-column {
   background: #f8fafc;
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  
   display: flex;
   flex-direction: column;
-  min-height: 600px;
-  width: 320px;
-  min-width: 320px;
-  flex-shrink: 0;
-  scroll-snap-align: start;
-  transition: box-shadow 0.3s ease;
+  
+  flex-grow: 1;          /* Cho phép cột giãn ra để lấp khoảng trống thừa bên phải */
+  flex-shrink: 0;        /* Không cho phép cột co lại quá nhỏ */
+  
+  flex-basis: 320px;     /* Kích thước cơ sở lý tưởng */
+  min-width: 300px;      /* Kích thước tối thiểu (để nội dung không bị vỡ) */
+  max-width: 500px;      /* Kích thước tối đa (để cột không bè ra quá to khi chỉ có 1-2 cột) */
+  
+  height: 100%;
+  max-height: 100%;
+  transition: box-shadow 0.2s ease;
 }
 
 .board-column:hover {

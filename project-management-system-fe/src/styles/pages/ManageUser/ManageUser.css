@@ -292,3 +292,135 @@
   border-radius: 8px; font-weight: 600; margin-top: 16px; cursor: pointer;
 }
 .popup-btn-submit:hover { background: #4338CA; }
+
+
+/* --- Popup Create User --- */
+
+/* Lớp phủ mờ toàn màn hình */
+.user-create-popup-overlay {
+  position: fixed; /* Quan trọng: Phải là fixed để đè lên toàn bộ trang */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Nền đen mờ */
+  z-index: 9999; /* Quan trọng: Phải cao hơn Sidebar (thường là 100-1000) */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(2px); /* Hiệu ứng làm mờ nền phía sau */
+}
+
+/* Hộp Popup chính */
+.user-create-popup {
+  background: white;
+  width: 600px;
+  max-width: 90%;
+  max-height: 90vh; /* Không quá cao so với màn hình */
+  overflow-y: auto; /* Cho phép cuộn nếu form dài */
+  border-radius: 16px;
+  padding: 24px 32px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  position: relative;
+  z-index: 10000;
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Header của Popup */
+.user-create-popup .popup-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.user-create-popup .popup-icon {
+  width: 48px;
+  height: 48px;
+  background: #eff6ff;
+  color: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.user-create-popup .popup-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px;
+}
+
+.user-create-popup .popup-subtitle {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Form Styles trong Popup */
+.user-create-popup .form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.user-create-popup .form-group {
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.user-create-popup label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.user-create-popup label.required::after {
+  content: "*";
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+.user-create-popup .popup-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.user-create-popup .popup-input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.popup-btn-submit {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: transform 0.1s;
+}
+
+.popup-btn-submit:active {
+  transform: scale(0.98);
+}
+
+/* Animation xuất hiện */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
