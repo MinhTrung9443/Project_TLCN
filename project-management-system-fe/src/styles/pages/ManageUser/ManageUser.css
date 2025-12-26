@@ -124,22 +124,11 @@
   border: 1px solid rgba(11,61,145,0.04);
 }
 
-#webcrumbs .user-table th {
-  font-size: 12px;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 700;
-  background: transparent;
-  padding-top: 18px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(15,23,42,0.06);
-}
+
 
 #webcrumbs .user-table td {
   font-size: 14px;
 }
-
 
 #webcrumbs .user-table tbody tr {
   position: relative;
@@ -165,10 +154,50 @@
   transform: translateY(-4px);
   box-shadow: 0 22px 56px rgba(11,61,145,0.07);
 }
+/* --- CẬP NHẬT PHẦN NÀY --- */
 
-/* increase left/right padding to make rows feel roomier and pill-like */
-#webcrumbs .user-table td:first-child { padding-left: 28px; position: relative; z-index: 1; }
-#webcrumbs .user-table td:last-child { padding-right: 28px; position: relative; z-index: 1; }
+#webcrumbs .user-table th {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  background: transparent;
+  
+  /* Đảm bảo padding trên/dưới giống td */
+  padding: 14px 18px; 
+  
+  border-bottom: 1px solid rgba(15,23,42,0.06);
+  
+  /* QUAN TRỌNG: Căn trái để tiêu đề dóng thẳng hàng với dữ liệu */
+  text-align: left; 
+}
+
+/* QUAN TRỌNG: Đồng bộ padding cột đầu tiên (Avatar) giữa Header và Body */
+#webcrumbs .user-table th:first-child {
+  padding-left: 28px;
+  /* Giới hạn chiều rộng cột Avatar để không bị giãn */
+  width: 60px; 
+}
+
+/* QUAN TRỌNG: Đồng bộ padding cột cuối cùng giữa Header và Body */
+#webcrumbs .user-table th:last-child {
+  padding-right: 28px;
+}
+
+/* --- GIỮ NGUYÊN PHẦN CŨ CỦA TD ĐỂ THAM CHIẾU --- */
+/* (Bạn kiểm tra xem đoạn này trong code cũ đã đúng như này chưa) */
+#webcrumbs .user-table td:first-child {
+  padding-left: 28px;
+  position: relative;
+  z-index: 1;
+}
+
+#webcrumbs .user-table td:last-child {
+  padding-right: 28px;
+  position: relative;
+  z-index: 1;
+}
 
 /* ensure table cells sit above the pseudo-background */
 #webcrumbs .user-table th, #webcrumbs .user-table td { border: none; position: relative; z-index: 1; background: transparent; }

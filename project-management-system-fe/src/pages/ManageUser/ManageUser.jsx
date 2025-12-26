@@ -172,6 +172,7 @@ const Component = () => {
           <table className="user-table min-w-full border-collapse">
           <thead>
             <tr>
+              <th></th>
               <th>Avatar</th>
               <th>Full Name</th>
               <th>Username</th>

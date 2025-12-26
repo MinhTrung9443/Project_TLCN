@@ -7,6 +7,7 @@ import NotificationBell from "../common/NotificationBell";
 import { FaUser, FaSignOutAlt, FaBars } from "react-icons/fa";
 import logo from "../../assets/logo.png";
 import "../../styles/layout/Header.css";
+import zentaskLogo from "../../assets/zentask.jpg"; 
 
 const Header = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -52,11 +53,31 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-content" style={{ justifyContent: "space-between" }}>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: "700", marginLeft: "1rem" }}>
-          <Link to="/" className="header-title-link">
-            ZENTASK
-          </Link>
-        </h1>
+        <h1 style={{ margin: 0, marginLeft: "1rem" }}>
+        <Link 
+          to="/app/dashboard" 
+          className="header-title-link"
+          style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "10px", 
+            textDecoration: "none",
+            color: "inherit",
+            fontSize: "1.5rem", 
+            fontWeight: "700"
+          }}
+        >
+          <img 
+            src={zentaskLogo} 
+            alt="Zentask Logo" 
+            style={{ 
+              height: "40px",  // Điều chỉnh chiều cao logo cho phù hợp
+              width: "auto"    // Giữ tỷ lệ ảnh
+            }} 
+          />
+          <span>ZENTASK</span>
+        </Link>
+      </h1>
         <nav>
           {isAuthenticated ? (
             <div className="profile-menu" ref={dropdownRef}>
@@ -68,8 +89,8 @@ const Header = () => {
                     alt="Avatar"
                     className="avatar-img"
                     style={{
-                      width: "50px",
-                      height: "50px",
+                      width: "45px",
+                      height: "45px",
                       borderRadius: "50%",
                       objectFit: "cover",
                     }}
