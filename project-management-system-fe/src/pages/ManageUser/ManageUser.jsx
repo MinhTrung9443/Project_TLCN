@@ -1,342 +1,331 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "../../styles/pages/ManageUser/ManageUser.css";
-import { useEffect } from "react";
 import userService from "../../services/userService";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-
-const genderIcon = {
-  male: <span className="material-symbols-outlined text-blue-700">male</span>,
-  female: <span className="material-symbols-outlined text-red-500">female</span>,
-  other: <span className="material-symbols-outlined text-gray-500">person</span>,
-};
-
-const statusColor = {
-  active: "text-blue-700",
-  inactive: "text-gray-500",
-};
-
-const roleColor = {
-  admin: "text-purple-700",
-  user: "text-gray-600",
-};
+import "../../styles/pages/ManageUser/ManageUser.css"; // CSS mới
 
 const Component = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [popupUserId, setPopupUserId] = useState(null);
-  const [showCreatePopup, setShowCreatePopup] = useState(false);
+  
+  // Data States
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  
+  // UI States
+  const [showCreatePopup, setShowCreatePopup] = useState(false);
+  const [popupUserId, setPopupUserId] = useState(null);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteUserData, setDeleteUserData] = useState(null);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+  
+  // Filter & Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const usersPerPage = 10;
-  const activeCount = users.filter((u) => u.status === "active").length;
+  const [roleFilter, setRoleFilter] = useState("all");
+  const usersPerPage = 8; // Giảm xuống một chút vì row to hơn
 
+  // --- Fetch Data ---
   useEffect(() => {
-    const handleClickOutside = () => {
-      handleClosePopup();
-    };
-
-    if (popupUserId !== null) {
-      document.addEventListener("click", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, [popupUserId]);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await userService.getAllUsers();
-        console.log("Fetched users:", response);
-        setUsers(response);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        toast.error("Failed to fetch users");
-      }
-    };
-
     fetchUsers();
   }, []);
 
-  const handleFullnameClick = (id) => {
-    navigate(`/app/Organization/User/${id}`);
+  // --- Filter Logic ---
+  useEffect(() => {
+    let result = users;
+
+    // Filter by Search
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      result = result.filter(u => 
+        u.fullname?.toLowerCase().includes(lowerTerm) || 
+        u.email?.toLowerCase().includes(lowerTerm) ||
+        u.username?.toLowerCase().includes(lowerTerm)
+      );
+    }
+
+    // Filter by Role
+    if (roleFilter !== "all") {
+      result = result.filter(u => u.role === roleFilter);
+    }
+
+    setFilteredUsers(result);
+    setCurrentPage(1); // Reset page on filter change
+  }, [users, searchTerm, roleFilter]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await userService.getAllUsers();
+      setUsers(response);
+      setFilteredUsers(response);
+    } catch (error) {
+      toast.error("Failed to fetch users");
+    }
   };
 
+  // --- Handlers ---
   const handleMenuClick = (id, event) => {
     event.stopPropagation();
     const rect = event.currentTarget.getBoundingClientRect();
-
+    // Tính toán vị trí menu
     setPopupPosition({
-      top: rect.bottom + window.scrollY + 5,
-      left: rect.left + window.scrollX - 110,
+      top: rect.bottom + window.scrollY, 
+      left: rect.left - 100
     });
-
     setPopupUserId(id);
   };
 
-  const handleClosePopup = () => {
-    setPopupUserId(null);
-  };
+  const handleClosePopup = () => setPopupUserId(null);
+
+  // Click outside to close menu
+  useEffect(() => {
+    if (popupUserId) {
+      const handleClick = () => handleClosePopup();
+      document.addEventListener("click", handleClick);
+      return () => document.removeEventListener("click", handleClick);
+    }
+  }, [popupUserId]);
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const newUser = {
-      fullname: formData.get("fullname"),
-      username: formData.get("username"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
-      gender: formData.get("gender"),
-      role: "user",
-      password: formData.get("password"),
-      confirmPassword: formData.get("confirmPassword"),
-    };
-    // Client-side password confirmation
+    const newUser = Object.fromEntries(formData.entries());
+    newUser.role = "user"; // Default role
+
     if (newUser.password !== newUser.confirmPassword) {
-      toast.error("Password and Confirm Password do not match.");
+      toast.error("Passwords do not match");
       return;
     }
+
     try {
-      var response = await userService.createUser(newUser);
-      console.log("Created user:", response.user);
-      setUsers([...users, response.user]);
+      const res = await userService.createUser(newUser);
+      setUsers([...users, res.user]);
       setShowCreatePopup(false);
       toast.success("User created successfully");
-      e.target.reset();
-    } catch (error) {
-      console.error("Error creating user:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Failed to create user";
-      toast.error(errorMessage);
-      return;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to create user");
     }
   };
 
   const handleDeleteUser = async () => {
     try {
       await userService.deleteUser(deleteUserData.userId);
-      setUsers((prevUsers) => prevUsers.map((u) => (u._id === deleteUserData.userId ? { ...u, status: "inactive" } : u)));
-      toast.success("User deleted successfully");
+      setUsers(prev => prev.map(u => u._id === deleteUserData.userId ? { ...u, status: "inactive" } : u));
+      toast.success("User deactivated");
       setIsDeleteModalOpen(false);
-      setDeleteUserData(null);
     } catch (error) {
-      console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
     }
   };
 
+  // --- Stats Calculation ---
+  const stats = {
+    total: users.length,
+    active: users.filter(u => u.status === 'active').length,
+    admins: users.filter(u => u.role === 'admin').length
+  };
+
+  // --- Pagination Logic ---
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
   return (
-    <div id="webcrumbs">
-      <div className="user-table-container overflow-x-auto">
-        <div className="user-table-card">
-          <div className="user-card-header">
-            <div className="header-left">
-              <h2 className="user-card-title">User List</h2>
-              <div className="header-chips">
-                <span className="chip">Active: {activeCount}</span>
-                <span className="chip">Total: {users.length}</span>
+    <div className="modern-user-page">
+      {/* 1. Header & Stats Section */}
+      <div className="page-header">
+        <div className="header-titles">
+          <h1 className="main-title">Team Members</h1>
+          <p className="sub-title">Manage access, roles, and user details.</p>
+        </div>
+        
+        <div className="stats-container">
+          <div className="stat-card blue">
+            <span className="material-symbols-outlined icon">group</span>
+            <div className="info">
+              <span className="number">{stats.total}</span>
+              <span className="label">Total Users</span>
+            </div>
+          </div>
+          <div className="stat-card green">
+            <span className="material-symbols-outlined icon">verified_user</span>
+            <div className="info">
+              <span className="number">{stats.active}</span>
+              <span className="label">Active</span>
+            </div>
+          </div>
+          <div className="stat-card purple">
+            <span className="material-symbols-outlined icon">admin_panel_settings</span>
+            <div className="info">
+              <span className="number">{stats.admins}</span>
+              <span className="label">Admins</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Controls Toolbar */}
+      <div className="controls-toolbar">
+        <div className="search-filter-group">
+          <div className="search-box">
+            <span className="material-symbols-outlined">search</span>
+            <input 
+              type="text" 
+              placeholder="Search by name, email..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <select 
+            className="filter-select" 
+            value={roleFilter} 
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="all">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+
+        {user.role === "admin" && (
+          <button className="btn-add-modern" onClick={() => setShowCreatePopup(true)}>
+            <span className="material-symbols-outlined">add</span>
+            New Member
+          </button>
+        )}
+      </div>
+
+      {/* 3. Modern List View (Floating Rows) */}
+      <div className="user-list-container custom-scrollbar">
+        <div className="table-header-row">
+          <div className="col user-col">USER / EMAIL</div>
+          <div className="col info-col">CONTACT Info</div>
+          <div className="col role-col">ROLE & GROUP</div>
+          <div className="col status-col">STATUS</div>
+          <div className="col action-col"></div>
+        </div>
+
+        {currentUsers.map(u => (
+          <div key={u._id} className="user-row-card fade-in">
+            {/* User Info */}
+            <div className="col user-col" onClick={() => navigate(`/app/Organization/User/${u._id}`)}>
+              <div className="avatar-wrapper">
+                {u.avatar ? (
+                  <img src={u.avatar} alt="avatar" />
+                ) : (
+                  <div className={`avatar-placeholder bg-${u.fullname.length % 5}`}>
+                    {u.fullname.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className={`status-dot ${u.status}`}></span>
+              </div>
+              <div className="user-details">
+                <span className="fullname">{u.fullname}</span>
+                <span className="username">@{u.username}</span>
               </div>
             </div>
 
-            <div className="header-actions">
-              <div className="search-pill">
-                <span className="material-symbols-outlined search-icon">search</span>
-                <input
-                  className="search-input-pill"
-                  type="text"
-                  placeholder="Search by name or username..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
+            {/* Contact Info */}
+            <div className="col info-col">
+              <div className="contact-item">
+                <span className="material-symbols-outlined">mail</span>
+                {u.email}
               </div>
+              <div className="contact-item">
+                <span className="material-symbols-outlined">call</span>
+                {u.phone || "N/A"}
+              </div>
+            </div>
 
-              {user.role === "admin" && (
-                <button className="create-user-btn" onClick={() => setShowCreatePopup(true)}>
-                  <span className="material-symbols-outlined align-middle">person_add</span>
-                  Create User
+            {/* Role & Group */}
+            <div className="col role-col">
+              <span className={`role-badge ${u.role}`}>
+                {u.role === 'admin' ? 'Admin' : 'Member'}
+              </span>
+              <div className="groups-mini">
+                {u.group?.length > 0 ? (
+                   u.group.slice(0, 2).map(g => (
+                     <span key={g._id} className="group-pill">{g.name}</span>
+                   ))
+                ) : <span className="no-group">-</span>}
+                {u.group?.length > 2 && <span className="group-pill more">+{u.group.length - 2}</span>}
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className="col status-col">
+              <div className={`status-pill ${u.status}`}>
+                {u.status}
+              </div>
+              <div className="last-login">
+                {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'Never'}
+              </div>
+            </div>
+
+            {/* Action */}
+            <div className="col action-col">
+              {user.role === 'admin' && (
+                <button className="btn-icon" onClick={(e) => handleMenuClick(u._id, e)}>
+                  <span className="material-symbols-outlined">more_vert</span>
                 </button>
               )}
             </div>
           </div>
-        <div className="table-scroll">
-          <table className="user-table min-w-full border-collapse">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Avatar</th>
-              <th>Full Name</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Gender</th>
-              <th>Status</th>
-              <th>Role</th>
-              <th>Last Login</th>
-              <th>Groups</th>
-              {user.role === "admin" && (
-                <th>
-                  <span className="material-symbols-outlined">apps</span>
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {users
-              .filter((u) => {
-                const search = searchTerm.toLowerCase();
-                return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
-              })
-              .slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage)
-              .map((eachUser) => (
-                <tr key={eachUser._id}>
-                  <td>
-                    {eachUser.avatar ? (
-                      <img src={eachUser.avatar} alt={eachUser.fullname} className="user-table-avatar rounded-full object-cover" />
-                    ) : (
-                      <div className="user-table-avatar flex items-center justify-center rounded-full bg-gray-300 text-gray-600 font-bold text-sm">
-                        {eachUser.fullname.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    <button
-                      className="text-blue-700 hover:underline font-medium"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        padding: 0,
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleFullnameClick(eachUser._id)}
-                    >
-                      {eachUser.fullname}
-                    </button>
-                  </td>
-                  <td>{eachUser.username}</td>
-                  <td>{eachUser.email}</td>
-                  <td>{eachUser.phone}</td>
-                  <td>{genderIcon[eachUser.gender] || genderIcon.other}</td>
-                  <td className={statusColor[eachUser.status]}>{eachUser.status}</td>
-                  <td className={roleColor[eachUser.role]}>{eachUser.role}</td>
-                  <td>{eachUser.lastLogin ? new Date(eachUser.lastLogin).toLocaleString() : ""}</td>
-                  <td>
-                    <div className="groups-cell">
-                      {Array.isArray(eachUser.group) && eachUser.group.length > 0 ? (
-                        eachUser.group.map((g) => (
-                          <span key={g._id} className="group-tag">
-                            {g.name}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </div>
-                  </td>
-                  {user.role === "admin" && (
-                    <td>
-                      <button className="text-gray-400 hover:text-gray-600" onClick={(e) => handleMenuClick(eachUser._id, e)}>
-                        <span className="material-symbols-outlined">more_vert</span>
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-          </tbody>
-          </table>
-        </div>
+        ))}
 
-        {/* Pagination */}
-        {users.filter((u) => {
-          const search = searchTerm.toLowerCase();
-          return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
-        }).length > usersPerPage && (
-          <div className="pagination">
-            <button className="pagination-btn" onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
-              <span className="material-symbols-outlined">chevron_left</span>
-            </button>
-
-            <div className="pagination-info">
-              Page {currentPage} of{" "}
-              {Math.ceil(
-                users.filter((u) => {
-                  const search = searchTerm.toLowerCase();
-                  return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
-                }).length / usersPerPage
-              )}
-            </div>
-
-            <button
-              className="pagination-btn"
-              onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(
-                    prev + 1,
-                    Math.ceil(
-                      users.filter((u) => {
-                        const search = searchTerm.toLowerCase();
-                        return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
-                      }).length / usersPerPage
-                    )
-                  )
-                )
-              }
-              disabled={
-                currentPage ===
-                Math.ceil(
-                  users.filter((u) => {
-                    const search = searchTerm.toLowerCase();
-                    return u.fullname.toLowerCase().includes(search) || u.username.toLowerCase().includes(search);
-                  }).length / usersPerPage
-                )
-              }
-            >
-              <span className="material-symbols-outlined">chevron_right</span>
-            </button>
+        {currentUsers.length === 0 && (
+          <div className="empty-state">
+            <span className="material-symbols-outlined">search_off</span>
+            <p>No users found matching your search.</p>
           </div>
         )}
       </div>
 
-      {/* Popup menu cho từng user */}
-      {popupUserId !== null && (
-        <div className="user-popup-menu" style={{ top: `${popupPosition.top}px`, left: `${popupPosition.left}px` }}>
-          <button
-            onClick={() => {
-              handleClosePopup();
-              navigate(`/app/Organization/User/${popupUserId}`);
-            }}
+      {/* Pagination Modern */}
+      {totalPages > 1 && (
+        <div className="pagination-modern">
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => p - 1)}
           >
-            <span className="material-symbols-outlined align-middle mr-2">edit</span>
-            Edit
+            Prev
           </button>
-          <button
-            className="text-red-600"
-            onClick={() => {
-              const userToDelete = users.find((u) => u._id === popupUserId);
-              setDeleteUserData({ userId: popupUserId, userName: userToDelete?.fullname });
-              setIsDeleteModalOpen(true);
-              handleClosePopup();
-            }}
+          <span>Page {currentPage} of {totalPages}</span>
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => setCurrentPage(p => p + 1)}
           >
-            <span className="material-symbols-outlined align-middle mr-2">delete</span>
-            Delete
+            Next
           </button>
         </div>
       )}
 
-      {/* Popup tạo user */}
+      {/* --- POPUPS & MODALS (Giữ nguyên logic cũ, chỉ style lại nếu cần) --- */}
+      {/* Context Menu */}
+      {popupUserId && (
+        <div className="floating-menu" style={{top: popupPosition.top, left: popupPosition.left}}>
+          <div onClick={() => { handleClosePopup(); navigate(`/app/Organization/User/${popupUserId}`) }}>
+            <span className="material-symbols-outlined">edit</span> Edit Details
+          </div>
+          <div className="danger" onClick={() => {
+            const u = users.find(x => x._id === popupUserId);
+            setDeleteUserData({userId: u._id, userName: u.fullname});
+            setIsDeleteModalOpen(true);
+            handleClosePopup();
+          }}>
+            <span className="material-symbols-outlined">delete</span> Deactivate
+          </div>
+        </div>
+      )}
+
+      {/* Create User Modal - Reusing your existing structure but ensure CSS matches */}
       {showCreatePopup && (
-        <div className="user-create-popup-overlay" onClick={() => setShowCreatePopup(false)}>
-          <div className="user-create-popup" onClick={(e) => e.stopPropagation()}>
+         <div className="user-create-popup-overlay" onClick={() => setShowCreatePopup(false)}>
+            <div className="user-create-popup" onClick={(e) => e.stopPropagation()}>
             <div className="popup-header">
               <div className="popup-icon">
                 <span className="material-symbols-outlined">person_add</span>
@@ -394,26 +383,19 @@ const Component = () => {
                 </div>
               </div>
 
-              <button type="submit" className="popup-btn-submit">
-                Create User Account
-              </button>
-            </form>
-          </div>
-        </div>
+               <button type="submit" className="popup-btn-submit">Create User</button>
+                 </form>
+            </div>
+         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setDeleteUserData(null);
-        }}
+        onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteUser}
-        title="Delete User"
-        message={`Are you sure you want to delete ${deleteUserData?.userName}? This action will deactivate the user account.`}
+        title="Deactivate User"
+        message={`Are you sure you want to deactivate ${deleteUserData?.userName}?`}
       />
-      </div>
     </div>
   );
 };
