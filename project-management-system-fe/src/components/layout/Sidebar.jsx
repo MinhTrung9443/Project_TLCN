@@ -57,7 +57,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     <div id="webcrumbs" className="relative">
       <div
         className={`sidebar h-screen bg-white border-r shadow-md flex flex-col transition-all duration-300 ease-in-out ${
-          isCollapsed ? "w-20" : "w-64"
+          isCollapsed ? "w-20" : "w-80"
         }`}
       >
         <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden" style={{ paddingTop: "80px" }}>
@@ -81,7 +81,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             {/* --- Task Management Section --- */}
             <details className="group" open>
               <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="flex items-center">
+                <div className="flex items-center whitespace-nowrap">
                   <span className="material-symbols-outlined mr-3 text-gray-500">computer</span>
                   {!isCollapsed && <span className="whitespace-nowrap">Task Management</span>}
                 </div>

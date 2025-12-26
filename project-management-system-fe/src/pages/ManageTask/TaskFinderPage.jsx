@@ -117,7 +117,7 @@ const TaskFinderPage = () => {
 
           if (viewMode === "MANAGED_TASKS") {
             const isPM = p.members?.some(
-              (member) => (member.userId?._id === user._id || member.userId === user._id) &&  member.role === "PROJECT_MANAGER"
+              (member) => (member.userId?._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
             );
             const isLeader = p.teams?.some((team) => team.leaderId?._id === user._id || team.leaderId === user._id);
             return isPM || isLeader;
@@ -348,43 +348,43 @@ const TaskFinderPage = () => {
               >
                 <option value="">All Projects</option>
                 {user?.role !== "admin" && viewMode === "MANAGED_TASKS" ? (
-                    // Grouped options: PM projects first, then Leader projects
-                    <>
-                      {groupedManagedProjects.pm.length > 0 && (
-                        <optgroup label="DỰ ÁN TÔI LÀM PM">
-                          {groupedManagedProjects.pm.map((p) => (
-                            <option key={p.value} value={p.value}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-
-                      {groupedManagedProjects.leader.length > 0 && (
-                        <optgroup label="DỰ ÁN TÔI LÀM LEADER">
-                          {groupedManagedProjects.leader.map((p) => (
-                            <option key={p.value} value={p.value}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {/* fallback to any projects derived from tasks, but avoid duplicates with PM/Leader groups */}
-                      {(() => {
-                        const pmIds = new Set((groupedManagedProjects.pm || []).map((p) => p.value?.toString()));
-                        const leaderIds = new Set((groupedManagedProjects.leader || []).map((p) => p.value?.toString()));
-                        const fallback = (projectsForDropdown || []).filter((opt) => {
-                          const id = opt.value?.toString();
-                          return !pmIds.has(id) && !leaderIds.has(id);
-                        });
-                        return fallback.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
+                  // Grouped options: PM projects first, then Leader projects
+                  <>
+                    {groupedManagedProjects.pm.length > 0 && (
+                      <optgroup label="Managed Projects (PM)">
+                        {groupedManagedProjects.pm.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
                           </option>
-                        ));
-                      })()}
-                    </>
-                  ) : (
+                        ))}
+                      </optgroup>
+                    )}
+
+                    {groupedManagedProjects.leader.length > 0 && (
+                      <optgroup label="Led Projects">
+                        {groupedManagedProjects.leader.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {/* fallback to any projects derived from tasks, but avoid duplicates with PM/Leader groups */}
+                    {(() => {
+                      const pmIds = new Set((groupedManagedProjects.pm || []).map((p) => p.value?.toString()));
+                      const leaderIds = new Set((groupedManagedProjects.leader || []).map((p) => p.value?.toString()));
+                      const fallback = (projectsForDropdown || []).filter((opt) => {
+                        const id = opt.value?.toString();
+                        return !pmIds.has(id) && !leaderIds.has(id);
+                      });
+                      return fallback.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ));
+                    })()}
+                  </>
+                ) : (
                   // Admin or My Tasks: show projects derived from tasks if available, otherwise all projects
                   (projectsForDropdown.length > 0 ? projectsForDropdown : selectOptions.projects).map((opt) => (
                     <option key={opt.value} value={opt.value}>
