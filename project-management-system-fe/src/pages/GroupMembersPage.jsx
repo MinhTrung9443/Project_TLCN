@@ -15,6 +15,7 @@ const GroupMembersPage = () => {
   const [members, setMembers] = useState([]);
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRemoveMemberModalOpen, setIsRemoveMemberModalOpen] = useState(false);
@@ -40,6 +41,16 @@ const GroupMembersPage = () => {
   useEffect(() => {
     fetchMembersAndGroup();
   }, [fetchMembersAndGroup]);
+
+  const filteredMembers = members.filter((m) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (m.fullname || "").toLowerCase().includes(q) ||
+      (m.username || "").toLowerCase().includes(q) ||
+      (m.email || "").toLowerCase().includes(q)
+    );
+  });
 
   const handleOpenAddModal = async () => {
     console.log("Opening Add Member modal...");
@@ -82,47 +93,60 @@ const GroupMembersPage = () => {
   return (
     <div className="member-page-container">
       <div className="member-page-header">
-        <h1 className="breadcrumbs">
-          <Link to="/organization/group">Groups</Link> / <span>{group?.name || "Group Members"}</span>
-        </h1>
-        {isAdmin && (
-          <button onClick={handleOpenAddModal} className="add-member-button">
-            ADD MEMBER
-          </button>
-        )}
+        <div className="breadcrumbs-and-stats">
+          <h1 className="breadcrumbs">
+            <Link to="/organization/group">Groups</Link> / <span>{group?.name || "Group Members"}</span>
+          </h1>
+          <div className="group-stats-inline">
+            <div className="chip total">
+              <strong>{members.length}</strong>
+              <span>Total</span>
+            </div>
+            <div className="chip active">
+              <strong>{members.filter((m) => m.status === "active").length}</strong>
+              <span>Active</span>
+            </div>
+            <div className="chip inactive">
+              <strong>{members.filter((m) => m.status !== "active").length}</strong>
+              <span>Inactive</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="header-controls">
+          <input
+            className="search-pill"
+            placeholder="Search members by name, username, email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {isAdmin && (
+            <button onClick={handleOpenAddModal} className="add-member-button">
+              ADD MEMBER
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <table className="members-table">
-          <thead>
-            <tr>
-              <th>Full Name</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Gender</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.length > 0 ? (
-              members.map((member) => (
-                <tr key={member._id}>
-                  <td>{member.fullname}</td>
-                  <td>{member.username}</td>
-                  <td>{member.email}</td>
-                  <td>{member.phone}</td>
-                  <td>{member.gender}</td>
-                  <td>
-                    <label className="switch">
-                      <input type="checkbox" checked={member.status === "active"} disabled={!isAdmin} />
-                      <span className="slider"></span>
-                    </label>
-                  </td>
-                  <td>
+        <div className="members-card">
+          {filteredMembers.length === 0 ? (
+            <div className="no-members-message">No members found.</div>
+          ) : (
+            <div className="members-list">
+              {filteredMembers.map((member) => (
+                <div className="member-row" key={member._id}>
+                  <div className="member-left">
+                    <div className="avatar">{(member.fullname || "")[0] || "U"}</div>
+                    <div className="meta">
+                      <div className="name">{member.fullname}</div>
+                      <div className="sub">{member.username} • {member.email}</div>
+                    </div>
+                  </div>
+                  <div className="member-right">
+                    <div className={`status-pill ${member.status === "active" ? "active" : "inactive"}`}>{member.status}</div>
                     {isAdmin && (
                       <button
                         className="remove-member-btn"
@@ -135,18 +159,12 @@ const GroupMembersPage = () => {
                         <span className="material-symbols-outlined">person_remove</span>
                       </button>
                     )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7" className="no-members-message">
-                  No data to display.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <AddMemberModal

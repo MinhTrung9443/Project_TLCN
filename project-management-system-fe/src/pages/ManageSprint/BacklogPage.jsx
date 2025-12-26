@@ -107,9 +107,11 @@ const BacklogPage = () => {
     // Validate task dates against sprint dates if moving to a sprint
     if (target !== "backlog" && task.startDate && task.dueDate) {
       const targetSprint = sprintList.find((s) => s._id === target);
+      // Nếu sprint không có ngày bắt đầu hoặc kết thúc thì bỏ qua validate
       if (targetSprint && targetSprint.startDate && targetSprint.endDate) {
         const taskStart = new Date(task.startDate).setHours(0, 0, 0, 0);
         const taskEnd = new Date(task.dueDate).setHours(0, 0, 0, 0);
+
         const sprintStart = new Date(targetSprint.startDate).setHours(0, 0, 0, 0);
         const sprintEnd = new Date(targetSprint.endDate).setHours(0, 0, 0, 0);
 
@@ -162,7 +164,7 @@ const BacklogPage = () => {
       toast.success("Sprint started successfully!");
 
       // Navigate to active sprint page with sprint ID
-      navigate(`/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
+      navigate(`/app/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
     } catch (error) {
       console.error("Error starting sprint:", error);
     }
@@ -170,7 +172,7 @@ const BacklogPage = () => {
 
   const handleSprintNameClick = (sprint) => {
     if (sprint.status === "Started") {
-      navigate(`/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
+      navigate(`/app/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
     }
   };
 
@@ -209,7 +211,7 @@ const BacklogPage = () => {
   };
 
   const handleTaskClick = (task) => {
-    navigate(`/task/${task.key}`);
+    navigate(`/app/task/${task.key}`);
   };
 
   useEffect(() => {

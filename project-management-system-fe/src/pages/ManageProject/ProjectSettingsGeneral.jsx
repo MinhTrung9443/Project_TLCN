@@ -130,8 +130,9 @@ const ProjectSettingsGeneral = () => {
       await updateProjectByKey(projectKey, payload);
       toast.success("Project updated successfully!");
 
-      // Fetch lại project data đầy đủ sau khi update để có members được populate
-      const refreshedProject = await getProjectByKey(projectKey);
+      // Nếu key thay đổi, dùng key mới để fetch lại project
+      const fetchKey = formData.key !== projectKey ? formData.key : projectKey;
+      const refreshedProject = await getProjectByKey(fetchKey);
 
       // Cập nhật lại projectData trong context với dữ liệu mới từ API
       if (refreshedProject.data) {
@@ -167,6 +168,7 @@ const ProjectSettingsGeneral = () => {
     return <div>Loading general settings...</div>;
   }
   const managerOptions = canChangeManager ? allUsers : projectData.members.map((m) => m.userId) || [];
+  const selectedManager = managerOptions.find((u) => u._id === formData.projectManagerId) || null;
 
   return (
     <form onSubmit={handleSubmit} className="settings-content-form">
@@ -183,17 +185,14 @@ const ProjectSettingsGeneral = () => {
       </div>
       <div className="form-group">
         <label>Type</label>
-        {/* Type cũng nên do Admin quyết định */}
-        <select name="type" value={formData.type} onChange={handleChange} disabled={!canEditSensitiveInfo}>
-          <option value="Scrum">Scrum</option>
-          <option value="Kanban">Kanban</option>
-        </select>
+        {/* Hiển thị input nhưng disabled, không cho chỉnh sửa */}
+        <input name="type" value={formData.type} disabled className="form-control" />
       </div>
       <div className="form-group">
         <label>Status</label>
         <select name="status" value={formData.status} onChange={handleChange} disabled={!canEditGeneralInfo}>
           <option value="active">Active</option>
-          <option value="paused">Paused</option>
+          {/* <option value="paused">Paused</option> */}
           <option value="completed">Completed</option>
         </select>
       </div>
@@ -232,6 +231,15 @@ const ProjectSettingsGeneral = () => {
           ))}
         </select>
         {errors.projectManagerId && <p className="error-text">{errors.projectManagerId}</p>}
+      {selectedManager && (
+          <div className="manager-preview">
+            <div className="mp-avatar">{(selectedManager.fullname || "")[0] || "U"}</div>
+            <div className="mp-meta">
+              <div className="mp-name">{selectedManager.fullname}</div>
+              <div className="mp-email">{selectedManager.email}</div>
+            </div>
+          </div>
+        )}
       </div>
       {canSaveChanges && (
         <div className="form-actions">

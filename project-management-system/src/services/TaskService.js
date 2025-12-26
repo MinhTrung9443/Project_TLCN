@@ -52,6 +52,12 @@ const createTask = async (taskData, userId) => {
     throw error;
   }
 
+  if (project.status === "completed") {
+    const error = new Error("Cannot create tasks in a completed project");
+    error.statusCode = 403;
+    throw error;
+  }
+
   // Nếu task được tạo trong sprint và chưa có startDate, lấy startDate từ sprint
   if (sprintId && !taskData.startDate) {
     const Sprint = require("../models/Sprint");
@@ -134,6 +140,7 @@ const searchTasks = async (queryParams, user) => {
     dueDate_lte,
     statusCategory,
     projectStatus,
+    managedOnly, // when true restrict results to projects the user manages
   } = queryParams;
 
   const query = {};
@@ -206,9 +213,38 @@ const searchTasks = async (queryParams, user) => {
         ],
       });
     }
-    // Luôn thấy task mình được assign hoặc mình là reporter
-    orConditions.push({ assigneeId: userId });
-    orConditions.push({ reporterId: userId });
+    // Determine if managedOnly flag was requested
+    const isManagedOnly = managedOnly === true || managedOnly === "true";
+
+    // If managedOnly requested, restrict to projects user manages (PM or Team Leader).
+    if (isManagedOnly) {
+      const managedIds = [
+        ...new Set([...pmProjectIds, ...leaderProjectIds]),
+      ];
+
+      // If there are no managed projects -> immediately return empty
+      if (managedIds.length === 0) return [];
+
+      // If frontend requested a specific projectId, ensure it's within managedIds
+      if (projectId) {
+        const requestedId = projectId.toString();
+        if (!managedIds.includes(requestedId)) {
+          // requested project is not managed by user -> no results
+          return [];
+        }
+        // allowed: keep specific projectId (do not overwrite)
+        query.projectId = projectId;
+      } else {
+        // otherwise restrict to managed projects
+        query.projectId = { $in: managedIds };
+      }
+    }
+    // By default, always see tasks assigned to or reported by the user
+    // If managedOnly is requested, skip these to restrict results to managed projects
+    if (!isManagedOnly) {
+      orConditions.push({ assigneeId: userId });
+      orConditions.push({ reporterId: userId });
+    }
 
     if (orConditions.length > 0) {
       if (query.$or) {

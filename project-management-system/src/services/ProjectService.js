@@ -133,7 +133,6 @@ const createProject = async (projectData, userId) => {
         description: "Default Kanban board for this project",
         projectId: savedProject._id,
         status: "Started",
-        startDate: new Date(),
       });
       await kanbanSprint.save();
       console.log(`✅ Created Kanban Board sprint for project ${savedProject.key}`);

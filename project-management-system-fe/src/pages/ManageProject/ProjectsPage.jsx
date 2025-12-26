@@ -8,7 +8,6 @@ import CreateProjectModal from "../../components/project/CreateProjectModal";
 import ProjectActionsMenu from "../../components/project/ProjectActionsMenu";
 import ArchivedProjectActionsMenu from "../../components/project/ArchivedProjectActionsMenu";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import CloneProjectModal from "../../components/project/CloneProjectModal";
 import "../../styles/pages/ManageProject/ProjectsPage.css";
 
 const ProjectsPage = () => {
@@ -29,7 +28,6 @@ const ProjectsPage = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteAction, setDeleteAction] = useState(null);
-  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -79,10 +77,6 @@ const ProjectsPage = () => {
     fetchData("");
   };
 
-  const handleProjectCloned = () => {
-    fetchData(searchTerm);
-  };
-
   const openArchiveModal = (project) => {
     setSelectedProject(project);
     setDeleteAction("archive");
@@ -93,11 +87,6 @@ const ProjectsPage = () => {
     setSelectedProject(project);
     setDeleteAction("permanent");
     setIsDeleteModalOpen(true);
-  };
-
-  const openCloneModal = (project) => {
-    setSelectedProject(project);
-    setIsCloneModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -139,7 +128,7 @@ const ProjectsPage = () => {
 
   const handleProjectSelect = (project) => {
     if (view === "active") {
-      navigate(`/task-mgmt/projects/${project.key}/settings/general`);
+      navigate(`/app/task-mgmt/projects/${project.key}/settings/general`);
     }
   };
 
@@ -241,7 +230,7 @@ const ProjectsPage = () => {
         </td>
         <td>
           {view === "active" ? (
-            <ProjectActionsMenu project={project} onDelete={openArchiveModal} onClone={openCloneModal} />
+            <ProjectActionsMenu project={project} onDelete={openArchiveModal} />
           ) : (
             <ArchivedProjectActionsMenu project={project} onRestore={handleRestore} onDelete={openPermanentDeleteModal} />
           )}
@@ -263,13 +252,6 @@ const ProjectsPage = () => {
         }"? This action cannot be undone.`}
       />
 
-      <CloneProjectModal
-        isOpen={isCloneModalOpen}
-        onClose={() => setIsCloneModalOpen(false)}
-        sourceProject={selectedProject}
-        onProjectCloned={handleProjectCloned}
-      />
-
       <div className="projects-page-container">
         <header className="projects-header">
           <h1 className="projects-title">Projects</h1>
@@ -288,7 +270,7 @@ const ProjectsPage = () => {
               </button>
               {user?.role === "admin" && (
                 <button className={`toggle-btn ${view === "archived" ? "active" : ""}`} onClick={() => setView("archived")}>
-                  Archived Projects
+                  Delete Project
                 </button>
               )}
             </div>
@@ -321,7 +303,7 @@ const ProjectsPage = () => {
               <select className="filter-select" value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
                 <option value="">All Statuses</option>
                 <option value="active">Active</option>
-                <option value="paused">Paused</option>
+                {/* <option value="paused">Paused</option> */}
                 <option value="completed">Completed</option>
               </select>
 

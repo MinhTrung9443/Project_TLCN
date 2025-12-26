@@ -21,6 +21,7 @@ const TaskFinderPage = () => {
   const [keyword, setKeyword] = useState("");
   const [includeDone, setIncludeDone] = useState(false);
   const [projectStatus, setProjectStatus] = useState("active"); // Default to active projects only
+  const [viewMode, setViewMode] = useState("MY_TASKS"); // MY_TASKS or MANAGED_TASKS (for non-admin users)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -37,6 +38,24 @@ const TaskFinderPage = () => {
     taskTypes: [],
     sprints: [],
   });
+
+  // Projects used for the project dropdown depending on view mode
+  const [projectsForDropdown, setProjectsForDropdown] = useState([]);
+  const [groupedManagedProjects, setGroupedManagedProjects] = useState({ pm: [], leader: [] });
+
+  // Recompute grouped managed projects when project list or user changes
+  useEffect(() => {
+    if (!user) return;
+    const pm = [];
+    const leader = [];
+    (filterData.projects || []).forEach((p) => {
+      const isPM = p.members?.some((m) => (m.userId?._id === user._id || m.userId === user._id) && m.role === "PROJECT_MANAGER");
+      const isLeader = p.teams?.some((t) => t.leaderId?._id === user._id || t.leaderId === user._id);
+      if (isPM) pm.push({ value: p._id, label: p.name, status: p.status });
+      else if (isLeader) leader.push({ value: p._id, label: p.name, status: p.status });
+    });
+    setGroupedManagedProjects({ pm, leader });
+  }, [filterData.projects, user]);
 
   useEffect(() => {
     const fetchFilterData = async () => {
@@ -65,10 +84,54 @@ const TaskFinderPage = () => {
     fetchFilterData();
   }, []);
 
+  // whether current user manages any project (PM or Team Leader)
+  const hasManagedRole = useMemo(() => {
+    if (!user) return false;
+    if (user.role === "admin") return true;
+
+    return (filterData.projects || []).some((project) => {
+      const isPM = project.members?.some(
+        (member) => (member.userId?._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+      );
+      const isLeader = project.teams?.some((team) => team.leaderId?._id === user._id || team.leaderId === user._id);
+      return isPM || isLeader;
+    });
+  }, [user, filterData.projects]);
+
+  // project ids present in current tasks list (helps include projects where user has assigned tasks)
+  const userProjectIdsFromTasks = useMemo(() => {
+    const set = new Set();
+    (tasks || []).forEach((t) => {
+      const pid = t.projectId?._id || t.projectId;
+      if (pid) set.add(pid.toString());
+    });
+    return set;
+  }, [tasks]);
+
   const selectOptions = useMemo(
     () => ({
       projects: filterData.projects
         .filter((p) => !projectStatus || p.status === projectStatus) // Filter projects by status
+        .filter((p) => {
+          if (user?.role === "admin") return true;
+
+          if (viewMode === "MANAGED_TASKS") {
+            const isPM = p.members?.some(
+              (member) => (member.userId?._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+            );
+            const isLeader = p.teams?.some((team) => team.leaderId?._id === user._id || team.leaderId === user._id);
+            return isPM || isLeader;
+          }
+
+          if (viewMode === "MY_TASKS") {
+            const isMember = p.members?.some((member) => member.userId?._id === user._id || member.userId === user._id);
+            const isLeader = p.teams?.some((team) => team.leaderId?._id === user._id || team.leaderId === user._id);
+            const hasTask = userProjectIdsFromTasks.has(p._id?.toString());
+            return Boolean(isMember || isLeader || hasTask);
+          }
+
+          return true;
+        })
         .map((p) => ({ value: p._id, label: p.name, status: p.status })),
       users: filterData.users.map((u) => ({ value: u._id, label: u.fullname })),
       statuses: filterData.statuses.map((s) => ({ value: s._id, label: s.name })),
@@ -77,7 +140,7 @@ const TaskFinderPage = () => {
       taskTypes: filterData.taskTypes.map((t) => ({ value: t._id, label: t.name })),
       sprints: filterData.sprints.map((sp) => ({ value: sp._id, label: sp.name })),
     }),
-    [filterData, projectStatus]
+    [filterData, projectStatus, viewMode, user, /* include tasks-derived project ids */ userProjectIdsFromTasks]
   );
 
   const fetchTasks = async (filters, currentKeyword, showDone, projStatus) => {
@@ -99,7 +162,39 @@ const TaskFinderPage = () => {
       };
 
       const response = await searchTasks(_.pickBy(params, _.identity));
-      setTasks(response.data);
+      const tasksRes = response.data || [];
+      setTasks(tasksRes);
+
+      // Build projectsForDropdown from returned tasks when in MY_TASKS or MANAGED_TASKS
+      try {
+        const projectMap = new Map();
+        tasksRes.forEach((t) => {
+          const p = t.projectId;
+          if (p && (p._id || p.id)) {
+            const id = p._id?.toString() || p.id?.toString();
+            if (!projectMap.has(id)) projectMap.set(id, { value: id, label: p.name, status: p.status });
+          }
+        });
+        const projectsArr = Array.from(projectMap.values());
+        if (viewMode === "MY_TASKS") {
+          setProjectsForDropdown(projectsArr);
+        } else if (viewMode === "MANAGED_TASKS") {
+          // For managed view, compute grouped managed projects from full project list
+          const pm = [];
+          const leader = [];
+          (filterData.projects || []).forEach((p) => {
+            const isPM = p.members?.some((m) => (m.userId?._id === user?._id || m.userId === user?._id) && m.role === "PROJECT_MANAGER");
+            const isLeader = p.teams?.some((t) => t.leaderId?._id === user?._id || t.leaderId === user?._id);
+            if (isPM) pm.push({ value: p._id, label: p.name, status: p.status });
+            else if (isLeader) leader.push({ value: p._id, label: p.name, status: p.status });
+          });
+          setGroupedManagedProjects({ pm, leader });
+          // If no projects derived from filterData, fallback to projects seen in tasks
+          if (pm.length === 0 && leader.length === 0) setProjectsForDropdown(projectsArr);
+        }
+      } catch (e) {
+        // ignore
+      }
     } catch (error) {
       toast.error("Could not fetch tasks.");
       setTasks([]);
@@ -111,9 +206,21 @@ const TaskFinderPage = () => {
   const debouncedFetch = useCallback(_.debounce(fetchTasks, 500), [filterData.projects]);
 
   useEffect(() => {
-    debouncedFetch(activeFilters, keyword, includeDone, projectStatus);
+    const effectiveFilters = { ...activeFilters };
+
+    // For non-admin users, apply view-mode specific filters
+    if (user?.role !== "admin") {
+      if (viewMode === "MY_TASKS") {
+        effectiveFilters.assigneeId = user._id;
+      } else if (viewMode === "MANAGED_TASKS") {
+        // Ask backend to restrict to projects the user manages
+        effectiveFilters.managedOnly = true;
+      }
+    }
+
+    debouncedFetch(effectiveFilters, keyword, includeDone, projectStatus);
     setCurrentPage(1); // Reset to page 1 when search or filters change
-  }, [keyword, debouncedFetch, activeFilters, includeDone, projectStatus]); // Thêm activeFilters vào dependency array
+  }, [keyword, debouncedFetch, activeFilters, includeDone, projectStatus, viewMode, user, filterData.projects]);
 
   const handleTaskCreated = (newTask) => {
     fetchTasks(activeFilters, keyword, includeDone, projectStatus);
@@ -170,19 +277,9 @@ const TaskFinderPage = () => {
     if (!user) return false;
     if (user.role === "admin") return true;
 
-    // Check if user is PM or Leader in any project
-    return filterData.projects.some((project) => {
-      // Check if PM
-      const isPM = project.members?.some(
-        (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
-      );
-
-      // Check if Leader
-      const isLeader = project.teams?.some((team) => team.leaderId._id === user._id || team.leaderId === user._id);
-
-      return isPM || isLeader;
-    });
-  }, [user, filterData.projects]);
+    // Non-admin can create tasks only when viewing Managed Tasks
+    return viewMode === "MANAGED_TASKS";
+  }, [user, viewMode]);
 
   const handleFilterChange = (filterName, value) => {
     setActiveFilters((prev) => ({
@@ -228,17 +325,73 @@ const TaskFinderPage = () => {
                 <option value="completed">Completed Projects</option>
               </select>
 
+              {user?.role !== "admin" && (
+                <select
+                  className="filter-select"
+                  value={viewMode}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setViewMode(val);
+                    // clear selected project when view changes to avoid invalid selection
+                    setActiveFilters((prev) => ({ ...prev, projectId: undefined }));
+                  }}
+                >
+                  <option value="MY_TASKS">My Tasks</option>
+                  {hasManagedRole && <option value="MANAGED_TASKS">Managed Tasks</option>}
+                </select>
+              )}
+
               <select
                 className="filter-select"
                 value={activeFilters.projectId || ""}
                 onChange={(e) => handleFilterChange("projectId", e.target.value)}
               >
                 <option value="">All Projects</option>
-                {selectOptions.projects.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
+                {user?.role !== "admin" && viewMode === "MANAGED_TASKS" ? (
+                  // Grouped options: PM projects first, then Leader projects
+                  <>
+                    {groupedManagedProjects.pm.length > 0 && (
+                      <optgroup label="Managed Projects (PM)">
+                        {groupedManagedProjects.pm.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+
+                    {groupedManagedProjects.leader.length > 0 && (
+                      <optgroup label="Led Projects">
+                        {groupedManagedProjects.leader.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {/* fallback to any projects derived from tasks, but avoid duplicates with PM/Leader groups */}
+                    {(() => {
+                      const pmIds = new Set((groupedManagedProjects.pm || []).map((p) => p.value?.toString()));
+                      const leaderIds = new Set((groupedManagedProjects.leader || []).map((p) => p.value?.toString()));
+                      const fallback = (projectsForDropdown || []).filter((opt) => {
+                        const id = opt.value?.toString();
+                        return !pmIds.has(id) && !leaderIds.has(id);
+                      });
+                      return fallback.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ));
+                    })()}
+                  </>
+                ) : (
+                  // Admin or My Tasks: show projects derived from tasks if available, otherwise all projects
+                  (projectsForDropdown.length > 0 ? projectsForDropdown : selectOptions.projects).map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))
+                )}
               </select>
 
               <select

@@ -48,18 +48,19 @@
 }
 
 /* Hiệu ứng khi focus vào input */
-.settings-content-form input[type="text"]:focus,
 .settings-content-form select:focus,
 .settings-content-form textarea:focus {
-  border-color: #4f46e5; /* Màu tím Indigo */
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+  border-color: #0b3d91; /* deep-blue */
+  box-shadow: 0 0 0 4px rgba(11, 61, 145, 0.06);
 }
 
 /* Kiểu riêng cho textarea */
 .settings-content-form textarea {
-  min-height: 100px;
+  min-height: 140px;
   resize: vertical;
   font-family: inherit; /* Kế thừa font chữ chung */
+  padding: 14px;
+  border-radius: 8px;
 }
 
 /* Kiểu cho ô input bị vô hiệu hóa */
@@ -104,18 +105,31 @@
 
 /* Nút chính (Save) */
 .btn-primary {
-  background-color: #4f46e5; /* Màu tím Indigo */
+  background-color: #0b3d91; /* deep-blue */
   color: white;
+  box-shadow: 0 8px 24px rgba(11,61,145,0.12);
 }
 
 .btn-primary:hover {
-  background-color: #4338ca;
+  background-color: #072b66;
+  transform: translateY(-2px);
 }
 
 .btn-primary:disabled {
-  background-color: #a5b4fc;
+  background-color: #7b9adf;
   cursor: not-allowed;
 }
+
+/* Header */
+.settings-header { margin-bottom: 18px; }
+.page-title { font-size: 28px; margin: 0; color: #0f172a; }
+.page-subtitle { margin: 6px 0 0 0; color: #6b7280; }
+
+/* Manager preview */
+.manager-preview { display:flex; gap:12px; align-items:center; margin-top:10px; }
+.mp-avatar { width:40px; height:40px; border-radius:8px; background:linear-gradient(135deg,#7c3aed,#a78bfa); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.mp-meta .mp-name { font-weight:700; color:#0f172a; }
+.mp-meta .mp-email { font-size:13px; color:#6b7280; }
 
 
 /* Nút phụ (Cancel) */

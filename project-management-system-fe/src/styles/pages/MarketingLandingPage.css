@@ -1,0 +1,423 @@
+/* --- Cài đặt chung & Font chữ --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+.landing-page {
+  font-family: 'Poppins', sans-serif; /* Font chữ hiện đại, thân thiện */
+  background-color: #f8f9fa; 
+}
+section {
+  padding: 80px 0;
+}
+.section-title {
+  font-weight: 700;
+  color: #212529;
+}
+.lead-text {
+  color: #6c757d;
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+.navbar {
+  background-color: transparent !important; 
+  box-shadow: none !important;
+  padding: 1.5rem 0; 
+  position: absolute; 
+  top: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.navbar-brand {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: #333 !important; 
+}
+
+.hero-section {
+    position: relative;
+    padding-top: 150px; 
+    padding-bottom: 100px;
+    background-color: #e0f7fa; 
+    overflow: hidden; 
+}
+
+/* Tạo khối màu xanh đậm cong cong bên phải */
+.hero-bg-shape {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 35%; /* Chiếm khoảng một nửa màn hình bên phải */
+    height: 100%;
+    background-color: #3f51b5; /* Màu xanh tím đậm */
+    border-bottom-left-radius: 50% 50%; /* Tạo độ cong lớn */
+    border-top-left-radius: 20% 50%; /* Tạo độ cong mềm mại */
+    z-index: 1;
+}
+
+/* --- Cập nhật Hero Text --- */
+.hero-text {
+    position: relative;
+    z-index: 10; /* Đảm bảo chữ nằm trên nền */
+}
+
+.hero-text .title {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #1a237e; /* Màu xanh đậm cho tiêu đề */
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+}
+
+/* Bỏ cái highlight tím cũ đi, dùng style mới */
+.hero-text .title-highlight {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+.hero-text .lead-text {
+    color: #455a64; /* Màu chữ xám xanh dễ đọc */
+    font-size: 1.15rem;
+    font-weight: 400;
+    margin-bottom: 2rem;
+}
+
+.feature-list li {
+    display: flex; /* QUAN TRỌNG: Lệnh này giúp icon và chữ nằm cùng hàng ngang */
+    align-items: flex-start; /* Căn icon thẳng hàng với dòng chữ đầu tiên */
+    font-size: 1.05rem;
+    margin-bottom: 15px;
+    color: #37474f;
+}
+
+.feature-list .check-icon {
+    flex-shrink: 0; /* QUAN TRỌNG: Giúp icon không bị méo khi chữ quá dài */
+    margin-right: 15px; /* Tạo khoảng cách giữa icon và chữ */
+    margin-top: 3px; /* Chỉnh icon xuống một chút cho cân với dòng chữ */
+    
+    /* Style cũ giữ nguyên */
+    color: #3f51b5; 
+    font-size: 1.2rem;
+    background: transparent;
+    border: 2px solid #3f51b5; 
+    border-radius: 4px; 
+    padding: 2px;
+    width: 24px;
+    height: 24px;
+}
+
+
+.hero-btn:hover {
+    background-color: #303f9f;
+    transform: translateY(-2px);
+}
+
+/* --- Cập nhật ảnh minh họa --- */
+.illustration-container {
+    position: relative;
+    z-index: 10; /* Nằm trên lớp shape */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Bỏ cái shape cũ đi vì mình đã dùng .hero-bg-shape to đùng rồi */
+.illustration-shape {
+    display: none; 
+}
+
+.hero-image {
+    max-width: 100%;
+    /* Thêm chút bóng đổ cho ảnh nổi bật trên nền xanh */
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15)); 
+}
+/* --- Features Section (Thêm màu sắc và bóng đổ) --- */
+.features-section { background-color: #f8f9fa; }
+.feature-card { border: none; border-radius: 15px; box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07); transition: transform 0.3s ease, box-shadow 0.3s ease; padding: 25px; background-color: white; height: 100%; }
+.feature-card:hover { transform: translateY(-10px); box-shadow: 0 10px 30px rgba(111, 66, 193, 0.15); }
+.feature-icon { width: 60px; height: 60px; border-radius: 50%; background-color: #f3efff; color: #6f42c1; display: flex; justify-content: center; align-items: center; margin-bottom: 1.5rem; }
+.card-feature-list { list-style: none; padding-left: 0; margin-top: 1.5rem; }
+.card-feature-list li { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.check-icon-sm { color: #6f42c1; margin-right: 8px; margin-top: 5px; flex-shrink: 0; }
+
+/* --- How It Works Section --- */
+.how-it-works-section { background-color: white; }
+.step-title { font-weight: 700; color: #6f42c1; margin-bottom: 1rem; font-size: 1.8rem; }
+.step-description { color: #6c757d; line-height: 1.8; font-size: 1.1rem; }
+
+/* --- Integrations Section --- */
+.integrations-section { background-color: #f3efff; } /* Nền tím rất nhạt */
+.integration-logos { display: flex; justify-content: center; align-items: center; gap: 2.5rem; }
+.integration-logo-card { background-color: white; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); transition: transform 0.2s ease-in-out; }
+.integration-logo-card:hover { transform: scale(1.05); }
+.integration-logo-card img { max-height: 150px; width: auto; }
+
+/* --- CTA Section (Phần kêu gọi hành động) --- */
+.cta-section { padding: 80px 0; background: linear-gradient(135deg, #6f42c1, #4a40c9); color: white; }
+.cta-title { font-weight: 700; font-size: 2.5rem; }
+.cta-subtitle { font-size: 1.2rem; opacity: 0.9; max-width: 600px; margin: 1rem auto 0; }
+.cta-button { background-color: white !important; color: #6f42c1 !important; font-weight: 700; border: none; padding: 15px 40px; border-radius: 50px; transition: all 0.3s ease; }
+.cta-button:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+/* --- Footer Section --- */
+.footer-section {
+    background-color: #101828; /* Màu nền tối sang trọng */
+    color: #eaecf0; /* Màu chữ trắng ngà */
+    padding-top: 80px;
+    padding-bottom: 30px;
+    font-size: 0.95rem;
+}
+
+/* --- Brand & Desc --- */
+.footer-desc {
+    color: #d0d5dd; /* Màu xám nhạt hơn cho text phụ */
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    max-width: 300px;
+}
+
+/* --- Social Icons --- */
+.footer-social {
+    display: flex;
+    gap: 15px;
+}
+
+.social-link {
+    width: 36px;
+    height: 36px;
+    background-color: rgba(255, 255, 255, 0.1); /* Nền kính mờ */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.social-link:hover {
+    background-color: #6c63ff; /* Màu brand khi hover */
+    transform: translateY(-3px);
+    color: white;
+}
+
+/* --- Headings & Links --- */
+.footer-heading {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-links li {
+    margin-bottom: 12px;
+}
+
+.footer-links a {
+    color: #98a2b3; /* Màu xám cho link */
+    text-decoration: none;
+    transition: color 0.2s ease, padding-left 0.2s ease;
+}
+
+.footer-links a:hover {
+    color: white;
+    padding-left: 5px; /* Hiệu ứng đẩy nhẹ sang phải */
+}
+
+/* --- Subscribe Form --- */
+.subscribe-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white !important;
+}
+
+.subscribe-input::placeholder {
+    color: #667085;
+}
+
+.subscribe-input:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #6c63ff;
+    box-shadow: none;
+}
+
+.subscribe-btn {
+    background-color: #6c63ff;
+    border: none;
+}
+
+.subscribe-btn:hover {
+    background-color: #5a52d5;
+}
+
+/* --- Footer Bottom (Copyright) --- */
+.footer-top {
+    padding-bottom: 60px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Đường kẻ mờ ngăn cách */
+}
+
+.footer-bottom {
+    padding-top: 30px;
+}
+
+.copyright-text {
+    color: #667085;
+    margin-bottom: 0;
+}
+
+.footer-legal-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+}
+
+.footer-legal-links a {
+    color: #667085;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.footer-legal-links a:hover {
+    color: white;
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+    .footer-legal-links {
+        justify-content: center;
+        margin-top: 15px;
+    }
+}
+/* =========================================
+   ENCYCLOPEDIA SECTION
+   ========================================= */
+.encyclopedia-section {
+    background-color: #fff;
+    padding: 80px 0;
+}
+
+.encyclopedia-word-cloud {
+    position: relative;
+    height: 300px; /* Chiều cao vùng chứa các chữ */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding-left: 20px;
+}
+
+/* 1. Hiệu ứng hover chung (Mặc định cho Agile và Scrum) */
+.word-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1.2;
+    margin-bottom: 15px;
+    opacity: 0.5; /* Mờ đi khi chưa chọn */
+}
+
+.word-item span {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #888;
+}
+
+/* Khi hover chung: Tăng độ rõ, scale to lên và đẩy sang phải xíu */
+.word-item:hover, .word-item.active {
+    opacity: 1;
+    transform: scale(1.1) translateX(10px); 
+}
+
+.kanban {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f44336; 
+    
+    position: absolute;
+    left: -80px; 
+    top: 50%;
+    margin-top: -60px;
+    transform: rotate(-90deg);
+    transform-origin: center; 
+}
+
+
+.kanban:hover, .kanban.active {
+    transform: rotate(-90deg) scale(1.1) !important; 
+    margin-left: 0; 
+}
+
+.agile {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #4caf50; /* Xanh lá */
+    margin-left: 60px;
+    margin-bottom: 5px;
+}
+
+.scrum {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #e91e63; /* Hồng */
+    margin-left: 60px;
+    margin-top: 5px;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #101828; /* Đen đậm */
+    margin-left: 60px;
+    letter-spacing: 1px;
+    opacity: 1 !important; /* Luôn rõ */
+    cursor: default;
+}
+
+/* Mũi tên chỉ */
+.arrow-indicator {
+    font-size: 2rem;
+    color: #ccc;
+    animation: bounceRight 2s infinite;
+}
+
+@keyframes bounceRight {
+    0%, 20%, 50%, 80%, 100% { transform: translateX(0); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(5px); }
+}
+
+/* Nội dung bên phải */
+.content-desc {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #555;
+    text-align: justify;
+}
+
+/* Hiệu ứng Fade in khi đổi tab */
+.fade-in-key {
+    animation: fadeIn 0.5s ease-in-out;
+}
+.Toastify {
+    /* Đưa nó ra khỏi dòng chảy văn bản để không chiếm diện tích */
+    position: absolute; 
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    z-index: 9999;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

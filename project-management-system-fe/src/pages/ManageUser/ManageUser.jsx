@@ -35,6 +35,7 @@ const Component = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const usersPerPage = 10;
+  const activeCount = users.filter((u) => u.status === "active").length;
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -66,7 +67,7 @@ const Component = () => {
   }, []);
 
   const handleFullnameClick = (id) => {
-    navigate(`/Organization/User/${id}`);
+    navigate(`/app/Organization/User/${id}`);
   };
 
   const handleMenuClick = (id, event) => {
@@ -134,39 +135,41 @@ const Component = () => {
   return (
     <div id="webcrumbs">
       <div className="user-table-container overflow-x-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-700">User List</h2>
-          <div className="flex items-center gap-3">
-            <div className="search-box" style={{ position: "relative", display: "flex", alignItems: "center" }}>
-              <span className="material-symbols-outlined" style={{ position: "absolute", left: "10px", color: "#666" }}>
-                search
-              </span>
-              <input
-                type="text"
-                placeholder="Search by name or username..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  padding: "8px 12px 8px 40px",
-                  border: "1px solid #ddd",
-                  borderRadius: "6px",
-                  width: "250px",
-                  fontSize: "14px",
-                }}
-              />
+        <div className="user-table-card">
+          <div className="user-card-header">
+            <div className="header-left">
+              <h2 className="user-card-title">User List</h2>
+              <div className="header-chips">
+                <span className="chip">Active: {activeCount}</span>
+                <span className="chip">Total: {users.length}</span>
+              </div>
             </div>
-            {user.role === "admin" && (
-              <button className="create-user-btn" onClick={() => setShowCreatePopup(true)}>
-                <span className="material-symbols-outlined align-middle mr-2">person_add</span>
-                Create User
-              </button>
-            )}
+
+            <div className="header-actions">
+              <div className="search-pill">
+                <span className="material-symbols-outlined search-icon">search</span>
+                <input
+                  className="search-input-pill"
+                  type="text"
+                  placeholder="Search by name or username..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+
+              {user.role === "admin" && (
+                <button className="create-user-btn" onClick={() => setShowCreatePopup(true)}>
+                  <span className="material-symbols-outlined align-middle">person_add</span>
+                  Create User
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-        <table className="user-table min-w-full border-collapse">
+        <div className="table-scroll">
+          <table className="user-table min-w-full border-collapse">
           <thead>
             <tr>
               <th>Avatar</th>
@@ -248,7 +251,8 @@ const Component = () => {
                 </tr>
               ))}
           </tbody>
-        </table>
+          </table>
+        </div>
 
         {/* Pagination */}
         {users.filter((u) => {
@@ -307,7 +311,7 @@ const Component = () => {
           <button
             onClick={() => {
               handleClosePopup();
-              navigate(`/Organization/User/${popupUserId}`);
+              navigate(`/app/Organization/User/${popupUserId}`);
             }}
           >
             <span className="material-symbols-outlined align-middle mr-2">edit</span>
@@ -358,7 +362,7 @@ const Component = () => {
               </div>
 
               <div className="form-group">
-                <label className="required">Address</label>
+                <label>Address</label>
                 <input name="address" className="popup-input" placeholder="Enter address" />
               </div>
 
@@ -408,6 +412,7 @@ const Component = () => {
         title="Delete User"
         message={`Are you sure you want to delete ${deleteUserData?.userName}? This action will deactivate the user account.`}
       />
+      </div>
     </div>
   );
 };

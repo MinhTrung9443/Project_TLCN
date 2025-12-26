@@ -48,7 +48,7 @@ const DashboardPage = () => {
         if (projectKey) {
           // Set project data to context before navigating
           setProject(project);
-          navigate(`/task-mgmt/projects/${projectKey}/backlog`);
+          navigate(`/app/task-mgmt/projects/${projectKey}/backlog`);
         }
       } catch (error) {
         console.error("Error navigating to sprint:", error);
@@ -154,7 +154,7 @@ const DashboardPage = () => {
                 <div
                   key={task._id}
                   className="upcoming-task-item clickable"
-                  onClick={() => task.key && navigate(`/task/${task.key}`)}
+                  onClick={() => task.key && navigate(`/app/task/${task.key}`)}
                   style={{ cursor: task.key ? "pointer" : "default" }}
                 >
                   <div className="task-info">

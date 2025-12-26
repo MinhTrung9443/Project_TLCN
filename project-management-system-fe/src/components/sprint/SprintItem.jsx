@@ -148,9 +148,12 @@ const SprintItem = ({
                     <span className="material-symbols-outlined sprint-status-icon sprint-status-completed">check_circle</span>
                   )}
                   <span className="sprint-status-text">{sprint.status}</span>
-                  <span className="sprint-date">
-                    {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
-                  </span>
+                  {/* Ẩn ngày nếu là Kanban Board */}
+                  {!isKanbanBoard && (
+                    <span className="sprint-date">
+                      {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="task-list">

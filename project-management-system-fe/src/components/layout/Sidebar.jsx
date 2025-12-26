@@ -12,7 +12,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   const getProjectPath = (path) => {
     if (!selectedProjectKey) return "#";
-    return `/task-mgmt/projects/${selectedProjectKey}/${path}`;
+    return `/app/task-mgmt/projects/${selectedProjectKey}/${path}`;
   };
 
   // Check if user can view Audit Log (Admin, PM, or Leader)
@@ -57,28 +57,31 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     <div id="webcrumbs" className="relative">
       <div
         className={`sidebar h-screen bg-white border-r shadow-md flex flex-col transition-all duration-300 ease-in-out ${
-          isCollapsed ? "w-20" : "w-64"
+          isCollapsed ? "w-20" : "w-80"
         }`}
       >
         <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden" style={{ paddingTop: "80px" }}>
           {/* Navigation (giữ nguyên như cũ) */}
           <nav className="space-y-1">
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
-                  isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                }`
-              }
-            >
-              <span className="material-symbols-outlined mr-3 text-gray-500">dashboard</span>
-              {!isCollapsed && <span className="whitespace-nowrap">Dashboard</span>}
-            </NavLink>
+            {/* Ẩn Dashboard nếu là admin */}
+            {user.role !== "admin" && (
+              <NavLink
+                to="/app/dashboard"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                    isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                  }`
+                }
+              >
+                <span className="material-symbols-outlined mr-3 text-gray-500">dashboard</span>
+                {!isCollapsed && <span className="whitespace-nowrap">Dashboard</span>}
+              </NavLink>
+            )}
 
             {/* --- Task Management Section --- */}
             <details className="group" open>
               <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="flex items-center">
+                <div className="flex items-center whitespace-nowrap">
                   <span className="material-symbols-outlined mr-3 text-gray-500">computer</span>
                   {!isCollapsed && <span className="whitespace-nowrap">Task Management</span>}
                 </div>
@@ -90,7 +93,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 <div className="pl-10 mt-1 space-y-1">
                   {/* ... các NavLink con ... */}
                   <NavLink
-                    to="/projects"
+                    to="/app/projects"
                     className={({ isActive }) =>
                       `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                         isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
@@ -101,7 +104,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     <span className="whitespace-nowrap">Projects</span>
                   </NavLink>
                   <NavLink
-                    to="/gantt"
+                    to="/app/gantt"
                     className={({ isActive }) =>
                       `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                         isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
@@ -112,7 +115,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     <span className="whitespace-nowrap">Gantt</span>
                   </NavLink>
                   <NavLink
-                    to="/task-finder"
+                    to="/app/task-finder"
                     className={({ isActive }) =>
                       `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                         isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
@@ -173,7 +176,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               {!isCollapsed && (
                 <div className="pl-10 mt-1 space-y-1">
                   <NavLink
-                    to="/Organization/group"
+                    to="/app/Organization/group"
                     className={({ isActive }) =>
                       `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                         isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
@@ -184,7 +187,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     <span className="whitespace-nowrap">Group</span>
                   </NavLink>
                   <NavLink
-                    to="/Organization/user"
+                    to="/app/Organization/user"
                     className={({ isActive }) =>
                       `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
                         isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
@@ -201,7 +204,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             {/* --- Other Links --- */}
             {canViewAuditLog && (
               <NavLink
-                to="/audit-log"
+                to="/app/audit-log"
                 className={({ isActive }) =>
                   `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
                     isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
@@ -214,7 +217,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             )}
             {user.role === "admin" && (
               <NavLink
-                to="/settings/TaskTypes"
+                to="/app/settings/TaskTypes"
                 className={({ isActive }) =>
                   `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
                     isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"

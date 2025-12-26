@@ -45,7 +45,7 @@ const TaskDetailPage = () => {
         }
 
         // Điều hướng về trang task finder
-        setTimeout(() => navigate("/task-finder"), 1500);
+        setTimeout(() => navigate("/app/task-finder"), 1500);
       } finally {
         setLoading(false);
       }
@@ -78,7 +78,7 @@ const TaskDetailPage = () => {
     try {
       await deleteTask(projectKey, task._id);
       toast.success(`Task ${taskKey} deleted successfully!`);
-      navigate("/task-finder");
+      navigate("/app/task-finder");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete task.");
     }

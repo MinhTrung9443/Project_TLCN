@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import "./App.css";
+import MarketingLandingPage from "./pages/MarketingLandingPage"; // Trang giới thiệu
 import PrivateRoute from "./routes/PrivateRoute"; // Đảm bảo đường dẫn này đúng
 import AdminRoute from "./routes/AdminRoute"; // Chúng ta sẽ tạo file này sau
 import LoginPage from "./pages/Login"; // Giả sử đường dẫn này đúng
@@ -38,11 +39,12 @@ function App() {
         <BrowserRouter>
           <Routes>
             {/* === CÁC ROUTE CÔNG KHAI === */}
+            <Route path="/" element={<MarketingLandingPage />} /> {/* <-- THAY ĐỔI QUAN TRỌNG */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* === CÁC ROUTE CẦN ĐĂNG NHẬP === */}
-            <Route path="/" element={<PrivateRoute />}>
+            <Route path="/app" element={<PrivateRoute />}>
               <Route element={<Layout />}>
                 {/* --- Các Route chung cho mọi User --- */}
                 <Route index element={<Dashboard />} />
@@ -51,7 +53,7 @@ function App() {
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="task-finder" element={<TaskFinderPage />} />
                 <Route path="gantt" element={<GanttPage />} />
-                <Route path="/task/:taskKey" element={<TaskDetailPage />} />
+                <Route path="task/:taskKey" element={<TaskDetailPage />} />
 
                 {/* Route cho trang Settings và các tab con của nó */}
                 <Route path="task-mgmt/projects/:projectKey/settings" element={<ProjectSettingsPage />}>
