@@ -198,3 +198,10 @@
   cursor: pointer;
   color: #6b7281;
 }
+.table-row {
+  overflow: visible;
+}
+
+.members-list-table {
+  overflow: visible;
+}
