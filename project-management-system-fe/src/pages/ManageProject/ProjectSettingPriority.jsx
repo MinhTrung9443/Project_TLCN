@@ -57,11 +57,24 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDelet
   });
   const [, drop] = useDrop({
     accept: ItemType,
-    hover(draggedItem) {
-      if (canEdit && draggedItem.index !== index) {
-        moveItem(draggedItem.index, index);
-        draggedItem.index = index;
-      }
+    hover(draggedItem, monitor) {
+      if (!canEdit) return;
+
+      const dragIndex = draggedItem.index;
+      const hoverIndex = index;
+
+      if (dragIndex === hoverIndex) return;
+
+      const hoverBoundingRect = ref.current?.getBoundingClientRect();
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+      const clientOffset = monitor.getClientOffset();
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+
+      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
+      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
+
+      moveItem(dragIndex, hoverIndex);
+      draggedItem.index = hoverIndex;
     },
   });
   if (canEdit) {
