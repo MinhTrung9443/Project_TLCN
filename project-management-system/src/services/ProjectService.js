@@ -187,7 +187,7 @@ const getAllProjects = async (actor, search) => {
   const projects = await Project.find(query)
     .populate({
       path: "members.userId",
-      select: "fullname email avatar",
+      select: "_id fullname username email avatar status",
     })
     .populate({
       path: "teams.teamId",
@@ -196,11 +196,11 @@ const getAllProjects = async (actor, search) => {
     })
     .populate({
       path: "teams.leaderId",
-      select: "fullname email avatar",
+      select: "_id fullname username email avatar status",
     })
     .populate({
       path: "teams.members",
-      select: "fullname email avatar",
+      select: "_id fullname username email avatar status",
     })
     .sort({ createdAt: -1 })
     .lean();
@@ -249,7 +249,7 @@ const getArchivedProjects = async (actor, search) => {
   const projects = await Project.find(query)
     .populate({
       path: "members.userId",
-      select: "fullname email avatar",
+      select: "_id fullname username email avatar status",
     })
     .populate({
       path: "teams.teamId",
@@ -258,11 +258,11 @@ const getArchivedProjects = async (actor, search) => {
     })
     .populate({
       path: "teams.leaderId",
-      select: "fullname email avatar",
+      select: "_id fullname username email avatar status",
     })
     .populate({
       path: "teams.members",
-      select: "fullname email avatar",
+      select: "_id fullname username email avatar status",
     })
     .sort({ deletedAt: -1 })
     .lean();
@@ -450,7 +450,7 @@ const getProjectByKey = async (key) => {
     // Populate lồng: Lấy thông tin user bên trong mảng 'members'
     .populate({
       path: "members.userId",
-      select: "fullname email avatar",
+      select: "_id fullname username email avatar status",
     });
 
   if (!project) {
@@ -464,7 +464,7 @@ const getProjectByKey = async (key) => {
 const getProjectById = async (id) => {
   const project = await Project.findOne({ _id: id, isDeleted: false }).populate({
     path: "members.userId",
-    select: "fullname email avatar",
+    select: "_id fullname username email avatar status",
   });
 
   if (!project) {
@@ -477,10 +477,10 @@ const getProjectById = async (id) => {
 
 const getProjectMembers = async (projectKey, userId = null) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
-    .populate("members.userId", "fullname email avatar role")
+    .populate("members.userId", "_id fullname username email avatar status role")
     .populate("teams.teamId", "name") // Populate để lấy tên group
-    .populate("teams.leaderId", "fullname email avatar") // Lấy thông tin của leader
-    .populate("teams.members", "fullname email avatar"); // Populate members đã được add vào team trong project
+    .populate("teams.leaderId", "_id fullname username email avatar status") // Lấy thông tin của leader
+    .populate("teams.members", "_id fullname username email avatar status"); // Populate members đã được add vào team trong project
 
   if (!project) {
     const error = new Error("Project not found");

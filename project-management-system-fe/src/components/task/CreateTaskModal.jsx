@@ -135,6 +135,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
           }
         }
 
+        // Keep only active users for assignment
+        filteredMembers = (filteredMembers || []).filter((m) => m.userId && m.userId.status !== "inactive");
+
         setSettings({
           ...res.data,
           members: filteredMembers,
@@ -408,7 +411,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                 {errors.priorityId && <p className="error-text">{errors.priorityId}</p>}
               </div>
               <div className="form-group">
-                <label className="required" htmlFor="dueDate">Due Date</label>
+                <label className="required" htmlFor="dueDate">
+                  Due Date
+                </label>
                 <input type="date" id="dueDate" name="dueDate" value={formData.dueDate} onChange={handleInputChange} />
                 {errors.dueDate && <p className="error-text">{errors.dueDate}</p>}
               </div>

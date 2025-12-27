@@ -44,8 +44,8 @@ const timeLogService = {
       // Tạo thông báo cho PM và Leader của project
       if (task.projectId) {
         const project = await Project.findById(task.projectId._id)
-          .populate("members.userId", "fullname email avatar")
-          .populate("teams.leaderId", "fullname email avatar");
+          .populate("members.userId", "_id fullname username email avatar status role")
+          .populate("teams.leaderId", "_id fullname username email avatar status");
 
         if (project) {
           const recipientIds = new Set();
@@ -96,7 +96,7 @@ const timeLogService = {
   // Lấy danh sách time logs của một task
   getTimeLogsByTask: async (taskId) => {
     try {
-      const timeLogs = await TimeLog.find({ taskId }).populate("userId", "fullname email avatar").sort({ createdAt: -1 });
+      const timeLogs = await TimeLog.find({ taskId }).populate("userId", "_id fullname username email avatar status").sort({ createdAt: -1 });
 
       return timeLogs;
     } catch (error) {

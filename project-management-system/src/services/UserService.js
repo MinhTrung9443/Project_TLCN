@@ -78,7 +78,9 @@ class UserService {
         return `${p.name} (${p.key || p._id}) - ${roles.join(" & ")}`;
       });
 
-      const message = `User này đang giữ chức: ${details.join("; ")}. Hãy chuyển giao các vai trò này trước khi inactivate.`;
+      const message = `This user currently holds the following roles: ${details.join(
+        "; "
+      )}. Please transfer these roles before deactivating the user.`;
       const err = new Error(message);
       err.statusCode = 400;
       throw err;

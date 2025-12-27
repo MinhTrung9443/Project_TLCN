@@ -9,9 +9,9 @@ const getCreateTaskFormData = async (req, res) => {
     const userId = req.user.id; // Get current user ID from auth middleware
 
     const project = await Project.findOne({ key: projectKey.toUpperCase() })
-      .populate("members.userId", "fullname email avatar role")
-      .populate("teams.members", "fullname email avatar")
-      .populate("teams.leaderId", "fullname email avatar");
+      .populate("members.userId", "_id fullname username email avatar status role")
+      .populate("teams.members", "_id fullname username email avatar status")
+      .populate("teams.leaderId", "_id fullname username email avatar status");
 
     if (!project) {
       return res.status(404).json({ message: "Project not found" });

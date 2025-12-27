@@ -97,40 +97,53 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
           const res = await getProjectMember(projectKey);
           console.log("TaskDetailPanel - Project members response:", res.data);
 
-          // Lấy members từ project.members
-          const individualMembers = res.data.members.map((member) => ({
-            value: member.userId._id,
-            label: member.userId.fullname,
-          }));
+          const currentAssigneeId = task?.assigneeId?._id || task?.assigneeId;
 
-          // Lấy team leaders và team members từ teams
+          // Build a set of active user ids based on populated status fields
+          const activeUserIds = new Set();
+          (res.data.members || []).forEach((member) => {
+            const uid = member.userId?._id || member.userId;
+            if (member.userId && member.userId.status !== "inactive") activeUserIds.add(uid);
+          });
+          (res.data.teams || []).forEach((team) => {
+            if (team.leaderId && team.leaderId.status !== "inactive") activeUserIds.add(team.leaderId._id || team.leaderId);
+            (team.members || []).forEach((member) => {
+              const mid = member._id || member;
+              if (member && member.status !== "inactive") activeUserIds.add(mid);
+            });
+          });
+
+          // Lấy members từ project.members (giữ lại nếu active hoặc là assignee hiện tại)
+          const individualMembers = (res.data.members || []).reduce((acc, member) => {
+            const uid = member.userId?._id || member.userId;
+            if (!uid) return acc;
+            if (activeUserIds.has(uid) || uid?.toString() === currentAssigneeId?.toString()) {
+              acc.push({ value: uid, label: member.userId?.fullname || member.userId?.username || "Unknown" });
+            }
+            return acc;
+          }, []);
+
+          // Lấy team leaders và team members từ teams (giữ lại nếu active hoặc là assignee hiện tại)
           const teamMembers = [];
           if (res.data.teams && Array.isArray(res.data.teams)) {
             res.data.teams.forEach((team) => {
-              // Add team leader
               if (team.leaderId) {
                 const leaderId = team.leaderId._id || team.leaderId;
                 const leaderName = team.leaderId.fullname || team.leaderId.username || "Unknown";
-                // Check if not already in list
                 if (!teamMembers.find((m) => m.value === leaderId) && !individualMembers.find((m) => m.value === leaderId)) {
-                  teamMembers.push({
-                    value: leaderId,
-                    label: leaderName,
-                  });
+                  if (activeUserIds.has(leaderId) || leaderId?.toString() === currentAssigneeId?.toString()) {
+                    teamMembers.push({ value: leaderId, label: leaderName });
+                  }
                 }
               }
-
-              // Add team members
               if (team.members && Array.isArray(team.members)) {
                 team.members.forEach((member) => {
                   const memberId = member._id || member;
                   const memberName = member.fullname || member.username || "Unknown";
-                  // Check if not already in list
                   if (!teamMembers.find((m) => m.value === memberId) && !individualMembers.find((m) => m.value === memberId)) {
-                    teamMembers.push({
-                      value: memberId,
-                      label: memberName,
-                    });
+                    if (activeUserIds.has(memberId) || memberId?.toString() === currentAssigneeId?.toString()) {
+                      teamMembers.push({ value: memberId, label: memberName });
+                    }
                   }
                 });
               }
