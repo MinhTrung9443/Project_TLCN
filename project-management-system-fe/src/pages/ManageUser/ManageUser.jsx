@@ -115,7 +115,8 @@ const Component = () => {
       toast.success("User deactivated");
       setIsDeleteModalOpen(false);
     } catch (error) {
-      toast.error("Failed to delete user");
+      const message = error?.response?.data?.message || "Failed to deactivate user";
+      toast.error(message);
     }
   };
 
