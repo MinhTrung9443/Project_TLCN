@@ -805,12 +805,10 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   };
 
   if (loading) {
-    return (
-      <div className="audit-log-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading audit log data...</p>
-        </div>
+     return (
+      <div className="auditlog-loading">
+        <div className="spinner"></div>
+        <p>Loading audit log data...</p>
       </div>
     );
   }
