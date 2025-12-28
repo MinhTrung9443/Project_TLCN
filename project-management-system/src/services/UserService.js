@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Project = require("../models/Project");
 const { logAction } = require("./AuditLogHelper");
+const taskService = require("./TaskService"); 
 
 class UserService {
   async updateProfile(userId, updateData, actorId) {
@@ -11,6 +12,7 @@ class UserService {
     // If trying to set status to inactive, ensure user can be deactivated
     if (updateData && updateData.status === "inactive") {
       await this.ensureCanDeactivateUser(userId);
+      await taskService.removeAssigneeFromIncompleteTasks(userId);
     }
 
     const allowedUpdates = ["fullname", "avatar", "phone", "gender", "status"];
@@ -93,7 +95,7 @@ class UserService {
 
     // Check active projects for roles
     await this.ensureCanDeactivateUser(userId);
-
+    await taskService.removeAssigneeFromIncompleteTasks(userId);
     const oldUser = user.toObject();
     user.status = "inactive";
     await user.save();
@@ -115,6 +117,7 @@ class UserService {
     // If attempting to set status to inactive, check active projects
     if (updateData && updateData.status === "inactive") {
       await this.ensureCanDeactivateUser(userId);
+      await taskService.removeAssigneeFromIncompleteTasks(userId);
     }
 
     const allowedUpdates = ["fullname", "avatar", "phone", "gender", "status"];
