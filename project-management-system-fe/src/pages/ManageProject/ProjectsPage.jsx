@@ -12,7 +12,7 @@ import "../../styles/pages/ManageProject/ProjectsPage.css";
 
 const ProjectsPage = () => {
   const { user } = useAuth();
-  const { selectedProjectKey, setProjectKey, clearProject } = useContext(ProjectContext);
+  const { selectedProjectKey, setProject, clearProject } = useContext(ProjectContext);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -31,10 +31,6 @@ const ProjectsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Dọn dẹp context khi vào trang
-  useEffect(() => {
-    clearProject();
-  }, [clearProject]);
 
   const fetchData = useCallback(
     async (currentSearchTerm) => {
@@ -128,6 +124,10 @@ const ProjectsPage = () => {
 
   const handleProjectSelect = (project) => {
     if (view === "active") {
+      // 1. Cập nhật Context ngay lập tức để Sidebar hiển thị menu con
+      setProject(project);
+      
+      // 2. Điều hướng thẳng đến trang Settings General của dự án đó
       navigate(`/app/task-mgmt/projects/${project.key}/settings/general`);
     }
   };
