@@ -188,11 +188,6 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
     if (!formData.name.trim()) newErrors.name = "Task Name is required.";
     if (!formData.priorityId) newErrors.priorityId = "Priority is required.";
 
-    // Due date is required
-    if (!formData.dueDate) {
-      newErrors.dueDate = "Due date is required.";
-    }
-
     // Get selected project
     const selectedProject = projects.find((p) => p._id === formData.projectId);
 
@@ -205,7 +200,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
     console.log("Task startDate:", formData.startDate);
     console.log("Sprint:", sprint);
 
-    // Validate start date <= due date if both are provided
+    // Validate start date <= due date only if both are provided
     if (formData.startDate && formData.dueDate) {
       const startDate = new Date(formData.startDate).setHours(0, 0, 0, 0);
       const dueDate = new Date(formData.dueDate).setHours(0, 0, 0, 0);
@@ -214,7 +209,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
       }
     }
 
-    // Validate due date with project dates (ALWAYS - highest priority)
+    // Validate due date with project dates only if due date is provided
     if (formData.dueDate && selectedProject) {
       const taskDueDate = new Date(formData.dueDate);
       taskDueDate.setHours(0, 0, 0, 0);
@@ -262,7 +257,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
       }
     }
 
-    // Additional validation: if creating in a sprint, validate with sprint dates
+    // Additional validation: if creating in a sprint and due date is provided, validate with sprint dates
     if (sprint && formData.dueDate && !newErrors.dueDate) {
       const taskDueDate = new Date(formData.dueDate);
       const sprintStartDate = new Date(sprint.startDate);
@@ -411,9 +406,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                 {errors.priorityId && <p className="error-text">{errors.priorityId}</p>}
               </div>
               <div className="form-group">
-                <label className="required" htmlFor="dueDate">
-                  Due Date
-                </label>
+                <label htmlFor="dueDate">Due Date</label>
                 <input type="date" id="dueDate" name="dueDate" value={formData.dueDate} onChange={handleInputChange} />
                 {errors.dueDate && <p className="error-text">{errors.dueDate}</p>}
               </div>
