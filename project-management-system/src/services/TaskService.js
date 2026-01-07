@@ -8,7 +8,7 @@ const notificationService = require("./NotificationService");
 const workflowService = require("./WorkflowService");
 const User = require("../models/User");
 const Workflow = require("../models/Workflow");
-const cloudinary = require("../config/cloudinary"); // BẠN CẦN IMPORT CLOUDINARY VÀO ĐÂY
+const cloudinary = require("../config/cloudinary"); 
 const path = require("path");
 const fs = require("fs");
 // Hàm lấy task theo projectId
@@ -952,6 +952,38 @@ const getTaskByKey = async (taskKey) => {
   return task;
 };
 
+const removeAssigneeFromIncompleteTasks = async (userId) => {
+  try {
+    const workflows = await Workflow.find({}, "statuses");
+    
+    let doneStatusIds = [];
+    
+    workflows.forEach((wf) => {
+      if (wf.statuses && Array.isArray(wf.statuses)) {
+        wf.statuses.forEach((status) => {
+          if (status.category && status.category.toLowerCase() === "done") {
+            doneStatusIds.push(status._id);
+          }
+        });
+      }
+    });
+
+    const result = await Task.updateMany(
+      {
+        assigneeId: userId,
+        statusId: { $nin: doneStatusIds } 
+      },
+      {
+        $set: { assigneeId: null } // Đưa về Unassigned
+      }
+    );
+
+    console.log(`Đã gỡ User ${userId} khỏi ${result.modifiedCount} task chưa hoàn thành.`);
+    return result;
+  } catch (error) {
+    console.error("Lỗi khi gỡ user khỏi task:", error);
+  }
+};
 module.exports = {
   getTasksByProjectKey,
   createTask,
@@ -966,4 +998,5 @@ module.exports = {
   linkTask,
   unlinkTask,
   getTaskByKey,
+  removeAssigneeFromIncompleteTasks
 };

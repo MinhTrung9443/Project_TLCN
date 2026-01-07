@@ -87,92 +87,104 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
             {/* --- Task Management Section --- */}
             <details className="group" open>
-              <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md hover:bg-gray-100 transition-colors cursor-pointer select-none">
-                <div className="flex items-center overflow-hidden">
-                  <span className="material-symbols-outlined mr-3 text-gray-500 shrink-0">computer</span>
-                  {!isCollapsed && <span className="whitespace-nowrap">Task Management</span>}
-                </div>
-                {!isCollapsed && (
-                  <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">expand_more</span>
-                )}
-              </summary>
+            <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md hover:bg-gray-100 transition-colors cursor-pointer select-none">
+              <div className="flex items-center overflow-hidden">
+                <span className="material-symbols-outlined mr-3 text-gray-500 shrink-0">computer</span>
+                {!isCollapsed && <span className="whitespace-nowrap">Task Management</span>}
+              </div>
               {!isCollapsed && (
-                <div className="pl-10 mt-1 space-y-1">
-                  <NavLink
-                    to="/app/projects"
-                    className={({ isActive }) =>
-                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <span className="material-symbols-outlined mr-3 text-gray-500">bar_chart</span>
-                    <span className="whitespace-nowrap">Projects</span>
-                  </NavLink>
-                  <NavLink
-                    to="/app/gantt"
-                    className={({ isActive }) =>
-                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <span className="material-symbols-outlined mr-3 text-gray-500">calendar_month</span>
-                    <span className="whitespace-nowrap">Gantt</span>
-                  </NavLink>
-                  <NavLink
-                    to="/app/task-finder"
-                    className={({ isActive }) =>
-                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <span className="material-symbols-outlined mr-3 text-gray-500">description</span>
-                    <span className="whitespace-nowrap">Task Finder</span>
-                  </NavLink>
-                  <NavLink
-                    to={getProjectPath("backlog")}
-                    className={({ isActive }) =>
-                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <span className="material-symbols-outlined mr-3 text-gray-500">checklist</span>
-                    <span className="whitespace-nowrap text-ellipsis overflow-hidden">
-                      Backlog {selectedProjectKey && `(${selectedProjectKey})`}
-                    </span>
-                  </NavLink>
-                  <NavLink
-                    to={getProjectPath("active-sprint")}
-                    className={({ isActive }) =>
-                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <span className="material-symbols-outlined mr-3 text-gray-500">view_kanban</span>
-                    <span className="whitespace-nowrap text-ellipsis overflow-hidden">
-                       Active Sprint {selectedProjectKey && `(${selectedProjectKey})`}
-                    </span>
-                  </NavLink>
-                  <NavLink
-                    to={getProjectPath("settings/general")}
-                    className={({ isActive }) =>
-                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <span className="material-symbols-outlined mr-3 text-gray-500">settings</span>
-                    <span className="whitespace-nowrap text-ellipsis overflow-hidden">
-                       Project Settings {selectedProjectKey && `(${selectedProjectKey})`}
-                    </span>
-                  </NavLink>
-                </div>
+                <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">expand_more</span>
               )}
-            </details>
+            </summary>
+            
+            {!isCollapsed && (
+              <div className="pl-10 mt-1 space-y-1">
+                {/* === NHÓM 1: LUÔN HIỂN THỊ (Projects, Gantt, Task Finder) === */}
+                <NavLink
+                  to="/app/projects"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">bar_chart</span>
+                  <span className="whitespace-nowrap">Projects</span>
+                </NavLink>
+
+                <NavLink
+                  to="/app/gantt"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">calendar_month</span>
+                  <span className="whitespace-nowrap">Gantt</span>
+                </NavLink>
+
+                <NavLink
+                  to="/app/task-finder"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">description</span>
+                  <span className="whitespace-nowrap">Task Finder</span>
+                </NavLink>
+
+                {/* === NHÓM 2: CHỈ HIỂN THỊ KHI ĐÃ CHỌN PROJECT === */}
+                {selectedProjectKey && (
+                  <>                    
+                    <NavLink
+                      to={getProjectPath("backlog")}
+                      className={({ isActive }) =>
+                        `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                          isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                        }`
+                      }
+                    >
+                      <span className="material-symbols-outlined mr-3 text-gray-500">checklist</span>
+                      <span className="whitespace-nowrap text-ellipsis overflow-hidden">
+                        Backlog <span className="text-xs text-gray-400">({selectedProjectKey})</span>
+                      </span>
+                    </NavLink>
+
+                    <NavLink
+                        to={getProjectPath("active-sprint")}
+                        className={({ isActive }) =>
+                          `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                            isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                          }`
+                        }
+                      >
+                        <span className="material-symbols-outlined mr-3 text-gray-500">view_kanban</span>
+                        <span className="whitespace-nowrap text-ellipsis overflow-hidden">
+                          Active Sprint <span className="text-xs text-gray-400">({selectedProjectKey})</span>
+                        </span>
+                      </NavLink>
+
+                      <NavLink
+                        to={getProjectPath("settings/general")}
+                        className={({ isActive }) =>
+                          `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                            isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                          }`
+                        }
+                      >
+                        <span className="material-symbols-outlined mr-3 text-gray-500">settings</span>
+                        <span className="whitespace-nowrap text-ellipsis overflow-hidden">
+                          Project Settings <span className="text-xs text-gray-400">({selectedProjectKey})</span>
+                        </span>
+                      </NavLink>
+                  </>
+                )}
+              </div>
+            )}
+          </details>
 
             {/* --- Organization Section --- */}
             <details className="group">
