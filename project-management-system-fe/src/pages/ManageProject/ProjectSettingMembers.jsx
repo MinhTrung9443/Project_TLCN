@@ -116,7 +116,7 @@ const ProjectSettingMembers = () => {
 
   const handleRemoveTeam = async () => {
     try {
-      await removeTeamFromProject(projectKey, removeTeamData.teamId._id);
+      await removeTeamFromProject(projectKey, removeTeamData.team.teamId._id);
       toast.success("Team removed.");
       fetchData();
       setIsRemoveTeamModalOpen(false);
