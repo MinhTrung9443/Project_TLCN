@@ -316,8 +316,8 @@ const ProjectSettingsWorkflow = () => {
             const g = new dagre.graphlib.Graph();
             g.setGraph({
               rankdir: "LR", // Left to Right
-              nodesep: 80, // Khoảng cách giữa nodes cùng rank
-              ranksep: 120, // Khoảng cách giữa các ranks
+              nodesep: 100, // Khoảng cách giữa nodes cùng rank
+              ranksep: 150, // Khoảng cách giữa các ranks
               marginx: 50,
               marginy: 50,
             });
@@ -372,8 +372,13 @@ const ProjectSettingsWorkflow = () => {
                   const midIndex = Math.floor(points.length / 2);
                   const labelPoint = points[midIndex];
 
-                  // Lấy transition name
+                  // Lấy transition name và cắt nếu quá dài
                   const transitionName = edge.transition?.name || "";
+                  const maxChars = 15;
+                  const displayName = transitionName.length > maxChars ? transitionName.substring(0, maxChars - 3) + "..." : transitionName;
+
+                  // Tính width động dựa trên độ dài text (tối đa)
+                  const textWidth = Math.min(displayName.length * 7, 120);
 
                   return (
                     <g key={`edge-${e.v}-${e.w}-${idx}`}>
@@ -384,16 +389,16 @@ const ProjectSettingsWorkflow = () => {
                         <>
                           {/* Background cho text */}
                           <rect
-                            x={labelPoint.x - transitionName.length * 3.5}
+                            x={labelPoint.x - textWidth / 2}
                             y={labelPoint.y - 12}
-                            width={transitionName.length * 7}
+                            width={textWidth}
                             height={18}
                             fill="white"
                             stroke="#999"
                             strokeWidth="1"
                             rx="3"
                           />
-                          {/* Text label */}
+                          {/* Text label với title cho full text */}
                           <text
                             x={labelPoint.x}
                             y={labelPoint.y}
@@ -403,7 +408,8 @@ const ProjectSettingsWorkflow = () => {
                             fontSize="11"
                             fontWeight="500"
                           >
-                            {transitionName}
+                            <title>{transitionName}</title>
+                            {displayName}
                           </text>
                         </>
                       )}
