@@ -185,6 +185,20 @@ const ProjectSettingsWorkflow = () => {
     }
   };
 
+  // Màu nền và viền cho workflow diagram (đồng bộ màu nhưng nhạt hơn)
+  const getDiagramColors = (category) => {
+    switch (category) {
+      case "To Do":
+        return { bg: "#e0e1f9", border: "#6366f1", text: "#333333" }; // Tím nhạt
+      case "In Progress":
+        return { bg: "#fef3e2", border: "#f59e0b", text: "#7c2d12" }; // Cam nhạt
+      case "Done":
+        return { bg: "#d1fae5", border: "#10b981", text: "#065f46" }; // Xanh lá nhạt
+      default:
+        return { bg: "#f3f4f6", border: "#6b7280", text: "#374151" };
+    }
+  };
+
   if (loading) {
     return <div className="workflow-loading">Loading workflow...</div>;
   }
@@ -359,63 +373,114 @@ const ProjectSettingsWorkflow = () => {
                 </defs>
 
                 {/* Vẽ edges (transitions) trước để nằm phía dưới */}
-                {g.edges().map((e, idx) => {
-                  const edge = g.edge(e);
-                  const points = edge.points;
+                {(() => {
+                  const allEdges = g.edges();
 
-                  if (!points || points.length === 0) return null;
+                  // Track edges đã vẽ để xác định hướng cong
+                  const drawnEdges = new Set();
 
-                  // Tạo path từ các points
-                  const pathData = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+                  return allEdges.map((e, idx) => {
+                    const edge = g.edge(e);
+                    const points = edge.points;
 
-                  // Tính điểm giữa để đặt label
-                  const midIndex = Math.floor(points.length / 2);
-                  const labelPoint = points[midIndex];
+                    if (!points || points.length === 0) return null;
 
-                  // Lấy transition name và cắt nếu quá dài
-                  const transitionName = edge.transition?.name || "";
-                  const maxChars = 15;
-                  const displayName = transitionName.length > maxChars ? transitionName.substring(0, maxChars - 3) + "..." : transitionName;
+                    // Kiểm tra xem có edge ngược chiều đã vẽ chưa
+                    const reverseKey = `${e.w}-${e.v}`;
+                    const hasReverseDrawn = drawnEdges.has(reverseKey);
+                    const currentKey = `${e.v}-${e.w}`;
+                    drawnEdges.add(currentKey);
 
-                  // Tính width động dựa trên độ dài text (tối đa)
-                  const textWidth = Math.min(displayName.length * 7, 120);
+                    let pathData;
+                    let labelPoint;
 
-                  return (
-                    <g key={`edge-${e.v}-${e.w}-${idx}`}>
-                      <path d={pathData} fill="none" stroke="#666" strokeWidth="2" markerEnd="url(#arrowhead)" />
+                    if (hasReverseDrawn && points.length >= 2) {
+                      // Edge ngược chiều đã được vẽ - vẽ đường cong theo hướng ngược lại
+                      const start = points[0];
+                      const end = points[points.length - 1];
 
-                      {/* Hiển thị transition name nếu có */}
-                      {transitionName && (
-                        <>
-                          {/* Background cho text */}
-                          <rect
-                            x={labelPoint.x - textWidth / 2}
-                            y={labelPoint.y - 12}
-                            width={textWidth}
-                            height={18}
-                            fill="white"
-                            stroke="#999"
-                            strokeWidth="1"
-                            rx="3"
-                          />
-                          {/* Text label với title cho full text */}
-                          <text
-                            x={labelPoint.x}
-                            y={labelPoint.y}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            fill="#333"
-                            fontSize="11"
-                            fontWeight="500"
-                          >
-                            <title>{transitionName}</title>
-                            {displayName}
-                          </text>
-                        </>
-                      )}
-                    </g>
-                  );
-                })}
+                      // Tính điểm giữa
+                      const midX = (start.x + end.x) / 2;
+                      const midY = (start.y + end.y) / 2;
+
+                      // Tính vector vuông góc
+                      const dx = end.x - start.x;
+                      const dy = end.y - start.y;
+                      const length = Math.sqrt(dx * dx + dy * dy);
+
+                      if (length > 0) {
+                        // Offset 40px
+                        const offset = 40;
+                        const perpX = (-dy / length) * offset;
+                        const perpY = (dx / length) * offset;
+
+                        // Cong về phía dưới (hướng -1)
+                        const controlX = midX - perpX;
+                        const controlY = midY - perpY;
+
+                        pathData = `M ${start.x} ${start.y} Q ${controlX} ${controlY}, ${end.x} ${end.y}`;
+
+                        labelPoint = {
+                          x: (start.x + 2 * controlX + end.x) / 4,
+                          y: (start.y + 2 * controlY + end.y) / 4,
+                        };
+                      } else {
+                        pathData = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+                        labelPoint = points[Math.floor(points.length / 2)];
+                      }
+                    } else {
+                      // Edge đầu tiên hoặc không có reverse - vẽ đường thẳng
+                      pathData = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+
+                      const midIndex = Math.floor(points.length / 2);
+                      labelPoint = points[midIndex];
+                    }
+
+                    // Lấy transition name và cắt nếu quá dài
+                    const transitionName = edge.transition?.name || "";
+                    const maxChars = 15;
+                    const displayName = transitionName.length > maxChars ? transitionName.substring(0, maxChars - 3) + "..." : transitionName;
+
+                    // Tính width động dựa trên độ dài text (tối đa)
+                    const textWidth = Math.min(displayName.length * 7, 120);
+
+                    return (
+                      <g key={`edge-${e.v}-${e.w}-${idx}`}>
+                        <path d={pathData} fill="none" stroke="#666" strokeWidth="2" markerEnd="url(#arrowhead)" />
+
+                        {/* Hiển thị transition name nếu có */}
+                        {transitionName && (
+                          <>
+                            {/* Background cho text */}
+                            <rect
+                              x={labelPoint.x - textWidth / 2}
+                              y={labelPoint.y - 12}
+                              width={textWidth}
+                              height={18}
+                              fill="white"
+                              stroke="#999"
+                              strokeWidth="1"
+                              rx="3"
+                            />
+                            {/* Text label với title cho full text */}
+                            <text
+                              x={labelPoint.x}
+                              y={labelPoint.y}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                              fill="#333"
+                              fontSize="11"
+                              fontWeight="500"
+                            >
+                              <title>{transitionName}</title>
+                              {displayName}
+                            </text>
+                          </>
+                        )}
+                      </g>
+                    );
+                  });
+                })()}
 
                 {/* Vẽ nodes (statuses) */}
                 {g.nodes().map((nodeId) => {
@@ -426,18 +491,21 @@ const ProjectSettingsWorkflow = () => {
                   const x = node.x - node.width / 2;
                   const y = node.y - node.height / 2;
 
+                  // Lấy màu từ category (pastel style)
+                  const colors = getDiagramColors(status.category);
+
                   return (
                     <g key={nodeId}>
-                      {/* Background box */}
-                      <rect x={x} y={y} width={node.width} height={node.height} fill="white" stroke="#333" strokeWidth="2" rx="4" />
+                      {/* Background box với màu pastel */}
+                      <rect x={x} y={y} width={node.width} height={node.height} fill={colors.bg} stroke={colors.border} strokeWidth="2" rx="6" />
 
-                      {/* Status name */}
-                      <text x={node.x} y={node.y - 8} textAnchor="middle" fill="#000" fontSize="14" fontWeight="600">
+                      {/* Status name - màu tối để dễ đọc */}
+                      <text x={node.x} y={node.y - 8} textAnchor="middle" fill={colors.text} fontSize="14" fontWeight="600">
                         {status.name}
                       </text>
 
-                      {/* Category */}
-                      <text x={node.x} y={node.y + 10} textAnchor="middle" fill="#666" fontSize="11">
+                      {/* Category - màu nhạt hơn */}
+                      <text x={node.x} y={node.y + 10} textAnchor="middle" fill={colors.text} fontSize="11" opacity="0.7">
                         {status.category}
                       </text>
                     </g>
