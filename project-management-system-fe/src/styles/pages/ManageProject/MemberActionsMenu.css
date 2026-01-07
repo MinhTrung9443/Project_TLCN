@@ -1,62 +1,65 @@
-/* CSS cho MemberActionsMenu */
-
-/* Container chính - Đây là chìa khóa để định vị */
 .actions-menu-container {
-  position: relative; /* Bắt buộc */
-  display: inline-block;
+    display: inline-block;
 }
 
 .actions-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  line-height: 1;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #6b7280;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
 }
 
 .actions-btn:hover {
-  background-color: #f0f0f0;
+    background-color: #f3f4f6;
+    color: #111827;
 }
 
-/* Menu dropdown */
-.dropdown-menu {
-  position: absolute; /* Định vị so với container */
-  right: 0; /* Căn lề phải */
-  top: 100%; /* Xuất hiện ngay bên dưới nút */
-  background-color: white;
-  border: 1px solid #dfe1e6;
-  border-radius: 4px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  list-style: none;
-  padding: 8px 0;
-  margin: 4px 0 0 0;
-  min-width: 160px; /* Độ rộng tối thiểu */
-  z-index: 10; /* Đảm bảo nó nổi lên trên */
+.dropdown-menu-portal {
+    background: #ffffff !important; /* Quan trọng: Màu nền trắng */
+    border: 1px solid #dfe1e6;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    padding: 8px 0;
+    margin: 0;
+    list-style: none;
+    text-align: left;
 }
 
-.dropdown-menu li {
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  white-space: nowrap; /* Ngăn không cho chữ xuống dòng */
+.dropdown-menu-portal li {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+    background: white; /* Đảm bảo li cũng có nền */
 }
 
-.dropdown-menu li:hover {
-  background-color: #f0f0f0;
+.dropdown-menu-portal li:hover {
+    background-color: #f3f4f6;
 }
 
-/* Style cho các hành động nguy hiểm */
-.dropdown-menu li.danger {
-  color: #de350b;
+.dropdown-menu-portal li.danger {
+    color: #ef4444;
 }
 
-.dropdown-menu li.danger:hover {
-  background-color: #ffebe6; /* Màu nền đỏ nhạt khi hover */
+.dropdown-menu-portal li.danger:hover {
+    background-color: #fef2f2;
 }
 
-/* Placeholder để giữ cho layout không bị vỡ */
+.menu-divider {
+    border: 0;
+    border-top: 1px solid #f3f4f6;
+    margin: 4px 0;
+}
+
 .actions-placeholder {
-    width: 24px; /* Bằng kích thước của nút actions-btn */
-    height: 24px;
+    width: 32px;
+    height: 32px;
 }

@@ -173,9 +173,9 @@ const TaskDetailsTab = ({
             value={findOption(projectMembers, editableTask.assigneeId)}
             options={projectMembers} // Sử dụng danh sách members
             onChange={(option) => handleUpdate("assigneeId", option ? option.value : null)}
-            isClearable
+            isClearable={!editableTask.assigneeId}
             placeholder="Select..."
-            isDisabled={user?.role !== "admin" && userProjectRole === "MEMBER"}
+            isDisabled={Boolean(editableTask.assigneeId)}
           />
         </div>
         <div className="detail-item-editable">

@@ -161,60 +161,6 @@ const isProjectManager = async (req, res, next) => {
   }
 };
 
-const adminOrPM = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    return next();
-  }
-
-  // Check if user has PROJECT_MANAGER role in any project
-  // This will be verified when fetching projects in the controller
-  if (req.user) {
-    return next();
-  }
-
-  return res.status(403).json({ message: "Forbidden: Admin or Project Manager access required" });
-};
-
-// Middleware to check if user is admin or PM of the project in request body
-const adminOrProjectPM = async (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    return next();
-  }
-
-  try {
-    // Get projectId from body (for create) or from existing resource (for update/delete)
-    let projectId = req.body.projectId;
-
-    // If not in body, try to get from the resource being updated/deleted
-    if (!projectId && req.params.id) {
-      // This will be handled by checking the resource's projectId in the service layer
-      // For now, just pass through and let service layer handle authorization
-      return next();
-    }
-
-    if (projectId) {
-      const project = await Project.findById(projectId);
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
-      }
-
-      // Check if user is PM of this project
-      const member = project.members.find((m) => m.userId.equals(req.user._id));
-      if (member && member.role === "PROJECT_MANAGER") {
-        return next();
-      }
-
-      return res.status(403).json({ message: "Forbidden: You must be Project Manager of this project" });
-    }
-
-    // If no projectId, let it through (will be caught by validation)
-    return next();
-  } catch (error) {
-    console.error("Error in adminOrProjectPM middleware:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
 // Middleware to check if user is admin or PM of sprint's project
 const isSprintManager = async (req, res, next) => {
   if (req.user && req.user.role === "admin") {
@@ -257,7 +203,5 @@ module.exports = {
   canAssignTask,
   isManagerOrLeader,
   isProjectManager,
-  adminOrPM,
-  adminOrProjectPM,
   isSprintManager,
 };

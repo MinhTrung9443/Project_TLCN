@@ -56,8 +56,9 @@ const Component = () => {
       // Cập nhật initialData sau khi save thành công
       setInitialData(updateUser);
     } catch (error) {
+      const message = error?.response?.data?.message || "Failed to update user";
       console.error("Error updating user:", error);
-      toast.error("Failed to update user.");
+      toast.error(message);
     }
   };
 

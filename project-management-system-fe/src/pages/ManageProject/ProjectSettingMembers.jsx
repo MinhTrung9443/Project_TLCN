@@ -116,7 +116,7 @@ const ProjectSettingMembers = () => {
 
   const handleRemoveTeam = async () => {
     try {
-      await removeTeamFromProject(projectKey, removeTeamData.teamId._id);
+      await removeTeamFromProject(projectKey, removeTeamData.team.teamId._id);
       toast.success("Team removed.");
       fetchData();
       setIsRemoveTeamModalOpen(false);
@@ -215,6 +215,7 @@ const ProjectSettingMembers = () => {
                         </div>
                       )}
                       <span>{item.leader.userId.fullname}</span>
+                      {item.leader.userId.status === "inactive" && <span className="deactivated-tag">Deactivated</span>}
                     </div>
                     <div>{item.leader.role}</div>
                     <div>Added via {item.team.teamId.name}</div>
@@ -241,6 +242,7 @@ const ProjectSettingMembers = () => {
                         </div>
                       )}
                       <span>{member.userId.fullname}</span>
+                      {member.userId.status === "inactive" && <span className="deactivated-tag">Deactivated</span>}
                     </div>
                     <div>{member.role}</div>
                     <div>Added via {item.team.teamId.name}</div>
@@ -271,6 +273,7 @@ const ProjectSettingMembers = () => {
                   )}
                   <span>{item.userId.fullname}</span>
                   {item.role === "PROJECT_MANAGER" && <span className="pm-badge">PM</span>}
+                  {item.userId.status === "inactive" && <span className="deactivated-tag">Deactivated</span>}
                 </div>
                 <div>{item.role}</div>
                 <div>Added individually</div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import dagre from "dagre";
 import workflowService from "../../services/workflowService";
 import { getProjectByKey } from "../../services/projectService";
 import { useAuth } from "../../contexts/AuthContext";
@@ -184,6 +185,20 @@ const ProjectSettingsWorkflow = () => {
     }
   };
 
+  // Màu nền và viền cho workflow diagram (đồng bộ màu nhưng nhạt hơn)
+  const getDiagramColors = (category) => {
+    switch (category) {
+      case "To Do":
+        return { bg: "#e0e1f9", border: "#6366f1", text: "#333333" }; // Tím nhạt
+      case "In Progress":
+        return { bg: "#fef3e2", border: "#f59e0b", text: "#7c2d12" }; // Cam nhạt
+      case "Done":
+        return { bg: "#d1fae5", border: "#10b981", text: "#065f46" }; // Xanh lá nhạt
+      default:
+        return { bg: "#f3f4f6", border: "#6b7280", text: "#374151" };
+    }
+  };
+
   if (loading) {
     return <div className="workflow-loading">Loading workflow...</div>;
   }
@@ -302,134 +317,203 @@ const ProjectSettingsWorkflow = () => {
           <span className="diagram-subtitle">Visual representation of status flow</span>
         </div>
 
-        <div className="workflow-diagram">
-          <svg width="100%" height="400" className="diagram-svg">
-            <defs>
-              {/* Arrow marker - improved shape */}
-              <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" opacity="0.8" />
-              </marker>
+        <div className="workflow-diagram" style={{ overflowX: "auto", overflowY: "auto" }}>
+          {(() => {
+            const statuses = workflow.statuses || [];
+            const transitions = workflow.transitions || [];
 
-              {/* Gradient for arrow */}
-              <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style={{ stopColor: "#94a3b8", stopOpacity: 0.5 }} />
-                <stop offset="100%" style={{ stopColor: "#64748b", stopOpacity: 0.9 }} />
-              </linearGradient>
+            if (statuses.length === 0) {
+              return <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>No statuses available</div>;
+            }
 
-              {/* Shadow filter */}
-              <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2" />
-              </filter>
-            </defs>
+            // Khởi tạo dagre graph
+            const g = new dagre.graphlib.Graph();
+            g.setGraph({
+              rankdir: "LR", // Left to Right
+              nodesep: 100, // Khoảng cách giữa nodes cùng rank
+              ranksep: 150, // Khoảng cách giữa các ranks
+              marginx: 50,
+              marginy: 50,
+            });
+            g.setDefaultEdgeLabel(() => ({}));
 
-            {/* Group statuses by category and render horizontally */}
-            {(() => {
-              const categoryOrder = ["To Do", "In Progress", "Done"];
-              const groupedStatuses = categoryOrder
-                .map((category) => ({
-                  category,
-                  statuses: (workflow.statuses || []).filter((s) => s.category === category),
-                }))
-                .filter((group) => group.statuses.length > 0);
+            // Thêm nodes vào graph
+            const nodeWidth = 150;
+            const nodeHeight = 60;
+            statuses.forEach((status) => {
+              g.setNode(status._id, {
+                label: status.name,
+                width: nodeWidth,
+                height: nodeHeight,
+                status: status,
+              });
+            });
 
-              let currentX = 80;
-              const spacing = 180;
-              const categorySpacing = 100;
-              const baseY = 200;
+            // Thêm edges vào graph
+            transitions.forEach((transition) => {
+              g.setEdge(transition.from, transition.to, {
+                transition: transition,
+              });
+            });
 
-              return (
-                <>
-                  {/* Render category groups */}
-                  {groupedStatuses.map((group, groupIndex) => {
-                    const groupStartX = currentX;
+            // Chạy layout algorithm
+            dagre.layout(g);
+
+            // Lấy kích thước graph
+            const graphAttrs = g.graph();
+            const svgWidth = graphAttrs.width + 100;
+            const svgHeight = graphAttrs.height + 100;
+
+            return (
+              <svg width={svgWidth} height={svgHeight} className="diagram-svg" style={{ minWidth: "100%" }}>
+                <defs>
+                  <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#333" />
+                  </marker>
+                </defs>
+
+                {/* Vẽ edges (transitions) trước để nằm phía dưới */}
+                {(() => {
+                  const allEdges = g.edges();
+
+                  // Track edges đã vẽ để xác định hướng cong
+                  const drawnEdges = new Set();
+
+                  return allEdges.map((e, idx) => {
+                    const edge = g.edge(e);
+                    const points = edge.points;
+
+                    if (!points || points.length === 0) return null;
+
+                    // Kiểm tra xem có edge ngược chiều đã vẽ chưa
+                    const reverseKey = `${e.w}-${e.v}`;
+                    const hasReverseDrawn = drawnEdges.has(reverseKey);
+                    const currentKey = `${e.v}-${e.w}`;
+                    drawnEdges.add(currentKey);
+
+                    let pathData;
+                    let labelPoint;
+
+                    if (hasReverseDrawn && points.length >= 2) {
+                      // Edge ngược chiều đã được vẽ - vẽ đường cong theo hướng ngược lại
+                      const start = points[0];
+                      const end = points[points.length - 1];
+
+                      // Tính điểm giữa
+                      const midX = (start.x + end.x) / 2;
+                      const midY = (start.y + end.y) / 2;
+
+                      // Tính vector vuông góc
+                      const dx = end.x - start.x;
+                      const dy = end.y - start.y;
+                      const length = Math.sqrt(dx * dx + dy * dy);
+
+                      if (length > 0) {
+                        // Offset 40px
+                        const offset = 40;
+                        const perpX = (-dy / length) * offset;
+                        const perpY = (dx / length) * offset;
+
+                        // Cong về phía dưới (hướng -1)
+                        const controlX = midX - perpX;
+                        const controlY = midY - perpY;
+
+                        pathData = `M ${start.x} ${start.y} Q ${controlX} ${controlY}, ${end.x} ${end.y}`;
+
+                        labelPoint = {
+                          x: (start.x + 2 * controlX + end.x) / 4,
+                          y: (start.y + 2 * controlY + end.y) / 4,
+                        };
+                      } else {
+                        pathData = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+                        labelPoint = points[Math.floor(points.length / 2)];
+                      }
+                    } else {
+                      // Edge đầu tiên hoặc không có reverse - vẽ đường thẳng
+                      pathData = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+
+                      const midIndex = Math.floor(points.length / 2);
+                      labelPoint = points[midIndex];
+                    }
+
+                    // Lấy transition name và cắt nếu quá dài
+                    const transitionName = edge.transition?.name || "";
+                    const maxChars = 15;
+                    const displayName = transitionName.length > maxChars ? transitionName.substring(0, maxChars - 3) + "..." : transitionName;
+
+                    // Tính width động dựa trên độ dài text (tối đa)
+                    const textWidth = Math.min(displayName.length * 7, 120);
 
                     return (
-                      <g key={group.category}>
-                        {/* Render statuses in this category */}
-                        {group.statuses.map((status, statusIndex) => {
-                          const x = currentX + statusIndex * spacing;
-                          const y = baseY;
+                      <g key={`edge-${e.v}-${e.w}-${idx}`}>
+                        <path d={pathData} fill="none" stroke="#666" strokeWidth="2" markerEnd="url(#arrowhead)" />
 
-                          // Store position for transitions
-                          status._renderX = x;
-                          status._renderY = y;
-
-                          return (
-                            <g key={status._id}>
-                              {/* Status box with shadow */}
-                              <rect
-                                x={x - 70}
-                                y={y - 30}
-                                width="140"
-                                height="60"
-                                rx="12"
-                                fill={getCategoryColor(status.category)}
-                                opacity="0.95"
-                                filter="url(#shadow)"
-                              />
-
-                              {/* Status name */}
-                              <text x={x} y={y} textAnchor="middle" fill="white" fontSize="15" fontWeight="600">
-                                {status.name}
-                              </text>
-
-                              {/* Category badge */}
-                              <rect x={x - 35} y={y + 12} width="70" height="18" rx="9" fill="rgba(255, 255, 255, 0.3)" />
-                              <text x={x} y={y + 24} textAnchor="middle" fill="white" fontSize="10" fontWeight="500">
-                                {status.category}
-                              </text>
-                            </g>
-                          );
-                        })}
-
-                        {/* Update currentX for next group */}
-                        {(() => {
-                          currentX += group.statuses.length * spacing + categorySpacing;
-                          return null;
-                        })()}
+                        {/* Hiển thị transition name nếu có */}
+                        {transitionName && (
+                          <>
+                            {/* Background cho text */}
+                            <rect
+                              x={labelPoint.x - textWidth / 2}
+                              y={labelPoint.y - 12}
+                              width={textWidth}
+                              height={18}
+                              fill="white"
+                              stroke="#999"
+                              strokeWidth="1"
+                              rx="3"
+                            />
+                            {/* Text label với title cho full text */}
+                            <text
+                              x={labelPoint.x}
+                              y={labelPoint.y}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                              fill="#333"
+                              fontSize="11"
+                              fontWeight="500"
+                            >
+                              <title>{transitionName}</title>
+                              {displayName}
+                            </text>
+                          </>
+                        )}
                       </g>
                     );
-                  })}
+                  });
+                })()}
 
-                  {/* Render transitions after all statuses positioned */}
-                  {workflow.transitions?.map((transition) => {
-                    const fromStatus = workflow.statuses?.find((s) => s._id === transition.from);
-                    const toStatus = workflow.statuses?.find((s) => s._id === transition.to);
+                {/* Vẽ nodes (statuses) */}
+                {g.nodes().map((nodeId) => {
+                  const node = g.node(nodeId);
+                  const status = node.status;
 
-                    if (!fromStatus?._renderX || !toStatus?._renderX) return null;
+                  // dagre tính toán vị trí center, cần chuyển về top-left
+                  const x = node.x - node.width / 2;
+                  const y = node.y - node.height / 2;
 
-                    const x1 = fromStatus._renderX + 70;
-                    const y1 = fromStatus._renderY;
-                    const x2 = toStatus._renderX - 70;
-                    const y2 = toStatus._renderY;
+                  // Lấy màu từ category (pastel style)
+                  const colors = getDiagramColors(status.category);
 
-                    // Calculate control points for smooth curve
-                    const dx = x2 - x1;
-                    const dy = y2 - y1;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                  return (
+                    <g key={nodeId}>
+                      {/* Background box với màu pastel */}
+                      <rect x={x} y={y} width={node.width} height={node.height} fill={colors.bg} stroke={colors.border} strokeWidth="2" rx="6" />
 
-                    // Curve more if going backwards or vertically
-                    const curveFactor = dx < 0 ? 0.6 : 0.3;
-                    const controlY = (y1 + y2) / 2 - distance * curveFactor;
+                      {/* Status name - màu tối để dễ đọc */}
+                      <text x={node.x} y={node.y - 8} textAnchor="middle" fill={colors.text} fontSize="14" fontWeight="600">
+                        {status.name}
+                      </text>
 
-                    return (
-                      <g key={transition._id}>
-                        {/* Smooth curved arrow */}
-                        <path
-                          d={`M ${x1} ${y1} Q ${(x1 + x2) / 2} ${controlY}, ${x2} ${y2}`}
-                          stroke="url(#arrowGradient)"
-                          strokeWidth="2.5"
-                          fill="none"
-                          markerEnd="url(#arrowhead)"
-                          opacity="0.7"
-                        />
-                      </g>
-                    );
-                  })}
-                </>
-              );
-            })()}
-          </svg>
+                      {/* Category - màu nhạt hơn */}
+                      <text x={node.x} y={node.y + 10} textAnchor="middle" fill={colors.text} fontSize="11" opacity="0.7">
+                        {status.category}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            );
+          })()}
         </div>
       </div>
 

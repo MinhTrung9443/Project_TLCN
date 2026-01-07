@@ -8,7 +8,7 @@ const notificationService = require("./NotificationService");
 const workflowService = require("./WorkflowService");
 const User = require("../models/User");
 const Workflow = require("../models/Workflow");
-const cloudinary = require("../config/cloudinary"); // BẠN CẦN IMPORT CLOUDINARY VÀO ĐÂY
+const cloudinary = require("../config/cloudinary"); 
 const path = require("path");
 const fs = require("fs");
 // Hàm lấy task theo projectId
@@ -218,9 +218,7 @@ const searchTasks = async (queryParams, user) => {
 
     // If managedOnly requested, restrict to projects user manages (PM or Team Leader).
     if (isManagedOnly) {
-      const managedIds = [
-        ...new Set([...pmProjectIds, ...leaderProjectIds]),
-      ];
+      const managedIds = [...new Set([...pmProjectIds, ...leaderProjectIds])];
 
       // If there are no managed projects -> immediately return empty
       if (managedIds.length === 0) return [];
@@ -275,7 +273,11 @@ const searchTasks = async (queryParams, user) => {
   }
 
   const tasks = await Task.find(query)
-    .populate("projectId", "name key isDeleted status")
+    .populate({
+      path: "projectId",
+      select: "name key isDeleted status members",
+      populate: { path: "members.userId", select: "_id fullname username email avatar status role" },
+    })
     .populate("taskTypeId", "name icon")
     .populate("priorityId", "name icon")
     .populate("assigneeId", "fullname avatar")
@@ -460,7 +462,6 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
   }
-  return populatedTask;
 
   await logAction({
     userId,
@@ -526,7 +527,7 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
   }
-  return updatedTask;
+  return populatedTask;
 };
 
 const changeTaskSprint = async (taskId, sprintId, userId) => {
@@ -787,7 +788,11 @@ const getOppositeLinkType = (type) => {
 
 const populateFullTask = (taskQuery) => {
   return taskQuery.populate([
-    { path: "projectId", select: "name key" },
+    {
+      path: "projectId",
+      select: "name key isDeleted status members",
+      populate: { path: "members.userId", select: "_id fullname username email avatar status role" },
+    },
     { path: "taskTypeId", select: "name icon" },
     { path: "priorityId", select: "name icon" },
     { path: "assigneeId", select: "fullname avatar" },
@@ -892,7 +897,11 @@ const unlinkTask = async (currentTaskId, linkId, userId) => {
 const getTaskByKey = async (taskKey) => {
   const task = await Task.findOne({ key: taskKey.toUpperCase() }).populate([
     // Sao chép phần populate từ hàm updateTask để đảm bảo nhất quán
-    { path: "projectId", select: "name key status isDeleted" }, // Thêm status và isDeleted
+    {
+      path: "projectId",
+      select: "name key status isDeleted members",
+      populate: { path: "members.userId", select: "_id fullname username email avatar status role" },
+    }, // Thêm status và isDeleted và members
     { path: "taskTypeId", select: "name icon" },
     { path: "priorityId", select: "name icon" },
     { path: "assigneeId", select: "fullname avatar" },
@@ -943,6 +952,38 @@ const getTaskByKey = async (taskKey) => {
   return task;
 };
 
+const removeAssigneeFromIncompleteTasks = async (userId) => {
+  try {
+    const workflows = await Workflow.find({}, "statuses");
+    
+    let doneStatusIds = [];
+    
+    workflows.forEach((wf) => {
+      if (wf.statuses && Array.isArray(wf.statuses)) {
+        wf.statuses.forEach((status) => {
+          if (status.category && status.category.toLowerCase() === "done") {
+            doneStatusIds.push(status._id);
+          }
+        });
+      }
+    });
+
+    const result = await Task.updateMany(
+      {
+        assigneeId: userId,
+        statusId: { $nin: doneStatusIds } 
+      },
+      {
+        $set: { assigneeId: null } // Đưa về Unassigned
+      }
+    );
+
+    console.log(`Đã gỡ User ${userId} khỏi ${result.modifiedCount} task chưa hoàn thành.`);
+    return result;
+  } catch (error) {
+    console.error("Lỗi khi gỡ user khỏi task:", error);
+  }
+};
 module.exports = {
   getTasksByProjectKey,
   createTask,
@@ -957,4 +998,5 @@ module.exports = {
   linkTask,
   unlinkTask,
   getTaskByKey,
+  removeAssigneeFromIncompleteTasks
 };

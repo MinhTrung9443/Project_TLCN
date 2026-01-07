@@ -1,11 +1,19 @@
 const User = require("../models/User");
+const Project = require("../models/Project");
 const { logAction } = require("./AuditLogHelper");
+const taskService = require("./TaskService"); 
 
 class UserService {
   async updateProfile(userId, updateData, actorId) {
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
     const oldUser = user.toObject();
+
+    // If trying to set status to inactive, ensure user can be deactivated
+    if (updateData && updateData.status === "inactive") {
+      await this.ensureCanDeactivateUser(userId);
+      await taskService.removeAssigneeFromIncompleteTasks(userId);
+    }
 
     const allowedUpdates = ["fullname", "avatar", "phone", "gender", "status"];
     Object.keys(updateData).forEach((key) => {
@@ -51,9 +59,43 @@ class UserService {
     }
   }
 
+  // Helper: ensure user can be deactivated (not PM or team leader in active projects)
+  async ensureCanDeactivateUser(userId) {
+    const uid = userId.toString();
+    const projects = await Project.find({
+      status: "active",
+      isDeleted: false,
+      $or: [{ members: { $elemMatch: { userId: userId, role: "PROJECT_MANAGER" } } }, { "teams.leaderId": userId }],
+    }).lean();
+
+    if (projects.length > 0) {
+      const details = projects.map((p) => {
+        const roles = [];
+        if ((p.members || []).some((m) => m.userId && m.userId.toString && m.userId.toString() === uid && m.role === "PROJECT_MANAGER")) {
+          roles.push("Project Manager");
+        }
+        if ((p.teams || []).some((t) => t.leaderId && t.leaderId.toString && t.leaderId.toString() === uid)) {
+          roles.push("Team Leader");
+        }
+        return `${p.name} (${p.key || p._id}) - ${roles.join(" & ")}`;
+      });
+
+      const message = `This user currently holds the following roles: ${details.join(
+        "; "
+      )}. Please transfer these roles before deactivating the user.`;
+      const err = new Error(message);
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
   async deleteUser(userId, actorId) {
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
+
+    // Check active projects for roles
+    await this.ensureCanDeactivateUser(userId);
+    await taskService.removeAssigneeFromIncompleteTasks(userId);
     const oldUser = user.toObject();
     user.status = "inactive";
     await user.save();
@@ -71,6 +113,12 @@ class UserService {
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
     const oldUser = user.toObject();
+
+    // If attempting to set status to inactive, check active projects
+    if (updateData && updateData.status === "inactive") {
+      await this.ensureCanDeactivateUser(userId);
+      await taskService.removeAssigneeFromIncompleteTasks(userId);
+    }
 
     const allowedUpdates = ["fullname", "avatar", "phone", "gender", "status"];
     Object.keys(updateData).forEach((key) => {

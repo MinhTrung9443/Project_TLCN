@@ -332,9 +332,9 @@ const performanceService = {
           model: "Group",
           select: "name status",
         })
-        .populate("teams.leaderId", "fullname email")
-        .populate("teams.members", "fullname email avatar")
-        .populate("members.userId", "_id email");
+        .populate("teams.leaderId", "_id fullname username email avatar status")
+        .populate("teams.members", "_id fullname username email avatar status")
+        .populate("members.userId", "_id fullname username email avatar status role");
 
       if (!project) {
         throw { statusCode: 404, message: "Project not found" };
@@ -438,9 +438,9 @@ const performanceService = {
           model: "Group",
           select: "name status",
         })
-        .populate("teams.leaderId", "fullname email")
-        .populate("teams.members", "fullname email avatar")
-        .populate("members.userId", "_id email");
+        .populate("teams.leaderId", "_id fullname username email avatar status")
+        .populate("teams.members", "_id fullname username email avatar status")
+        .populate("members.userId", "_id fullname username email avatar status role");
 
       if (!project) {
         throw { statusCode: 404, message: "Project not found" };

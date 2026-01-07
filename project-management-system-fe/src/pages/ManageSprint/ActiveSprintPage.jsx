@@ -12,6 +12,7 @@ import BoardColumn from "../../components/sprint/BoardColumn";
 import SprintSelector from "../../components/sprint/SprintSelector";
 import { isTransitionAllowed, getTransitionErrorMessage } from "../../utils/workflowTransitions";
 import { useAuth } from "../../contexts/AuthContext";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 import "../../styles/pages/ManageSprint/ActiveSprintPage.css";
 
 const ActiveSprintPage = () => {
@@ -20,6 +21,8 @@ const ActiveSprintPage = () => {
   const [searchParams] = useSearchParams();
   const [isCompleting, setIsCompleting] = useState(false);
   const [userProjectRole, setUserProjectRole] = useState(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [incompleteCount, setIncompleteCount] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -138,19 +141,25 @@ const ActiveSprintPage = () => {
     return tasks.filter((task) => task.statusId?._id === status._id || (task.statusId?.category === status.category && !task.statusId?._id));
   };
 
-  // Handle complete sprint
+  // Handle complete sprint (show confirmation modal if there are incomplete tasks)
   const handleCompleteSprint = async () => {
     if (!currentSprint) return;
 
     const incompleteTasks = tasks.filter((task) => task.statusId?.category !== "Done");
 
     if (incompleteTasks.length > 0) {
-      const confirmed = window.confirm(
-        `This sprint has ${incompleteTasks.length} incomplete task(s). Are you sure you want to complete it? Incomplete tasks will be moved to backlog.`
-      );
-      if (!confirmed) return;
+      setIncompleteCount(incompleteTasks.length);
+      setConfirmModalOpen(true);
+      return;
     }
 
+    // No incomplete tasks - proceed directly
+    await completeSprintConfirmed();
+  };
+
+  // Actual completion logic extracted so it can be invoked from modal confirm
+  const completeSprintConfirmed = async () => {
+    setConfirmModalOpen(false);
     setIsCompleting(true);
     try {
       await sprintService.updateSprint(currentSprint._id, { status: "Completed" });
@@ -211,6 +220,16 @@ const ActiveSprintPage = () => {
             <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
           ))}
         </div>
+
+        <ConfirmationModal
+          isOpen={confirmModalOpen}
+          onClose={() => setConfirmModalOpen(false)}
+          onConfirm={completeSprintConfirmed}
+          title="Complete Sprint"
+          message={`This sprint has ${incompleteCount} incomplete task(s). Are you sure you want to complete it? Incomplete tasks will be moved to backlog.`}
+          confirmText="Complete"
+          cancelText="Cancel"
+        />
       </div>
     </DndProvider>
   );
