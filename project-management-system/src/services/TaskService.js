@@ -232,6 +232,25 @@ const searchTasks = async (queryParams, user) => {
         }
         // allowed: keep specific projectId (do not overwrite)
         query.projectId = projectId;
+
+        // Nếu user là leader trong project này, chỉ hiển thị tasks của team members
+        if (projectRoleMap[requestedId] === "TEAM_LEADER") {
+          const project = projects.find((p) => p._id.toString() === requestedId);
+          if (project) {
+            let teamMemberIds = new Set();
+            teamMemberIds.add(userId.toString()); // Leader cũng có thể được assign task
+            for (const team of project.teams || []) {
+              if (team.leaderId?.toString() === userId.toString()) {
+                (team.members || []).forEach((m) => teamMemberIds.add(m.toString()));
+              }
+            }
+            // Chỉ hiển thị tasks được assign hoặc report bởi team members
+            query.$and = query.$and || [];
+            query.$and.push({
+              $or: [{ assigneeId: { $in: Array.from(teamMemberIds) } }, { reporterId: { $in: Array.from(teamMemberIds) } }],
+            });
+          }
+        }
       } else {
         // otherwise restrict to managed projects
         query.projectId = { $in: managedIds };
