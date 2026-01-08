@@ -111,11 +111,11 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
           );
 
           if (!isPM) {
-            // User is a Leader - can only assign to their team members
+            // User is a Leader - can only assign to their team members + themselves
             const userLeadTeams = selectedProject.teams?.filter((team) => team.leaderId._id === user._id || team.leaderId === user._id) || [];
 
-            // Get all team member IDs
-            const teamMemberIds = [];
+            // Get all team member IDs including the leader themselves
+            const teamMemberIds = [user._id.toString()]; // Add leader to the list
             userLeadTeams.forEach((team) => {
               if (team.members && Array.isArray(team.members)) {
                 team.members.forEach((member) => {
@@ -127,7 +127,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
               }
             });
 
-            // Filter members to only show team members
+            // Filter members to only show team members + leader
             filteredMembers = res.data.members.filter((m) => {
               const userId = m.userId._id || m.userId;
               return teamMemberIds.includes(userId.toString());
