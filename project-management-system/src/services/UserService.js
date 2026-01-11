@@ -42,7 +42,7 @@ class UserService {
     }
   }
 
-  async getAllUsers(page = 1, limit = 20) {
+  async getAllUsers(page = 1, limit = 100) {
     // Nếu không có page và limit, chúng ta muốn lấy hết
     // Kiểm tra xem req.query có rỗng không
     const hasPagination = page && limit && !isNaN(page) && !isNaN(limit);
