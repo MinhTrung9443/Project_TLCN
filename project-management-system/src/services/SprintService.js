@@ -115,6 +115,23 @@ const sprintService = {
         }
       }
 
+      const taskList = await Task.find({ sprintId});
+      if (sprintData.status === "Completed") {
+        const workflow = await Workflow.findOne({ projectId: sprint.projectId });
+        if (workflow && workflow.statuses) {
+          const doneStatus = workflow.statuses.find((s) => s.category.toLowerCase() === "done");
+          if (doneStatus && doneStatus.category && doneStatus.category.toLowerCase() === "done") {
+            for (const task of taskList) {
+              if (task.statusId && task.statusId.toString() !== doneStatus._id.toString()) {
+                task.sprintId = null;
+                await task.save();
+              }
+          }
+        }
+      }
+    }
+
+
       // Validate dates - compare only dates, not time
       if (sprintData.startDate && sprintData.endDate) {
         const startDate = new Date(sprintData.startDate);
