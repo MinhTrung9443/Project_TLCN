@@ -408,7 +408,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
                 <IconComponent name={editableTask.taskTypeId.icon} />
               </span>
             )}
-            <a href={`/task/${editableTask.key}`} target="_blank" rel="noopener noreferrer" className="task-key-text">
+            <a href={`/app/task/${editableTask.key}`} target="_blank" rel="noopener noreferrer" className="task-key-text">
               {editableTask.key}
             </a>
           </div>
