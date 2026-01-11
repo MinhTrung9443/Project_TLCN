@@ -423,7 +423,7 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
 
-    // Validate startDate with project dates if provided
+    // Validate startDate with project dates (only if task has startDate)
     if (newStartDate) {
       if (project.startDate && new Date(newStartDate) < new Date(project.startDate)) {
         const error = new Error("Task start date cannot be before project start date");
@@ -437,7 +437,7 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
 
-    // Validate dueDate with project dates if provided
+    // Validate dueDate with project dates (only if task has dueDate)
     if (newDueDate) {
       if (project.startDate && new Date(newDueDate) < new Date(project.startDate)) {
         const error = new Error("Task due date cannot be before project start date");
@@ -451,30 +451,35 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
 
-    // If task has a sprint, validate dates with sprint dates
+    // If task has a sprint, validate dates with sprint dates (only if task has dates)
     if (originalTask.sprintId) {
       const Sprint = require("../models/Sprint");
       const sprint = await Sprint.findById(originalTask.sprintId);
       if (sprint) {
-        if (newStartDate && sprint.startDate && new Date(newStartDate) < new Date(sprint.startDate)) {
-          const error = new Error("Task start date cannot be before sprint start date");
-          error.statusCode = 400;
-          throw error;
+        if (newStartDate) {
+          if (sprint.startDate && new Date(newStartDate) < new Date(sprint.startDate)) {
+            const error = new Error("Task start date cannot be before sprint start date");
+            error.statusCode = 400;
+            throw error;
+          }
+          if (sprint.endDate && new Date(newStartDate) > new Date(sprint.endDate)) {
+            const error = new Error("Task start date cannot be after sprint end date");
+            error.statusCode = 400;
+            throw error;
+          }
         }
-        if (newStartDate && sprint.endDate && new Date(newStartDate) > new Date(sprint.endDate)) {
-          const error = new Error("Task start date cannot be after sprint end date");
-          error.statusCode = 400;
-          throw error;
-        }
-        if (newDueDate && sprint.startDate && new Date(newDueDate) < new Date(sprint.startDate)) {
-          const error = new Error("Task due date cannot be before sprint start date");
-          error.statusCode = 400;
-          throw error;
-        }
-        if (newDueDate && sprint.endDate && new Date(newDueDate) > new Date(sprint.endDate)) {
-          const error = new Error("Task due date cannot be after sprint end date");
-          error.statusCode = 400;
-          throw error;
+
+        if (newDueDate) {
+          if (sprint.startDate && new Date(newDueDate) < new Date(sprint.startDate)) {
+            const error = new Error("Task due date cannot be before sprint start date");
+            error.statusCode = 400;
+            throw error;
+          }
+          if (sprint.endDate && new Date(newDueDate) > new Date(sprint.endDate)) {
+            const error = new Error("Task due date cannot be after sprint end date");
+            error.statusCode = 400;
+            throw error;
+          }
         }
       }
     }
@@ -657,54 +662,78 @@ const changeTaskSprint = async (taskId, sprintId, userId) => {
   if (sprintId) {
     const Sprint = require("../models/Sprint");
     sprint = await Sprint.findById(sprintId);
-    if (sprint && sprint.startDate) {
-      updateData.startDate = sprint.startDate;
+
+    // Chỉ set startDate từ sprint nếu task chưa có startDate VÀ sprint startDate hợp lệ với project
+    if (sprint && sprint.startDate && !task.startDate) {
+      // Kiểm tra sprint startDate có hợp lệ với project không
+      const isValidWithProject =
+        (!project.startDate || new Date(sprint.startDate) >= new Date(project.startDate)) &&
+        (!project.endDate || new Date(sprint.startDate) <= new Date(project.endDate));
+
+      // Chỉ set nếu hợp lệ, nếu không thì bỏ qua (không báo lỗi, chỉ set sprintId)
+      if (isValidWithProject) {
+        updateData.startDate = sprint.startDate;
+      }
     }
   }
 
-  // Validate ngày: task phải nằm trong khoảng ngày của project
-  if (project.startDate && task.startDate && new Date(task.startDate) < new Date(project.startDate)) {
-    const error = new Error("Task start date cannot be before project start date");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (project.endDate && task.startDate && new Date(task.startDate) > new Date(project.endDate)) {
-    const error = new Error("Task start date cannot be after project end date");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (project.startDate && task.dueDate && new Date(task.dueDate) < new Date(project.startDate)) {
-    const error = new Error("Task due date cannot be before project start date");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (project.endDate && task.dueDate && new Date(task.dueDate) > new Date(project.endDate)) {
-    const error = new Error("Task due date cannot be after project end date");
-    error.statusCode = 400;
-    throw error;
+  // Xác định giá trị ngày cuối cùng sẽ được sử dụng (sau khi update)
+  const finalStartDate = updateData.startDate !== undefined ? updateData.startDate : task.startDate;
+  const finalDueDate = task.dueDate; // dueDate không thay đổi trong hàm này
+
+  // Validate ngày: chỉ validate nếu task có ngày (sử dụng giá trị SAU khi update)
+  if (finalStartDate) {
+    if (project.startDate && new Date(finalStartDate) < new Date(project.startDate)) {
+      const error = new Error("Task start date cannot be before project start date");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (project.endDate && new Date(finalStartDate) > new Date(project.endDate)) {
+      const error = new Error("Task start date cannot be after project end date");
+      error.statusCode = 400;
+      throw error;
+    }
   }
 
-  // Nếu có sprint, validate ngày task phải nằm trong khoảng sprint
+  if (finalDueDate) {
+    if (project.startDate && new Date(finalDueDate) < new Date(project.startDate)) {
+      const error = new Error("Task due date cannot be before project start date");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (project.endDate && new Date(finalDueDate) > new Date(project.endDate)) {
+      const error = new Error("Task due date cannot be after project end date");
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  // Nếu có sprint, validate ngày task phải nằm trong khoảng sprint (chỉ khi task có ngày)
   if (sprint) {
-    if (sprint.startDate && task.startDate && new Date(task.startDate) < new Date(sprint.startDate)) {
-      const error = new Error("Task start date cannot be before sprint start date");
-      error.statusCode = 400;
-      throw error;
+    if (finalStartDate) {
+      if (sprint.startDate && new Date(finalStartDate) < new Date(sprint.startDate)) {
+        const error = new Error("Task start date cannot be before sprint start date");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (sprint.endDate && new Date(finalStartDate) > new Date(sprint.endDate)) {
+        const error = new Error("Task start date cannot be after sprint end date");
+        error.statusCode = 400;
+        throw error;
+      }
     }
-    if (sprint.endDate && task.startDate && new Date(task.startDate) > new Date(sprint.endDate)) {
-      const error = new Error("Task start date cannot be after sprint end date");
-      error.statusCode = 400;
-      throw error;
-    }
-    if (sprint.startDate && task.dueDate && new Date(task.dueDate) < new Date(sprint.startDate)) {
-      const error = new Error("Task due date cannot be before sprint start date");
-      error.statusCode = 400;
-      throw error;
-    }
-    if (sprint.endDate && task.dueDate && new Date(task.dueDate) > new Date(sprint.endDate)) {
-      const error = new Error("Task due date cannot be after sprint end date");
-      error.statusCode = 400;
-      throw error;
+
+    if (finalDueDate) {
+      if (sprint.startDate && new Date(finalDueDate) < new Date(sprint.startDate)) {
+        const error = new Error("Task due date cannot be before sprint start date");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (sprint.endDate && new Date(finalDueDate) > new Date(sprint.endDate)) {
+        const error = new Error("Task due date cannot be after sprint end date");
+        error.statusCode = 400;
+        throw error;
+      }
     }
   }
 
