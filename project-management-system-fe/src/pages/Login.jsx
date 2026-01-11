@@ -29,8 +29,9 @@ const LoginPage = () => {
       .then((response) => {
         login(response.data.user, response.data.token);
         toast.success("Login successful");
-        if (user && user.role === "admin") {
-          navigate("/app/audit-log");
+        // Redirect admin to projects page instead of audit-log
+        if (response.data.user.role === "admin") {
+          navigate("/app/projects");
           return;
         }
         navigate("/app/dashboard");

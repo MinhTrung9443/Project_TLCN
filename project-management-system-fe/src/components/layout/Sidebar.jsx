@@ -10,9 +10,9 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const { selectedProjectKey } = useContext(ProjectContext);
   const [canViewAuditLog, setCanViewAuditLog] = useState(false);
 
-  // Giả sử chiều cao Header của bạn là khoảng 64px. 
+  // Giả sử chiều cao Header của bạn là khoảng 64px.
   // Nếu Header cao hơn, hãy chỉnh số 64 thành số tương ứng (ví dụ 70 hoặc 80).
-  const SIDEBAR_HEIGHT = "calc(100vh - 64px)"; 
+  const SIDEBAR_HEIGHT = "calc(100vh - 64px)";
 
   const getProjectPath = (path) => {
     if (!selectedProjectKey) return "#";
@@ -48,8 +48,8 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   return (
     // --- CONTAINER CHÍNH ---
-    <div 
-      id="webcrumbs" 
+    <div
+      id="webcrumbs"
       className={`
         relative 
         flex flex-col 
@@ -60,10 +60,10 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         ${isCollapsed ? "w-20 min-w-[5rem]" : "w-64 min-w-[16rem]"}
       `}
       // Set chiều cao bằng màn hình trừ đi header để không bị lửng lơ
-      style={{ 
-        height: SIDEBAR_HEIGHT, 
+      style={{
+        height: SIDEBAR_HEIGHT,
         minHeight: SIDEBAR_HEIGHT,
-        zIndex: 40 
+        zIndex: 40,
       }}
     >
       {/* 
@@ -71,7 +71,9 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
          Vì sidebar nằm dưới Header, không cần padding này nữa, nó gây ra khoảng trắng.
       */}
       <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          <nav className="space-y-1">
+        <nav className="space-y-1">
+          {/* Hide Dashboard for admin users */}
+          {user?.role !== "admin" && (
             <NavLink
               to="/app/dashboard"
               className={({ isActive }) =>
@@ -84,9 +86,10 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               {/* Thêm whitespace-nowrap để chữ không bao giờ xuống dòng */}
               {!isCollapsed && <span className="whitespace-nowrap">Dashboard</span>}
             </NavLink>
+          )}
 
-            {/* --- Task Management Section --- */}
-            <details className="group" open>
+          {/* --- Task Management Section --- */}
+          <details className="group" open>
             <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md hover:bg-gray-100 transition-colors cursor-pointer select-none">
               <div className="flex items-center overflow-hidden">
                 <span className="material-symbols-outlined mr-3 text-gray-500 shrink-0">computer</span>
@@ -96,7 +99,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">expand_more</span>
               )}
             </summary>
-            
+
             {!isCollapsed && (
               <div className="pl-10 mt-1 space-y-1">
                 {/* === NHÓM 1: LUÔN HIỂN THỊ (Projects, Gantt, Task Finder) === */}
@@ -138,7 +141,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
                 {/* === NHÓM 2: CHỈ HIỂN THỊ KHI ĐÃ CHỌN PROJECT === */}
                 {selectedProjectKey && (
-                  <>                    
+                  <>
                     <NavLink
                       to={getProjectPath("backlog")}
                       className={({ isActive }) =>
@@ -154,105 +157,105 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     </NavLink>
 
                     <NavLink
-                        to={getProjectPath("active-sprint")}
-                        className={({ isActive }) =>
-                          `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                            isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                          }`
-                        }
-                      >
-                        <span className="material-symbols-outlined mr-3 text-gray-500">view_kanban</span>
-                        <span className="whitespace-nowrap text-ellipsis overflow-hidden">
-                          Active Sprint <span className="text-xs text-gray-400">({selectedProjectKey})</span>
-                        </span>
-                      </NavLink>
+                      to={getProjectPath("active-sprint")}
+                      className={({ isActive }) =>
+                        `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                          isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                        }`
+                      }
+                    >
+                      <span className="material-symbols-outlined mr-3 text-gray-500">view_kanban</span>
+                      <span className="whitespace-nowrap text-ellipsis overflow-hidden">
+                        Active Sprint <span className="text-xs text-gray-400">({selectedProjectKey})</span>
+                      </span>
+                    </NavLink>
 
-                      <NavLink
-                        to={getProjectPath("settings/general")}
-                        className={({ isActive }) =>
-                          `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                            isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                          }`
-                        }
-                      >
-                        <span className="material-symbols-outlined mr-3 text-gray-500">settings</span>
-                        <span className="whitespace-nowrap text-ellipsis overflow-hidden">
-                          Project Settings <span className="text-xs text-gray-400">({selectedProjectKey})</span>
-                        </span>
-                      </NavLink>
+                    <NavLink
+                      to={getProjectPath("settings/general")}
+                      className={({ isActive }) =>
+                        `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                          isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                        }`
+                      }
+                    >
+                      <span className="material-symbols-outlined mr-3 text-gray-500">settings</span>
+                      <span className="whitespace-nowrap text-ellipsis overflow-hidden">
+                        Project Settings <span className="text-xs text-gray-400">({selectedProjectKey})</span>
+                      </span>
+                    </NavLink>
                   </>
                 )}
               </div>
             )}
           </details>
 
-            {/* --- Organization Section --- */}
-            <details className="group">
-              <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md transition-colors cursor-pointer hover:bg-gray-100 select-none">
-                <div className="flex items-center overflow-hidden">
-                  <span className="material-symbols-outlined mr-3 text-gray-500 shrink-0">apartment</span>
-                  {!isCollapsed && <span className="whitespace-nowrap">Organization</span>}
-                </div>
-                {!isCollapsed && (
-                  <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">expand_more</span>
-                )}
-              </summary>
+          {/* --- Organization Section --- */}
+          <details className="group">
+            <summary className="flex items-center justify-between px-3 py-2.5 text-sm rounded-md transition-colors cursor-pointer hover:bg-gray-100 select-none">
+              <div className="flex items-center overflow-hidden">
+                <span className="material-symbols-outlined mr-3 text-gray-500 shrink-0">apartment</span>
+                {!isCollapsed && <span className="whitespace-nowrap">Organization</span>}
+              </div>
               {!isCollapsed && (
-                <div className="pl-10 mt-1 space-y-1">
-                  <NavLink
-                    to="/app/Organization/group"
-                    className={({ isActive }) =>
-                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <span className="material-symbols-outlined mr-3 text-gray-500">group</span>
-                    <span className="whitespace-nowrap">Group</span>
-                  </NavLink>
-                  <NavLink
-                    to="/app/Organization/user"
-                    className={({ isActive }) =>
-                      `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                        isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <span className="material-symbols-outlined mr-3 text-gray-500">person</span>
-                    <span className="whitespace-nowrap">User</span>
-                  </NavLink>
-                </div>
+                <span className="material-symbols-outlined text-gray-500 transform group-open:rotate-180 transition-transform">expand_more</span>
               )}
-            </details>
+            </summary>
+            {!isCollapsed && (
+              <div className="pl-10 mt-1 space-y-1">
+                <NavLink
+                  to="/app/Organization/group"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">group</span>
+                  <span className="whitespace-nowrap">Group</span>
+                </NavLink>
+                <NavLink
+                  to="/app/Organization/user"
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  <span className="material-symbols-outlined mr-3 text-gray-500">person</span>
+                  <span className="whitespace-nowrap">User</span>
+                </NavLink>
+              </div>
+            )}
+          </details>
 
-            {/* --- Other Links --- */}
-            {canViewAuditLog && (
-              <NavLink
-                to="/app/audit-log"
-                className={({ isActive }) =>
-                  `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
-                    isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                  }`
-                }
-              >
-                <span className="material-symbols-outlined mr-3 text-gray-500">receipt_long</span>
-                {!isCollapsed && <span className="whitespace-nowrap">Audit Log</span>}
-              </NavLink>
-            )}
-            {user.role === "admin" && (
-              <NavLink
-                to="/app/settings/TaskTypes"
-                className={({ isActive }) =>
-                  `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
-                    isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
-                  }`
-                }
-              >
-                <span className="material-symbols-outlined mr-3 text-gray-500">settings</span>
-                {!isCollapsed && <span className="whitespace-nowrap">Settings</span>}
-              </NavLink>
-            )}
-          </nav>
+          {/* --- Other Links --- */}
+          {canViewAuditLog && (
+            <NavLink
+              to="/app/audit-log"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                  isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                }`
+              }
+            >
+              <span className="material-symbols-outlined mr-3 text-gray-500">receipt_long</span>
+              {!isCollapsed && <span className="whitespace-nowrap">Audit Log</span>}
+            </NavLink>
+          )}
+          {user.role === "admin" && (
+            <NavLink
+              to="/app/settings/TaskTypes"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2.5 text-sm rounded-md transition-colors ${
+                  isActive ? "bg-gray-100 text-primary-500 font-semibold" : "hover:bg-gray-100"
+                }`
+              }
+            >
+              <span className="material-symbols-outlined mr-3 text-gray-500">settings</span>
+              {!isCollapsed && <span className="whitespace-nowrap">Settings</span>}
+            </NavLink>
+          )}
+        </nav>
       </div>
 
       {/* Button Toggle Sidebar */}
