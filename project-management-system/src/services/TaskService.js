@@ -8,7 +8,7 @@ const notificationService = require("./NotificationService");
 const workflowService = require("./WorkflowService");
 const User = require("../models/User");
 const Workflow = require("../models/Workflow");
-const cloudinary = require("../config/cloudinary"); 
+const cloudinary = require("../config/cloudinary");
 const path = require("path");
 const fs = require("fs");
 // Hàm lấy task theo projectId
@@ -232,6 +232,25 @@ const searchTasks = async (queryParams, user) => {
         }
         // allowed: keep specific projectId (do not overwrite)
         query.projectId = projectId;
+
+        // Nếu user là leader trong project này, chỉ hiển thị tasks của team members
+        if (projectRoleMap[requestedId] === "TEAM_LEADER") {
+          const project = projects.find((p) => p._id.toString() === requestedId);
+          if (project) {
+            let teamMemberIds = new Set();
+            teamMemberIds.add(userId.toString()); // Leader cũng có thể được assign task
+            for (const team of project.teams || []) {
+              if (team.leaderId?.toString() === userId.toString()) {
+                (team.members || []).forEach((m) => teamMemberIds.add(m.toString()));
+              }
+            }
+            // Chỉ hiển thị tasks được assign hoặc report bởi team members
+            query.$and = query.$and || [];
+            query.$and.push({
+              $or: [{ assigneeId: { $in: Array.from(teamMemberIds) } }, { reporterId: { $in: Array.from(teamMemberIds) } }],
+            });
+          }
+        }
       } else {
         // otherwise restrict to managed projects
         query.projectId = { $in: managedIds };
@@ -376,6 +395,87 @@ const updateTask = async (taskId, updateData, userId) => {
         const error = new Error("Forbidden: Only Project Manager or Team Leader can change assignee or estimated time");
         error.statusCode = 403;
         throw error;
+      }
+    }
+  }
+
+  // Validate dates if startDate or dueDate is being updated
+  if (updateData.startDate !== undefined || updateData.dueDate !== undefined) {
+    const project = await Project.findById(originalTask.projectId._id);
+    if (!project) {
+      const error = new Error("Project not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Use new values if provided, otherwise keep original
+    const newStartDate = updateData.startDate !== undefined ? updateData.startDate : originalTask.startDate;
+    const newDueDate = updateData.dueDate !== undefined ? updateData.dueDate : originalTask.dueDate;
+
+    // Validate startDate <= dueDate if both exist
+    if (newStartDate && newDueDate) {
+      const start = new Date(newStartDate).setHours(0, 0, 0, 0);
+      const due = new Date(newDueDate).setHours(0, 0, 0, 0);
+      if (start > due) {
+        const error = new Error("Start date must be before or equal to due date");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Validate startDate with project dates if provided
+    if (newStartDate) {
+      if (project.startDate && new Date(newStartDate) < new Date(project.startDate)) {
+        const error = new Error("Task start date cannot be before project start date");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (project.endDate && new Date(newStartDate) > new Date(project.endDate)) {
+        const error = new Error("Task start date cannot be after project end date");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Validate dueDate with project dates if provided
+    if (newDueDate) {
+      if (project.startDate && new Date(newDueDate) < new Date(project.startDate)) {
+        const error = new Error("Task due date cannot be before project start date");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (project.endDate && new Date(newDueDate) > new Date(project.endDate)) {
+        const error = new Error("Task due date cannot be after project end date");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // If task has a sprint, validate dates with sprint dates
+    if (originalTask.sprintId) {
+      const Sprint = require("../models/Sprint");
+      const sprint = await Sprint.findById(originalTask.sprintId);
+      if (sprint) {
+        if (newStartDate && sprint.startDate && new Date(newStartDate) < new Date(sprint.startDate)) {
+          const error = new Error("Task start date cannot be before sprint start date");
+          error.statusCode = 400;
+          throw error;
+        }
+        if (newStartDate && sprint.endDate && new Date(newStartDate) > new Date(sprint.endDate)) {
+          const error = new Error("Task start date cannot be after sprint end date");
+          error.statusCode = 400;
+          throw error;
+        }
+        if (newDueDate && sprint.startDate && new Date(newDueDate) < new Date(sprint.startDate)) {
+          const error = new Error("Task due date cannot be before sprint start date");
+          error.statusCode = 400;
+          throw error;
+        }
+        if (newDueDate && sprint.endDate && new Date(newDueDate) > new Date(sprint.endDate)) {
+          const error = new Error("Task due date cannot be after sprint end date");
+          error.statusCode = 400;
+          throw error;
+        }
       }
     }
   }
@@ -563,6 +663,16 @@ const changeTaskSprint = async (taskId, sprintId, userId) => {
   }
 
   // Validate ngày: task phải nằm trong khoảng ngày của project
+  if (project.startDate && task.startDate && new Date(task.startDate) < new Date(project.startDate)) {
+    const error = new Error("Task start date cannot be before project start date");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (project.endDate && task.startDate && new Date(task.startDate) > new Date(project.endDate)) {
+    const error = new Error("Task start date cannot be after project end date");
+    error.statusCode = 400;
+    throw error;
+  }
   if (project.startDate && task.dueDate && new Date(task.dueDate) < new Date(project.startDate)) {
     const error = new Error("Task due date cannot be before project start date");
     error.statusCode = 400;
@@ -576,6 +686,16 @@ const changeTaskSprint = async (taskId, sprintId, userId) => {
 
   // Nếu có sprint, validate ngày task phải nằm trong khoảng sprint
   if (sprint) {
+    if (sprint.startDate && task.startDate && new Date(task.startDate) < new Date(sprint.startDate)) {
+      const error = new Error("Task start date cannot be before sprint start date");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (sprint.endDate && task.startDate && new Date(task.startDate) > new Date(sprint.endDate)) {
+      const error = new Error("Task start date cannot be after sprint end date");
+      error.statusCode = 400;
+      throw error;
+    }
     if (sprint.startDate && task.dueDate && new Date(task.dueDate) < new Date(sprint.startDate)) {
       const error = new Error("Task due date cannot be before sprint start date");
       error.statusCode = 400;
@@ -955,9 +1075,9 @@ const getTaskByKey = async (taskKey) => {
 const removeAssigneeFromIncompleteTasks = async (userId) => {
   try {
     const workflows = await Workflow.find({}, "statuses");
-    
+
     let doneStatusIds = [];
-    
+
     workflows.forEach((wf) => {
       if (wf.statuses && Array.isArray(wf.statuses)) {
         wf.statuses.forEach((status) => {
@@ -971,10 +1091,10 @@ const removeAssigneeFromIncompleteTasks = async (userId) => {
     const result = await Task.updateMany(
       {
         assigneeId: userId,
-        statusId: { $nin: doneStatusIds } 
+        statusId: { $nin: doneStatusIds },
       },
       {
-        $set: { assigneeId: null } // Đưa về Unassigned
+        $set: { assigneeId: null }, // Đưa về Unassigned
       }
     );
 
@@ -998,5 +1118,5 @@ module.exports = {
   linkTask,
   unlinkTask,
   getTaskByKey,
-  removeAssigneeFromIncompleteTasks
+  removeAssigneeFromIncompleteTasks,
 };

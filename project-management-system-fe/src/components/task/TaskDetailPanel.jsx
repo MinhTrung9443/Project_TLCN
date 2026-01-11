@@ -151,7 +151,39 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
           }
 
           // Combine all members
-          const allMembers = [...individualMembers, ...teamMembers];
+          let allMembers = [...individualMembers, ...teamMembers];
+
+          // Filter based on user role if not admin
+          if (user.role !== "admin") {
+            // Check if user is PM in this project
+            const isPM = res.data.members?.some(
+              (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+            );
+
+            if (!isPM) {
+              // User is a Leader - only show their team members + themselves
+              const userLeadTeams = res.data.teams?.filter((team) => team.leaderId._id === user._id || team.leaderId === user._id) || [];
+
+              // Get all team member IDs including the leader
+              const allowedMemberIds = [user._id.toString()]; // Add leader themselves
+              userLeadTeams.forEach((team) => {
+                if (team.members && Array.isArray(team.members)) {
+                  team.members.forEach((member) => {
+                    const memberId = (member._id || member).toString();
+                    if (!allowedMemberIds.includes(memberId)) {
+                      allowedMemberIds.push(memberId);
+                    }
+                  });
+                }
+              });
+
+              // Filter to only allowed members (or current assignee to prevent breaking existing assignments)
+              allMembers = allMembers.filter(
+                (m) => allowedMemberIds.includes(m.value.toString()) || m.value.toString() === currentAssigneeId?.toString()
+              );
+            }
+          }
+
           console.log("TaskDetailPanel - Formatted memberOptions:", allMembers);
           setProjectMembers(allMembers);
         } catch (error) {

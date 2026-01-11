@@ -255,10 +255,6 @@ const TaskFinderPage = () => {
     setSelectedTask(task);
   };
 
-  const closePanel = () => {
-    setSelectedTask(null);
-  };
-
   const handleTaskDelete = async (taskId) => {
     const projectKey = selectedTask?.projectId?.key;
 
@@ -394,18 +390,20 @@ const TaskFinderPage = () => {
                 )}
               </select>
 
-              <select
-                className="filter-select"
-                value={activeFilters.assigneeId || ""}
-                onChange={(e) => handleFilterChange("assigneeId", e.target.value)}
-              >
-                <option value="">All Assignees</option>
-                {selectOptions.users.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              {viewMode !== "MY_TASKS" && (
+                <select
+                  className="filter-select"
+                  value={activeFilters.assigneeId || ""}
+                  onChange={(e) => handleFilterChange("assigneeId", e.target.value)}
+                >
+                  <option value="">All Assignees</option>
+                  {selectOptions.users.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               <select
                 className="filter-select"
