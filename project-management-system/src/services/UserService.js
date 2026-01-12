@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const Project = require("../models/Project");
 const { logAction } = require("./AuditLogHelper");
-const taskService = require("./TaskService"); 
+const taskService = require("./TaskService");
 
 class UserService {
   async updateProfile(userId, updateData, actorId) {
@@ -49,12 +49,12 @@ class UserService {
 
     if (hasPagination) {
       const skip = (page - 1) * limit;
-      const users = await User.find().select("-password").skip(skip).limit(limit).populate("group", "name -_id").lean();
+      const users = await User.find({ status: "active" }).select("-password").skip(skip).limit(limit).populate("group", "name -_id").lean();
       // ... (trả về kết quả phân trang)
       return users; // Giả sử trả về mảng
     } else {
-      // Nếu không có tham số phân trang, lấy TẤT CẢ user
-      const users = await User.find().select("-password").lean();
+      // Nếu không có tham số phân trang, lấy TẤT CẢ user active
+      const users = await User.find({ status: "active" }).select("-password").lean();
       return users;
     }
   }
