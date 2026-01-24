@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { ProjectContext } from "../../contexts/ProjectContext";
+import "../../styles/components/ProjectActionsMenu.css";
 
 const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
   const { user } = useAuth();
@@ -42,6 +43,9 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
         <ul className="actions-dropdown">
           <li>
             <Link to={`/app/task-mgmt/projects/${project.key}/settings/general`} onClick={handleSettingsClick}>
+              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px", verticalAlign: "middle" }}>
+                settings
+              </span>
               Project Settings
             </Link>
           </li>
@@ -53,6 +57,9 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
                 setIsOpen(false);
               }}
             >
+              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px" }}>
+                delete
+              </span>
               Delete Project
             </button>
           </li>

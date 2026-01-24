@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { NavLink, useParams } from "react-router-dom";
 import { ProjectContext } from "../../contexts/ProjectContext";
-import "../../components/Setting/SettingMenu.css";
+import "../../styles/Setting/SettingMenu.css";
 
 const ProjectSettingMenu = () => {
   const { projectKey } = useParams();

@@ -1,6 +1,6 @@
 import React from "react";
 import { FaPlus } from "react-icons/fa";
-import "./SettingMenu.css";
+import "../../styles/Setting/SettingMenu.css";
 
 const SettingMenu = ({ activeTab, onTabChange, onCreate }) => {
   const menuItems = [

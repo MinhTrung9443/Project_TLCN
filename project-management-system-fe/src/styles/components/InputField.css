@@ -1,0 +1,50 @@
+/* InputField Component */
+.input-field-group {
+  margin-bottom: 1rem;
+}
+
+.input-field-label {
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #37474f;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.input-field-control {
+  font-family: "Poppins", sans-serif;
+  font-size: 0.95rem;
+  padding: 10px 14px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  transition: all 0.25s ease;
+  width: 100%;
+}
+
+.input-field-control:focus {
+  border-color: #6f42c1;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+  outline: none;
+}
+
+.input-field-control.is-invalid {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.input-field-control.is-invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.input-field-error {
+  font-size: 0.8rem;
+  color: #dc3545;
+  margin-top: 6px;
+  font-weight: 500;
+  display: block;
+  font-family: "Poppins", sans-serif;
+}

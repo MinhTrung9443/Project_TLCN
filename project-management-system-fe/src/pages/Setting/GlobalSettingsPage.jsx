@@ -8,7 +8,7 @@ import SettingsPlatforms from "./Platform";
 
 // Import Menu Tab
 import SettingMenu from "../../components/Setting/SettingMenu";
-import "./GlobalSettingsPage.css";
+import "../../styles/Setting/GlobalSettingsPage.css";
 
 const GlobalSettingsPage = () => {
   const { tabName = "tasktypes" } = useParams(); // Mặc định là 'tasktypes'

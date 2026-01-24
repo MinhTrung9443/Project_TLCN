@@ -1,106 +1,200 @@
-.setting-menu {
-  border-bottom: 1px solid #e5e7eb; /* border-b */
-  background: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+/* SettingMenu.css - Modern Design */
+
+.setting-menu-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  overflow: hidden;
 }
 
-.setting-menu ul {
+/* Header */
+.setting-menu-header {
   display: flex;
-  overflow-x: auto;
-  font-size: 0.875rem; /* text-sm */
-  color: #4b5563; /* text-gray-600 */
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 2px solid #f0f0f0;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 300px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+}
+
+.page-title .material-symbols-outlined {
+  font-size: 32px;
+  color: #1976d2;
+}
+
+.page-subtitle {
+  color: #666;
   margin: 0;
-  padding: 0;
-  list-style: none;
-  justify-content: space-between; /* Thêm dòng này */
+  font-size: 14px;
 }
 
-.setting-menu li {
-  position: relative;
-  padding: 0.75rem 1rem; /* py-3 px-4 */
-  white-space: nowrap;
+/* Create Button */
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #1976d2, #2196f3);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
 }
 
-.setting-menu li:hover a {
-  color: #2563eb; /* hover:text-primary-600 */
+.create-btn:hover {
+  background: linear-gradient(135deg, #1565c0, #1976d2);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+  transform: translateY(-2px);
 }
 
-.setting-menu li.active a {
-  color: #2563eb; /* text-primary-600 */
+.create-btn:active {
+  transform: translateY(0);
+}
+
+.create-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* Tabs */
+.setting-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #6b7280;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.tab-item:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.tab-item.active {
+  background: white;
+  color: #1976d2;
+  border-bottom-color: #1976d2;
   font-weight: 600;
 }
 
-.setting-menu li.active::after,
-.setting-menu li:hover::after {
+.tab-item.active::before {
   content: "";
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
-  height: 2px;
-  width: 100%;
-  background-color: #2563eb; /* underline color */
-  transform: scaleX(1);
-  transition: transform 0.3s ease;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1976d2, #2196f3);
 }
 
-.setting-menu li::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  width: 100%;
-  background-color: #2563eb;
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
+.tab-item .material-symbols-outlined {
+  font-size: 22px;
+  transition: transform 0.3s;
 }
 
-.setting-menu-create-btn {
-  background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  padding: 7px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-left: auto; /* Đẩy nút về lề phải */
-  transition: background 0.18s, box-shadow 0.18s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.tab-item:hover .material-symbols-outlined {
+  transform: scale(1.1);
 }
 
-.setting-menu-create-btn:hover {
-  background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+.tab-item.active .material-symbols-outlined {
+  transform: scale(1.15);
 }
 
-/* Style cho thẻ a khi nó active, nằm bên trong li */
-.setting-menu li a.active {
-    display: block; /* Để thẻ a chiếm hết không gian của li */
-    background-color: #eef2ff;
-    color: #4f46e5;
-    border-radius: 6px; /* Thêm bo góc cho đẹp */
+.tab-label {
+  white-space: nowrap;
 }
 
-/* Thêm hiệu ứng hover cho tất cả các link trong menu */
-.setting-menu li a:hover {
-    background-color: #f9fafb;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .setting-menu-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+  }
+
+  .header-info {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .page-title .material-symbols-outlined {
+    font-size: 28px;
+  }
+
+  .create-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .setting-tabs {
+    flex-direction: column;
+  }
+
+  .tab-item {
+    justify-content: flex-start;
+    padding: 14px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    border-left: 3px solid transparent;
+  }
+
+  .tab-item.active {
+    border-bottom-color: #e5e7eb;
+    border-left-color: #1976d2;
+  }
+
+  .tab-item.active::before {
+    display: none;
+  }
 }
 
-/* Bỏ padding mặc định của thẻ a và di chuyển nó ra li để click dễ hơn */
-.setting-menu li a {
-    padding: 10px 16px; 
-    text-decoration: none;
-    color: #374151;
-}
+@media (max-width: 480px) {
+  .tab-item .material-symbols-outlined {
+    font-size: 20px;
+  }
 
-/* Xóa padding của li nếu có */
-.setting-menu li {
-    padding: 0;
+  .tab-label {
+    font-size: 14px;
+  }
 }

@@ -1,0 +1,107 @@
+/* RichTextEditor - Matching MarketingLandingPage Style */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+
+.tiptap-editor-wrapper {
+  font-family: "Poppins", sans-serif;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  transition: all 0.25s ease;
+}
+
+.tiptap-editor-wrapper:focus-within {
+  border-color: #6f42c1;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+}
+
+.tiptap-menu-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 2px solid #f3efff;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 6px 6px 0 0;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #6c757d;
+  margin: 0 2px;
+  transition: all 0.2s ease;
+}
+
+.icon-button:hover {
+  background-color: #f3efff;
+  color: #6f42c1;
+  transform: scale(1.05);
+}
+
+.icon-button.is-active {
+  background-color: #6f42c1;
+  color: white;
+  box-shadow: 0 2px 6px rgba(111, 66, 193, 0.3);
+}
+
+.icon-button .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.divider {
+  width: 2px;
+  height: 24px;
+  background: linear-gradient(180deg, #e9ecef 0%, #dee2e6 100%);
+  margin: 0 10px;
+  border-radius: 1px;
+}
+
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 4px;
+}
+
+.color-picker-wrapper .material-symbols-outlined {
+  font-size: 20px;
+  color: #6c757d;
+  pointer-events: none;
+  position: absolute;
+  left: 8px;
+}
+
+.color-picker-wrapper input[type="color"] {
+  width: 34px;
+  height: 34px;
+  opacity: 0;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+.ProseMirror {
+  font-family: "Poppins", sans-serif;
+  padding: 14px 16px;
+  min-height: 180px;
+  outline: none;
+  line-height: 1.7;
+  color: #495057;
+}
+
+.prose-mirror-editor img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.25rem 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}

@@ -5,12 +5,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.25s ease;
+  font-family: "Poppins", sans-serif;
 }
 
 .performance-panel {
@@ -21,7 +23,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(111, 66, 193, 0.3);
   animation: slideUp 0.3s ease;
   overflow: hidden;
 }
@@ -37,7 +39,7 @@
 
 @keyframes slideUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(30px);
     opacity: 0;
   }
   to {
@@ -53,7 +55,7 @@
   align-items: center;
   padding: 24px;
   border-bottom: 2px solid #e5e7eb;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
   color: white;
 }
 
@@ -73,6 +75,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 3px solid rgba(255, 255, 255, 0.3);
 }
 
 .user-avatar-large img {
@@ -84,7 +87,7 @@
 .avatar-placeholder-large {
   font-size: 24px;
   font-weight: bold;
-  color: #667eea;
+  color: #6f42c1;
 }
 
 .user-info-header h2 {
@@ -96,7 +99,7 @@
 .performance-subtitle {
   margin: 4px 0 0 0;
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .close-btn-performance {
@@ -158,8 +161,8 @@
 
 .date-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #6f42c1;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
 }
 
 .clear-filter-btn {
@@ -212,14 +215,14 @@
 }
 
 .performance-tab:hover {
-  color: #667eea;
+  color: #6f42c1;
   background: white;
 }
 
 .performance-tab.active {
-  color: #667eea;
+  color: #6f42c1;
   background: white;
-  border-bottom-color: #667eea;
+  border-bottom-color: #6f42c1;
 }
 
 .performance-tab .material-symbols-outlined {
@@ -243,12 +246,12 @@
 
 /* SPI Card */
 .spi-card-large {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
   border-radius: 12px;
   padding: 32px;
   color: white;
   text-align: center;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 24px rgba(111, 66, 193, 0.3);
 }
 
 .spi-label {
@@ -362,7 +365,7 @@
   background: white;
   border-radius: 12px;
   padding: 20px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #6f42c1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -376,7 +379,7 @@
 }
 
 .performance-info-box h4 .material-symbols-outlined {
-  color: #667eea;
+  color: #6f42c1;
   font-size: 20px;
 }
 
@@ -399,7 +402,7 @@
   content: "→";
   position: absolute;
   left: 0;
-  color: #667eea;
+  color: #6f42c1;
   font-weight: bold;
 }
 
@@ -455,8 +458,8 @@
 .task-key {
   font-size: 12px;
   font-weight: 700;
-  color: #667eea;
-  background: #ede9fe;
+  color: #6f42c1;
+  background: #f3efff;
   padding: 4px 10px;
   border-radius: 6px;
 }
@@ -508,7 +511,7 @@
 
 .progress-fill-mini {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #6f42c1 0%, #5a32a3 100%);
   transition: width 0.3s ease;
 }
 
@@ -547,7 +550,7 @@
   width: 48px;
   height: 48px;
   border: 4px solid #e5e7eb;
-  border-top-color: #667eea;
+  border-top-color: #6f42c1;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin-bottom: 16px;

@@ -1,0 +1,82 @@
+/* ActionsMenu - Matching MarketingLandingPage Style */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+
+.actions-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.actions-menu-trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+
+.actions-menu-trigger:hover {
+  background-color: #f3efff;
+  color: #6f42c1;
+  transform: scale(1.1);
+}
+
+.actions-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  padding: 8px;
+  margin: 8px 0 0 0;
+  min-width: 200px;
+  z-index: 101;
+  border: 1px solid #e9ecef;
+  font-family: "Poppins", sans-serif;
+  animation: dropdown-fade-in 0.2s ease-out;
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.actions-menu-dropdown li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.actions-menu-dropdown li:hover {
+  background-color: #f3efff;
+  color: #6f42c1;
+  transform: translateX(4px);
+}
+
+.actions-menu-dropdown li.danger {
+  color: #dc3545;
+}
+
+.actions-menu-dropdown li.danger:hover {
+  background-color: #ffe5e8;
+  color: #c82333;
+}

@@ -1,32 +1,24 @@
 import React from "react";
-import { Form } from "react-bootstrap";
+import "../../styles/components/InputField.css";
 
-const InputField = ({
-  label,
-  id,
-  type,
-  name,
-  value,
-  onChange,
-  placeholder,
-  error,
-}) => {
+const InputField = ({ label, id, type, name, value, onChange, placeholder, error, className = "", ...props }) => {
   return (
-    <Form.Group className="mb-3">
-      <Form.Label>{label}</Form.Label>
-      <Form.Control
+    <div className="input-field-group">
+      <label htmlFor={id} className="input-field-label">
+        {label}
+      </label>
+      <input
         id={id}
         type={type}
         name={name}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        isInvalid={!!error}
+        className={`input-field-control ${error ? "is-invalid" : ""} ${className}`}
+        {...props}
       />
-      {error && (
-        <Form.Control.Feedback type="invalid">{error}</Form.Control.Feedback>
-      )}
-    </Form.Group>
+      {error && <div className="input-field-error">{error}</div>}
+    </div>
   );
 };
 

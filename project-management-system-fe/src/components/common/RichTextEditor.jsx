@@ -7,7 +7,7 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import axios from "axios";
 import { toast } from "react-toastify";
-import "./RichTextEditor.css";
+import "../../styles/components/RichTextEditor.css";
 
 const MenuBar = ({ editor }) => {
   const fileInputRef = useRef(null);

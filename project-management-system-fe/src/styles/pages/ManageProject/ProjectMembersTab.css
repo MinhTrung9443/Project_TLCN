@@ -1,82 +1,89 @@
-/* src/styles/pages/ManageProject/ProjectMembersTab.css */
+/* ProjectMembersTab - Matching MarketingLandingPage Style */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
 
 .project-members-container {
+  font-family: "Poppins", sans-serif;
   background-color: #ffffff;
-  padding: 24px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 28px;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
 }
 
-/* PM Info Section */
 .pm-info-section {
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 2px solid #f3efff;
 }
 
 .pm-info-section h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #374151;
-  margin: 0 0 16px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a237e;
+  margin: 0 0 1.25rem 0;
 }
 
 .pm-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: white;
+  gap: 18px;
+  padding: 18px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 2px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s ease;
+}
+
+.pm-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 66, 193, 0.15);
 }
 
 .pm-avatar {
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #e5e7eb;
+  border: 3px solid #e9ecef;
   flex-shrink: 0;
 }
 
 .pm-avatar.avatar-placeholder {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6f42c1 0%, #9575cd 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 1.75rem;
   font-weight: 700;
+  box-shadow: 0 2px 8px rgba(111, 66, 193, 0.3);
 }
 
 .pm-details {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .pm-name {
-  font-size: 18px;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #374151;
+  color: #1a237e;
 }
 
 .pm-email {
-  font-size: 14px;
-  color: #6b7280;
+  font-size: 0.9rem;
+  color: #6c757d;
 }
 
-/* Header chứa các nút hành động */
 .members-actions-header {
   display: flex;
-  justify-content: space-between; /* Đẩy Filter/Search và Buttons ra hai bên */
+  justify-content: space-between;
   align-items: center;
-  padding-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 2px solid #f3efff;
 }
 
 .members-actions-header .action-buttons {
@@ -84,20 +91,17 @@
   gap: 1rem;
 }
 
-/* Bảng danh sách thành viên */
 .members-list-table {
   display: flex;
   flex-direction: column;
 }
 
-/* Header và Row của bảng (dùng CSS Grid để căn chỉnh cột) */
 .table-header,
 .table-row {
   display: grid;
-  /* Cột 1 (Member) rộng nhất, cột cuối (actions) hẹp nhất */
   grid-template-columns: 3fr 1.5fr 1.5fr 50px;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #f3f4f6; /* Đường kẻ mờ giữa các hàng */
 }

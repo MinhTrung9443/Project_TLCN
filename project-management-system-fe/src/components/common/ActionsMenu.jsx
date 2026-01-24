@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { FaEllipsisV, FaTrash, FaPaperclip } from "react-icons/fa";
-import "../common/ActionsMenu.css"; // Sẽ tạo file này
+import "../../styles/components/ActionsMenu.css";
 
 const ActionsMenu = ({ onDelete, onAddAttachment }) => {
   const [isOpen, setIsOpen] = useState(false);

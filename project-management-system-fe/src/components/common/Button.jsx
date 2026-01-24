@@ -1,17 +1,15 @@
-import React from 'react';
-import { Button as BootstrapButton } from 'react-bootstrap';
+import React from "react";
+import "../../styles/components/Button.css";
 
-const Button = ({ type, variant, onClick, disabled, loading, children }) => {
+const Button = ({ type = "button", variant = "primary", onClick, disabled, loading, children, size, block, className = "", ...props }) => {
+  const buttonClasses = ["custom-btn", `custom-btn-${variant}`, size && `custom-btn-${size}`, block && "custom-btn-block", className]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <BootstrapButton
-      type={type}
-      variant={variant}
-      onClick={onClick}
-      disabled={disabled || loading}
-      className="w-100"
-    >
-      {loading ? 'Loading...' : children}
-    </BootstrapButton>
+    <button type={type} onClick={onClick} disabled={disabled || loading} className={buttonClasses} {...props}>
+      {loading ? "Loading..." : children}
+    </button>
   );
 };
 

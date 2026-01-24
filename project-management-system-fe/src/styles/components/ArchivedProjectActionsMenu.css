@@ -1,0 +1,89 @@
+/* ArchivedProjectActionsMenu Component */
+.project-actions-menu {
+  position: relative;
+  display: inline-block;
+  font-family: "Poppins", sans-serif;
+}
+
+.actions-trigger-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-size: 24px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.actions-trigger-btn:hover {
+  background-color: #f3efff;
+  color: #6f42c1;
+  transform: scale(1.1);
+}
+
+.actions-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  padding: 8px;
+  margin: 8px 0 0 0;
+  min-width: 200px;
+  z-index: 101;
+  border: 1px solid #e9ecef;
+  animation: dropdown-fade-in 0.2s ease-out;
+}
+
+.actions-dropdown li {
+  margin: 0;
+}
+
+.actions-dropdown button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+}
+
+.actions-dropdown button:hover {
+  background-color: #f3efff;
+  color: #6f42c1;
+}
+
+.actions-dropdown button.delete-option {
+  color: #dc3545;
+}
+
+.actions-dropdown button.delete-option:hover {
+  background-color: #fff5f5;
+  color: #c92a2a;
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

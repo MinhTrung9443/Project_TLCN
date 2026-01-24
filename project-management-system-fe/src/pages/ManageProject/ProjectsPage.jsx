@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button, Form, Table, Badge } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { getProjects, getArchivedProjects, archiveProjectByKey, restoreProject, permanentlyDeleteProject } from "../../services/projectService";
@@ -31,7 +32,6 @@ const ProjectsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-
   const fetchData = useCallback(
     async (currentSearchTerm) => {
       setLoading(true);
@@ -51,7 +51,7 @@ const ProjectsPage = () => {
         setLoading(false);
       }
     },
-    [view] // Chỉ phụ thuộc vào `view`
+    [view], // Chỉ phụ thuộc vào `view`
   );
 
   useEffect(() => {
@@ -126,7 +126,7 @@ const ProjectsPage = () => {
     if (view === "active") {
       // 1. Cập nhật Context ngay lập tức để Sidebar hiển thị menu con
       setProject(project);
-      
+
       // 2. Điều hướng thẳng đến trang Settings General của dự án đó
       navigate(`/app/task-mgmt/projects/${project.key}/settings/general`);
     }
@@ -201,6 +201,37 @@ const ProjectsPage = () => {
     return Array.from(managers.values());
   };
 
+  const renderFilters = () => (
+    <div className="projects-filters">
+      <Form.Select className="filter-select" value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
+        <option value="">All Types</option>
+        <option value="Scrum">Scrum</option>
+        <option value="Kanban">Kanban</option>
+      </Form.Select>
+
+      <Form.Select className="filter-select" value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
+        <option value="">All Project Managers</option>
+        {getProjectManagers().map((pm) => (
+          <option key={pm._id} value={pm._id}>
+            {pm.fullname}
+          </option>
+        ))}
+      </Form.Select>
+
+      {view === "active" && (
+        <Form.Select className="filter-select" value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+        </Form.Select>
+      )}
+
+      <Button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
+        Clear Filters
+      </Button>
+    </div>
+  );
+
   const renderProjects = () => {
     const paginatedProjects = getPaginatedProjects();
 
@@ -224,9 +255,7 @@ const ProjectsPage = () => {
         <td>{getTotalMembers(project)}</td>
         <td>{formatDate(view === "active" ? project.createdAt : project.deletedAt)}</td>
         <td>
-          <span className={`status-badge ${view === "active" ? "status-active" : "status-archived"}`}>
-            {view === "active" ? project.status : "Archived"}
-          </span>
+          <Badge className={view === "active" ? "status-active" : "status-archived"}>{view === "active" ? project.status : "Archived"}</Badge>
         </td>
         <td>
           {view === "active" ? (
@@ -253,28 +282,28 @@ const ProjectsPage = () => {
       />
 
       <div className="projects-page-container">
-        <header className="projects-header">
+        <div className="projects-header">
           <h1 className="projects-title">Projects</h1>
           {view === "active" && user?.role === "admin" && (
-            <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+            <Button className="projects-create-btn" onClick={() => setIsModalOpen(true)}>
               Create Project
-            </button>
+            </Button>
           )}
-        </header>
+        </div>
 
         <div className="projects-content-wrapper">
           <div className="projects-controls">
             <div className="view-toggle">
-              <button className={`toggle-btn ${view === "active" ? "active" : ""}`} onClick={() => setView("active")}>
+              <Button className={`toggle-btn ${view === "active" ? "active" : ""}`} onClick={() => setView("active")} variant="outline-primary">
                 All Projects
-              </button>
+              </Button>
               {user?.role === "admin" && (
-                <button className={`toggle-btn ${view === "archived" ? "active" : ""}`} onClick={() => setView("archived")}>
+                <Button className={`toggle-btn ${view === "archived" ? "active" : ""}`} onClick={() => setView("archived")} variant="outline-primary">
                   Delete Project
-                </button>
+                </Button>
               )}
             </div>
-            <input
+            <Form.Control
               type="search"
               placeholder="Search by name or key..."
               className="search-input"
@@ -283,64 +312,13 @@ const ProjectsPage = () => {
             />
           </div>
 
-          {view === "active" && (
-            <div className="projects-filters">
-              <select className="filter-select" value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
-                <option value="">All Types</option>
-                <option value="Scrum">Scrum</option>
-                <option value="Kanban">Kanban</option>
-              </select>
-
-              <select className="filter-select" value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
-                <option value="">All Project Managers</option>
-                {getProjectManagers().map((pm) => (
-                  <option key={pm._id} value={pm._id}>
-                    {pm.fullname}
-                  </option>
-                ))}
-              </select>
-
-              <select className="filter-select" value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                {/* <option value="paused">Paused</option> */}
-                <option value="completed">Completed</option>
-              </select>
-
-              <button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
-                Clear Filters
-              </button>
-            </div>
-          )}
-
-          {view === "archived" && (
-            <div className="projects-filters">
-              <select className="filter-select" value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
-                <option value="">All Types</option>
-                <option value="Scrum">Scrum</option>
-                <option value="Kanban">Kanban</option>
-              </select>
-
-              <select className="filter-select" value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
-                <option value="">All Project Managers</option>
-                {getProjectManagers().map((pm) => (
-                  <option key={pm._id} value={pm._id}>
-                    {pm.fullname}
-                  </option>
-                ))}
-              </select>
-
-              <button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
-                Clear Filters
-              </button>
-            </div>
-          )}
+          {renderFilters()}
 
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px" }}>Loading...</div>
+            <div className="loading-container">Loading...</div>
           ) : (
             <div className="table-wrapper">
-              <table className="projects-table">
+              <Table className="projects-table">
                 <thead>
                   <tr>
                     <th>Project</th>
@@ -362,25 +340,31 @@ const ProjectsPage = () => {
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
 
           {!loading && getTotalPages() > 1 && (
             <div className="pagination-container">
-              <button className="pagination-btn" onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+              <Button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                variant="outline-primary"
+              >
                 Previous
-              </button>
+              </Button>
               <div className="pagination-info">
                 Page {currentPage} of {getTotalPages()} ({getFilteredProjects().length} total projects)
               </div>
-              <button
+              <Button
                 className="pagination-btn"
                 onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
                 disabled={currentPage === getTotalPages()}
+                variant="outline-primary"
               >
                 Next
-              </button>
+              </Button>
             </div>
           )}
         </div>

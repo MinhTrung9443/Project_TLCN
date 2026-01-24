@@ -1,105 +1,169 @@
+/* Create Project Modal - Matching MarketingLandingPage Style */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(26, 35, 126, 0.4);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 1rem;
+  animation: overlay-fade-in 0.3s ease-out;
 }
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .modal-container {
+  font-family: "Poppins", sans-serif;
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  padding: 24px 32px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 28px 36px;
   width: 100%;
-  max-width: 600px;
-  animation: modal-fade-in 0.3s ease-out;
+  max-width: 620px;
+  animation: modal-slide-up 0.3s ease-out;
 }
-.error-message {
-  color: #d93025; 
-  font-size: 0.8rem;
-  margin-top: 4px;
-  font-weight: 500;
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-@keyframes modal-fade-in {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+
 .modal-header {
-  font-size: 24px;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 24px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a237e;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f3efff;
 }
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 1.25rem;
 }
+
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 0.75rem;
 }
+
 .form-group-span-2 {
   grid-column: span 2;
-  margin-bottom: 16px;
+  margin-bottom: 0.75rem;
 }
+
 .form-label {
   display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #37474f;
+  margin-bottom: 0.5rem;
 }
+
 .required-star {
   color: #ef4444;
+  margin-left: 2px;
 }
-.form-input, .form-select {
+
+.form-input,
+.form-select {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 10px 14px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: "Poppins", sans-serif;
   box-sizing: border-box;
+  transition: all 0.25s ease;
+  background-color: #f8f9fa;
 }
-.form-input:focus, .form-select:focus {
+
+.form-input:focus,
+.form-select:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  border-color: #6f42c1;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
 }
+
+.form-input::placeholder {
+  color: #adb5bd;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f3efff;
 }
+
 .modal-btn {
-  padding: 10px 20px;
-  font-size: 14px;
+  padding: 10px 24px;
+  font-size: 0.95rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  transition: all 0.25s ease;
 }
+
 .modal-btn-primary {
-  background-color: #2563eb;
+  background-color: #6f42c1;
   color: white;
+  box-shadow: 0 2px 8px rgba(111, 66, 193, 0.2);
 }
-.modal-btn-primary:hover {
-  background-color: #1d4ed8;
+
+.modal-btn-primary:hover:not(:disabled) {
+  background-color: #5a32a3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
 }
+
 .modal-btn-primary:disabled {
-  background-color: #93c5fd;
+  background-color: #b8a1d6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
+
 .modal-btn-cancel {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #6c757d;
+  border: 2px solid #e9ecef;
 }
+
 .modal-btn-cancel:hover {
-  background-color: #e5e7eb;
+  background-color: #f8f9fa;
+  border-color: #6c757d;
+  transform: translateY(-1px);
 }

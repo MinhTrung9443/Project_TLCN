@@ -1,6 +1,7 @@
 // src/components/project/ArchivedProjectActionsMenu.jsx
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
+import "../../styles/components/ArchivedProjectActionsMenu.css";
 
 const ArchivedProjectActionsMenu = ({ project, onRestore, onDelete }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,9 +13,9 @@ const ArchivedProjectActionsMenu = ({ project, onRestore, onDelete }) => {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -27,13 +28,30 @@ const ArchivedProjectActionsMenu = ({ project, onRestore, onDelete }) => {
       {isOpen && (
         <ul className="actions-dropdown">
           <li>
-            <button onClick={() => { onRestore(project); setIsOpen(false); }}>
-              <span style={{ marginRight: '8px' }}>🔄</span> Restore Project
+            <button
+              onClick={() => {
+                onRestore(project);
+                setIsOpen(false);
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px" }}>
+                restore
+              </span>
+              Restore Project
             </button>
           </li>
           <li>
-            <button className="delete-option" onClick={() => { onDelete(project); setIsOpen(false); }}>
-              <span style={{ marginRight: '8px' }}>🗑️</span> Delete Project
+            <button
+              className="delete-option"
+              onClick={() => {
+                onDelete(project);
+                setIsOpen(false);
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px" }}>
+                delete
+              </span>
+              Delete Project
             </button>
           </li>
         </ul>

@@ -3,6 +3,7 @@ import Select from "react-select";
 import { toast } from "react-toastify";
 import userService from "../../services/userService";
 import { addMemberToTeamInProject } from "../../services/projectService";
+import "../../styles/components/AddMemberToTeamModal.css";
 
 const AddMemberToTeamModal = ({ isOpen, onClose, projectKey, team, onMemberAdded, existingMemberIds = [] }) => {
   const [allUsers, setAllUsers] = useState([]);
@@ -50,7 +51,23 @@ const AddMemberToTeamModal = ({ isOpen, onClose, projectKey, team, onMemberAdded
         <h2>Add Member to "{team?.teamId?.name}"</h2>
         <div className="form-group">
           <label>Select a user</label>
-          <Select options={userOptions} value={selectedUser} onChange={setSelectedUser} placeholder="Search for a user to add..." />
+          <Select
+            options={userOptions}
+            value={selectedUser}
+            onChange={setSelectedUser}
+            placeholder="Search for a user to add..."
+            menuPortalTarget={document.body}
+            styles={{
+              menuPortal: (base) => ({ ...base, zIndex: 99999 }),
+              control: (base) => ({
+                ...base,
+                fontFamily: '"Poppins", sans-serif',
+                borderRadius: "8px",
+                border: "2px solid #e9ecef",
+                "&:hover": { borderColor: "#6f42c1" },
+              }),
+            }}
+          />
         </div>
         <div className="modal-actions">
           <button onClick={onClose} className="btn btn-secondary" disabled={isLoading}>

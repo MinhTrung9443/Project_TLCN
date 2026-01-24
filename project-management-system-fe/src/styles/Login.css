@@ -1,105 +1,102 @@
-.login-page-container {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
+/* Login Page Styles - Matching MarketingLandingPage Design */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
 
-.login-image-panel {
-  flex-basis: 50%;
-  background-image: url('../assets/login-bg.png'); 
-  background-size: cover;
-  background-position: center;
-}
-
-
-.login-form-panel {
-  flex-basis: 50%;
-  background-color: #ffffff;
+.login-page {
+  font-family: "Poppins", sans-serif;
+  background-color: #f8f9fa;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  box-sizing: border-box; 
 }
 
-.form-content {
-  width: 100%;
-  max-width: 400px;
+.login-card {
+  border-radius: 15px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+  border: none;
 }
 
-.logo {
+.login-card-body {
+  padding: 3rem;
+}
+
+.login-logo {
   width: 120px;
-  margin-bottom: 30px;
+  margin-bottom: 2rem;
 }
 
-.form-content h2 {
+.login-title {
   font-size: 2.5rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
+  font-weight: 700;
+  color: #1a237e;
+  margin-bottom: 1rem;
 }
 
-.subtitle {
-  color: #777;
-  margin-bottom: 30px;
+.login-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
 }
 
-.input-group {
-  margin-bottom: 20px;
+.login-form-group {
+  margin-bottom: 1.5rem;
 }
 
-.input-group label {
-  display: block;
+.login-label {
   font-weight: 600;
-  margin-bottom: 8px;
-  color: #555;
+  color: #212529;
+  margin-bottom: 0.5rem;
 }
 
-.input-group input {
-  width: 100%;
+.login-form-control {
   padding: 12px 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
-  box-sizing: border-box;
 }
 
-.forgot-password {
-  display: block;
-  text-align: right;
-  margin-bottom: 20px;
-  color: #4f63ff;
+.login-form-control:focus {
+  border-color: #6f42c1;
+  box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+}
+
+.login-forgot-link {
+  color: #6f42c1;
   text-decoration: none;
   font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
 }
 
-.btn-signin {
+.login-forgot-link:hover {
+  color: #5a32a3;
+}
+
+.login-btn {
   width: 100%;
-  padding: 15px;
+  background-color: #6f42c1;
   border: none;
-  background-color: #4f63ff;
-  color: white;
+  padding: 15px;
   font-size: 1rem;
-  font-weight: bold;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  font-weight: 700;
+  border-radius: 50px;
+  transition: all 0.3s ease;
 }
 
-.btn-signin:hover {
-  background-color: #3a4ee6;
+.login-btn:hover {
+  background-color: #5a32a3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(111, 66, 193, 0.3);
 }
 
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .login-card-body {
+    padding: 2rem;
+  }
 
-.signup-link {
-  margin-top: 30px;
-  text-align: center;
-  color: #555;
-}
-
-.signup-link a {
-  color: #4f63ff;
-  font-weight: bold;
-  text-decoration: none;
+  .login-title {
+    font-size: 2rem;
+  }
 }

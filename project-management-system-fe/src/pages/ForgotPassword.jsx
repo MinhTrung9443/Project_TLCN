@@ -1,11 +1,11 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Container, Row, Col, Button, Form, Card } from "react-bootstrap";
 import authService from "../services/AuthService.js";
 import { toast } from "react-toastify";
 
 import "../styles/ForgotPassword.css";
 
-// Không cần import logobg nữa vì nó được gọi trong CSS
 import logo from "../assets/logo.png";
 
 const ForgotPasswordPage = () => {
@@ -65,87 +65,104 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="forgot-password-page-container">
-      {/* CỘT BÊN TRÁI (HÌNH ẢNH) - ĐÃ SỬA */}
-      <div className="forgot-password-image-panel">{/* Phần này sẽ hiển thị ảnh nền được định nghĩa trong Login.css */}</div>
+    <div className="forgot-password-page">
+      <Container>
+        <Row className="justify-content-center">
+          <Col lg={6} md={8} sm={10}>
+            <Card className="forgot-password-card">
+              <Card.Body className="forgot-password-card-body">
+                <div className="text-center mb-4">
+                  <img src={logo} alt="Logo" className="forgot-password-logo" />
+                  <h2 className="forgot-password-title">{isSentRequest ? "New Password" : "Forgot Password"}</h2>
+                  <p className="forgot-password-subtitle">
+                    {isSentRequest ? "Check your email for the OTP to reset your password." : "Please enter your email to reset your password."}
+                  </p>
+                </div>
 
-      {/* CỘT BÊN PHẢI (FORM) */}
+                {isSentRequest === false ? (
+                  <Form onSubmit={handleForgotPassword}>
+                    <Form.Group className="forgot-password-form-group">
+                      <Form.Label className="forgot-password-label">
+                        Email <span style={{ color: "#ef4444" }}>*</span>
+                      </Form.Label>
+                      <Form.Control
+                        type="email"
+                        name="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="your.email@example.com"
+                        required
+                        className="forgot-password-form-control"
+                      />
+                    </Form.Group>
 
-      {isSentRequest === false ? (
-        <div className="form-panel">
-          <div className="form-content">
-            <img src={logo} alt="Logo" className="logo" />
-            <h2>Forgot Password</h2>
-            <p className="subtitle">Please enter your email to reset your password.</p>
+                    <div className="d-flex justify-content-end mb-4">
+                      <Link to="/login" className="forgot-password-login-link">
+                        Back to Login
+                      </Link>
+                    </div>
 
-            <form onSubmit={handleForgotPassword}>
-              <div className="input-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.email@example.com"
-                  required
-                />
-              </div>
-              <Link to="/login" className="login-link">
-                Back to Login
-              </Link>
+                    <Button type="submit" className="forgot-password-btn">
+                      Send OTP
+                    </Button>
+                  </Form>
+                ) : (
+                  <Form onSubmit={handleResetPassword}>
+                    <Form.Group className="forgot-password-form-group">
+                      <Form.Label className="forgot-password-label">
+                        OTP <span style={{ color: "#ef4444" }}>*</span>
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="OTP"
+                        placeholder="Enter the OTP"
+                        required
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        className="forgot-password-form-control"
+                      />
+                    </Form.Group>
 
-              <button type="submit" className="btn-request-otp">
-                Send OTP
-              </button>
-            </form>
-          </div>
-        </div>
-      ) : (
-        <div className="form-panel">
-          <div className="form-content">
-            <img src={logo} alt="Logo" className="logo" />
-            <h2>New Password</h2>
-            <p className="subtitle">Check your email for the OTP to reset your password.</p>
-            <form onSubmit={handleResetPassword}>
-              <div className="input-group">
-                <label>OTP</label>
-                <input type="text" id="OTP" name="OTP" placeholder="Enter the OTP" required value={otp} onChange={(e) => setOtp(e.target.value)} />
-              </div>
+                    <Form.Group className="forgot-password-form-group">
+                      <Form.Label className="forgot-password-label">
+                        New Password <span style={{ color: "#ef4444" }}>*</span>
+                      </Form.Label>
+                      <Form.Control
+                        type="password"
+                        name="newPassword"
+                        placeholder="Enter your new password"
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="forgot-password-form-control"
+                      />
+                    </Form.Group>
 
-              <div className="input-group">
-                <label htmlFor="newPassword">New Password</label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  name="newPassword"
-                  placeholder="Enter your new password"
-                  required
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </div>
+                    <Form.Group className="forgot-password-form-group">
+                      <Form.Label className="forgot-password-label">
+                        Repeat Password <span style={{ color: "#ef4444" }}>*</span>
+                      </Form.Label>
+                      <Form.Control
+                        type="password"
+                        name="repeatPassword"
+                        placeholder="Repeat your new password"
+                        required
+                        value={repeatPassword}
+                        onChange={(e) => setRepeatPassword(e.target.value)}
+                        className="forgot-password-form-control"
+                      />
+                    </Form.Group>
 
-              <div className="input-group">
-                <label htmlFor="repeatPassword">Repeat Password</label>
-                <input
-                  type="password"
-                  id="repeatPassword"
-                  name="repeatPassword"
-                  placeholder="Repeat your new password"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                />
-              </div>
-
-              <button type="submit" className="btn-reset-password">
-                Reset Password
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+                    <Button type="submit" className="forgot-password-btn">
+                      Reset Password
+                    </Button>
+                  </Form>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
     </div>
   );
 };

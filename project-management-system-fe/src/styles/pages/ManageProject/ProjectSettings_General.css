@@ -1,174 +1,211 @@
-/* src/styles/pages/ManageProject/ProjectSettingsPage.css */
+/* ProjectSettings_General - Matching MarketingLandingPage Style */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
 
-/* Container chính bao bọc toàn bộ trang settings */
 .project-settings-container {
-  padding: 2rem;
-  background-color: #f9fafb; /* Một màu nền nhẹ nhàng */
+  font-family: "Poppins", sans-serif;
+  padding: 1.5rem;
+  background-color: transparent;
   height: 100%;
 }
 
-/* Form chứa nội dung cài đặt */
 .settings-content-form {
   margin-top: 1.5rem;
   background-color: #ffffff;
-  padding: 24px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 28px;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Khoảng cách giữa các group */
+  gap: 1.5rem;
 }
 
-/* Nhóm chứa label và input */
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* Khoảng cách giữa label và input */
+  gap: 0.5rem;
 }
 
 .form-group label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151; /* Màu xám đậm */
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #37474f;
 }
 
-/* Kiểu chung cho tất cả các ô input, select, textarea */
 .settings-content-form input[type="text"],
 .settings-content-form select,
 .settings-content-form textarea {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db; /* Viền xám nhạt */
-  border-radius: 6px;
-  font-size: 14px;
-  color: #111827;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  padding: 10px 14px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: "Poppins", sans-serif;
+  color: #495057;
+  background-color: #f8f9fa;
+  transition: all 0.25s ease;
   outline: none;
 }
 
-/* Hiệu ứng khi focus vào input */
+.settings-content-form input[type="text"]:focus,
 .settings-content-form select:focus,
 .settings-content-form textarea:focus {
-  border-color: #0b3d91; /* deep-blue */
-  box-shadow: 0 0 0 4px rgba(11, 61, 145, 0.06);
+  border-color: #6f42c1;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
 }
 
-/* Kiểu riêng cho textarea */
 .settings-content-form textarea {
-  min-height: 140px;
+  min-height: 150px;
   resize: vertical;
-  font-family: inherit; /* Kế thừa font chữ chung */
   padding: 14px;
-  border-radius: 8px;
+  line-height: 1.6;
 }
 
-/* Kiểu cho ô input bị vô hiệu hóa */
 .settings-content-form input:disabled {
-  background-color: #f3f4f6;
-  color: #6b7281;
+  background-color: #e9ecef;
+  color: #6c757d;
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
-/* Custom style cho thẻ select để có mũi tên tùy chỉnh */
 .settings-content-form select {
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7281' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236f42c1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 0.75rem center;
   background-repeat: no-repeat;
   background-size: 1.25em;
   padding-right: 2.5rem;
 }
 
-
-/* Khu vực chứa các nút Save, Cancel */
 .form-actions {
   display: flex;
-  justify-content: flex-end; /* Căn các nút về bên phải */
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb; /* Đường kẻ phân cách */
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f3efff;
 }
 
-/* Kiểu chung cho các nút */
 .btn {
-  padding: 10px 20px;
+  padding: 10px 24px;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
   cursor: pointer;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  transition: all 0.25s ease;
 }
 
-/* Nút chính (Save) */
 .btn-primary {
-  background-color: #0b3d91; /* deep-blue */
+  background-color: #6f42c1;
   color: white;
-  box-shadow: 0 8px 24px rgba(11,61,145,0.12);
+  box-shadow: 0 2px 8px rgba(111, 66, 193, 0.2);
 }
 
-.btn-primary:hover {
-  background-color: #072b66;
+.btn-primary:hover:not(:disabled) {
+  background-color: #5a32a3;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
 }
 
 .btn-primary:disabled {
-  background-color: #7b9adf;
+  background-color: #b8a1d6;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* Header */
-.settings-header { margin-bottom: 18px; }
-.page-title { font-size: 28px; margin: 0; color: #0f172a; }
-.page-subtitle { margin: 6px 0 0 0; color: #6b7280; }
+.settings-header {
+  margin-bottom: 1.25rem;
+}
 
-/* Manager preview */
-.manager-preview { display:flex; gap:12px; align-items:center; margin-top:10px; }
-.mp-avatar { width:40px; height:40px; border-radius:8px; background:linear-gradient(135deg,#7c3aed,#a78bfa); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; }
-.mp-meta .mp-name { font-weight:700; color:#0f172a; }
-.mp-meta .mp-email { font-size:13px; color:#6b7280; }
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1a237e;
+}
 
+.page-subtitle {
+  margin: 8px 0 0 0;
+  color: #6c757d;
+  font-size: 1rem;
+}
 
-/* Nút phụ (Cancel) */
+.manager-preview {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+}
+
+.mp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6f42c1, #9575cd);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(111, 66, 193, 0.3);
+}
+
+.mp-meta .mp-name {
+  font-weight: 700;
+  color: #1a237e;
+}
+
+.mp-meta .mp-email {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
 .btn-secondary {
   background-color: #ffffff;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  color: #6c757d;
+  border: 2px solid #e9ecef;
 }
 
 .btn-secondary:hover {
-  background-color: #f3f4f6; /* Nền xám rất nhạt khi hover */
+  background-color: #f8f9fa;
+  border-color: #6c757d;
+  transform: translateY(-1px);
 }
 
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Chia thành 2 cột bằng nhau */
-  gap: 20px; /* Khoảng cách giữa 2 cột */
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
 }
 
 .error-message {
-  color: #d9534f; /* Màu đỏ cho thông báo lỗi */
-  font-size: 0.875rem;
-  margin-top: 5px;
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  font-weight: 500;
 }
 
-/* Tùy chọn: Thêm viền đỏ cho input khi có lỗi */
 .form-group input.error,
 .form-group textarea.error {
-    border-color: #d9534f;
+  border-color: #dc3545;
 }
+
 .form-group label.required::after {
   content: " *";
-  color: #de350b; /* Màu đỏ */
+  color: #dc3545;
   margin-left: 2px;
 }
 
-/* CSS cho thông báo lỗi */
 .error-text {
-  color: #de350b; /* Màu đỏ */
-  font-size: 12px;
-  margin-top: 4px;
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  font-weight: 500;
 }

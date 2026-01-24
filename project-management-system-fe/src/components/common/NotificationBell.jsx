@@ -6,7 +6,7 @@ import { getProjectById } from "../../services/projectService";
 import sprintService from "../../services/sprintService";
 import { toast } from "react-toastify";
 import { ProjectContext } from "../../contexts/ProjectContext";
-import "./NotificationBell.css";
+import "../../styles/components/NotificationBell.css";
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,7 +54,7 @@ const NotificationBell = () => {
             <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
             <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
           </div>,
-          toastOptions
+          toastOptions,
         );
       } else if (notification.priority === "HIGH") {
         toast.warning(
@@ -62,7 +62,7 @@ const NotificationBell = () => {
             <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
             <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
           </div>,
-          toastOptions
+          toastOptions,
         );
       } else if (notification.priority === "MEDIUM") {
         toast.info(
@@ -70,7 +70,7 @@ const NotificationBell = () => {
             <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
             <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
           </div>,
-          toastOptions
+          toastOptions,
         );
       } else {
         // LOW priority - use success type
@@ -79,7 +79,7 @@ const NotificationBell = () => {
             <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
             <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
           </div>,
-          toastOptions
+          toastOptions,
         );
       }
     };

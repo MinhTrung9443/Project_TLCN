@@ -1,6 +1,7 @@
-import React from 'react';
+import React from "react";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
+import "../../styles/components/IconPicker.css";
 
 export const IconComponent = ({ name }) => {
   const AllIcons = { ...FaIcons, ...VscIcons };

@@ -1,0 +1,133 @@
+/* FilterBar Component */
+.advanced-filter-bar {
+  font-family: "Poppins", sans-serif;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+}
+
+.active-filters-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f3efff;
+  border: 2px solid #e0d4f7;
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: all 0.25s ease;
+}
+
+.filter-pill:hover {
+  border-color: #6f42c1;
+  box-shadow: 0 2px 8px rgba(111, 66, 193, 0.15);
+}
+
+.filter-pill-label {
+  font-weight: 600;
+  color: #6f42c1;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.filter-select-input {
+  min-width: 200px;
+  font-family: "Poppins", sans-serif;
+}
+
+.remove-filter-btn {
+  background: transparent;
+  border: none;
+  color: #6f42c1;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.remove-filter-btn:hover {
+  background: #6f42c1;
+  color: white;
+  transform: scale(1.1);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.add-filter-select {
+  flex: 1;
+  font-family: "Poppins", sans-serif;
+}
+
+.search-btn {
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: "Poppins", sans-serif;
+  white-space: nowrap;
+}
+
+.search-btn:hover {
+  background: linear-gradient(135deg, #5a32a3 0%, #4a2889 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(111, 66, 193, 0.3);
+}
+
+.search-btn:active {
+  transform: translateY(0);
+}
+
+/* React-Select Custom Styling */
+.react-select__control {
+  border: 2px solid #e9ecef !important;
+  border-radius: 8px !important;
+  font-family: "Poppins", sans-serif !important;
+  transition: all 0.25s ease !important;
+}
+
+.react-select__control:hover {
+  border-color: #6f42c1 !important;
+}
+
+.react-select__control--is-focused {
+  border-color: #6f42c1 !important;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1) !important;
+}
+
+.react-select__menu {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  font-family: "Poppins", sans-serif !important;
+}
+
+.react-select__option--is-selected {
+  background-color: #6f42c1 !important;
+}
+
+.react-select__option--is-focused {
+  background-color: #f3efff !important;
+  color: #6f42c1 !important;
+}
+
+.react-select__option:active {
+  background-color: #e0d4f7 !important;
+}
