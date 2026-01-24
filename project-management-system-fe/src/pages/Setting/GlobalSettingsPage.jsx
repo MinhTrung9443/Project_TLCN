@@ -1,24 +1,19 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-// Import các component con cho từng tab
 import SettingsTaskTypes from "./TaskType";
 import SettingsPriorities from "./Priority";
 import SettingsPlatforms from "./Platform";
-
-// Import Menu Tab
 import SettingMenu from "../../components/Setting/SettingMenu";
 import "../../styles/Setting/GlobalSettingsPage.css";
 
 const GlobalSettingsPage = () => {
-  const { tabName = "tasktypes" } = useParams(); // Mặc định là 'tasktypes'
+  const { tabName = "tasktypes" } = useParams();
   const navigate = useNavigate();
 
   const handleTabChange = (newTab) => {
     navigate(`/app/settings/${newTab.toLowerCase()}`);
   };
 
-  // Hàm render nội dung dựa vào `tabName`
   const renderTabContent = () => {
     switch (tabName.toLowerCase()) {
       case "priorities":
@@ -32,9 +27,19 @@ const GlobalSettingsPage = () => {
   };
 
   return (
-    <div className="global-settings-container">
-      <SettingMenu activeTab={tabName} onTabChange={handleTabChange} />
-      <div className="settings-content-area">{renderTabContent()}</div>
+    <div className="global-settings-page">
+      <div className="settings-hero-bg">
+        <div className="settings-hero-shape"></div>
+        <div className="settings-hero-content">
+          <h1 className="settings-hero-title">Global Settings</h1>
+          <p className="settings-hero-subtitle">Configure default task types, priorities, and platforms for your projects</p>
+        </div>
+      </div>
+
+      <div className="settings-main-container">
+        <SettingMenu activeTab={tabName} onTabChange={handleTabChange} />
+        <div className="settings-content-wrapper">{renderTabContent()}</div>
+      </div>
     </div>
   );
 };

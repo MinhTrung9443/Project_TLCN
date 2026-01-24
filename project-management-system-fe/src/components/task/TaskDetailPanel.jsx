@@ -157,7 +157,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
           if (user.role !== "admin") {
             // Check if user is PM in this project
             const isPM = res.data.members?.some(
-              (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+              (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
             );
 
             if (!isPM) {
@@ -179,7 +179,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
 
               // Filter to only allowed members (or current assignee to prevent breaking existing assignments)
               allMembers = allMembers.filter(
-                (m) => allowedMemberIds.includes(m.value.toString()) || m.value.toString() === currentAssigneeId?.toString()
+                (m) => allowedMemberIds.includes(m.value.toString()) || m.value.toString() === currentAssigneeId?.toString(),
               );
             }
           }
@@ -290,10 +290,10 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         if (taskStart < sprintStart || taskEnd > sprintEnd) {
           toast.error(
             `Task dates (${new Date(newStartDate).toLocaleDateString()} - ${new Date(
-              newDueDate
+              newDueDate,
             ).toLocaleDateString()}) must be within sprint dates (${new Date(selectedSprint.startDate).toLocaleDateString()} - ${new Date(
-              selectedSprint.endDate
-            ).toLocaleDateString()})`
+              selectedSprint.endDate,
+            ).toLocaleDateString()})`,
           );
           return;
         }
@@ -397,18 +397,20 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
 
   const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find((i) => i.name === editableTask.taskTypeId?.icon);
 
+  if (!task) return null;
+
   return (
-    <div className="task-detail-panel">
+    <div className={`task-detail-panel ${task ? "open" : ""}`}>
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
       <header className="panel-header">
         <div className="panel-header-left">
           <div className="task-key-container">
             {typeIconInfo && (
-              <span className="icon-wrapper-list-small" style={{ backgroundColor: typeIconInfo.color }} title={editableTask.taskTypeId.name}>
+              <span className="task-type-icon-panel" style={{ backgroundColor: typeIconInfo.color }} title={editableTask.taskTypeId.name}>
                 <IconComponent name={editableTask.taskTypeId.icon} />
               </span>
             )}
-            <a href={`/app/task/${editableTask.key}`} target="_blank" rel="noopener noreferrer" className="task-key-text">
+            <a href={`/app/task/${editableTask.key}`} className="task-key-display">
               {editableTask.key}
             </a>
           </div>

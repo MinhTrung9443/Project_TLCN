@@ -22,19 +22,6 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
     [status, workflow]
   );
 
-  const getCategoryLabel = () => {
-    switch (status.category) {
-      case "To Do":
-        return "TO DO";
-      case "In Progress":
-        return "IN PROGRESS";
-      case "Done":
-        return "DONE";
-      default:
-        return status.name.toUpperCase();
-    }
-  };
-
   const getCategoryClass = () => {
     switch (status.category) {
       case "To Do":

@@ -52,14 +52,13 @@ const MyProfilePage = () => {
   };
 
   const handleAvatarClick = () => {
-    fileInputRef.current.click(); // Kích hoạt input ẩn
+    fileInputRef.current.click();
   };
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file ảnh
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file.");
       return;
@@ -67,11 +66,8 @@ const MyProfilePage = () => {
 
     setIsUploading(true);
     try {
-      // Gọi API upload file (đã setup ở các bước trước)
       const response = await userService.uploadFile(file);
 
-      // Cập nhật URL ảnh vào formData
-      // Lưu ý: Lúc này ảnh mới hiển thị trên UI, nhưng CHƯA LƯU vào database user cho đến khi bấm nút SAVE
       setFormData((prev) => ({
         ...prev,
         avatar: response.imageUrl,
@@ -93,14 +89,13 @@ const MyProfilePage = () => {
     try {
       const response = await userService.updateProfile(formData);
 
-      const updatedUser = response.user || response.data?.user; // Tùy cấu trúc trả về của backend
+      const updatedUser = response.user || response.data?.user;
 
       const token = localStorage.getItem("token");
       login(updatedUser, token);
 
       toast.success("Profile updated successfully!");
 
-      // Cập nhật initialData sau khi save thành công
       setInitialData(formData);
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -113,7 +108,6 @@ const MyProfilePage = () => {
   };
 
   const handleCancel = () => {
-    // Reset về dữ liệu ban đầu từ context user
     if (initialData) {
       setFormData(initialData);
     }
@@ -121,103 +115,185 @@ const MyProfilePage = () => {
   };
 
   if (loading) {
-    return <div className="loading-container">Loading profile...</div>;
+    return (
+      <div className="profile-loading">
+        <div className="spinner"></div>
+        <p>Loading profile...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="profile-page-container">
-      <div className="profile-header">
-        <div className="header-left">
-          <h1 className="profile-title">My Profile</h1>
-          <p className="profile-sub">Manage your personal details and account settings</p>
+    <div className="profile-page-container modern-profile">
+      <div className="profile-hero">
+        <div className="hero-content">
+          <div className="badge-pill">
+            <span className="material-symbols-outlined">person</span>
+            Account Settings
+          </div>
+          <h1 className="profile-title">
+            <span className="material-symbols-outlined">account_circle</span>
+            My Profile
+          </h1>
+          <p className="profile-subtitle">Manage your personal details and account settings</p>
         </div>
       </div>
-      <form onSubmit={handleSubmit} className="profile-form">
-        <div className="profile-main-content">
-          <div className="profile-tabs">
-            <span className="tab-item active">Personal</span>
-          </div>
 
-          <div className="form-section">
-            <h3 className="section-title">Basic Info</h3>
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="fullname" className="required">
-                  Full Name
-                </label>
-                <input type="text" id="fullname" name="fullname" value={formData.fullname} onChange={handleChange} required />
+      <form onSubmit={handleSubmit} className="profile-form-wrapper">
+        <div className="profile-layout">
+          <div className="profile-sidebar panel">
+            <div className="avatar-section">
+              <div className="avatar-wrapper">
+                <div className="avatar-display">
+                  {formData.avatar ? (
+                    <img src={formData.avatar} alt="Avatar" className="avatar-img-preview" />
+                  ) : (
+                    <div className="avatar-placeholder">{user.fullname ? user.fullname.charAt(0).toUpperCase() : "U"}</div>
+                  )}
+                </div>
+                {isUploading && (
+                  <div className="upload-overlay">
+                    <div className="spinner-small"></div>
+                  </div>
+                )}
               </div>
-              <div className="form-group">
-                <label htmlFor="username" className="required">
-                  Username
-                </label>
-                <input type="text" id="username" name="username" value={formData.username} onChange={handleChange} required disabled />
-              </div>
-              <div className="form-group">
-                <label htmlFor="email" className="required">
-                  Email
-                </label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required disabled />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phone">Phone</label>
-                <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} />
-              </div>
-              <div className="form-group">
-                <label htmlFor="gender">Gender</label>
-                <select id="gender" name="gender" value={formData.gender} onChange={handleChange}>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="status">Status</label>
-                <label className="toggle-switch">
-                  <input type="checkbox" id="status" name="status" checked={formData.status === "active"} onChange={handleStatusToggle} />
-                  <span className="slider"></span>
-                </label>
+
+              <input type="file" ref={fileInputRef} style={{ display: "none" }} accept="image/*" onChange={handleFileChange} />
+
+              <button type="button" className="btn-upload-avatar" onClick={handleAvatarClick} disabled={isUploading}>
+                <span className="material-symbols-outlined">cloud_upload</span>
+                {isUploading ? "Uploading..." : "Upload Avatar"}
+              </button>
+
+              <div className="sidebar-info">
+                <div className="info-card">
+                  <div className="info-row">
+                    <span className="material-symbols-outlined">badge</span>
+                    <div className="info-content">
+                      <div className="info-label">Role</div>
+                      <div className="info-value">{user?.role || "Member"}</div>
+                    </div>
+                  </div>
+                  <div className="info-row">
+                    <span className="material-symbols-outlined">email</span>
+                    <div className="info-content">
+                      <div className="info-label">Email</div>
+                      <div className="info-value">{user?.email}</div>
+                    </div>
+                  </div>
+                  <div className="info-row">
+                    <span className="material-symbols-outlined">verified</span>
+                    <div className="info-content">
+                      <div className="info-label">Status</div>
+                      <div className={`info-value status ${formData.status}`}>{formData.status === "active" ? "Active" : "Inactive"}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="form-actions">
-            <button type="button" className="btn-cancel" onClick={handleCancel} disabled={!hasChanges()}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-save" disabled={!hasChanges()}>
-              Save
-            </button>
-          </div>
-        </div>
 
-        <div className="profile-sidebar">
-          <div className="avatar-section">
-            {/* Logic hiển thị Avatar: Nếu có link ảnh thì hiện ảnh, không thì hiện chữ cái */}
-            <div className="avatar-display">
-              {formData.avatar ? (
-                <img src={formData.avatar} alt="Avatar" className="avatar-img-preview" />
-              ) : user.fullname ? (
-                user.fullname.charAt(0).toUpperCase()
-              ) : (
-                "U"
-              )}
-            </div>
-
-            {/* Input ẩn để chọn file */}
-            <input type="file" ref={fileInputRef} style={{ display: "none" }} accept="image/*" onChange={handleFileChange} />
-
-            {/* Nút bấm kích hoạt upload */}
-            <button type="button" className="btn-upload-avatar" onClick={handleAvatarClick} disabled={isUploading}>
-              {isUploading ? "Uploading..." : "Upload Avatar"}
-            </button>
-            <div className="sidebar-info">
-              <div className="info-row">
-                <div className="info-label">Role</div>
-                <div className="info-value">{user?.role || "Member"}</div>
+          <div className="profile-main-content">
+            <div className="form-card panel">
+              <div className="card-header">
+                <h3 className="section-title">
+                  <span className="material-symbols-outlined">info</span>
+                  Basic Information
+                </h3>
+                <p className="section-description">Update your personal details and contact information</p>
               </div>
-              <div className="info-row">
-                <div className="info-label">Email</div>
-                <div className="info-value small">{user?.email}</div>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="fullname" className="form-label">
+                    <span className="material-symbols-outlined">person</span>
+                    Full Name <span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="fullname"
+                    name="fullname"
+                    className="form-input"
+                    value={formData.fullname}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="username" className="form-label">
+                    <span className="material-symbols-outlined">alternate_email</span>
+                    Username <span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    className="form-input disabled"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                    disabled
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email" className="form-label">
+                    <span className="material-symbols-outlined">mail</span>
+                    Email Address <span className="required">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    className="form-input disabled"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    disabled
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="phone" className="form-label">
+                    <span className="material-symbols-outlined">phone</span>
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    className="form-input"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="gender" className="form-label">
+                    <span className="material-symbols-outlined">wc</span>
+                    Gender
+                  </label>
+                  <select id="gender" name="gender" className="form-input" value={formData.gender} onChange={handleChange}>
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button type="button" className="btn btn-cancel" onClick={handleCancel} disabled={!hasChanges()}>
+                  <span className="material-symbols-outlined">close</span>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-save" disabled={!hasChanges()}>
+                  <span className="material-symbols-outlined">save</span>
+                  Save Changes
+                </button>
               </div>
             </div>
           </div>

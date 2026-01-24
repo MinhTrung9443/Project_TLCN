@@ -64,7 +64,7 @@ const BacklogPage = () => {
               (team.members || []).some((m) => {
                 const memId = m?._id || m;
                 return memId === userId;
-              })
+              }),
             );
             if (isTeamMember) {
               role = "MEMBER";
@@ -104,6 +104,15 @@ const BacklogPage = () => {
     const { task, source } = draggedItem;
     console.log(`Dropped task: ${task.name} from ${source} to ${target}`);
 
+    // Check if target sprint is completed
+    if (target !== "backlog") {
+      const targetSprint = sprintList.find((s) => s._id === target);
+      if (targetSprint && targetSprint.status === "Completed") {
+        toast.error("Cannot add tasks to a completed sprint.");
+        return;
+      }
+    }
+
     // Validate task dates against sprint dates if moving to a sprint
     if (target !== "backlog" && task.startDate && task.dueDate) {
       const targetSprint = sprintList.find((s) => s._id === target);
@@ -118,10 +127,10 @@ const BacklogPage = () => {
         if (taskStart < sprintStart || taskEnd > sprintEnd) {
           toast.error(
             `Task dates (${new Date(task.startDate).toLocaleDateString()} - ${new Date(
-              task.dueDate
+              task.dueDate,
             ).toLocaleDateString()}) must be within sprint dates (${new Date(targetSprint.startDate).toLocaleDateString()} - ${new Date(
-              targetSprint.endDate
-            ).toLocaleDateString()})`
+              targetSprint.endDate,
+            ).toLocaleDateString()})`,
           );
           return;
         }
@@ -229,51 +238,59 @@ const BacklogPage = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="backlogpage-container">
-        <div className="backlogpage-header">
-          <h2 className="backlogpage-title">Backlog & Sprints</h2>
-          {canManageSprints && projectType !== "Kanban" && (
-            <button className="backlogpage-create-btn" onClick={handleCreateSprint}>
-              + Create Sprint
-            </button>
-          )}
-        </div>
-        <div className="backlogpage-content">
-          <div className="backlogpage-sprint-list">
-            <SprintList
-              sprintList={sprintList}
-              onDrop={handleDrop}
-              onEdit={handleEditSprint}
-              onStart={handleStartSprint}
-              onComplete={handleCompleteSprint}
-              onDelete={handleDeleteSprint}
-              onSprintNameClick={handleSprintNameClick}
-              onTaskClick={handleTaskClick}
-              projectType={projectType}
-              canManageSprints={canManageSprints}
-              canCreateTask={canCreateTask}
-              canDragDrop={canDragDrop}
-            />
+      <div className="backlog-page">
+        <div className="backlog-hero-section">
+          <div className="backlog-hero-shape"></div>
+          <div className="backlog-hero-content">
+            <h1 className="backlog-page-title">Backlog & Sprints</h1>
+            <p className="backlog-page-subtitle">Plan and organize your project tasks</p>
           </div>
-          {/* Backlog section moved below */}
         </div>
-        <div className="backlogpage-backlog-section backlogpage-backlog-section-full">
-          <div className="backlogpage-backlog-header">
-            <span className="backlogpage-backlog-title">Backlog</span>
-            <span className="backlogpage-backlog-count">{taskList.length}</span>
-          </div>
-          <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} canDragDrop={canDragDrop} onTaskClick={handleTaskClick} />
-          {canCreateTask && (
-            <div className="sprint-create-task-row">
-              <button className="sprint-add-btn">
-                <span className="material-symbols-outlined">add_circle</span>
+
+        <div className="backlog-container">
+          <div className="backlog-header-bar">
+            {canManageSprints && projectType !== "Kanban" && (
+              <button className="btn-create-sprint" onClick={handleCreateSprint}>
+                <span className="material-symbols-outlined">add</span>
+                Create Sprint
               </button>
-              <span className="sprint-create-task-label" onClick={() => setIsCreateTaskModalOpen(true)}>
-                Create Task
-              </span>
+            )}
+          </div>
+
+          <div className="backlog-main-content">
+            <div className="backlog-sprints-section">
+              <SprintList
+                sprintList={sprintList}
+                onDrop={handleDrop}
+                onEdit={handleEditSprint}
+                onStart={handleStartSprint}
+                onComplete={handleCompleteSprint}
+                onDelete={handleDeleteSprint}
+                onSprintNameClick={handleSprintNameClick}
+                onTaskClick={handleTaskClick}
+                projectType={projectType}
+                canManageSprints={canManageSprints}
+                canCreateTask={canCreateTask}
+                canDragDrop={canDragDrop}
+              />
             </div>
-          )}
+
+            <div className="backlog-tasks-section">
+              <div className="backlog-tasks-header">
+                <h2 className="backlog-tasks-title">Backlog</h2>
+                <span className="backlog-tasks-count">{taskList.length}</span>
+              </div>
+              <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} canDragDrop={canDragDrop} onTaskClick={handleTaskClick} />
+              {canCreateTask && (
+                <button className="btn-create-task" onClick={() => setIsCreateTaskModalOpen(true)}>
+                  <span className="material-symbols-outlined">add</span>
+                  Create Task
+                </button>
+              )}
+            </div>
+          </div>
         </div>
+
         <ConfirmationModal
           isOpen={showDeleteModal}
           title="Confirm Delete"

@@ -45,11 +45,7 @@ const GroupMembersPage = () => {
   const filteredMembers = members.filter((m) => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return (
-      (m.fullname || "").toLowerCase().includes(q) ||
-      (m.username || "").toLowerCase().includes(q) ||
-      (m.email || "").toLowerCase().includes(q)
-    );
+    return (m.fullname || "").toLowerCase().includes(q) || (m.username || "").toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q);
   });
 
   const handleOpenAddModal = async () => {
@@ -91,65 +87,100 @@ const GroupMembersPage = () => {
   };
 
   return (
-    <div className="member-page-container">
-      <div className="member-page-header">
-        <div className="breadcrumbs-and-stats">
-          <h1 className="breadcrumbs">
-            <Link to="/organization/group">Groups</Link> / <span>{group?.name || "Group Members"}</span>
-          </h1>
-          <div className="group-stats-inline">
-            <div className="chip total">
+    <div className="members-page-container">
+      <div className="members-hero">
+        <div className="hero-breadcrumb">
+          <Link to="/app/organization/group" className="breadcrumb-link">
+            <span className="material-symbols-outlined">groups</span>
+            Teams
+          </Link>
+          <span className="breadcrumb-separator">/</span>
+          <span className="breadcrumb-current">{group?.name || "Team Members"}</span>
+        </div>
+        <h1 className="hero-title">{group?.name || "Team Members"}</h1>
+        <div className="hero-stats">
+          <div className="stat-chip total">
+            <span className="material-symbols-outlined">group</span>
+            <div className="stat-info">
               <strong>{members.length}</strong>
-              <span>Total</span>
+              <span>Total Members</span>
             </div>
-            <div className="chip active">
+          </div>
+          <div className="stat-chip active">
+            <span className="material-symbols-outlined">check_circle</span>
+            <div className="stat-info">
               <strong>{members.filter((m) => m.status === "active").length}</strong>
               <span>Active</span>
             </div>
-            <div className="chip inactive">
+          </div>
+          <div className="stat-chip inactive">
+            <span className="material-symbols-outlined">cancel</span>
+            <div className="stat-info">
               <strong>{members.filter((m) => m.status !== "active").length}</strong>
               <span>Inactive</span>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="header-controls">
+      <div className="members-controls">
+        <div className="search-box">
+          <span className="material-symbols-outlined">search</span>
           <input
-            className="search-pill"
+            type="text"
+            className="search-input"
             placeholder="Search members by name, username, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          {isAdmin && (
-            <button onClick={handleOpenAddModal} className="add-member-button">
-              ADD MEMBER
-            </button>
-          )}
         </div>
+        {isAdmin && (
+          <button onClick={handleOpenAddModal} className="btn-add-member">
+            <span className="material-symbols-outlined">person_add</span>
+            Add Member
+          </button>
+        )}
       </div>
 
       {loading ? (
-        <p>Loading...</p>
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Loading members...</p>
+        </div>
       ) : (
-        <div className="members-card">
+        <div className="members-content">
           {filteredMembers.length === 0 ? (
-            <div className="no-members-message">No members found.</div>
+            <div className="empty-state">
+              <span className="material-symbols-outlined empty-icon">group_off</span>
+              <h3>No members found</h3>
+              <p>Try adjusting your search or add new members to this team</p>
+            </div>
           ) : (
             <div className="members-list">
               {filteredMembers.map((member) => (
-                <div className="member-row" key={member._id}>
-                  <div className="member-left">
-                    <div className="avatar">{(member.fullname || "")[0] || "U"}</div>
-                    <div className="meta">
-                      <div className="name">{member.fullname}</div>
-                      <div className="sub">{member.username} • {member.email}</div>
-                    </div>
+                <div className="member-card" key={member._id}>
+                  <div className="member-avatar">
+                    <span className="avatar-text">{(member.fullname || "")[0] || "U"}</span>
                   </div>
-                  <div className="member-right">
-                    <div className={`status-pill ${member.status === "active" ? "active" : "inactive"}`}>{member.status}</div>
+                  <div className="member-info">
+                    <h3 className="member-name">{member.fullname}</h3>
+                    <p className="member-details">
+                      <span className="material-symbols-outlined">badge</span>
+                      {member.username}
+                    </p>
+                    <p className="member-details">
+                      <span className="material-symbols-outlined">email</span>
+                      {member.email}
+                    </p>
+                  </div>
+                  <div className="member-actions">
+                    <span className={`status-badge ${member.status === "active" ? "active" : "inactive"}`}>
+                      <span className="status-dot"></span>
+                      {member.status}
+                    </span>
                     {isAdmin && (
                       <button
-                        className="remove-member-btn"
+                        className="btn-remove-member"
                         onClick={() => {
                           setRemoveMemberData({ userId: member._id, userName: member.fullname });
                           setIsRemoveMemberModalOpen(true);

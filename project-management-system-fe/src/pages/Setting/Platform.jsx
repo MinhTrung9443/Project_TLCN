@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
-import platformService from "../../services/platformService"; // Service cho Platform
+import platformService from "../../services/platformService";
 import * as FaIcons from "react-icons/fa";
-import * as VscIcons from "react-icons/vsc";
 import { useAuth } from "../../contexts/AuthContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
+import IconPicker from "../../components/Setting/IconPicker";
+import "../../styles/Setting/SettingsPage.css";
 
 const PREDEFINED_PLATFORM_ICONS = [
   { name: "FaCode", color: "#8E44AD" },
@@ -21,33 +21,10 @@ const PREDEFINED_PLATFORM_ICONS = [
 ];
 
 const IconComponent = ({ name }) => {
-  const AllIcons = { ...FaIcons, ...VscIcons };
-  const Icon = AllIcons[name];
+  const Icon = FaIcons[name];
   if (!Icon) return <FaIcons.FaQuestionCircle />;
   return <Icon />;
 };
-
-// IconPicker giờ sẽ nhận danh sách icons làm props
-const IconPicker = ({ selectedIcon, onSelect, icons }) => {
-  return (
-    <div className="icon-picker-container">
-      {icons.map((icon) => (
-        <button
-          key={icon.name}
-          type="button"
-          className={`icon-picker-button ${selectedIcon === icon.name ? "selected" : ""}`}
-          onClick={() => onSelect(icon.name)}
-        >
-          <div className="icon-display" style={{ backgroundColor: icon.color }}>
-            <IconComponent name={icon.name} />
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-};
-
-// --- COMPONENT CHÍNH ---
 export const SettingsPlatforms = () => {
   const { user } = useAuth();
   const [platforms, setPlatforms] = useState([]);
@@ -61,7 +38,6 @@ export const SettingsPlatforms = () => {
   const fetchPlatforms = useCallback(async () => {
     try {
       setLoading(true);
-      // Gọi API lấy TẤT CẢ platform (không cần projectKey)
       const response = await platformService.getAllPlatforms();
       setPlatforms(response.data);
     } catch (error) {
@@ -79,6 +55,7 @@ export const SettingsPlatforms = () => {
     setCurrentPlatform(platform ? { ...platform } : { name: "", icon: "FaCode" });
     setIsModalOpen(true);
   };
+
   const handleCloseModal = () => setIsModalOpen(false);
 
   const handleChange = (e) => {
@@ -114,8 +91,7 @@ export const SettingsPlatforms = () => {
     }
   };
 
-  const handleDeleteClick = (e, platform) => {
-    e.stopPropagation();
+  const handleDeleteClick = (platform) => {
     setPlatformToDelete(platform);
     setIsDeleteModalOpen(true);
   };
@@ -132,54 +108,52 @@ export const SettingsPlatforms = () => {
     }
   };
 
-  const handleEditClick = (e, platform) => {
-    e.stopPropagation();
-    handleOpenModal(platform);
-  };
-
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="settings-loading">
+        <div className="spinner"></div>
+        <p>Loading platforms...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="settings-list-container">
-      <div className="settings-list-header">
-        <div className="header-col col-icon">Icon</div>
-        <div className="header-col col-name">Platform Name</div>
-        <div className="header-col col-description">Description</div>
+    <div className="settings-page-container">
+      <div className="settings-page-header">
+        <div className="header-left">
+          <h2>Platforms</h2>
+          <p>{platforms.length} platforms configured</p>
+        </div>
         {user.role === "admin" && (
-          <div className="header-col col-actions">
-            <button className="btn-add-icon" onClick={() => handleOpenModal()}>
-              <VscIcons.VscAdd />
-            </button>
-          </div>
+          <button className="btn-create" onClick={() => handleOpenModal()}>
+            <span className="material-symbols-outlined">add</span>
+            Create Platform
+          </button>
         )}
       </div>
 
-      <div className="settings-list-body">
+      <div className="settings-grid">
         {platforms.map((p) => {
           const iconInfo = PREDEFINED_PLATFORM_ICONS.find((i) => i.name === p.icon);
           return (
-            <div className="settings-list-row" key={p._id}>
-              <div className="row-col col-icon">
-                <span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || "#4BADE8" }}>
-                  <IconComponent name={p.icon} />
-                </span>
+            <div className="settings-card" key={p._id}>
+              <div className="card-icon" style={{ backgroundColor: iconInfo?.color || "#4BADE8" }}>
+                <IconComponent name={p.icon} />
               </div>
-              <div className="row-col col-name">{p.name}</div>
-              <div className="row-col col-description">{p.description || "-"}</div>
-              <div className="row-col col-project">{p.projectId ? p.projectId.name : <span className="default-badge">Default</span>}</div>
+              <div className="card-content">
+                <h3 className="card-title">{p.name}</h3>
+                <p className="card-description">{p.description || "No description"}</p>
+                {p.projectId && <span className="card-badge">Project-specific</span>}
+                {!p.projectId && <span className="card-badge default">Default</span>}
+              </div>
               {!p.projectId && user.role === "admin" && (
-                <div className="row-col col-actions">
-                  <button className="btn-edit" onClick={(e) => handleEditClick(e, p)}>
-                    <FaIcons.FaPencilAlt />
+                <div className="card-actions">
+                  <button className="btn-icon-action" onClick={() => handleOpenModal(p)} title="Edit">
+                    <span className="material-symbols-outlined">edit</span>
                   </button>
-                  <button className="btn-delete" onClick={(e) => handleDeleteClick(e, p)}>
-                    <FaIcons.FaTrash />
+                  <button className="btn-icon-action delete" onClick={() => handleDeleteClick(p)} title="Delete">
+                    <span className="material-symbols-outlined">delete</span>
                   </button>
-                </div>
-              )}
-              {p.projectId && user.role === "admin" && (
-                <div className="row-col col-actions">
-                  <span className="menu-item-disabled">Managed in Project</span>
                 </div>
               )}
             </div>
@@ -188,29 +162,47 @@ export const SettingsPlatforms = () => {
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>{currentPlatform?._id ? "Edit Platform" : "Create Platform"}</h2>
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{currentPlatform?._id ? "Edit Platform" : "Create Platform"}</h2>
+              <button className="modal-close" onClick={handleCloseModal}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="name" className="required">
-                  Name
-                </label>
-                <input id="name" name="name" value={currentPlatform.name} onChange={handleChange} required />
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="name">
+                    Name <span className="required">*</span>
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={currentPlatform.name}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g. Web, Mobile, Desktop"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Icon</label>
+                  <IconPicker
+                    icons={PREDEFINED_PLATFORM_ICONS.map((icon) => ({
+                      ...icon,
+                      component: <IconComponent name={icon.name} />,
+                    }))}
+                    selectedIcon={currentPlatform.icon}
+                    onSelect={handleIconSelect}
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Icon</label>
-                <IconPicker
-                  selectedIcon={currentPlatform.icon}
-                  onSelect={handleIconSelect}
-                  icons={PREDEFINED_PLATFORM_ICONS} // Truyền danh sách icon vào
-                />
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                <button type="submit" className="btn-primary" disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>

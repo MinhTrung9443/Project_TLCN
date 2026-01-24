@@ -63,57 +63,150 @@ const Component = () => {
   };
 
   return (
-    <div className="profile-page-container">
-      <form className="profile-form" onSubmit={handleUpdateUser}>
-        <div className="profile-main-content">
-          <div className="profile-tabs">
-            <span className="tab-item active">
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px" }}>
-                person
-              </span>
-              Basic Info
-            </span>
+    <div className="user-profile-container">
+      <div className="user-profile-hero">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span className="material-symbols-outlined">person</span>
+            User Profile
           </div>
+          <h1 className="hero-title">{updateUser.fullname || "User Details"}</h1>
+          <p className="hero-subtitle">View and manage user information and settings</p>
+        </div>
+      </div>
 
-          <div className="form-section">
+      <form className="profile-content" onSubmit={handleUpdateUser}>
+        <div className="profile-main">
+          <div className="profile-card">
+            <div className="card-header">
+              <h2 className="card-title">
+                <span className="material-symbols-outlined">badge</span>
+                Personal Information
+              </h2>
+            </div>
+
             <div className="form-grid">
               <div className="form-group">
-                <label className="required">Full Name</label>
-                <input className="user-profile-input" value={updateUser.fullname || ""} onChange={onInputChange} name="fullname" />
+                <label htmlFor="fullname" className="form-label">
+                  <span className="material-symbols-outlined">person</span>
+                  Full Name
+                </label>
+                <input
+                  id="fullname"
+                  name="fullname"
+                  className="form-input"
+                  value={updateUser.fullname || ""}
+                  onChange={onInputChange}
+                  placeholder="Enter full name"
+                />
               </div>
+
               <div className="form-group">
-                <label className="required">Username</label>
-                <input className="user-profile-input" value={updateUser.username || ""} readOnly name="username" />
+                <label htmlFor="username" className="form-label">
+                  <span className="material-symbols-outlined">badge</span>
+                  Username
+                </label>
+                <input id="username" name="username" className="form-input disabled" value={updateUser.username || ""} readOnly disabled />
               </div>
+
               <div className="form-group">
-                <label className="required">Email</label>
-                <input className="user-profile-input" value={updateUser.email || ""} readOnly name="email" />
+                <label htmlFor="email" className="form-label">
+                  <span className="material-symbols-outlined">email</span>
+                  Email Address
+                </label>
+                <input id="email" name="email" type="email" className="form-input disabled" value={updateUser.email || ""} readOnly disabled />
               </div>
+
               <div className="form-group">
-                <label>Phone</label>
-                <input className="user-profile-input" value={updateUser.phone || ""} onChange={onInputChange} name="phone" />
+                <label htmlFor="phone" className="form-label">
+                  <span className="material-symbols-outlined">phone</span>
+                  Phone Number
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  className="form-input"
+                  value={updateUser.phone || ""}
+                  onChange={onInputChange}
+                  placeholder="Enter phone number"
+                />
               </div>
+
               <div className="form-group">
-                <label>Gender</label>
+                <label htmlFor="gender" className="form-label">
+                  <span className="material-symbols-outlined">wc</span>
+                  Gender
+                </label>
                 <select
-                  className="user-profile-select"
+                  id="gender"
+                  name="gender"
+                  className="form-input"
                   value={updateUser.gender || "male"}
                   onChange={onInputChange}
                   disabled={!isAdmin}
-                  name="gender"
                 >
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                   <option value="other">Other</option>
                 </select>
               </div>
+
               <div className="form-group">
-                <label>Status</label>
-                <label className="switch">
+                <label htmlFor="role" className="form-label">
+                  <span className="material-symbols-outlined">admin_panel_settings</span>
+                  Role
+                </label>
+                <input
+                  id="role"
+                  name="role"
+                  className="form-input disabled"
+                  value={updateUser.role === "admin" ? "Admin" : "User"}
+                  readOnly
+                  disabled
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="group" className="form-label">
+                  <span className="material-symbols-outlined">groups</span>
+                  Groups
+                </label>
+                <input
+                  id="group"
+                  name="group"
+                  className="form-input disabled"
+                  value={Array.isArray(updateUser.group) ? updateUser.group.join(", ") : updateUser.group || ""}
+                  readOnly
+                  disabled
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="lastLogin" className="form-label">
+                  <span className="material-symbols-outlined">schedule</span>
+                  Last Login
+                </label>
+                <input
+                  id="lastLogin"
+                  name="lastLogin"
+                  className="form-input disabled"
+                  value={updateUser.lastLogin ? new Date(updateUser.lastLogin).toLocaleString() : "Never"}
+                  readOnly
+                  disabled
+                />
+              </div>
+            </div>
+
+            {isAdmin && (
+              <div className="status-section">
+                <label className="status-label">
+                  <span className="material-symbols-outlined">toggle_on</span>
+                  Account Status
+                </label>
+                <label className="toggle-switch">
                   <input
                     type="checkbox"
                     checked={updateUser.status === "active"}
-                    disabled={!isAdmin}
                     onChange={() =>
                       setUpdateUser((prev) => ({
                         ...prev,
@@ -122,53 +215,43 @@ const Component = () => {
                     }
                   />
                   <span className="slider"></span>
+                  <span className="toggle-label">{updateUser.status === "active" ? "Active" : "Inactive"}</span>
                 </label>
               </div>
-              <div className="form-group">
-                <label>Role</label>
-                <input className="user-profile-input" value={updateUser.role === "admin" ? "Admin" : "User"} readOnly name="role" />
-              </div>
-              <div className="form-group">
-                <label>Groups</label>
-                <input
-                  readOnly
-                  className="user-profile-input"
-                  value={Array.isArray(updateUser.group) ? updateUser.group.join(", ") : updateUser.group || ""}
-                  name="group"
-                />
-              </div>
-              <div className="form-group">
-                <label>Last Login</label>
-                <input
-                  className="user-profile-input"
-                  value={updateUser.lastLogin ? new Date(updateUser.lastLogin).toLocaleString() : ""}
-                  readOnly
-                  name="lastLogin"
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="form-actions">
-            <button className="btn-cancel" type="button" onClick={handleCancel} disabled={!isAdmin || !hasChanges()}>
+            <button type="button" className="btn btn-cancel" onClick={handleCancel} disabled={!isAdmin || !hasChanges()}>
+              <span className="material-symbols-outlined">close</span>
               Cancel
             </button>
             {isAdmin && (
-              <button className="btn-save" type="submit" disabled={!hasChanges()}>
-                Save
+              <button type="submit" className="btn btn-save" disabled={!hasChanges()}>
+                <span className="material-symbols-outlined">save</span>
+                Save Changes
               </button>
             )}
           </div>
         </div>
 
         <div className="profile-sidebar">
-          <div className="avatar-section">
-            <div className="avatar-display">
+          <div className="avatar-card">
+            <div className="avatar-wrapper">
               {updateUser.avatar ? (
-                <img src={updateUser.avatar} alt="Avatar" className="avatar-img-preview" />
+                <img src={updateUser.avatar} alt="Avatar" className="avatar-image" />
               ) : (
                 <div className="avatar-placeholder">{updateUser.fullname ? updateUser.fullname.charAt(0).toUpperCase() : "U"}</div>
               )}
+            </div>
+            <h3 className="avatar-name">{updateUser.fullname}</h3>
+            <p className="avatar-role">
+              <span className="material-symbols-outlined">{updateUser.role === "admin" ? "admin_panel_settings" : "person"}</span>
+              {updateUser.role === "admin" ? "Administrator" : "User"}
+            </p>
+            <div className={`avatar-status ${updateUser.status}`}>
+              <span className="status-dot"></span>
+              {updateUser.status}
             </div>
           </div>
         </div>

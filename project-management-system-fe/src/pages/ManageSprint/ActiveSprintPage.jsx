@@ -31,7 +31,7 @@ const ActiveSprintPage = () => {
   // Use custom hook for sprint data management
   const { currentSprint, setCurrentSprint, availableSprints, tasks, setTasks, workflowStatuses, workflow, loading, fetchSprintTasks } = useSprintData(
     effectiveProjectKey,
-    searchParams
+    searchParams,
   );
 
   // Fetch user project role
@@ -67,7 +67,7 @@ const ActiveSprintPage = () => {
                 (team.members || []).some((m) => {
                   const memId = m?._id || m;
                   return memId === userId;
-                })
+                }),
               );
               if (isTeamMember) {
                 role = "MEMBER";
@@ -204,21 +204,31 @@ const ActiveSprintPage = () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="active-sprint-page">
-        <div className="active-sprint-header">
-          <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
-
-          {currentSprint && canManageSprints && !isKanbanProject && (
-            <button className="btn-complete-sprint" onClick={handleCompleteSprint} disabled={isCompleting}>
-              <span className="material-symbols-outlined">check_circle</span>
-              {isCompleting ? "Completing..." : "Complete Sprint"}
-            </button>
-          )}
+        <div className="sprint-hero-section">
+          <div className="sprint-hero-shape"></div>
+          <div className="sprint-hero-content">
+            <h1 className="sprint-page-title">Active Sprint</h1>
+            <p className="sprint-page-subtitle">Manage and track your sprint board</p>
+          </div>
         </div>
 
-        <div className="active-sprint-board">
-          {workflowStatuses.map((status) => (
-            <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
-          ))}
+        <div className="sprint-container">
+          <div className="sprint-controls">
+            <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
+
+            {currentSprint && canManageSprints && !isKanbanProject && (
+              <button className="btn-complete-sprint" onClick={handleCompleteSprint} disabled={isCompleting}>
+                <span className="material-symbols-outlined">check_circle</span>
+                {isCompleting ? "Completing..." : "Complete Sprint"}
+              </button>
+            )}
+          </div>
+
+          <div className="active-sprint-board">
+            {workflowStatuses.map((status) => (
+              <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
+            ))}
+          </div>
         </div>
 
         <ConfirmationModal

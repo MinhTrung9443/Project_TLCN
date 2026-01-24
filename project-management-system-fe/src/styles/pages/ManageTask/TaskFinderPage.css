@@ -1,610 +1,208 @@
-/* src/styles/pages/ManageTask/TaskFinderPage.css */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
 
-.task-finder-wrapper {
-  height: 100%;
+/* =========================
+   LAYOUT
+========================= */
+.task-finder-container {
+  font-family: "Poppins", sans-serif;
   display: flex;
-  position: relative;
-  background-color: #f7f8fa;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-.task-finder-main-content {
+.task-finder-main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 16px 12px 12px 12px;
   overflow: auto;
+  padding: 32px;
+  transition: all 0.3s ease;
 }
 
-.task-finder-container {
-  padding: 24px;
-  background-color: #f7f8fa;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+.task-finder-container.panel-open .task-finder-main {
+  margin-right: 600px;
 }
 
-.task-finder-header {
+/* =========================
+   HERO (REDESIGN)
+========================= */
+.task-finder-hero {
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  padding: 36px 40px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 40px rgba(111, 66, 193, 0.35);
+
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.hero-content {
+  max-width: 520px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
   margin-bottom: 12px;
 }
 
-.task-finder-header h1 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #172b4d;
+.hero-badge .material-symbols-outlined {
+  font-size: 16px;
 }
 
-.create-task-btn {
-  background: linear-gradient(90deg, #4f46e5, #818cf8);
+.hero-title {
+  font-size: 2.2rem;
+  font-weight: 700;
   color: white;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+/* =========================
+   CREATE TASK BUTTON (FIXED)
+========================= */
+.btn-create-task {
+  background: white;
+  color: #6f42c1;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 14px;
+
+  padding: 10px 18px;
+  font-size: 0.9rem;
   font-weight: 600;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease;
+
+  width: fit-content;
 }
 
-.create-task-btn:hover {
+.btn-create-task:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  background: #f8f9fa;
 }
 
-.task-list-container {
-  flex-grow: 1; /* Cho phép nó chiếm hết không gian còn lại */
-  overflow: auto; /* Tự động thêm thanh cuộn DỌC và NGANG nếu cần */
-  padding: 0;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Base styles for rows and headers */
-.task-list-header,
-.task-row {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border-bottom: 1px solid #dfe1e6;
-  min-height: 44px;
-}
-
-.task-list-header {
-  background-color: #f4f5f7;
-  font-weight: 600;
-  font-size: 13px;
-  color: #5e6c84;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.task-row {
-  transition: background-color 0.15s ease-in-out;
-}
-
-.task-row:hover {
-  background-color: #f7f8fa;
-}
-
-/* Cell styles */
-.task-cell {
-  padding: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-}
-
-/* Specific column widths */
-.task-key {
-  flex: 0 0 100px;
-}
-.task-name {
-  flex: 1 1 300px;
-  font-weight: 500;
-  color: #172b4d;
-}
-.task-sprint {
-  flex: 0 0 120px;
-}
-.task-assignee,
-.task-reporter {
-  flex: 0 0 80px;
-  justify-content: center;
-}
-.task-priority {
-  flex: 0 0 80px;
-  justify-content: center;
-}
-.task-status {
-  flex: 0 0 120px;
-}
-.task-due-date {
-  flex: 0 0 120px;
-}
-
-/* Avatar styles */
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.default-avatar {
-  background-color: #dfe1e6;
-  color: #172b4d;
-  font-weight: bold;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 14px;
-}
-
-/* Priority icon */
-.priority-icon {
-  width: 20px;
-  height: 20px;
-}
-
-/* Status Pill */
-.status-pill {
-  color: white;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.loading-text,
-.info-text {
-  padding: 20px;
-  text-align: center;
-  color: #5e6c84;
-  font-size: 16px;
-}
-.task-cell {
-  padding: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-}
-
-.task-key {
-  flex: 0 0 120px;
-}
-.task-name {
-  flex: 1 1 280px;
-  font-weight: 500;
-  color: #172b4d;
-}
-.task-sprint {
-  flex: 0 0 120px;
-}
-.task-platform {
-  flex: 0 0 80px;
-  justify-content: center;
-}
-.task-assignee,
-.task-reporter {
-  flex: 0 0 80px;
-  justify-content: center;
-}
-.task-priority {
-  flex: 0 0 80px;
-  justify-content: center;
-}
-.task-status {
-  flex: 0 0 120px;
-}
-.task-due-date {
-  flex: 0 0 120px;
-}
-
-/* Avatar styles (giữ nguyên) */
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.default-avatar {
-  background-color: #dfe1e6;
-  color: #172b4d;
-  font-weight: bold;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 14px;
-}
-
-.icon-wrapper-list {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  color: white;
-  font-size: 16px;
-}
-
-/* Style cho wrapper icon nhỏ hơn, nằm cạnh Key */
-.icon-wrapper-list-small {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  color: white;
-  font-size: 14px;
-  margin-right: 8px; /* Tạo khoảng cách với text Key */
-}
-
-.task-finder-wrapper {
-  display: grid;
-  /* Định nghĩa 2 cột: Cột nội dung chính và Cột panel */
-  /* Ban đầu, cột panel có chiều rộng là 0 */
-  grid-template-columns: 1fr 0px;
-  /* Chiều cao 100% của viewport trừ đi chiều cao của header (nếu có) */
-  height: calc(100vh - 64px); /* Giả sử header cao 64px, bạn hãy điều chỉnh */
-  overflow: hidden; /* Ngăn cuộn ở cấp độ cao nhất */
-  transition: grid-template-columns 0.3s ease-in-out;
-}
-
-.task-finder-main-content {
-  flex-grow: 1;
-  width: 100%;
-  transition: width 0.3s ease-in-out;
-}
-
-.task-finder-wrapper.panel-open {
-  /* Cột nội dung chính chiếm không gian còn lại, cột panel rộng 600px */
-  grid-template-columns: 1fr 500px; /* Tăng chiều rộng panel để dễ nhìn hơn */
-}
-
-.task-finder-main-content {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Ngăn cuộn nội bộ không cần thiết */
-  width: 100%; /* Đảm bảo nó chiếm toàn bộ cột grid */
-}
-
-.filters-bar {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.filters-bar select,
-.filters-bar .search-input {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.filters-bar .search-input {
-  flex-grow: 1; /* Cho ô search chiếm phần còn lại */
-}
-
-.task-row {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.task-row:hover {
-  background-color: #f5f5f5;
-}
-
-.filters-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 8px 10px;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #e0e0e0;
-  gap: 0.75rem;
-  margin-bottom: 8px;
-}
-
-.filter-dropdowns {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  flex-grow: 1;
-}
-
-.filter-select {
-  padding: 6px 10px;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  background-color: white;
-  cursor: pointer;
-  font-size: 13px;
-  min-width: 150px;
-  transition: all 0.2s;
-}
-
-.filter-select:hover {
-  border-color: #4f46e5;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.btn-clear-filters {
-  padding: 6px 8px;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  background-color: white;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  color: #495057;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 34px;
-}
-
-.btn-clear-filters .material-symbols-outlined {
+.btn-create-task .material-symbols-outlined {
   font-size: 20px;
 }
 
-.btn-clear-filters:hover {
-  background-color: #f8f9fa;
-  border-color: #495057;
-}
-
-.include-done-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background-color: white;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  color: #495057;
-  transition: all 0.2s;
-  user-select: none;
-}
-
-.include-done-checkbox:hover {
-  background-color: #f8f9fa;
-  border-color: #495057;
-}
-
-.include-done-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #4f46e5;
-}
-
-.include-done-checkbox span {
-  cursor: pointer;
-}
-
-.right-side-filters {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* --- CSS for AdvancedFilterBar --- */
-.advanced-filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  flex-grow: 1;
-}
-
-.active-filters-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.filter-pill {
-  display: flex;
-  align-items: center;
-  background-color: #e9ecef;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 14px;
-}
-
-.filter-pill-label {
-  margin-right: 8px;
-  color: #495057;
-  font-weight: 500;
-}
-
-.filter-select-input {
-  min-width: 180px;
-}
-
-.remove-filter-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #6c757d;
-  margin-left: 8px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-}
-.remove-filter-btn:hover {
-  color: #343a40;
-}
-
-.filter-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.add-filter-select {
-  min-width: 150px;
-}
-
-.search-btn {
-  padding: 8px 16px;
-  border: none;
-  background-color: #4f46e5;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-.search-btn:hover {
-  background-color: #4338ca;
-}
-
-.keyword-search-input {
-  padding: 6px 10px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 13px;
-  min-width: 220px;
-}
-
-.panel-header {
-  display: flex; /* Bật Flexbox */
-  justify-content: space-between; /* Đẩy 2 bên ra xa nhau */
-  align-items: flex-start; /* Căn lề trên cùng, quan trọng khi title có nhiều dòng */
-  padding: 16px 24px;
-  border-bottom: 1px solid #dfe1e6;
-  gap: 16px; /* Tạo khoảng cách giữa cụm title và cụm icon */
-}
-
-.panel-header-left {
+/* =========================
+   FILTERS
+========================= */
+.task-filters {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  flex-grow: 1; /* Cho phép phần bên trái chiếm hết không gian còn lại */
-  min-width: 0; /* Cần thiết để flexbox co lại đúng cách khi cần */
+  gap: 16px;
 }
 
-.panel-header-right {
+.filter-row-primary {
   display: flex;
-  align-items: center; /* Căn các icon vào giữa theo chiều dọc */
-  gap: 8px; /* Khoảng cách giữa các icon */
-  flex-shrink: 0; /* Không cho phép cụm icon bị co lại */
-}
-
-.task-key-display {
-  font-size: 14px;
-  color: #5e6c84;
-  font-weight: 500;
-  margin-bottom: 4px;
-  padding: 2px 6px;
-}
-
-/* Loại bỏ max-height và overflow-y để nó tự giãn nở */
-.editable-task-name {
-  font-family: inherit;
-  font-size: 22px;
-  font-weight: 600;
-  color: #172b4d;
-  line-height: 1.3;
-
-  width: 100%;
-  padding: 4px 6px;
-  margin: -4px -6px;
-
-  border: 2px solid transparent;
-  border-radius: 4px;
-  background-color: transparent;
-
-  resize: none;
-  overflow: hidden; /* Quan trọng: ẩn thanh cuộn của chính textarea */
-
-  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
-}
-
-.editable-task-name:hover {
-  background-color: #f4f5f7;
-}
-
-.editable-task-name:focus {
-  outline: none;
-  background-color: #ffffff;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 1px #4f46e5;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #5e6c84;
-  line-height: 1;
-}
-
-.close-btn:hover {
-  color: #172b4d;
-}
-
-/* Pagination */
-.pagination-container {
-  display: flex;
-  justify-content: center;
+  gap: 12px;
   align-items: center;
-  gap: 3px;
-  padding: 0;
-  margin: 20px 0 0 0; /* Thêm margin-top để tách khỏi list */
 }
 
-.pagination-btn {
-  padding: 1px 4px;
-  border: 1px solid #dfe1e6;
-  background-color: white;
-  border-radius: 2px;
-  cursor: pointer;
-  font-weight: 400;
-  font-size: 10px;
-  color: #42526e;
-  transition: all 0.2s;
-  line-height: 1.2;
+.search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid #e9ecef;
+  transition: all 0.25s ease;
 }
 
-.pagination-btn:hover:not(:disabled) {
-  background-color: #0052cc;
-  color: white;
-  border-color: #0052cc;
+.search-box:focus-within {
+  border-color: #6f42c1;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+  background: white;
 }
 
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.search-box .material-symbols-outlined {
+  font-size: 20px;
+  color: #6c757d;
+  margin-right: 10px;
 }
 
-.pagination-info {
-  font-size: 10px;
-  color: #6b778c;
-  font-weight: 400;
-  padding: 0 1px;
-  line-height: 1.2;
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  font-family: "Poppins", sans-serif;
+  background: transparent;
+}
+
+/* =========================
+   LIST
+========================= */
+.task-list-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 1400px) {
+  .task-finder-container.panel-open .task-finder-main {
+    margin-right: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .task-finder-main {
+    padding: 20px;
+  }
+
+  .task-finder-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28px 24px;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .btn-create-task {
+    margin-top: 16px;
+  }
+
+  .task-finder-container.panel-open .task-finder-main {
+    margin-right: 0;
+  }
 }

@@ -1,104 +1,253 @@
+/* Backlog Page - Modern SaaS Design */
 body {
-  font-family: "Open Sans", Arial, sans-serif;
-  background: #f6f8fa;
+  font-family:
+    "Poppins",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: #f8f9fa;
 }
 
-.backlogpage-container {
-  max-width: auto;
+.backlog-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+/* Hero Section */
+.backlog-hero-section {
+  position: relative;
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  padding: 80px 40px 60px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(111, 66, 193, 0.15);
+  overflow: hidden;
+}
+
+.backlog-hero-shape {
+  position: absolute;
+  top: 0;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.backlog-hero-content {
+  position: relative;
+  z-index: 10;
+  max-width: 700px;
   margin: 0 auto;
-  padding: 12px 24px 12px 24px;
 }
 
-.backlogpage-header {
+.backlog-page-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.5px;
+}
+
+.backlog-page-subtitle {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Backlog Container */
+.backlog-container {
+  flex: 1;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+/* Header Bar */
+.backlog-header-bar {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 20px;
+}
+
+.btn-create-sprint {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 32px;
-}
-.backlogpage-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1e293b;
-  letter-spacing: 0.5px;
-}
-.backlogpage-create-btn {
-  padding: 10px 28px;
-  background: linear-gradient(90deg, #2563eb 0%, #1e40af 100%);
-  color: #fff;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  color: white;
   border: none;
   border-radius: 8px;
+  font-size: 15px;
   font-weight: 600;
-  font-size: 1.1rem;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
-  transition: background 0.2s, box-shadow 0.2s;
-}
-.backlogpage-create-btn:hover {
-  background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%);
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
 }
 
-.backlogpage-content {
-  display: flex;
+.btn-create-sprint:hover {
+  background: linear-gradient(135deg, #5a32a3 0%, #4a2588 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
+}
+
+.btn-create-sprint .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* Main Content */
+.backlog-main-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
   gap: 32px;
-  align-items: flex-start;
+  align-items: start;
 }
 
-.backlogpage-sprint-list {
-  flex: 2;
+.backlog-sprints-section {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.backlogpage-backlog-section {
-  flex: 1.1;
-  background: #fff;
+/* Tasks Section */
+.backlog-tasks-section {
+  background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(30, 41, 59, 0.07);
-  padding: 24px 18px 18px 18px;
-  min-width: 320px;
-}
-.backlogpage-backlog-header {
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  position: sticky;
+  top: 0;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 18px;
-}
-.backlogpage-backlog-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-.backlogpage-backlog-count {
-  background: #2563eb;
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  border-radius: 12px;
-  padding: 2px 12px;
-  margin-left: 2px;
+  flex-direction: column;
 }
 
-/* Card style for each sprint (áp dụng cho SprintItem hoặc .sprint-card nếu có) */
-.sprint-card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(30, 41, 59, 0.07);
-  padding: 24px 18px 18px 18px;
-  margin-bottom: 18px;
+.backlog-tasks-section::-webkit-scrollbar {
+  width: 6px;
 }
-.sprint-header {
+
+.backlog-tasks-section::-webkit-scrollbar-track {
+  background: #f1f3f5;
+  border-radius: 3px;
+}
+
+.backlog-tasks-section::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.backlog-tasks-section::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.backlog-tasks-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e9ecef;
 }
-.sprint-title {
-  font-size: 1.1rem;
+
+.backlog-tasks-title {
+  font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: #212529;
+  margin: 0;
 }
+
+.backlog-tasks-count {
+  background: #6f42c1;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 4px 12px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.btn-create-task {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  margin-top: 16px;
+  background: #f8f9fa;
+  color: #6f42c1;
+  border: 2px dashed #e9ecef;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-create-task:hover {
+  background: #f3f0ff;
+  border-color: #6f42c1;
+  color: #5a32a3;
+}
+
+.btn-create-task .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .backlog-main-content {
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .backlog-hero-section {
+    padding: 60px 20px 40px;
+  }
+
+  .backlog-page-title {
+    font-size: 32px;
+  }
+
+  .backlog-page-subtitle {
+    font-size: 16px;
+  }
+
+  .backlog-container {
+    padding: 30px 20px;
+  }
+
+  .backlog-main-content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .backlog-tasks-section {
+    max-height: none;
+  }
+
+  .backlog-header-bar {
+    margin-bottom: 24px;
+  }
+
+  .btn-create-sprint {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .sprint-task-badge {
   background: #e0f2fe;
   color: #2563eb;

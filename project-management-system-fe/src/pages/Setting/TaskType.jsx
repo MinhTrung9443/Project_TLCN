@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
-// KHÔNG CẦN useParams ở đây vì đây là trang global
 import { toast } from "react-toastify";
 import typeTaskService from "../../services/typeTaskService";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
-import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
+import IconPicker from "../../components/Setting/IconPicker";
+import "../../styles/Setting/SettingsPage.css";
 import { useAuth } from "../../contexts/AuthContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
+
 const PREDEFINED_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
   { name: "FaStar", color: "#2ECC71" },
@@ -28,27 +29,7 @@ const IconComponent = ({ name }) => {
   return <Icon />;
 };
 
-const IconPicker = ({ selectedIcon, onSelect }) => {
-  return (
-    <div className="icon-picker-container">
-      {PREDEFINED_ICONS.map((icon) => (
-        <button
-          key={icon.name}
-          type="button"
-          className={`icon-picker-button ${selectedIcon === icon.name ? "selected" : ""}`}
-          onClick={() => onSelect(icon.name)}
-        >
-          <div className="icon-display" style={{ backgroundColor: icon.color }}>
-            <IconComponent name={icon.name} />
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-};
-
 const SettingTaskTypePage = () => {
-  // Tên component cho trang Global Settings
   const { user } = useAuth();
   const [taskTypes, setTaskTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +42,6 @@ const SettingTaskTypePage = () => {
   const fetchTaskTypes = useCallback(async () => {
     try {
       setLoading(true);
-      // Service này không cần projectKey
       const response = await typeTaskService.getAllTypeTask();
       setTaskTypes(response.data);
     } catch (error) {
@@ -79,6 +59,7 @@ const SettingTaskTypePage = () => {
     setCurrentTaskType(taskType ? { ...taskType } : { name: "", icon: "FaTasks", description: "" });
     setIsModalOpen(true);
   };
+
   const handleCloseModal = () => setIsModalOpen(false);
 
   const handleChange = (e) => {
@@ -97,7 +78,6 @@ const SettingTaskTypePage = () => {
       name: currentTaskType.name,
       icon: currentTaskType.icon,
       description: currentTaskType.description,
-      // Khi tạo mới từ trang global, nó là item mặc định nên projectId = null
       projectId: currentTaskType.projectId || null,
     };
     try {
@@ -105,7 +85,6 @@ const SettingTaskTypePage = () => {
         await typeTaskService.updateTypeTask(currentTaskType._id, payload);
         toast.success("Task type updated successfully!");
       } else {
-        // Không truyền projectKey, vì đây là tạo mới cho hệ thống
         await typeTaskService.createTypeTask(payload);
         toast.success("Task type created successfully!");
       }
@@ -135,51 +114,53 @@ const SettingTaskTypePage = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="settings-loading">
+        <div className="spinner"></div>
+        <p>Loading task types...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="settings-list-container">
-      <div className="settings-list-header">
-        <div className="header-col col-icon">Icon</div>
-        <div className="header-col col-name">Task Type</div>
-        <div className="header-col col-description">Description</div>
+    <div className="settings-page-container">
+      <div className="settings-page-header">
+        <div className="header-left">
+          <h2>Task Types</h2>
+          <p>{taskTypes.length} task types configured</p>
+        </div>
         {user.role === "admin" && (
-          <div className="header-col col-actions">
-            <button className="btn-add-icon" onClick={() => handleOpenModal()}>
-              <VscIcons.VscAdd />
-            </button>
-          </div>
+          <button className="btn-create" onClick={() => handleOpenModal()}>
+            <span className="material-symbols-outlined">add</span>
+            Create Task Type
+          </button>
         )}
       </div>
 
-      <div className="settings-list-body">
-        {" "}
-        {/* Bọc trong một div để có style nhất quán */}
+      <div className="settings-grid">
         {taskTypes.map((tt) => {
           const iconInfo = PREDEFINED_ICONS.find((i) => i.name === tt.icon);
           const iconColor = iconInfo ? iconInfo.color : "#4BADE8";
           return (
-            <div className="settings-list-row" key={tt._id}>
-              <div className="row-col col-icon">
-                <span className="icon-wrapper" style={{ backgroundColor: iconColor }}>
-                  <IconComponent name={tt.icon} />
-                </span>
+            <div className="settings-card" key={tt._id}>
+              <div className="card-icon" style={{ backgroundColor: iconColor }}>
+                <IconComponent name={tt.icon} />
               </div>
-              <div className="row-col col-name">{tt.name}</div>
-              <div className="row-col col-description">{tt.description || "-"}</div>
+              <div className="card-content">
+                <h3 className="card-title">{tt.name}</h3>
+                <p className="card-description">{tt.description || "No description"}</p>
+                {tt.projectId && <span className="card-badge">Project-specific</span>}
+                {!tt.projectId && <span className="card-badge default">Default</span>}
+              </div>
               {user.role === "admin" && !tt.projectId && (
-                <div className="row-col col-actions">
-                  <button className="btn-edit" onClick={() => handleOpenModal(tt)}>
-                    <FaIcons.FaPencilAlt />
+                <div className="card-actions">
+                  <button className="btn-icon-action" onClick={() => handleOpenModal(tt)} title="Edit">
+                    <span className="material-symbols-outlined">edit</span>
                   </button>
-                  <button className="btn-delete" onClick={() => handleDeleteClick(tt)}>
-                    <FaIcons.FaTrash />
+                  <button className="btn-icon-action delete" onClick={() => handleDeleteClick(tt)} title="Delete">
+                    <span className="material-symbols-outlined">delete</span>
                   </button>
-                </div>
-              )}
-              {user.role === "admin" && tt.projectId && (
-                <div className="row-col col-actions">
-                  <span className="menu-item-disabled">Managed in Project</span>
                 </div>
               )}
             </div>
@@ -188,29 +169,58 @@ const SettingTaskTypePage = () => {
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>{currentTaskType?._id ? "Edit Default Task Type" : "Create Default Task Type"}</h2>
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{currentTaskType?._id ? "Edit Task Type" : "Create Task Type"}</h2>
+              <button className="modal-close" onClick={handleCloseModal}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="name" className="required">
-                  Task Type
-                </label>
-                <input id="name" name="name" value={currentTaskType.name} onChange={handleChange} required />
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="name">
+                    Name <span className="required">*</span>
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={currentTaskType.name}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g. Bug, Feature, Story"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Icon</label>
+                  <IconPicker
+                    icons={PREDEFINED_ICONS.map((icon) => ({
+                      ...icon,
+                      component: <IconComponent name={icon.name} />,
+                    }))}
+                    selectedIcon={currentTaskType.icon}
+                    onSelect={handleIconSelect}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="description">Description</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows="3"
+                    value={currentTaskType.description || ""}
+                    onChange={handleChange}
+                    placeholder="Optional description"
+                  ></textarea>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Icon</label>
-                <IconPicker selectedIcon={currentTaskType.icon} onSelect={handleIconSelect} />
-              </div>
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea id="description" name="description" rows="3" value={currentTaskType.description || ""} onChange={handleChange}></textarea>
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                <button type="submit" className="btn-primary" disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>

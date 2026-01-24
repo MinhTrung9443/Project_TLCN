@@ -1,6 +1,7 @@
 import React from "react";
 import { useDrag } from "react-dnd";
 import { useNavigate, useParams } from "react-router-dom";
+import "./TaskCard.css";
 
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "task", color: "#4BADE8" },

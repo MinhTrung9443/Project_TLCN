@@ -42,22 +42,22 @@ const PREDEFINED_PRIORITY_ICONS = [
   { name: "FaExclamationTriangle", color: "#FFB300" },
 ];
 const statusCategoryStyles = {
-  'To Do': {
-    backgroundColor: '#dfe1e6',
-    color: '#42526E',
+  "To Do": {
+    backgroundColor: "#dfe1e6",
+    color: "#42526E",
   },
-  'In Progress': {
-    backgroundColor: '#deebff',
-    color: '#0747A6',
+  "In Progress": {
+    backgroundColor: "#deebff",
+    color: "#0747A6",
   },
-  'Done': {
-    backgroundColor: '#e3fcef',
-    color: '#0B875B',
+  Done: {
+    backgroundColor: "#e3fcef",
+    color: "#0B875B",
   },
-  'default': {
-    backgroundColor: '#dfe1e6',
-    color: '#42526E',
-  }
+  default: {
+    backgroundColor: "#dfe1e6",
+    color: "#42526E",
+  },
 };
 const TaskRow = ({ task, onTaskClick }) => {
   const renderAvatar = (user) => {
@@ -82,54 +82,63 @@ const TaskRow = ({ task, onTaskClick }) => {
   const priorityIconInfo = PREDEFINED_PRIORITY_ICONS.find((i) => i.name === task.priorityId?.icon);
   const statusStyle = statusCategoryStyles[task.statusId?.category] || statusCategoryStyles.default;
 
+  const truncateName = (name, maxLength = 30) => {
+    if (!name) return "";
+    return name.length > maxLength ? name.substring(0, maxLength) + "..." : name;
+  };
+
   return (
-    <div className="task-row" onClick={() => onTaskClick(task)}>
-      <div className="task-cell task-key">
+    <div className="task-row-modern" onClick={() => onTaskClick(task)}>
+      <div className="task-row-cell task-key-col">
         {typeIconInfo && (
-          <span className="icon-wrapper-list-small" style={{ backgroundColor: typeIconInfo.color }} title={task.taskTypeId.name}>
+          <span className="task-type-icon" style={{ backgroundColor: typeIconInfo.color }} title={task.taskTypeId.name}>
             <IconComponent name={task.taskTypeId.icon} />
           </span>
         )}
-        <a href={`/task/${task.key}`} target="_blank" rel="noopener noreferrer" className="task-key-link">
+        <a href={`/task/${task.key}`} target="_blank" rel="noopener noreferrer" className="task-key-link" onClick={(e) => e.stopPropagation()}>
           {task.key}
         </a>
       </div>
-      <div className="task-cell task-name">{task.name}</div>
-      <div className="task-cell task-sprint">
-        <span className="sprint-pill">{task.sprintId?.name || "Backlog"}</span>
+      <div className="task-row-cell task-name-col" title={task.name}>
+        {truncateName(task.name)}
       </div>
-      <div className="task-cell task-platform">
+      <div className="task-row-cell task-sprint-col">
+        <span className="sprint-badge">{task.sprintId?.name || "Backlog"}</span>
+      </div>
+      <div className="task-row-cell task-platform-col">
         {platformIconInfo && (
-          <span className="icon-wrapper-list" style={{ backgroundColor: platformIconInfo.color }} title={task.platformId.name}>
+          <span className="platform-icon" style={{ backgroundColor: platformIconInfo.color }} title={task.platformId.name}>
             <IconComponent name={task.platformId.icon} />
           </span>
         )}
       </div>
-      <div className="task-cell task-assignee">{renderAvatar(task.assigneeId)}</div>
-      <div className="task-cell task-reporter">{renderAvatar(task.reporterId)}</div>
-      <div className="task-cell task-priority">
+      <div className="task-row-cell task-assignee-col">{renderAvatar(task.assigneeId)}</div>
+      <div className="task-row-cell task-reporter-col">{renderAvatar(task.reporterId)}</div>
+      <div className="task-row-cell task-priority-col">
         {priorityIconInfo && (
-          <span className="icon-wrapper-list" style={{ backgroundColor: priorityIconInfo.color }} title={task.priorityId.name}>
+          <span className="priority-icon" style={{ backgroundColor: priorityIconInfo.color }} title={task.priorityId.name}>
             <IconComponent name={task.priorityId.icon} />
           </span>
         )}
       </div>
-      <div className="task-cell task-status">
+      <div className="task-row-cell task-status-col">
         {task.statusId ? (
-          <span 
-            className="status-pill" 
-            style={{ 
-              backgroundColor: statusStyle.backgroundColor, 
-              color: statusStyle.color 
+          <span
+            className="status-badge"
+            style={{
+              backgroundColor: statusStyle.backgroundColor,
+              color: statusStyle.color,
             }}
           >
             {task.statusId.name}
           </span>
         ) : (
-          <span>-</span> // Hiển thị gạch ngang nếu không có status
+          <span className="no-status">-</span>
         )}
       </div>
-      <div className="task-cell task-due-date">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "Due"}</div>
+      <div className="task-row-cell task-due-col">
+        {task.dueDate ? <span className="due-date">{new Date(task.dueDate).toLocaleDateString()}</span> : <span className="no-due">-</span>}
+      </div>
     </div>
   );
 };

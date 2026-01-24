@@ -71,32 +71,29 @@ const DashboardPage = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Header */}
-      <div className="dashboard-header">
-        <div className="header-content">
-          <div className="header-text">
-            <h1 className="welcome-title">
-              <span className="material-symbols-outlined">dashboard</span>
-              Welcome back, {user.fullname}!
-            </h1>
-            <p className="welcome-subtitle">Here's your productivity overview and recent activities</p>
+      <div className="dashboard-hero">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span className="material-symbols-outlined">bolt</span>
+            Productivity Hub
           </div>
-          <div className="header-date">
-            <span className="material-symbols-outlined">calendar_today</span>
-            <span>{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
-          </div>
+          <h1 className="hero-title">Welcome back, {user.fullname}!</h1>
+          <p className="hero-subtitle">Here's your productivity overview and recent activities</p>
+        </div>
+        <div className="hero-date">
+          <span className="material-symbols-outlined">calendar_today</span>
+          <span>{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
         </div>
       </div>
 
-      {/* Statistics Cards */}
       <div className="stats-grid">
         <div className="stat-card primary">
           <div className="stat-icon">
             <span className="material-symbols-outlined">assignment</span>
           </div>
           <div className="stat-content">
-            <div className="stat-value">{overview?.total ?? 0}</div>
             <div className="stat-label">Total Tasks</div>
+            <div className="stat-value">{overview?.total ?? 0}</div>
             <div className="stat-description">All tasks assigned to you</div>
           </div>
         </div>
@@ -106,8 +103,8 @@ const DashboardPage = () => {
             <span className="material-symbols-outlined">check_circle</span>
           </div>
           <div className="stat-content">
-            <div className="stat-value">{overview?.done ?? 0}</div>
             <div className="stat-label">Completed</div>
+            <div className="stat-value">{overview?.done ?? 0}</div>
             <div className="stat-description">Tasks successfully finished</div>
           </div>
         </div>
@@ -117,8 +114,8 @@ const DashboardPage = () => {
             <span className="material-symbols-outlined">schedule</span>
           </div>
           <div className="stat-content">
-            <div className="stat-value">{overview?.upcomingTasks?.length ?? 0}</div>
             <div className="stat-label">Upcoming</div>
+            <div className="stat-value">{overview?.upcomingTasks?.length ?? 0}</div>
             <div className="stat-description">Tasks with approaching deadlines</div>
           </div>
         </div>
@@ -128,21 +125,22 @@ const DashboardPage = () => {
             <span className="material-symbols-outlined">warning</span>
           </div>
           <div className="stat-content">
-            <div className="stat-value">{overview?.overdue ?? 0}</div>
             <div className="stat-label">Overdue</div>
+            <div className="stat-value">{overview?.overdue ?? 0}</div>
             <div className="stat-description">Tasks past their deadline</div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
       <div className="dashboard-grid">
-        {/* Upcoming Tasks */}
         <div className="dashboard-card upcoming-tasks">
-          <h3 className="card-title">
-            <span className="material-symbols-outlined">event</span>
-            Upcoming Deadlines
-          </h3>
+          <div className="card-header">
+            <h3 className="card-title">
+              <span className="material-symbols-outlined">event</span>
+              Upcoming Deadlines
+            </h3>
+            <span className="card-badge">{overview?.upcomingTasks?.length ?? 0}</span>
+          </div>
           <div className="upcoming-tasks-list">
             {!overview?.upcomingTasks || overview.upcomingTasks.length === 0 ? (
               <div className="empty-state">
@@ -153,7 +151,7 @@ const DashboardPage = () => {
               overview.upcomingTasks.map((task) => (
                 <div
                   key={task._id}
-                  className="upcoming-task-item clickable"
+                  className="upcoming-task-item"
                   onClick={() => task.key && navigate(`/app/task/${task.key}`)}
                   style={{ cursor: task.key ? "pointer" : "default" }}
                 >
@@ -174,12 +172,14 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Project Progress */}
         <div className="dashboard-card project-progress">
-          <h3 className="card-title">
-            <span className="material-symbols-outlined">trending_up</span>
-            Project Progress
-          </h3>
+          <div className="card-header">
+            <h3 className="card-title">
+              <span className="material-symbols-outlined">trending_up</span>
+              Project Progress
+            </h3>
+            <span className="card-badge">{overview?.projectProgress?.length ?? 0}</span>
+          </div>
           <div className="project-progress-list">
             {!overview?.projectProgress || overview.projectProgress.length === 0 ? (
               <div className="empty-state">
@@ -214,12 +214,14 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Recent Activity */}
       <div className="dashboard-card activity-feed">
-        <h3 className="card-title">
-          <span className="material-symbols-outlined">notifications_active</span>
-          Recent Activity
-        </h3>
+        <div className="card-header">
+          <h3 className="card-title">
+            <span className="material-symbols-outlined">notifications_active</span>
+            Recent Activity
+          </h3>
+          <span className="card-badge">{overview?.recentActivity?.length ?? 0}</span>
+        </div>
         <div className="activity-timeline">
           {!overview?.recentActivity || overview.recentActivity.length === 0 ? (
             <div className="empty-state">

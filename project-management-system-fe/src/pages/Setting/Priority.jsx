@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
-import { DndProvider } from "react-dnd";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import priorityService from "../../services/priorityService";
 import * as FaIcons from "react-icons/fa";
-import * as VscIcons from "react-icons/vsc";
-import { useDrag, useDrop } from "react-dnd";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
+import IconPicker from "../../components/Setting/IconPicker";
+import "../../styles/Setting/SettingsPage.css";
 import { useAuth } from "../../contexts/AuthContext";
-// DANH SÁCH ICON CHO PRIORITY
+
 const PREDEFINED_PRIORITY_ICONS = [
   { name: "FaFire", color: "#CD1317" },
   { name: "FaExclamationCircle", color: "#E94F37" },
@@ -24,30 +23,11 @@ const PREDEFINED_PRIORITY_ICONS = [
 ];
 
 const IconComponent = ({ name }) => {
-  const AllIcons = { ...FaIcons, ...VscIcons };
+  const AllIcons = FaIcons;
   const Icon = AllIcons[name];
   if (!Icon) return <FaIcons.FaQuestionCircle />;
   return <Icon />;
 };
-
-const IconPicker = ({ selectedIcon, onSelect }) => (
-  <div className="icon-picker-container">
-    {PREDEFINED_PRIORITY_ICONS.map((icon) => (
-      <button
-        key={icon.name}
-        type="button"
-        className={`icon-picker-button ${selectedIcon === icon.name ? "selected" : ""}`}
-        onClick={() => onSelect(icon.name)}
-      >
-        <div className="icon-display" style={{ backgroundColor: icon.color }}>
-          <IconComponent name={icon.name} />
-        </div>
-      </button>
-    ))}
-  </div>
-);
-
-// (Bạn có thể tách ra file DraggablePriorityItem.jsx riêng nếu muốn)
 const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete }) => {
   const ref = React.useRef(null);
   const ItemType = "PRIORITY_ITEM";
@@ -57,7 +37,6 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete 
     hover(draggedItem, monitor) {
       const dragIndex = draggedItem.index;
       const hoverIndex = index;
-
       if (dragIndex === hoverIndex) return;
 
       const hoverBoundingRect = ref.current?.getBoundingClientRect();
@@ -82,42 +61,41 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete 
   drag(drop(ref));
   const iconInfo = PREDEFINED_PRIORITY_ICONS.find((i) => i.name === item.icon);
 
-  const handleEditClick = (e) => {
-    e.stopPropagation();
-    openEditModal(item);
-  };
-
-  const handleDeleteClick = (e) => {
-    e.stopPropagation();
-    onDelete(item._id);
-  };
-
   return (
-    <div ref={ref} className="settings-list-row" style={{ opacity: isDragging ? 0.5 : 1 }}>
-      <div className="row-col col-drag-handle">
-        <FaIcons.FaGripVertical />
+    <div ref={ref} className={`settings-list-item ${isDragging ? "dragging" : ""}`}>
+      <div className="drag-handle">
+        <span className="material-symbols-outlined">drag_indicator</span>
       </div>
-      <div className="row-col col-icon">
-        <span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || "#7A869A" }}>
-          <IconComponent name={item.icon} />
-        </span>
+      <div className="item-icon" style={{ backgroundColor: iconInfo?.color || "#7A869A" }}>
+        <IconComponent name={item.icon} />
       </div>
-      <div className="row-col col-name">{item.name}</div>
-      <div className="row-col col-level">{item.level}</div>
-      <div className="row-col col-project">{item.projectId ? item.projectId.name : <span className="default-badge">Default</span>}</div>
-      {!item.projectId && (
-        <div className="row-col col-actions">
-          <button className="btn-edit" onClick={handleEditClick}>
-            <FaIcons.FaPencilAlt />
-          </button>
-          <button className="btn-delete" onClick={handleDeleteClick}>
-            <FaIcons.FaTrash />
-          </button>
+      <div className="item-content">
+        <div className="item-name">{item.name}</div>
+        <div className="item-meta">
+          Level {item.level}
+          {item.projectId ? " • Project-specific" : " • Default"}
         </div>
-      )}
-      {item.projectId && (
-        <div className="row-col col-actions">
-          <span className="menu-item-disabled">Managed in Project</span>
+      </div>
+      {!item.projectId && (
+        <div className="item-actions">
+          <button
+            className="btn-icon-action"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEditModal(item);
+            }}
+          >
+            <span className="material-symbols-outlined">edit</span>
+          </button>
+          <button
+            className="btn-icon-action delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(item._id);
+            }}
+          >
+            <span className="material-symbols-outlined">delete</span>
+          </button>
         </div>
       )}
     </div>
@@ -229,27 +207,35 @@ export const SettingsPriorities = () => {
         fetchPriorities();
       }
     },
-    [priorities, fetchPriorities]
+    [priorities, fetchPriorities],
   );
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="settings-loading">
+        <div className="spinner"></div>
+        <p>Loading priorities...</p>
+      </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="settings-list-container">
-        <div className="settings-list-header">
-          <div className="header-col col-drag-handle"></div>
-          <div className="header-col col-icon">Icon</div>
-          <div className="header-col col-name">Priority Name</div>
+      <div className="settings-page-container">
+        <div className="settings-page-header">
+          <div className="header-left">
+            <h2>Priorities</h2>
+            <p>{priorities.length} priorities configured • Drag to reorder</p>
+          </div>
           {user.role === "admin" && (
-            <div className="header-col col-actions">
-              <button className="btn-add-icon" onClick={() => handleOpenModal()}>
-                <VscIcons.VscAdd />
-              </button>
-            </div>
+            <button className="btn-create" onClick={() => handleOpenModal()}>
+              <span className="material-symbols-outlined">add</span>
+              Create Priority
+            </button>
           )}
         </div>
-        <div className="settings-list-body">
+
+        <div className="settings-list">
           {priorities.map((item, index) => (
             <DraggablePriorityItem
               key={item._id}
@@ -264,25 +250,47 @@ export const SettingsPriorities = () => {
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>{currentPriority._id ? "Edit Priority" : "Create Priority"}</h2>
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{currentPriority._id ? "Edit Priority" : "Create Priority"}</h2>
+              <button className="modal-close" onClick={handleCloseModal}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="name" className="required">
-                  Priority Name
-                </label>
-                <input id="name" name="name" value={currentPriority.name} onChange={handleChange} required />
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="name">
+                    Priority Name <span className="required">*</span>
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={currentPriority.name}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g. Critical, High, Medium, Low"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Icon</label>
+                  <IconPicker
+                    icons={PREDEFINED_PRIORITY_ICONS.map((icon) => ({
+                      ...icon,
+                      component: <IconComponent name={icon.name} />,
+                    }))}
+                    selectedIcon={currentPriority.icon}
+                    onSelect={handleIconSelect}
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Icon</label>
-                <IconPicker selectedIcon={currentPriority.icon} onSelect={handleIconSelect} />
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                <button type="submit" className="btn-primary" disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>

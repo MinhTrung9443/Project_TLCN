@@ -91,7 +91,7 @@ const TaskFinderPage = () => {
 
     return (filterData.projects || []).some((project) => {
       const isPM = project.members?.some(
-        (member) => (member.userId?._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+        (member) => (member.userId?._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
       );
       const isLeader = project.teams?.some((team) => team.leaderId?._id === user._id || team.leaderId === user._id);
       return isPM || isLeader;
@@ -117,7 +117,7 @@ const TaskFinderPage = () => {
 
           if (viewMode === "MANAGED_TASKS") {
             const isPM = p.members?.some(
-              (member) => (member.userId?._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+              (member) => (member.userId?._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
             );
             const isLeader = p.teams?.some((team) => team.leaderId?._id === user._id || team.leaderId === user._id);
             return isPM || isLeader;
@@ -140,7 +140,7 @@ const TaskFinderPage = () => {
       taskTypes: filterData.taskTypes.map((t) => ({ value: t._id, label: t.name })),
       sprints: filterData.sprints.map((sp) => ({ value: sp._id, label: sp.name })),
     }),
-    [filterData, projectStatus, viewMode, user, /* include tasks-derived project ids */ userProjectIdsFromTasks]
+    [filterData, projectStatus, viewMode, user, /* include tasks-derived project ids */ userProjectIdsFromTasks],
   );
 
   const fetchTasks = async (filters, currentKeyword, showDone, projStatus) => {
@@ -301,19 +301,46 @@ const TaskFinderPage = () => {
   return (
     <>
       <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
-      <div className={`task-finder-wrapper ${selectedTask ? "panel-open" : ""}`}>
-        <div className="task-finder-main-content">
-          <header className="task-finder-header">
-            <h1>Task Finder</h1>
+      <div className={`task-finder-container ${selectedTask ? "panel-open" : ""}`}>
+        <div className="task-finder-main">
+          <div className="task-finder-hero">
+            <div className="hero-content">
+              <div className="hero-badge">
+                <span className="material-symbols-outlined">task</span>
+                Task Management
+              </div>
+
+              <h1 className="hero-title">Task Finder</h1>
+              <p className="hero-subtitle">Search, filter, and manage tasks across your projects</p>
+            </div>
+
             {canCreateTask && (
-              <button className="create-task-btn" onClick={() => setIsModalOpen(true)}>
-                CREATE TASK
+              <button className="btn-create-task" onClick={() => setIsModalOpen(true)}>
+                <span className="material-symbols-outlined">add</span>
+                Create Task
               </button>
             )}
-          </header>
+          </div>
 
-          <div className="filters-container">
-            <div className="filter-dropdowns">
+          <div className="task-filters">
+            <div className="filter-row-primary">
+              <div className="search-box">
+                <span className="material-symbols-outlined">search</span>
+                <input
+                  type="text"
+                  placeholder="Search by name, key..."
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  className="search-input"
+                />
+              </div>
+              <button className="btn-clear-filters" onClick={clearAllFilters} title="Clear All Filters">
+                <span className="material-symbols-outlined">filter_alt_off</span>
+                Clear Filters
+              </button>
+            </div>
+
+            <div className="filter-row-secondary">
               <select className="filter-select" value={projectStatus} onChange={(e) => setProjectStatus(e.target.value)}>
                 <option value="">All Project Status</option>
                 <option value="active">Active Projects</option>
@@ -328,7 +355,6 @@ const TaskFinderPage = () => {
                   onChange={(e) => {
                     const val = e.target.value;
                     setViewMode(val);
-                    // clear selected project when view changes to avoid invalid selection
                     setActiveFilters((prev) => ({ ...prev, projectId: undefined }));
                   }}
                 >
@@ -344,7 +370,6 @@ const TaskFinderPage = () => {
               >
                 <option value="">All Projects</option>
                 {user?.role !== "admin" && viewMode === "MANAGED_TASKS" ? (
-                  // Grouped options: PM projects first, then Leader projects
                   <>
                     {groupedManagedProjects.pm.length > 0 && (
                       <optgroup label="Managed Projects (PM)">
@@ -355,7 +380,6 @@ const TaskFinderPage = () => {
                         ))}
                       </optgroup>
                     )}
-
                     {groupedManagedProjects.leader.length > 0 && (
                       <optgroup label="Led Projects">
                         {groupedManagedProjects.leader.map((p) => (
@@ -365,7 +389,6 @@ const TaskFinderPage = () => {
                         ))}
                       </optgroup>
                     )}
-                    {/* fallback to any projects derived from tasks, but avoid duplicates with PM/Leader groups */}
                     {(() => {
                       const pmIds = new Set((groupedManagedProjects.pm || []).map((p) => p.value?.toString()));
                       const leaderIds = new Set((groupedManagedProjects.leader || []).map((p) => p.value?.toString()));
@@ -381,7 +404,6 @@ const TaskFinderPage = () => {
                     })()}
                   </>
                 ) : (
-                  // Admin or My Tasks: show projects derived from tasks if available, otherwise all projects
                   (projectsForDropdown.length > 0 ? projectsForDropdown : selectOptions.projects).map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -418,63 +440,59 @@ const TaskFinderPage = () => {
                 ))}
               </select>
 
-              <button className="btn-clear-filters" onClick={clearAllFilters} title="Clear Filters">
-                <span className="material-symbols-outlined">filter_alt_off</span>
-              </button>
-
-              <label className="include-done-checkbox">
+              <label className="checkbox-filter">
                 <input type="checkbox" checked={includeDone} onChange={(e) => setIncludeDone(e.target.checked)} />
-                <span>Include Done tasks</span>
+                <span className="checkbox-label">Include Done</span>
               </label>
-            </div>
-
-            <div className="right-side-filters">
-              <input
-                type="text"
-                placeholder="Search by name, key..."
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                className="keyword-search-input"
-              />
             </div>
           </div>
 
-          <div className="task-list-container">
+          <div className="task-list-wrapper">
             <div className="task-list-header">
-              <div className="task-cell task-key">Key</div>
-              <div className="task-cell task-name">Name</div>
-              <div className="task-cell task-sprint">Sprint</div>
-              <div className="task-cell task-platform">Platform</div>
-              <div className="task-cell task-assignee">Assignee</div>
-              <div className="task-cell task-reporter">Reporter</div>
-              <div className="task-cell task-priority">Priority</div>
-              <div className="task-cell task-status">Status</div>
-              <div className="task-cell task-due-date">Due Date</div>
+              <div className="task-header-cell task-key-col">Key</div>
+              <div className="task-header-cell task-name-col">Name</div>
+              <div className="task-header-cell task-sprint-col">Sprint</div>
+              <div className="task-header-cell task-platform-col">Platform</div>
+              <div className="task-header-cell task-assignee-col">Assignee</div>
+              <div className="task-header-cell task-reporter-col">Reporter</div>
+              <div className="task-header-cell task-priority-col">Priority</div>
+              <div className="task-header-cell task-status-col">Status</div>
+              <div className="task-header-cell task-due-col">Due Date</div>
             </div>
             <div className="task-list-body">
               {loading ? (
-                <p className="loading-text">Loading tasks...</p>
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>Loading tasks...</p>
+                </div>
               ) : tasks.length === 0 ? (
-                <p className="info-text">No tasks found.</p>
+                <div className="empty-state">
+                  <span className="material-symbols-outlined empty-icon">task_alt</span>
+                  <h3>No tasks found</h3>
+                  <p>Try adjusting your filters or search criteria</p>
+                </div>
               ) : (
                 getPaginatedTasks().map((task) => <TaskRow key={task._id} task={task} onTaskClick={handleTaskClick} />)
               )}
             </div>
           </div>
+
           {!loading && getTotalPages() > 1 && (
-            <div className="pagination-container">
+            <div className="pagination">
               <button className="pagination-btn" onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                <span className="material-symbols-outlined">chevron_left</span>
                 Previous
               </button>
-              <div className="pagination-info">
+              <span className="pagination-info">
                 Page {currentPage} of {getTotalPages()}
-              </div>
+              </span>
               <button
                 className="pagination-btn"
                 onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
                 disabled={currentPage === getTotalPages()}
               >
                 Next
+                <span className="material-symbols-outlined">chevron_right</span>
               </button>
             </div>
           )}

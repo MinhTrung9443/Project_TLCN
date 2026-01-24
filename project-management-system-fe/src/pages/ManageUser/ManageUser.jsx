@@ -4,7 +4,7 @@ import userService from "../../services/userService";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageUser/ManageUser.css"; // CSS mới
+import "../../styles/pages/ManageUser/ManageUser.css";
 
 const Component = () => {
   const navigate = useNavigate();
@@ -41,7 +41,9 @@ const Component = () => {
       const lowerTerm = searchTerm.toLowerCase();
       result = result.filter(
         (u) =>
-          u.fullname?.toLowerCase().includes(lowerTerm) || u.email?.toLowerCase().includes(lowerTerm) || u.username?.toLowerCase().includes(lowerTerm)
+          u.fullname?.toLowerCase().includes(lowerTerm) ||
+          u.email?.toLowerCase().includes(lowerTerm) ||
+          u.username?.toLowerCase().includes(lowerTerm),
       );
     }
 
@@ -134,173 +136,163 @@ const Component = () => {
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
   return (
-    <div className="modern-user-page">
-      {/* 1. Header & Stats Section */}
-      <div className="page-header">
-        <div className="header-titles">
-          <h1 className="main-title">Team Members</h1>
-          <p className="sub-title">Manage access, roles, and user details.</p>
+    <div className="users-page-container">
+      <div className="users-hero">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span className="material-symbols-outlined">groups</span>
+            User Management
+          </div>
+          <h1 className="hero-title">Team Members</h1>
+          <p className="hero-subtitle">Manage access, roles, and user details across your organization</p>
         </div>
-
-        <div className="stats-container">
-          <div className="stat-card blue">
-            <span className="material-symbols-outlined icon">group</span>
-            <div className="info">
-              <span className="number">{stats.total}</span>
-              <span className="label">Total Users</span>
+        <div className="hero-stats">
+          <div className="stat-chip">
+            <span className="material-symbols-outlined">group</span>
+            <div className="stat-info">
+              <strong>{stats.total}</strong>
+              <span>Total Users</span>
             </div>
           </div>
-          <div className="stat-card green">
-            <span className="material-symbols-outlined icon">verified_user</span>
-            <div className="info">
-              <span className="number">{stats.active}</span>
-              <span className="label">Active</span>
+          <div className="stat-chip">
+            <span className="material-symbols-outlined">verified_user</span>
+            <div className="stat-info">
+              <strong>{stats.active}</strong>
+              <span>Active</span>
             </div>
           </div>
-          <div className="stat-card purple">
-            <span className="material-symbols-outlined icon">admin_panel_settings</span>
-            <div className="info">
-              <span className="number">{stats.admins}</span>
-              <span className="label">Admins</span>
+          <div className="stat-chip">
+            <span className="material-symbols-outlined">admin_panel_settings</span>
+            <div className="stat-info">
+              <strong>{stats.admins}</strong>
+              <span>Admins</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Controls Toolbar */}
-      <div className="controls-toolbar">
-        <div className="search-filter-group">
+      <div className="users-controls">
+        <div className="search-filter-wrapper">
           <div className="search-box">
             <span className="material-symbols-outlined">search</span>
-            <input type="text" placeholder="Search by name, email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <input type="text" placeholder="Search by name, email, username..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
-
           <select className="filter-select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
             <option value="user">User</option>
           </select>
         </div>
-
         {user.role === "admin" && (
-          <button className="btn-add-modern" onClick={() => setShowCreatePopup(true)}>
-            <span className="material-symbols-outlined">add</span>
-            New Member
+          <button className="btn-add-user" onClick={() => setShowCreatePopup(true)}>
+            <span className="material-symbols-outlined">person_add</span>
+            Add Member
           </button>
         )}
       </div>
 
-      {/* 3. Modern List View (Floating Rows) */}
-      <div className="user-list-container custom-scrollbar">
-        <div className="table-header-row">
-          <div className="col user-col">USER / EMAIL</div>
-          <div className="col info-col">CONTACT Info</div>
-          <div className="col role-col">ROLE & GROUP</div>
-          <div className="col status-col">STATUS</div>
-          <div className="col action-col"></div>
-        </div>
-
+      <div className="users-grid">
         {currentUsers.map((u) => (
-          <div key={u._id} className="user-row-card fade-in">
-            {/* User Info */}
-            <div className="col user-col" onClick={() => navigate(`/app/Organization/User/${u._id}`)}>
-              <div className="avatar-wrapper">
+          <div key={u._id} className="user-card">
+            <div className="user-card-header">
+              <div className="user-avatar-section" onClick={() => navigate(`/app/Organization/User/${u._id}`)}>
                 {u.avatar ? (
-                  <img src={u.avatar} alt="avatar" />
+                  <img src={u.avatar} alt="avatar" className="user-avatar-img" />
                 ) : (
-                  <div className={`avatar-placeholder bg-${u.fullname.length % 5}`}>{u.fullname.charAt(0).toUpperCase()}</div>
+                  <div className="user-avatar-placeholder">{u.fullname.charAt(0).toUpperCase()}</div>
                 )}
-                <span className={`status-dot ${u.status}`}></span>
+                <span className={`avatar-status-dot ${u.status}`}></span>
               </div>
-              <div className="user-details">
-                <span className="fullname">{u.fullname}</span>
-                <span className="username">@{u.username}</span>
-              </div>
-            </div>
-
-            {/* Contact Info */}
-            <div className="col info-col">
-              <div className="contact-item">
-                <span className="material-symbols-outlined">mail</span>
-                {u.email}
-              </div>
-              <div className="contact-item">
-                <span className="material-symbols-outlined">call</span>
-                {u.phone || "N/A"}
-              </div>
-            </div>
-
-            {/* Role & Group */}
-            <div className="col role-col">
-              <span className={`role-badge ${u.role}`}>{u.role === "admin" ? "Admin" : "Member"}</span>
-              <div className="groups-mini">
-                {u.group?.length > 0 ? (
-                  u.group.slice(0, 2).map((g) => (
-                    <span key={g._id} className="group-pill">
-                      {g.name}
-                    </span>
-                  ))
-                ) : (
-                  <span className="no-group">-</span>
-                )}
-                {u.group?.length > 2 && <span className="group-pill more">+{u.group.length - 2}</span>}
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="col status-col">
-              <div className={`status-pill ${u.status}`}>{u.status}</div>
-              <div className="last-login">{u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : "Never"}</div>
-            </div>
-
-            {/* Action */}
-            <div className="col action-col">
               {user.role === "admin" && (
-                <button className="btn-icon" onClick={(e) => handleMenuClick(u._id, e)}>
+                <button className="btn-menu" onClick={(e) => handleMenuClick(u._id, e)}>
                   <span className="material-symbols-outlined">more_vert</span>
                 </button>
               )}
+            </div>
+
+            <div className="user-card-body" onClick={() => navigate(`/app/Organization/User/${u._id}`)}>
+              <h3 className="user-name">{u.fullname}</h3>
+              <p className="user-username">@{u.username}</p>
+              <div className="user-contact-info">
+                <div className="contact-row">
+                  <span className="material-symbols-outlined">email</span>
+                  <span>{u.email}</span>
+                </div>
+                <div className="contact-row">
+                  <span className="material-symbols-outlined">phone</span>
+                  <span>{u.phone || "N/A"}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="user-card-footer">
+              <div className="user-role-status">
+                <span className={`role-badge ${u.role}`}>
+                  <span className="material-symbols-outlined">{u.role === "admin" ? "admin_panel_settings" : "person"}</span>
+                  {u.role === "admin" ? "Admin" : "User"}
+                </span>
+                <span className={`status-badge ${u.status}`}>
+                  <span className="status-dot"></span>
+                  {u.status}
+                </span>
+              </div>
+              {u.group?.length > 0 && (
+                <div className="user-groups">
+                  {u.group.slice(0, 2).map((g) => (
+                    <span key={g._id} className="group-tag">
+                      {g.name}
+                    </span>
+                  ))}
+                  {u.group.length > 2 && <span className="group-tag more">+{u.group.length - 2}</span>}
+                </div>
+              )}
+              <div className="user-last-login">
+                <span className="material-symbols-outlined">schedule</span>
+                Last login: {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : "Never"}
+              </div>
             </div>
           </div>
         ))}
 
         {currentUsers.length === 0 && (
           <div className="empty-state">
-            <span className="material-symbols-outlined">search_off</span>
-            <p>No users found matching your search.</p>
+            <span className="material-symbols-outlined empty-icon">search_off</span>
+            <h3>No users found</h3>
+            <p>Try adjusting your search or filters</p>
           </div>
         )}
       </div>
 
-      {/* Pagination Modern */}
       {totalPages > 1 && (
-        <div className="pagination-modern">
-          <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
-            Prev
+        <div className="pagination">
+          <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="pagination-btn">
+            <span className="material-symbols-outlined">chevron_left</span>
+            Previous
           </button>
-          <span>
+          <span className="pagination-info">
             Page {currentPage} of {totalPages}
           </span>
-          <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+          <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="pagination-btn">
             Next
+            <span className="material-symbols-outlined">chevron_right</span>
           </button>
         </div>
       )}
 
-      {/* --- POPUPS & MODALS (Giữ nguyên logic cũ, chỉ style lại nếu cần) --- */}
-      {/* Context Menu */}
       {popupUserId && (
-        <div className="floating-menu" style={{ top: popupPosition.top, left: popupPosition.left }}>
+        <div className="context-menu" style={{ top: popupPosition.top, left: popupPosition.left }}>
           <div
+            className="menu-item"
             onClick={() => {
               handleClosePopup();
               navigate(`/app/Organization/User/${popupUserId}`);
             }}
           >
-            <span className="material-symbols-outlined">edit</span> Edit Details
+            <span className="material-symbols-outlined">edit</span>
+            Edit Details
           </div>
           <div
-            className="danger"
+            className="menu-item danger"
             onClick={() => {
               const u = users.find((x) => x._id === popupUserId);
               setDeleteUserData({ userId: u._id, userName: u.fullname });
@@ -308,48 +300,63 @@ const Component = () => {
               handleClosePopup();
             }}
           >
-            <span className="material-symbols-outlined">delete</span> Deactivate
+            <span className="material-symbols-outlined">delete</span>
+            Deactivate
           </div>
         </div>
       )}
 
-      {/* Create User Modal - Reusing your existing structure but ensure CSS matches */}
       {showCreatePopup && (
-        <div className="user-create-popup-overlay" onClick={() => setShowCreatePopup(false)}>
-          <div className="user-create-popup" onClick={(e) => e.stopPropagation()}>
-            <div className="popup-header">
-              <div className="popup-icon">
+        <div className="modal-overlay" onClick={() => setShowCreatePopup(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-icon">
                 <span className="material-symbols-outlined">person_add</span>
               </div>
-              <h3 className="popup-title">Create Account</h3>
-              <p className="popup-subtitle">Fill in the information below to create a new account.</p>
+              <h2 className="modal-title">Create New Member</h2>
+              <p className="modal-subtitle">Fill in the information below to create a new user account</p>
             </div>
 
-            <form onSubmit={handleCreateUser}>
+            <form onSubmit={handleCreateUser} className="modal-form">
               <div className="form-row">
                 <div className="form-group">
-                  <label className="required">Full Name</label>
-                  <input name="fullname" className="popup-input" placeholder="Enter full name" required />
+                  <label>
+                    <span className="material-symbols-outlined">person</span>
+                    Full Name <span className="required">*</span>
+                  </label>
+                  <input name="fullname" className="form-input" placeholder="Enter full name" required />
                 </div>
                 <div className="form-group">
-                  <label>Phone</label>
-                  <input name="phone" className="popup-input" placeholder="Enter phone number" />
+                  <label>
+                    <span className="material-symbols-outlined">phone</span>
+                    Phone
+                  </label>
+                  <input name="phone" className="form-input" placeholder="Enter phone number" />
                 </div>
               </div>
 
               <div className="form-group">
-                <label className="required">Email</label>
-                <input name="email" className="popup-input" placeholder="Enter email address" type="email" required />
+                <label>
+                  <span className="material-symbols-outlined">email</span>
+                  Email <span className="required">*</span>
+                </label>
+                <input name="email" className="form-input" placeholder="Enter email address" type="email" required />
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="required">Username</label>
-                  <input name="username" className="popup-input" placeholder="Enter username" required />
+                  <label>
+                    <span className="material-symbols-outlined">badge</span>
+                    Username <span className="required">*</span>
+                  </label>
+                  <input name="username" className="form-input" placeholder="Enter username" required />
                 </div>
                 <div className="form-group">
-                  <label>Gender</label>
-                  <select name="gender" className="popup-input">
+                  <label>
+                    <span className="material-symbols-outlined">wc</span>
+                    Gender
+                  </label>
+                  <select name="gender" className="form-input">
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -360,18 +367,30 @@ const Component = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="required">Password</label>
-                  <input name="password" className="popup-input" placeholder="Enter password" type="password" required />
+                  <label>
+                    <span className="material-symbols-outlined">lock</span>
+                    Password <span className="required">*</span>
+                  </label>
+                  <input name="password" className="form-input" placeholder="Enter password" type="password" required />
                 </div>
                 <div className="form-group">
-                  <label className="required">Confirm Password</label>
-                  <input name="confirmPassword" className="popup-input" placeholder="Confirm password" type="password" required />
+                  <label>
+                    <span className="material-symbols-outlined">lock</span>
+                    Confirm Password <span className="required">*</span>
+                  </label>
+                  <input name="confirmPassword" className="form-input" placeholder="Confirm password" type="password" required />
                 </div>
               </div>
 
-              <button type="submit" className="popup-btn-submit">
-                Create User
-              </button>
+              <div className="modal-actions">
+                <button type="button" className="btn-cancel" onClick={() => setShowCreatePopup(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-submit">
+                  <span className="material-symbols-outlined">check</span>
+                  Create User
+                </button>
+              </div>
             </form>
           </div>
         </div>

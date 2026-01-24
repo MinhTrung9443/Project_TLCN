@@ -104,7 +104,6 @@ const GroupListPage = () => {
     setIsConfirmOpen(true);
   };
 
-  // small animated counter component
   const CountUp = ({ end = 0, duration = 700 }) => {
     const [value, setValue] = useState(0);
     useEffect(() => {
@@ -137,46 +136,57 @@ const GroupListPage = () => {
   };
 
   return (
-    <div className="group-page-container">
-      <div className="group-page-header">
-        <div className="header-content">
-          <h1 className="group-page-title">Groups</h1>
+    <div className="groups-page-container">
+      <div className="groups-hero">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span className="material-symbols-outlined">groups</span>
+            Team Management
+          </div>
+          <h1 className="hero-title">Teams & Groups</h1>
+          <p className="hero-subtitle">Manage your organization teams and collaborate effectively</p>
         </div>
         {isAdmin && (
-          <button onClick={handleOpenCreateModal} className="create-button">
-            <span className="plus-icon">+</span>
-            Create Group
+          <button onClick={handleOpenCreateModal} className="btn-create-group">
+            <span className="material-symbols-outlined">add</span>
+            Create New Team
           </button>
         )}
       </div>
 
       {loading ? (
-        <div className="loading-container">
+        <div className="loading-state">
           <div className="spinner"></div>
           <p>Loading teams...</p>
         </div>
       ) : groups.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">📁</div>
+          <span className="material-symbols-outlined empty-icon">folder_open</span>
           <h3>No teams found</h3>
           <p>Create your first team to get started</p>
+          {isAdmin && (
+            <button onClick={handleOpenCreateModal} className="btn-empty-create">
+              <span className="material-symbols-outlined">add</span>
+              Create Team
+            </button>
+          )}
         </div>
       ) : (
         <div className="groups-grid">
           {groups.map((group) => (
             <div key={group._id} className={`group-card ${group.status === "inactive" ? "inactive" : ""}`}>
               <div className="group-card-header">
-                <div className="group-name-section">
+                <div className="group-info">
                   <h3 className="group-name">{group.name}</h3>
                   <span className={`status-badge ${group.status}`}>
-                    <span className="status-dot" aria-hidden></span>
+                    <span className="status-dot"></span>
                     {group.status === "active" ? "Active" : "Inactive"}
                   </span>
                 </div>
                 {isAdmin && (
                   <div className="action-menu-container" ref={openActionMenu === group._id ? menuRef : null}>
                     <button className="action-menu-trigger" onClick={() => handleToggleActionMenu(group._id)}>
-                      ⋮
+                      <span className="material-symbols-outlined">more_vert</span>
                     </button>
                     {openActionMenu === group._id && (
                       <div className="action-menu-dropdown">
@@ -187,7 +197,7 @@ const GroupListPage = () => {
                             setOpenActionMenu(null);
                           }}
                         >
-                          <span className="menu-icon">✏️</span>
+                          <span className="material-symbols-outlined">edit</span>
                           Edit
                         </button>
                         <button
@@ -197,7 +207,7 @@ const GroupListPage = () => {
                             setOpenActionMenu(null);
                           }}
                         >
-                          <span className="menu-icon">{group.status === "active" ? "🔒" : "🔓"}</span>
+                          <span className="material-symbols-outlined">{group.status === "active" ? "lock" : "lock_open"}</span>
                           {group.status === "active" ? "Deactivate" : "Activate"}
                         </button>
                         <button
@@ -207,7 +217,7 @@ const GroupListPage = () => {
                             setOpenActionMenu(null);
                           }}
                         >
-                          <span className="menu-icon">🗑️</span>
+                          <span className="material-symbols-outlined">delete</span>
                           Delete
                         </button>
                       </div>
@@ -219,16 +229,20 @@ const GroupListPage = () => {
               <p className="group-description">{group.description || "No description provided"}</p>
 
               <div className="group-stats">
-                <div className="stat-item">
-                  <div className="stat-icon active-icon">👥</div>
-                  <div className="stat-content">
+                <div className="stat-item active">
+                  <div className="stat-icon">
+                    <span className="material-symbols-outlined">group</span>
+                  </div>
+                  <div className="stat-details">
                     <CountUp end={group.totalActives || 0} />
                     <span className="stat-label">Active Members</span>
                   </div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-icon inactive-icon">💤</div>
-                  <div className="stat-content">
+                <div className="stat-item inactive">
+                  <div className="stat-icon">
+                    <span className="material-symbols-outlined">person_off</span>
+                  </div>
+                  <div className="stat-details">
                     <CountUp end={group.totalInactives || 0} />
                     <span className="stat-label">Inactive Members</span>
                   </div>
@@ -236,9 +250,9 @@ const GroupListPage = () => {
               </div>
 
               <div className="group-card-footer">
-                <button className="view-members-btn" onClick={() => navigate(`/app/organization/group/${group._id}`)}>
+                <button className="btn-view-members" onClick={() => navigate(`/app/organization/group/${group._id}`)}>
                   View Members
-                  <span className="arrow-icon">→</span>
+                  <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
               </div>
             </div>
