@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import PerformancePanel from "../../components/common/PerformancePanel";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
-import "../../styles/AdminAuditLog.css";
 
 const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   const { user } = useAuth();

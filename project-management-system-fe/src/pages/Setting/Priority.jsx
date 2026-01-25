@@ -6,7 +6,6 @@ import priorityService from "../../services/priorityService";
 import * as FaIcons from "react-icons/fa";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import IconPicker from "../../components/Setting/IconPicker";
-import "../../styles/Setting/SettingsPage.css";
 import { useAuth } from "../../contexts/AuthContext";
 
 const PREDEFINED_PRIORITY_ICONS = [
@@ -28,6 +27,7 @@ const IconComponent = ({ name }) => {
   if (!Icon) return <FaIcons.FaQuestionCircle />;
   return <Icon />;
 };
+
 const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete }) => {
   const ref = React.useRef(null);
   const ItemType = "PRIORITY_ITEM";
@@ -62,39 +62,45 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete 
   const iconInfo = PREDEFINED_PRIORITY_ICONS.find((i) => i.name === item.icon);
 
   return (
-    <div ref={ref} className={`settings-list-item ${isDragging ? "dragging" : ""}`}>
-      <div className="drag-handle">
-        <span className="material-symbols-outlined">drag_indicator</span>
+    <div
+      ref={ref}
+      className={`flex items-center gap-4 px-5 py-4 border-b border-gray-200 hover:bg-gray-50 ${isDragging ? "opacity-50 rotate-1" : "bg-white"}`}
+    >
+      <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 cursor-grab active:cursor-grabbing flex items-center justify-center hover:bg-purple-200 transition-colors flex-shrink-0">
+        <span>drag_indicator</span>
       </div>
-      <div className="item-icon" style={{ backgroundColor: iconInfo?.color || "#7A869A" }}>
+      <div
+        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 text-white shadow-sm text-lg"
+        style={{ backgroundColor: iconInfo?.color || "#7A869A" }}
+      >
         <IconComponent name={item.icon} />
       </div>
-      <div className="item-content">
-        <div className="item-name">{item.name}</div>
-        <div className="item-meta">
+      <div className="flex-1 min-w-0">
+        <div className="text-base font-semibold text-blue-900">{item.name}</div>
+        <div className="text-sm text-gray-600 mt-1">
           Level {item.level}
           {item.projectId ? " • Project-specific" : " • Default"}
         </div>
       </div>
       {!item.projectId && (
-        <div className="item-actions">
+        <div className="flex gap-2">
           <button
-            className="btn-icon-action"
+            className="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all flex items-center justify-center"
             onClick={(e) => {
               e.stopPropagation();
               openEditModal(item);
             }}
           >
-            <span className="material-symbols-outlined">edit</span>
+            <span>edit</span>
           </button>
           <button
-            className="btn-icon-action delete"
+            className="w-9 h-9 rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:scale-110 transition-all flex items-center justify-center"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(item._id);
             }}
           >
-            <span className="material-symbols-outlined">delete</span>
+            <span>delete</span>
           </button>
         </div>
       )}
@@ -102,7 +108,6 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, onDelete 
   );
 };
 
-// --- COMPONENT CHÍNH ---
 export const SettingsPriorities = () => {
   const { user } = useAuth();
   const [priorities, setPriorities] = useState([]);
@@ -212,30 +217,33 @@ export const SettingsPriorities = () => {
 
   if (loading) {
     return (
-      <div className="settings-loading">
-        <div className="spinner"></div>
-        <p>Loading priorities...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+        <p className="mt-4 text-gray-600">Loading priorities...</p>
       </div>
     );
   }
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="settings-page-container">
-        <div className="settings-page-header">
-          <div className="header-left">
-            <h2>Priorities</h2>
-            <p>{priorities.length} priorities configured • Drag to reorder</p>
+      <div className="font-sans text-gray-900">
+        <div className="flex justify-between items-center mb-8 pb-6 border-b-2 border-gray-200">
+          <div>
+            <h2 className="text-3xl font-bold text-blue-900 mb-2">Priorities</h2>
+            <p className="text-sm text-gray-600">{priorities.length} priorities configured • Drag to reorder</p>
           </div>
           {user.role === "admin" && (
-            <button className="btn-create" onClick={() => handleOpenModal()}>
-              <span className="material-symbols-outlined">add</span>
+            <button
+              onClick={() => handleOpenModal()}
+              className="flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 shadow-md"
+            >
+              <span>add</span>
               Create Priority
             </button>
           )}
         </div>
 
-        <div className="settings-list">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           {priorities.map((item, index) => (
             <DraggablePriorityItem
               key={item._id}
@@ -250,47 +258,56 @@ export const SettingsPriorities = () => {
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{currentPriority._id ? "Edit Priority" : "Create Priority"}</h2>
-              <button className="modal-close" onClick={handleCloseModal}>
-                <span className="material-symbols-outlined">close</span>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" onClick={handleCloseModal}>
+          <div className="bg-white rounded-lg w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">{currentPriority?._id ? "Edit Priority" : "Create Priority"}</h2>
+              <button onClick={handleCloseModal} className="text-gray-500 hover:text-gray-700 transition-colors">
+                <span>close</span>
               </button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label htmlFor="name">
-                    Priority Name <span className="required">*</span>
+              <div className="p-6 space-y-6">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Priority Name <span className="text-red-600">*</span>
                   </label>
                   <input
                     id="name"
                     name="name"
                     type="text"
-                    value={currentPriority.name}
+                    value={currentPriority?.name || ""}
                     onChange={handleChange}
                     required
                     placeholder="e.g. Critical, High, Medium, Low"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Icon</label>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">Icon</label>
                   <IconPicker
                     icons={PREDEFINED_PRIORITY_ICONS.map((icon) => ({
                       ...icon,
                       component: <IconComponent name={icon.name} />,
                     }))}
-                    selectedIcon={currentPriority.icon}
+                    selectedIcon={currentPriority?.icon || "FaFire"}
                     onSelect={handleIconSelect}
                   />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
+              <div className="flex gap-3 p-6 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary" disabled={isSaving}>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg disabled:opacity-50 transition-colors"
+                >
                   {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>

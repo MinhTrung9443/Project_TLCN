@@ -1,5 +1,3 @@
-import "../../styles/pages/ManageUser/UserProfile.css";
-import "../../styles/pages/MyProfilePage.css";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import userService from "../../services/userService";

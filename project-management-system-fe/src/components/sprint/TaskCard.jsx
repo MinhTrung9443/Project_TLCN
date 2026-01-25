@@ -1,7 +1,6 @@
 import React from "react";
 import { useDrag } from "react-dnd";
 import { useNavigate, useParams } from "react-router-dom";
-import "./TaskCard.css";
 
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "task", color: "#4BADE8" },
@@ -58,40 +57,48 @@ const TaskCard = ({ task, onStatusChange }) => {
   return (
     <div
       ref={drag}
-      className={`board-task-card ${isDragging ? "dragging" : ""}`}
+      className={`bg-white rounded-lg p-4 mb-3 border border-gray-200 shadow-sm hover:shadow-md transition-all ${isDragging ? "opacity-50" : ""}`}
       style={{ opacity: isDragging ? 0.5 : 1, cursor: "pointer" }}
       onClick={handleCardClick}
     >
-      <div className="board-task-top">
-        <span className="board-task-checkbox material-symbols-outlined">check_box</span>
-        <span className="board-task-code">{task.key}</span>
+      <div className="flex items-center justify-between mb-3">
+        <span className="material-symbols-outlined text-gray-400 text-lg">check_box</span>
+        <span className="text-sm font-semibold text-purple-600">{task.key}</span>
       </div>
 
-      <div className="board-task-type-row">
-        <span className="icon-wrapper-task" style={{ backgroundColor: typeIcon.color }} title={task.taskTypeId?.name}>
+      <div className="flex items-center gap-2 mb-3">
+        <span
+          className="w-6 h-6 rounded flex items-center justify-center text-white text-sm"
+          style={{ backgroundColor: typeIcon.color }}
+          title={task.taskTypeId?.name}
+        >
           <IconComponent name={typeIcon.name} />
         </span>
-        <span className="board-task-type-name">{task.taskTypeId?.name || "Task"}</span>
+        <span className="text-xs text-gray-600">{task.taskTypeId?.name || "Task"}</span>
       </div>
 
-      <div className="board-task-name">{task.name}</div>
+      <div className="text-sm font-medium text-gray-900 mb-4 line-clamp-2">{task.name}</div>
 
-      <div className="board-task-footer">
-        <span className="icon-wrapper-priority" style={{ backgroundColor: priorityIcon.color }} title={task.priorityId?.name}>
+      <div className="flex items-center justify-between">
+        <span
+          className="w-6 h-6 rounded flex items-center justify-center text-white text-sm"
+          style={{ backgroundColor: priorityIcon.color }}
+          title={task.priorityId?.name}
+        >
           <IconComponent name={priorityIcon.name} />
         </span>
-        <div className="board-task-assignee">
+        <div className="flex items-center">
           {task.assigneeId ? (
-            <div className="avatar" title={task.assigneeId.fullname}>
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center" title={task.assigneeId.fullname}>
               {task.assigneeId.avatar ? (
-                <img src={task.assigneeId.avatar} alt={task.assigneeId.fullname} />
+                <img src={task.assigneeId.avatar} alt={task.assigneeId.fullname} className="w-full h-full object-cover" />
               ) : (
-                <span>{task.assigneeId.fullname.charAt(0).toUpperCase()}</span>
+                <span className="text-white text-sm font-semibold">{task.assigneeId.fullname.charAt(0).toUpperCase()}</span>
               )}
             </div>
           ) : (
-            <div className="avatar unassigned" title="Unassigned">
-              <span className="material-symbols-outlined">person</span>
+            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center" title="Unassigned">
+              <span className="material-symbols-outlined text-gray-600 text-lg">person</span>
             </div>
           )}
         </div>

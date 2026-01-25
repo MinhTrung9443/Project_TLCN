@@ -1,7 +1,6 @@
 import React from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { IconComponent } from "../../components/common/IconPicker";
-import "../../styles/components/TaskRow.css";
 
 // Các hằng số này thuộc về TaskRow, nên để ở đây
 const PREDEFINED_TASKTYPE_ICONS = [

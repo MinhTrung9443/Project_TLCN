@@ -1,11 +1,8 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Container, Row, Col, Button, Form, Card } from "react-bootstrap";
 import authService from "../services/AuthService.js";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
-
-import "../styles/Login.css";
 
 import logo from "../assets/logo.png";
 
@@ -44,48 +41,57 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="login-page">
-      <Container>
-        <Row className="justify-content-center">
-          <Col lg={6} md={8} sm={10}>
-            <Card className="login-card">
-              <Card.Body className="login-card-body">
-                <div className="text-center mb-4">
-                  <img src={logo} alt="Logo" className="login-logo" />
-                  <h2 className="login-title">Sign in</h2>
-                  <p className="login-subtitle">Welcome back! Please enter your details.</p>
-                </div>
+    <div className="min-h-screen bg-light flex items-center justify-center px-4 font-sans">
+      <div className="w-full max-w-lg">
+        <div className="bg-white rounded-2xl shadow-sm p-12">
+          <div className="text-center mb-8">
+            <img src={logo} alt="Logo" className="w-32 h-auto mx-auto mb-6" />
+            <h2 className="text-4xl font-bold text-blue-900 mb-2">Sign in</h2>
+            <p className="text-lg text-gray-600 leading-relaxed">Welcome back! Please enter your details.</p>
+          </div>
 
-                <Form onSubmit={handleLogin}>
-                  <Form.Group className="login-form-group">
-                    <Form.Label className="login-label">
-                      Email <span style={{ color: "#ef4444" }}>*</span>
-                    </Form.Label>
-                    <Form.Control type="email" name="email" placeholder="your.email@example.com" required className="login-form-control" />
-                  </Form.Group>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-base font-semibold text-gray-900 mb-2">
+                Email <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                placeholder="your.email@example.com"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
+              />
+            </div>
 
-                  <Form.Group className="login-form-group">
-                    <Form.Label className="login-label">
-                      Password <span style={{ color: "#ef4444" }}>*</span>
-                    </Form.Label>
-                    <Form.Control type="password" name="password" placeholder="Enter password" required className="login-form-control" />
-                  </Form.Group>
+            <div>
+              <label className="block text-base font-semibold text-gray-900 mb-2">
+                Password <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="password"
+                name="password"
+                placeholder="Enter password"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
+              />
+            </div>
 
-                  <div className="d-flex justify-content-end mb-4">
-                    <Link to="/forgot-password" className="login-forgot-link">
-                      Forgot your password?
-                    </Link>
-                  </div>
+            <div className="flex justify-end">
+              <Link to="/forgot-password" className="text-purple-600 no-underline text-sm font-medium hover:text-purple-700 transition-colors">
+                Forgot your password?
+              </Link>
+            </div>
 
-                  <Button type="submit" className="login-btn">
-                    Sign in
-                  </Button>
-                </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+            <button
+              type="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              Sign in
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };

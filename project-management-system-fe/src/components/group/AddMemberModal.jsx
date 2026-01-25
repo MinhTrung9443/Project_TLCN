@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Select from "react-select";
-import "../../styles/pages/AddMemberModal.css";
 
 const AddMemberModal = ({ isOpen, onClose, onAdd, users }) => {
   const [selectedUserIds, setSelectedUserIds] = useState([]);
@@ -57,30 +56,41 @@ const AddMemberModal = ({ isOpen, onClose, onAdd, users }) => {
     return null;
   }
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-header">Add Members</h2>
-        <p>Members</p>
-        <Select
-          value={userOptions.filter((opt) => selectedUserIds.includes(opt.value))}
-          onChange={(options) => setSelectedUserIds(options ? options.map((opt) => opt.value) : [])}
-          options={userOptions}
-          formatOptionLabel={formatOptionLabel}
-          placeholder="Select members"
-          isMulti
-          isClearable
-          menuPlacement="auto"
-          menuPortalTarget={document.body}
-          styles={{
-            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-          }}
-        />
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">Add Members</h2>
+        </div>
+        <div className="p-6 space-y-4">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Members</label>
+          <Select
+            value={userOptions.filter((opt) => selectedUserIds.includes(opt.value))}
+            onChange={(options) => setSelectedUserIds(options ? options.map((opt) => opt.value) : [])}
+            options={userOptions}
+            formatOptionLabel={formatOptionLabel}
+            placeholder="Select members"
+            isMulti
+            isClearable
+            menuPlacement="auto"
+            menuPortalTarget={document.body}
+            styles={{
+              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+            }}
+          />
+        </div>
 
-        <div className="modal-actions">
-          <button type="button" onClick={onClose} className="cancel-button">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+          >
             Cancel
           </button>
-          <button onClick={handleAddClick} className="save-button">
+          <button
+            onClick={handleAddClick}
+            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
+          >
             Add Members
           </button>
         </div>

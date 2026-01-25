@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
 import TaskList from "./taskItem";
-import "../../styles/pages/ManageSprint/SprintList.css";
 import { useDrop } from "react-dnd";
 import CreateTaskModal from "../../components/task/CreateTaskModal";
 
@@ -64,28 +63,29 @@ const SprintItem = ({
         onTaskCreated={handleTaskCreated}
         defaultProjectId={sprint.projectId}
       />
-      <div className="sprint-card" key={sprint._id}>
-        <div ref={drop} className={`sprint-card-dropzone${isOver ? " sprint-card-dropzone-over" : ""}`}>
-          <div className="sprint-header">
-            <button className="sprint-chevron-btn" onClick={() => setExpanded((prev) => !prev)}>
-              <span className={`material-symbols-outlined sprint-chevron-icon${expanded ? " expanded" : ""}`}>chevron_right</span>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4" key={sprint._id}>
+        <div ref={drop} className={`p-4 ${isOver ? "bg-purple-50 border-2 border-purple-300" : ""}`}>
+          <div className="flex items-center gap-3 mb-3">
+            <button className="p-1 hover:bg-gray-100 rounded transition-colors" onClick={() => setExpanded((prev) => !prev)}>
+              <span className={`material-symbols-outlined text-gray-600 transition-transform ${expanded ? "rotate-90" : ""}`}>chevron_right</span>
             </button>
             <span
-              className={`sprint-title ${sprint.status === "Started" ? "sprint-title-clickable" : ""}`}
+              className={`text-lg font-semibold text-gray-900 flex-1 ${sprint.status === "Started" ? "cursor-pointer hover:text-purple-600" : ""}`}
               onClick={() => onSprintNameClick && sprint.status === "Started" && onSprintNameClick(sprint)}
             >
               {sprint.name}
             </span>
-            <span className="sprint-task-badge">{sprint.tasks?.length || 0} Tasks</span>
+            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">{sprint.tasks?.length || 0} Tasks</span>
             {!isKanbanBoard && canManageSprints && sprint.status !== "Completed" && (
-              <div className="sprint-header-menu" ref={openMenuId === sprint._id ? menuRef : null}>
-                <button onClick={() => handleMenuToggle(sprint._id)} className="sprint-menu-btn">
-                  <span className="material-symbols-outlined">more_horiz</span>
+              <div className="relative" ref={openMenuId === sprint._id ? menuRef : null}>
+                <button onClick={() => handleMenuToggle(sprint._id)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <span className="material-symbols-outlined text-gray-600">more_horiz</span>
                 </button>
                 {openMenuId === sprint._id && (
-                  <ul className="sprint-menu-list">
+                  <ul className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
                     <li>
                       <button
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 transition-colors"
                         onClick={() => {
                           onEdit(sprint);
                           setOpenMenuId(null);
@@ -97,6 +97,7 @@ const SprintItem = ({
                     {sprint.status === "Not Start" && (
                       <li>
                         <button
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 transition-colors"
                           onClick={() => {
                             onStart(sprint);
                             setOpenMenuId(null);
@@ -109,6 +110,7 @@ const SprintItem = ({
                     {sprint.status === "Started" && (
                       <li>
                         <button
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 transition-colors"
                           onClick={() => {
                             onComplete(sprint);
                             setOpenMenuId(null);
@@ -120,7 +122,7 @@ const SprintItem = ({
                     )}
                     <li>
                       <button
-                        className="sprint-menu-delete"
+                        className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 transition-colors"
                         onClick={() => {
                           onDelete(sprint);
                           setOpenMenuId(null);
@@ -136,36 +138,30 @@ const SprintItem = ({
           </div>
           {expanded && (
             <>
-              <div className="sprint-status-row">
-                <div className="sprint-status-box">
-                  {sprint.status === "Not Start" && (
-                    <span className="material-symbols-outlined sprint-status-icon sprint-status-notstarted">radio_button_unchecked</span>
-                  )}
-                  {sprint.status === "Started" && (
-                    <span className="material-symbols-outlined sprint-status-icon sprint-status-started">schedule</span>
-                  )}
-                  {sprint.status === "Completed" && (
-                    <span className="material-symbols-outlined sprint-status-icon sprint-status-completed">check_circle</span>
-                  )}
-                  <span className="sprint-status-text">{sprint.status}</span>
+              <div className="mb-3">
+                <div className="flex items-center gap-3">
+                  {sprint.status === "Not Start" && <span className="material-symbols-outlined text-gray-400">radio_button_unchecked</span>}
+                  {sprint.status === "Started" && <span className="material-symbols-outlined text-blue-500">schedule</span>}
+                  {sprint.status === "Completed" && <span className="material-symbols-outlined text-green-500">check_circle</span>}
+                  <span className="text-sm font-medium text-gray-700">{sprint.status}</span>
                   {/* Ẩn ngày nếu là Kanban Board */}
                   {!isKanbanBoard && (
-                    <span className="sprint-date">
+                    <span className="text-sm text-gray-500">
                       {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
                     </span>
                   )}
                 </div>
               </div>
-              <div className="task-list">
+              <div className="mb-3">
                 <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} canDragDrop={canDragDrop} onTaskClick={onTaskClick} />
               </div>
-              <div className="sprint-create-task-row">
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
                 {canCreateTask && sprint.status !== "Completed" && (
                   <>
-                    <button className="sprint-add-btn">
+                    <button className="text-purple-600 hover:text-purple-700">
                       <span className="material-symbols-outlined">add_circle</span>
                     </button>
-                    <span className="sprint-create-task-label" onClick={() => setIsModalOpen(true)}>
+                    <span className="text-sm text-purple-600 hover:text-purple-700 cursor-pointer font-medium" onClick={() => setIsModalOpen(true)}>
                       Create Task
                     </span>
                   </>

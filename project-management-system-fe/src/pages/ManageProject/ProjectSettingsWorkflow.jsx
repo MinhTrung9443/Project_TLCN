@@ -5,7 +5,6 @@ import dagre from "dagre";
 import workflowService from "../../services/workflowService";
 import { getProjectByKey } from "../../services/projectService";
 import { useAuth } from "../../contexts/AuthContext";
-import "../../styles/pages/ManageProject/ProjectSettings_Workflow.css";
 
 const ProjectSettingsWorkflow = () => {
   const { projectKey } = useParams();

@@ -5,7 +5,6 @@ import { getProjects } from "../../services/projectService";
 import { getCreateTaskFormData } from "../../services/settingsService";
 import { createTask } from "../../services/taskService";
 import RichTextEditor from "../common/RichTextEditor";
-import "../../styles/components/CreateTaskModal.css";
 
 const INITIAL_FORM_STATE = {
   projectId: "",
@@ -46,7 +45,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
             availableProjects = res.data.filter((project) => {
               // Check if PM
               const isPM = project.members?.some(
-                (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+                (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
               );
 
               // Check if Leader
@@ -107,7 +106,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
         if (user.role !== "admin") {
           // Check if user is PM
           const isPM = selectedProject.members?.some(
-            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
           );
 
           if (!isPM) {
@@ -336,22 +335,32 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <header className="modal-header">
-          <h2>Create Task</h2>
-          <button onClick={onClose} className="close-button">
-            &times;
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div
+        className="bg-white rounded-lg w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 flex items-center justify-between border-b border-purple-800">
+          <h2 className="text-xl font-bold">Create Task</h2>
+          <button onClick={onClose} className="text-white hover:bg-purple-600 p-2 rounded-lg transition-colors">
+            <span className="material-symbols-outlined">close</span>
           </button>
-        </header>
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body-scrollable">
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="projectId" className="required">
-                  Project
+        </div>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="projectId" className="block text-sm font-semibold text-gray-900 mb-2">
+                  Project <span className="text-red-600">*</span>
                 </label>
-                <select id="projectId" name="projectId" value={formData.projectId} onChange={handleInputChange} disabled={!!defaultProjectId}>
+                <select
+                  id="projectId"
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleInputChange}
+                  disabled={!!defaultProjectId}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
                   <option value="">Select Project</option>
                   {projects.map((p) => (
                     <option key={p._id} value={p._id}>
@@ -359,13 +368,20 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                     </option>
                   ))}
                 </select>
-                {errors.projectId && <p className="error-text">{errors.projectId}</p>}
+                {errors.projectId && <p className="text-sm text-red-600 mt-1">{errors.projectId}</p>}
               </div>
-              <div className="form-group">
-                <label htmlFor="taskTypeId" className="required">
-                  Type
+              <div>
+                <label htmlFor="taskTypeId" className="block text-sm font-semibold text-gray-900 mb-2">
+                  Type <span className="text-red-600">*</span>
                 </label>
-                <select id="taskTypeId" name="taskTypeId" value={formData.taskTypeId} onChange={handleInputChange} disabled={!formData.projectId}>
+                <select
+                  id="taskTypeId"
+                  name="taskTypeId"
+                  value={formData.taskTypeId}
+                  onChange={handleInputChange}
+                  disabled={!formData.projectId}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
                   <option value="">Select Type</option>
                   {settings.taskTypes.map((t) => (
                     <option key={t._id} value={t._id}>
@@ -373,29 +389,43 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                     </option>
                   ))}
                 </select>
-                {errors.taskTypeId && <p className="error-text">{errors.taskTypeId}</p>}
+                {errors.taskTypeId && <p className="text-sm text-red-600 mt-1">{errors.taskTypeId}</p>}
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="name" className="required">
-                Task Name
+            <div>
+              <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-2">
+                Task Name <span className="text-red-600">*</span>
               </label>
-              <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} />
-              {errors.name && <p className="error-text">{errors.name}</p>}
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
             </div>
 
-            <div className="form-group">
-              <label>Description</label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
               <RichTextEditor value={formData.description} onChange={handleDescriptionChange} />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="priorityId" className="required">
-                  Priority
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="priorityId" className="block text-sm font-semibold text-gray-900 mb-2">
+                  Priority <span className="text-red-600">*</span>
                 </label>
-                <select id="priorityId" name="priorityId" value={formData.priorityId} onChange={handleInputChange} disabled={!formData.projectId}>
+                <select
+                  id="priorityId"
+                  name="priorityId"
+                  value={formData.priorityId}
+                  onChange={handleInputChange}
+                  disabled={!formData.projectId}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
                   <option value="">Select Priority</option>
                   {settings.priorities.map((p) => (
                     <option key={p._id} value={p._id}>
@@ -403,19 +433,37 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                     </option>
                   ))}
                 </select>
-                {errors.priorityId && <p className="error-text">{errors.priorityId}</p>}
+                {errors.priorityId && <p className="text-sm text-red-600 mt-1">{errors.priorityId}</p>}
               </div>
-              <div className="form-group">
-                <label htmlFor="dueDate">Due Date</label>
-                <input type="date" id="dueDate" name="dueDate" value={formData.dueDate} onChange={handleInputChange} />
-                {errors.dueDate && <p className="error-text">{errors.dueDate}</p>}
+              <div>
+                <label htmlFor="dueDate" className="block text-sm font-semibold text-gray-900 mb-2">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  id="dueDate"
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                {errors.dueDate && <p className="text-sm text-red-600 mt-1">{errors.dueDate}</p>}
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="assigneeId">Assignee</label>
-                <select id="assigneeId" name="assigneeId" value={formData.assigneeId} onChange={handleInputChange} disabled={!formData.projectId}>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="assigneeId" className="block text-sm font-semibold text-gray-900 mb-2">
+                  Assignee
+                </label>
+                <select
+                  id="assigneeId"
+                  name="assigneeId"
+                  value={formData.assigneeId}
+                  onChange={handleInputChange}
+                  disabled={!formData.projectId}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
                   <option value="">Unassigned</option>
                   {settings.members.map((m) => (
                     <option key={m.userId._id} value={m.userId._id}>
@@ -424,21 +472,39 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                   ))}
                 </select>
               </div>
-              <div className="form-group">
-                <label>Reporter</label>
-                <input type="text" value={user.fullname} disabled />
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Reporter</label>
+                <input
+                  type="text"
+                  value={user.fullname}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                />
               </div>
             </div>
 
-            <button type="button" className="show-more-btn" onClick={() => setShowMore(!showMore)}>
+            <button
+              type="button"
+              className="px-4 py-2 text-purple-600 font-medium hover:bg-purple-50 rounded-lg transition-colors"
+              onClick={() => setShowMore(!showMore)}
+            >
               {showMore ? "Hide" : "Show"} more fields
             </button>
 
             {showMore && (
-              <div className="more-fields">
-                <div className="form-group">
-                  <label htmlFor="platformId">Platform</label>
-                  <select id="platformId" name="platformId" value={formData.platformId} onChange={handleInputChange} disabled={!formData.projectId}>
+              <div className="space-y-6">
+                <div>
+                  <label htmlFor="platformId" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Platform
+                  </label>
+                  <select
+                    id="platformId"
+                    name="platformId"
+                    value={formData.platformId}
+                    onChange={handleInputChange}
+                    disabled={!formData.projectId}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
                     <option value="">Select Platform</option>
                     {settings.platforms.map((p) => (
                       <option key={p._id} value={p._id}>
@@ -451,14 +517,29 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
             )}
           </div>
 
-          <footer className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <div className="flex gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <button
+              type="button"
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-white font-medium transition-colors"
+              onClick={onClose}
+            >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? "Creating..." : "Save"}
+            <button
+              type="submit"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-purple-300 border-t-white rounded-full animate-spin"></div>
+                  Creating...
+                </>
+              ) : (
+                "Save"
+              )}
             </button>
-          </footer>
+          </div>
         </form>
       </div>
     </div>

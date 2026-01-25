@@ -4,8 +4,6 @@ import userService from "../../services/userService";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
 
-import "../../styles/pages/ManageProject/CreateProjectModal.css";
-
 const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
   const { user: currentUser } = useAuth();
   const getInitialFormData = () => ({
@@ -115,29 +113,33 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-header-content">
-            <div className="modal-icon">
-              <span className="material-symbols-outlined">folder_open</span>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={handleClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-start justify-between z-10">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+              <span className="material-symbols-outlined text-2xl">folder_open</span>
             </div>
             <div>
-              <h2 className="modal-title">Create New Project</h2>
-              <p className="modal-subtitle">Set up your project workspace</p>
+              <h2 className="text-2xl font-bold text-gray-900">Create New Project</h2>
+              <p className="text-sm text-gray-600 mt-1">Set up your project workspace</p>
             </div>
           </div>
-          <button onClick={handleClose} className="modal-close-btn" type="button">
+          <button
+            onClick={handleClose}
+            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+            type="button"
+          >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="name" className="form-label">
-                <span className="material-symbols-outlined">title</span>
-                Project Name <span className="required-star">*</span>
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label htmlFor="name" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <span className="material-symbols-outlined text-base">title</span>
+                Project Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -145,16 +147,16 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
                 id="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="form-input"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Enter project name"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="key" className="form-label">
-                <span className="material-symbols-outlined">key</span>
-                Key <span className="required-star">*</span>
+            <div>
+              <label htmlFor="key" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <span className="material-symbols-outlined text-base">key</span>
+                Key <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -162,34 +164,41 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
                 id="key"
                 value={formData.key}
                 onChange={handleInputChange}
-                className="form-input"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="e.g., PROJ"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="type" className="form-label">
-                <span className="material-symbols-outlined">category</span>
-                Type <span className="required-star">*</span>
+            <div>
+              <label htmlFor="type" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <span className="material-symbols-outlined text-base">category</span>
+                Type <span className="text-red-500">*</span>
               </label>
-              <select name="type" id="type" value={formData.type} onChange={handleInputChange} className="form-select" required>
+              <select
+                name="type"
+                id="type"
+                value={formData.type}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                required
+              >
                 <option value="Scrum">Scrum</option>
                 <option value="Kanban">Kanban</option>
               </select>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="projectManagerId" className="form-label">
-                <span className="material-symbols-outlined">person</span>
-                Project Manager <span className="required-star">*</span>
+            <div>
+              <label htmlFor="projectManagerId" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <span className="material-symbols-outlined text-base">person</span>
+                Project Manager <span className="text-red-500">*</span>
               </label>
               <select
                 name="projectManagerId"
                 id="projectManagerId"
                 value={formData.projectManagerId}
                 onChange={handleInputChange}
-                className="form-select"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 required
               >
                 <option value="" disabled>
@@ -204,36 +213,58 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
               </select>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="startDate" className="form-label">
-                <span className="material-symbols-outlined">calendar_today</span>
+            <div>
+              <label htmlFor="startDate" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <span className="material-symbols-outlined text-base">calendar_today</span>
                 Start Date
               </label>
-              <input type="date" name="startDate" id="startDate" value={formData.startDate} onChange={handleInputChange} className="form-input" />
+              <input
+                type="date"
+                name="startDate"
+                id="startDate"
+                value={formData.startDate}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="endDate" className="form-label">
-                <span className="material-symbols-outlined">event</span>
+            <div>
+              <label htmlFor="endDate" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <span className="material-symbols-outlined text-base">event</span>
                 End Date
               </label>
-              <input type="date" name="endDate" id="endDate" value={formData.endDate} onChange={handleInputChange} className="form-input" />
+              <input
+                type="date"
+                name="endDate"
+                id="endDate"
+                value={formData.endDate}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
               {dateError && (
-                <p className="error-message">
-                  <span className="material-symbols-outlined">error</span>
+                <p className="flex items-center gap-1 text-sm text-red-600 mt-2">
+                  <span className="material-symbols-outlined text-base">error</span>
                   {dateError}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="modal-actions">
-            <button type="button" onClick={handleClose} className="modal-btn modal-btn-cancel">
+          <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <span className="material-symbols-outlined">close</span>
               Cancel
             </button>
-            <button type="submit" disabled={isSubmitting} className="modal-btn modal-btn-primary">
-              <span className="material-symbols-outlined">{isSubmitting ? "sync" : "check_circle"}</span>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className={`material-symbols-outlined ${isSubmitting ? "animate-spin" : ""}`}>{isSubmitting ? "sync" : "check_circle"}</span>
               {isSubmitting ? "Creating..." : "Create Project"}
             </button>
           </div>

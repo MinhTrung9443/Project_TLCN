@@ -1,8 +1,7 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { createPortal } from "react-dom"; // <--- QUAN TRỌNG: Import cái này
+import { createPortal } from "react-dom";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { useAuth } from "../../contexts/AuthContext";
-import "../../styles/pages/ManageProject/MemberActionsMenu.css";
 
 const MemberActionsMenu = ({ item, onRemoveMember, onRemoveTeam, onChangeRole, onAddMemberToTeam, onRemoveMemberFromTeam, isTeamMember = false }) => {
   const [isOpen, setIsOpen] = useState(false);

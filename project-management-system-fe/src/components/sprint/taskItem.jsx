@@ -1,5 +1,4 @@
 import { useDrag, useDrop } from "react-dnd";
-import "../../styles/pages/ManageSprint/taskItem.css";
 import { IconComponent } from "../../components/common/IconPicker";
 
 // Utility function to truncate text
@@ -48,59 +47,66 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
   return (
     <div
       ref={drag}
-      className={`task-item${isDragging ? " task-item-dragging" : ""}`}
+      className={`flex items-center justify-between p-3 mb-2 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all cursor-pointer ${isDragging ? "opacity-50" : ""}`}
       onClick={() => onTaskClick && onTaskClick(task)}
       style={{ cursor: "pointer" }}
     >
-      <div className="task-item-left">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
         {typeIconInfo ? (
-          <span className="icon-wrapper-list-small" style={{ backgroundColor: typeIconInfo.color }} title={task.taskTypeId?.name}>
+          <span
+            className="w-6 h-6 rounded flex items-center justify-center text-white text-sm flex-shrink-0"
+            style={{ backgroundColor: typeIconInfo.color }}
+            title={task.taskTypeId?.name}
+          >
             <IconComponent name={task.taskTypeId.icon} />
           </span>
         ) : (
-          <span className="icon-wrapper-list-small" style={{ backgroundColor: "#ccc" }}>
+          <span className="w-6 h-6 rounded flex items-center justify-center text-white text-sm flex-shrink-0" style={{ backgroundColor: "#ccc" }}>
             <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
               help
             </span>
           </span>
         )}
 
-        <span className="task-key-display">{task.key || "No-Key"}</span>
-        <span className="task-name" title={task.name}>
+        <span className="text-sm font-semibold text-purple-600 flex-shrink-0">{task.key || "No-Key"}</span>
+        <span className="text-sm text-gray-900 truncate" title={task.name}>
           {truncateText(task.name, 40)}
         </span>
       </div>
-      <div className="task-item-right">
+      <div className="flex items-center gap-2 flex-shrink-0">
         {/* Priority Icon (same style as TaskFinder) */}
-        <div className="task-priority" title={task.priorityId?.name || "Priority"}>
+        <div className="flex items-center" title={task.priorityId?.name || "Priority"}>
           {(() => {
             if (!task.priorityId?.icon) return null;
             const iconInfo = PREDEFINED_PRIORITY_ICONS.find((i) => i.name === task.priorityId.icon);
             return (
-              <span className="icon-wrapper-list" style={{ backgroundColor: iconInfo ? iconInfo.color : "#ccc" }}>
+              <span
+                className="w-6 h-6 rounded flex items-center justify-center text-white text-sm"
+                style={{ backgroundColor: iconInfo ? iconInfo.color : "#ccc" }}
+              >
                 <IconComponent name={task.priorityId.icon} />
               </span>
             );
           })()}
         </div>
         {/* Status Icon */}
-        <div className="task-status-type" title={task.statusId?.name || "Status"}>
-          {task.statusId?.name === "To Do" && <span className="material-symbols-outlined task-status-todo">radio_button_unchecked</span>}
-          {task.statusId?.name === "In Progress" && <span className="material-symbols-outlined task-status-inprogress">schedule</span>}
-          {task.statusId?.name === "Done" && <span className="material-symbols-outlined task-status-done">check_circle</span>}
+        <div className="flex items-center" title={task.statusId?.name || "Status"}>
+          {task.statusId?.name === "To Do" && <span className="material-symbols-outlined text-gray-400">radio_button_unchecked</span>}
+          {task.statusId?.name === "In Progress" && <span className="material-symbols-outlined text-blue-500">schedule</span>}
+          {task.statusId?.name === "Done" && <span className="material-symbols-outlined text-green-500">check_circle</span>}
         </div>
         {/* Assignee Avatar */}
-        <div className="task-assignee" title={task.assigneeId ? task.assigneeId.fullname || task.assigneeId.username : "Unassigned"}>
+        <div className="flex items-center" title={task.assigneeId ? task.assigneeId.fullname || task.assigneeId.username : "Unassigned"}>
           {task.assigneeId ? (
             task.assigneeId.avatar ? (
-              <img src={task.assigneeId.avatar} alt="avatar" className="task-assignee-avatar" />
+              <img src={task.assigneeId.avatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
             ) : (
-              <div className="task-assignee-avatar-placeholder">
+              <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-semibold">
                 {(task.assigneeId.fullname || task.assigneeId.username || "U").charAt(0).toUpperCase()}
               </div>
             )
           ) : (
-            <span className="material-symbols-outlined task-assignee-icon">person</span>
+            <span className="material-symbols-outlined text-gray-400 text-xl">person</span>
           )}
         </div>
       </div>
@@ -125,13 +131,13 @@ const TaskList = ({ tasks, source, onDrop, canDragDrop = true, onTaskClick }) =>
   );
 
   return (
-    <div ref={drop} className={`task-list${isOver ? " task-list-over" : ""}`}>
+    <div ref={drop} className={`min-h-[100px] p-2 rounded-lg ${isOver ? "bg-purple-50 border-2 border-purple-300" : ""}`}>
       {tasks && tasks.length > 0 ? (
         tasks.map((task, index) => (
           <DraggableTask key={task.id || index} task={task} source={source} canDragDrop={canDragDrop} onTaskClick={onTaskClick} />
         ))
       ) : (
-        <div className="task-empty">No tasks</div>
+        <div className="text-center py-8 text-gray-500">No tasks</div>
       )}
     </div>
   );

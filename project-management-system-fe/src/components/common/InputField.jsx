@@ -1,10 +1,9 @@
 import React from "react";
-import "../../styles/components/InputField.css";
 
 const InputField = ({ label, id, type, name, value, onChange, placeholder, error, className = "", ...props }) => {
   return (
-    <div className="input-field-group">
-      <label htmlFor={id} className="input-field-label">
+    <div className="mb-4">
+      <label htmlFor={id} className="block text-sm font-semibold text-gray-900 mb-2">
         {label}
       </label>
       <input
@@ -14,10 +13,12 @@ const InputField = ({ label, id, type, name, value, onChange, placeholder, error
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`input-field-control ${error ? "is-invalid" : ""} ${className}`}
+        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${
+          error ? "border-red-500 focus:ring-red-500" : ""
+        } ${className}`}
         {...props}
       />
-      {error && <div className="input-field-error">{error}</div>}
+      {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
     </div>
   );
 };

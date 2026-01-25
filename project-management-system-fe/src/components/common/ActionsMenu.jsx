@@ -2,13 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { FaEllipsisV, FaTrash, FaPaperclip } from "react-icons/fa";
-import "../../styles/components/ActionsMenu.css";
 
 const ActionsMenu = ({ onDelete, onAddAttachment }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Xử lý click ra ngoài để đóng menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -22,22 +20,28 @@ const ActionsMenu = ({ onDelete, onAddAttachment }) => {
   }, []);
 
   const handleActionClick = (action) => {
-    setIsOpen(false); // Đóng menu sau khi chọn
+    setIsOpen(false);
     action();
   };
 
   return (
-    <div className="actions-menu-container" ref={menuRef}>
-      <button className="actions-menu-trigger" onClick={() => setIsOpen(!isOpen)}>
+    <div className="relative" ref={menuRef}>
+      <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" onClick={() => setIsOpen(!isOpen)}>
         <FaEllipsisV />
       </button>
       {isOpen && (
-        <ul className="actions-menu-dropdown">
-          <li onClick={() => handleActionClick(onAddAttachment)}>
+        <ul className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+          <li
+            className="px-4 py-2 hover:bg-gray-100 text-gray-700 cursor-pointer flex items-center gap-3 transition-colors"
+            onClick={() => handleActionClick(onAddAttachment)}
+          >
             <FaPaperclip />
             <span>Add Attachment</span>
           </li>
-          <li className="danger" onClick={() => handleActionClick(onDelete)}>
+          <li
+            className="px-4 py-2 hover:bg-red-50 text-red-600 cursor-pointer flex items-center gap-3 transition-colors"
+            onClick={() => handleActionClick(onDelete)}
+          >
             <FaTrash />
             <span>Delete Task</span>
           </li>

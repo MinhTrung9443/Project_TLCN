@@ -1,105 +1,119 @@
-import React, { useRef, useEffect } from 'react'; // <<< THÊM useRef và useEffect
-import { FaFile, FaFileImage, FaFileVideo, FaFilePdf, FaFileArchive, FaFileCode, FaPlus, FaTrash, FaDownload } from 'react-icons/fa'; 
-import '../../styles/components/AttachmentsTab.css'; // Tạo file CSS này
+import React, { useRef, useEffect } from "react";
+import { FaFile, FaFileImage, FaFileVideo, FaFilePdf, FaFileArchive, FaFileCode, FaPlus, FaTrash, FaDownload } from "react-icons/fa";
 
 const getFileIcon = (filename) => {
-    const extension = filename.split('.').pop().toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) {
-        return <FaFileImage />;
-    }
-    if (['mp4', 'mov', 'avi', 'mkv'].includes(extension)) {
-        return <FaFileVideo />;
-    }
-    if (['pdf'].includes(extension)) {
-        return <FaFilePdf />;
-    }
-    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
-        return <FaFileArchive />;
-    }
-    if (['js', 'jsx', 'ts', 'html', 'css', 'json', 'py', 'java'].includes(extension)) {
-        return <FaFileCode />;
-    }
-    return <FaFile />;
+  const extension = filename.split(".").pop().toLowerCase();
+  if (["jpg", "jpeg", "png", "gif", "svg"].includes(extension)) {
+    return <FaFileImage />;
+  }
+  if (["mp4", "mov", "avi", "mkv"].includes(extension)) {
+    return <FaFileVideo />;
+  }
+  if (["pdf"].includes(extension)) {
+    return <FaFilePdf />;
+  }
+  if (["zip", "rar", "7z", "tar", "gz"].includes(extension)) {
+    return <FaFileArchive />;
+  }
+  if (["js", "jsx", "ts", "html", "css", "json", "py", "java"].includes(extension)) {
+    return <FaFileCode />;
+  }
+  return <FaFile />;
 };
 
 const AttachmentsTab = ({ attachments = [], onAdd, onDelete }) => {
-    const scrollContainerRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
-    // Xử lý cuộn ngang bằng con lăn chuột (giữ lại vì nó hữu ích)
-    useEffect(() => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        const handleWheelScroll = (event) => {
-            if (event.deltaY !== 0) {
-                event.preventDefault();
-                container.scrollLeft += event.deltaY;
-            }
-        };
-        container.addEventListener('wheel', handleWheelScroll);
-        return () => container.removeEventListener('wheel', handleWheelScroll);
-    }, []);
-
-    // Hàm xử lý xóa, có thêm stopPropagation để không kích hoạt link cha
-    const handleDeleteClick = (event, attachmentId) => {
-        event.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
-        event.preventDefault();  // Ngăn hành vi mặc định của thẻ <a> nếu có
-        onDelete(attachmentId);
+  // Xử lý cuộn ngang bằng con lăn chuột (giữ lại vì nó hữu ích)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const handleWheelScroll = (event) => {
+      if (event.deltaY !== 0) {
+        event.preventDefault();
+        container.scrollLeft += event.deltaY;
+      }
     };
+    container.addEventListener("wheel", handleWheelScroll);
+    return () => container.removeEventListener("wheel", handleWheelScroll);
+  }, []);
 
-    return (
-        <div className="attachments-section">
-            <div className="attachments-header">
-                <h4 className="attachments-title">Attachment(s) ({Array.isArray(attachments) ? attachments.length : 0})</h4>
-            </div>
+  // Hàm xử lý xóa, có thêm stopPropagation để không kích hoạt link cha
+  const handleDeleteClick = (event, attachmentId) => {
+    event.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+    event.preventDefault(); // Ngăn hành vi mặc định của thẻ <a> nếu có
+    onDelete(attachmentId);
+  };
 
-            <div className="attachments-scroll-container" ref={scrollContainerRef}>
-                {Array.isArray(attachments) && attachments.length > 0 && attachments.map((att) => (
-                    <div key={att._id} className="attachment-item">
-                        {/* Lớp phủ chứa các nút hành động */}
-                        <div className="attachment-overlay">
-                            <a 
-                                href={att.url} 
-                                download={att.filename} 
-                                className="attachment-action-btn" 
-                                title="Download"
-                                onClick={(e) => e.stopPropagation()} // Ngăn click lan ra ngoài
-                            >
-                                <FaDownload />
-                            </a>
-                            <button 
-                                onClick={(e) => handleDeleteClick(e, att._id)} 
-                                className="attachment-action-btn" 
-                                title="Delete Attachment"
-                            >
-                                <FaTrash />
-                            </button>
-                        </div>
-                        
-                        {/* Link chính để mở file trong tab mới */}
-                        <a href={att.url} target="_blank" rel="noopener noreferrer" className="attachment-content-link">
-                            <div className="attachment-thumbnail">
-                                {att.filename.match(/\.(jpeg|jpg|gif|png|svg)$/i) ? (
-                                    <img src={att.url} alt={att.filename} />
-                                ) : (
-                                    <div className="file-icon">{getFileIcon(att.filename)}</div>
-                                )}
-                            </div>
-                            <div className="attachment-details">
-                                <span className="attachment-filename">{att.filename}</span>
-                                <span className="attachment-date">
-                                    {new Date(att.uploadedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            </div>
-                        </a>
-                    </div>
-                ))}
-                
-                <button className="add-attachment-button" onClick={onAdd} title="Add attachment">
-                    <FaPlus />
+  return (
+    <div className="space-y-4">
+      <div className="pb-4 border-b border-gray-200">
+        <h4 className="text-lg font-semibold text-gray-900">Attachments ({Array.isArray(attachments) ? attachments.length : 0})</h4>
+      </div>
+
+      <div className="flex items-center gap-4 overflow-x-auto pb-2" ref={scrollContainerRef}>
+        {Array.isArray(attachments) &&
+          attachments.length > 0 &&
+          attachments.map((att) => (
+            <div key={att._id} className="relative flex-shrink-0 group">
+              <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black bg-opacity-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <a
+                  href={att.url}
+                  download={att.filename}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white text-gray-900 hover:bg-gray-100 transition-colors"
+                  title="Download"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <FaDownload className="text-lg" />
+                </a>
+                <button
+                  onClick={(e) => handleDeleteClick(e, att._id)}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                  title="Delete Attachment"
+                >
+                  <FaTrash className="text-lg" />
                 </button>
+              </div>
+
+              <a
+                href={att.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow min-w-max"
+              >
+                <div className="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-lg text-2xl text-gray-600">
+                  {att.filename.match(/\.(jpeg|jpg|gif|png|svg)$/i) ? (
+                    <img src={att.url} alt={att.filename} className="w-full h-full object-cover rounded" />
+                  ) : (
+                    getFileIcon(att.filename)
+                  )}
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-medium text-gray-900 truncate max-w-[120px]">{att.filename}</span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    {new Date(att.uploadedAt).toLocaleString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              </a>
             </div>
-        </div>
-    );
+          ))}
+
+        <button
+          className="flex-shrink-0 flex items-center justify-center w-20 h-24 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-gray-400 hover:text-purple-600 text-3xl"
+          onClick={onAdd}
+          title="Add attachment"
+        >
+          <FaPlus />
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default AttachmentsTab;

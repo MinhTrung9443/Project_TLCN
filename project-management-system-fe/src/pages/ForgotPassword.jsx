@@ -1,10 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Container, Row, Col, Button, Form, Card } from "react-bootstrap";
 import authService from "../services/AuthService.js";
 import { toast } from "react-toastify";
-
-import "../styles/ForgotPassword.css";
 
 import logo from "../assets/logo.png";
 
@@ -65,104 +62,104 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="forgot-password-page">
-      <Container>
-        <Row className="justify-content-center">
-          <Col lg={6} md={8} sm={10}>
-            <Card className="forgot-password-card">
-              <Card.Body className="forgot-password-card-body">
-                <div className="text-center mb-4">
-                  <img src={logo} alt="Logo" className="forgot-password-logo" />
-                  <h2 className="forgot-password-title">{isSentRequest ? "New Password" : "Forgot Password"}</h2>
-                  <p className="forgot-password-subtitle">
-                    {isSentRequest ? "Check your email for the OTP to reset your password." : "Please enter your email to reset your password."}
-                  </p>
-                </div>
+    <div className="min-h-screen bg-light flex items-center justify-center px-4 font-sans">
+      <div className="w-full max-w-lg">
+        <div className="bg-white rounded-2xl shadow-sm p-12">
+          <div className="text-center mb-8">
+            <img src={logo} alt="Logo" className="w-32 h-auto mx-auto mb-6" />
+            <h2 className="text-4xl font-bold text-blue-900 mb-2">{isSentRequest ? "New Password" : "Forgot Password"}</h2>
+            <p className="text-lg text-gray-600 leading-relaxed">
+              {isSentRequest ? "Check your email for the OTP to reset your password." : "Please enter your email to reset your password."}
+            </p>
+          </div>
 
-                {isSentRequest === false ? (
-                  <Form onSubmit={handleForgotPassword}>
-                    <Form.Group className="forgot-password-form-group">
-                      <Form.Label className="forgot-password-label">
-                        Email <span style={{ color: "#ef4444" }}>*</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="email"
-                        name="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your.email@example.com"
-                        required
-                        className="forgot-password-form-control"
-                      />
-                    </Form.Group>
+          {isSentRequest === false ? (
+            <form onSubmit={handleForgotPassword} className="space-y-6">
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  Email <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                />
+              </div>
 
-                    <div className="d-flex justify-content-end mb-4">
-                      <Link to="/login" className="forgot-password-login-link">
-                        Back to Login
-                      </Link>
-                    </div>
+              <div className="flex justify-end">
+                <Link to="/login" className="text-purple-600 no-underline text-sm font-medium hover:text-purple-700 transition-colors">
+                  Back to Login
+                </Link>
+              </div>
 
-                    <Button type="submit" className="forgot-password-btn">
-                      Send OTP
-                    </Button>
-                  </Form>
-                ) : (
-                  <Form onSubmit={handleResetPassword}>
-                    <Form.Group className="forgot-password-form-group">
-                      <Form.Label className="forgot-password-label">
-                        OTP <span style={{ color: "#ef4444" }}>*</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="OTP"
-                        placeholder="Enter the OTP"
-                        required
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        className="forgot-password-form-control"
-                      />
-                    </Form.Group>
+              <button
+                type="submit"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                Send OTP
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  OTP <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="OTP"
+                  placeholder="Enter the OTP"
+                  required
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                />
+              </div>
 
-                    <Form.Group className="forgot-password-form-group">
-                      <Form.Label className="forgot-password-label">
-                        New Password <span style={{ color: "#ef4444" }}>*</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="password"
-                        name="newPassword"
-                        placeholder="Enter your new password"
-                        required
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="forgot-password-form-control"
-                      />
-                    </Form.Group>
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  New Password <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="newPassword"
+                  placeholder="Enter your new password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                />
+              </div>
 
-                    <Form.Group className="forgot-password-form-group">
-                      <Form.Label className="forgot-password-label">
-                        Repeat Password <span style={{ color: "#ef4444" }}>*</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="password"
-                        name="repeatPassword"
-                        placeholder="Repeat your new password"
-                        required
-                        value={repeatPassword}
-                        onChange={(e) => setRepeatPassword(e.target.value)}
-                        className="forgot-password-form-control"
-                      />
-                    </Form.Group>
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  Repeat Password <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="repeatPassword"
+                  placeholder="Repeat your new password"
+                  required
+                  value={repeatPassword}
+                  onChange={(e) => setRepeatPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                />
+              </div>
 
-                    <Button type="submit" className="forgot-password-btn">
-                      Reset Password
-                    </Button>
-                  </Form>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+              <button
+                type="submit"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                Reset Password
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

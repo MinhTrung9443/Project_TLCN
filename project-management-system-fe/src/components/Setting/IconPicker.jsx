@@ -1,20 +1,21 @@
 import React from "react";
-import "../../styles/Setting/IconPicker.css";
 
 const IconPicker = ({ icons, selectedIcon, onSelect }) => {
   if (!icons || icons.length === 0) return null;
 
   return (
-    <div className="icon-picker-modern">
+    <div className="grid grid-cols-6 gap-2">
       {icons.map((icon) => (
         <button
           key={icon.name}
           type="button"
-          className={`icon-option ${selectedIcon === icon.name ? "selected" : ""}`}
+          className={`p-2 rounded-lg border-2 transition-all hover:scale-110 ${
+            selectedIcon === icon.name ? "border-purple-600 bg-purple-50 shadow-md" : "border-gray-200 hover:border-purple-300"
+          }`}
           onClick={() => onSelect(icon.name)}
           title={icon.name}
         >
-          <div className="icon-badge" style={{ backgroundColor: icon.color }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: icon.color }}>
             {icon.component}
           </div>
         </button>

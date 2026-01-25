@@ -1,13 +1,9 @@
-// src/components/layout/Header.jsx
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import NotificationBell from "../common/NotificationBell";
-import { FaUser, FaSignOutAlt, FaBars } from "react-icons/fa";
-import logo from "../../assets/logo.png";
-import "../../styles/layout/Header.css";
-import zentaskLogo from "../../assets/zentask.jpg"; 
+import { FaUser, FaSignOutAlt } from "react-icons/fa";
+import zentaskLogo from "../../assets/zentask.jpg";
 
 const Header = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -23,12 +19,10 @@ const Header = () => {
   };
 
   function getAvatarInitial(name) {
-    // Kiểm tra xem 'name' có phải là một chuỗi ký tự và có độ dài > 0 không
     if (typeof name === "string" && name.length > 0) {
       return name.charAt(0).toUpperCase();
     }
-    // Nếu không, trả về một giá trị mặc định để không bị crash
-    return "?"; // hoặc return một icon mặc định
+    return "?";
   }
 
   const getAvatarUrl = () => {
@@ -51,80 +45,64 @@ const Header = () => {
   }, [dropdownRef]);
 
   return (
-    <header className="header">
-      <div className="header-content" style={{ justifyContent: "space-between" }}>
-        <h1 style={{ margin: 0, marginLeft: "1rem" }}>
-        <Link 
-          to="/app/dashboard" 
-          className="header-title-link"
-          style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: "10px", 
-            textDecoration: "none",
-            color: "inherit",
-            fontSize: "1.5rem", 
-            fontWeight: "700"
-          }}
-        >
-          <img 
-            src={zentaskLogo} 
-            alt="Zentask Logo" 
-            style={{ 
-              height: "40px",  // Điều chỉnh chiều cao logo cho phù hợp
-              width: "auto"    // Giữ tỷ lệ ảnh
-            }} 
-          />
-          <span>ZENTASK</span>
-        </Link>
-      </h1>
-        <nav>
+    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+      <div className="flex justify-between items-center px-6 h-16 max-w-full">
+        <h1 className="m-0">
+          <Link
+            to="/app/dashboard"
+            className="flex items-center gap-2.5 no-underline text-gray-900 text-xl font-bold hover:text-purple-600 transition-colors"
+          >
+            <img src={zentaskLogo} alt="Zentask Logo" className="h-10 w-auto" />
+            <span>ZENTASK</span>
+          </Link>
+        </h1>
+
+        <nav className="flex items-center gap-4">
           {isAuthenticated ? (
-            <div className="profile-menu" ref={dropdownRef}>
+            <div className="flex items-center gap-6" ref={dropdownRef}>
               <NotificationBell />
-              <div className="avatar" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                {getAvatarUrl() ? (
-                  <img
-                    src={getAvatarUrl()}
-                    alt="Avatar"
-                    className="avatar-img"
-                    style={{
-                      width: "45px",
-                      height: "45px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                    }}
-                  />
-                ) : (
-                  getAvatarInitial(user.fullname)
+
+              <div className="relative" onClick={() => setDropdownOpen(!dropdownOpen)}>
+                <button className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer border-2 border-transparent hover:border-purple-200">
+                  {getAvatarUrl() ? (
+                    <img src={getAvatarUrl()} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-semibold text-gray-700">{getAvatarInitial(user.fullname)}</span>
+                  )}
+                </button>
+
+                {dropdownOpen && user && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <div className="font-semibold text-gray-900">{user.fullname}</div>
+                      <div className="text-sm text-gray-500">{user.email}</div>
+                    </div>
+                    <button
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                      onClick={() => {
+                        navigate("/app/my-profile");
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      <FaUser className="text-purple-600" />
+                      My Profile
+                    </button>
+                    <button
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors border-t border-gray-100"
+                      onClick={handleLogout}
+                    >
+                      <FaSignOutAlt className="text-red-600" />
+                      Log Out
+                    </button>
+                  </div>
                 )}
               </div>
-
-              {dropdownOpen && user && (
-                <div className="dropdown-content">
-                  <div className="dropdown-user-info">
-                    <strong>{user.fullname}</strong>
-                    <span>{user.email}</span>
-                  </div>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => {
-                      navigate("/app/my-profile");
-                      setDropdownOpen(false);
-                    }}
-                  >
-                    <FaUser className="dropdown-icon" />
-                    My Profile
-                  </button>
-                  <button className="dropdown-item" onClick={handleLogout}>
-                    <FaSignOutAlt className="dropdown-icon" />
-                    Log Out
-                  </button>
-                </div>
-              )}
             </div>
           ) : (
-            <Link to="/login" className="login-button">
+            <Link
+              to="/login"
+              className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors no-underline"
+            >
               LOGIN
             </Link>
           )}

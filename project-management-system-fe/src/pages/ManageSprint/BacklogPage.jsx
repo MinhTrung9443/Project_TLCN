@@ -11,7 +11,7 @@ import ConfirmationModal from "../../components/common/ConfirmationModal";
 import SprintEditModal from "../../components/sprint/SprintEditModal";
 import CreateTaskModal from "../../components/task/CreateTaskModal";
 import { getProjectByKey } from "../../services/projectService";
-import "../../styles/pages/ManageSprint/BacklogPage.css";
+
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
 

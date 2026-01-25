@@ -19,43 +19,44 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
         canDrop: monitor.canDrop(),
       }),
     }),
-    [status, workflow]
+    [status, workflow],
   );
 
-  const getCategoryClass = () => {
+  const getCategoryColor = () => {
     switch (status.category) {
       case "To Do":
-        return "todo";
+        return "from-gray-500 to-gray-600";
       case "In Progress":
-        return "inprogress";
+        return "from-blue-500 to-blue-600";
       case "Done":
-        return "done";
+        return "from-green-500 to-green-600";
       default:
-        return status.name.toLowerCase().replace(" ", "");
+        return "from-purple-500 to-purple-600";
     }
   };
 
   return (
-    <div className="board-column" ref={drop}>
-      <div className={`board-column-header board-column-header-${getCategoryClass()}`}>
-        <div className="header-content">
-          <span className="status-name">{status.name}</span>
-          <span className="status-category">({status.category})</span>
+    <div className="flex flex-col bg-gray-50 rounded-lg border border-gray-200 min-w-[300px]" ref={drop}>
+      <div className={`bg-gradient-to-r ${getCategoryColor()} text-white px-4 py-3 rounded-t-lg`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{status.name}</span>
+            <span className="text-sm opacity-90">({status.category})</span>
+          </div>
+          <span className="bg-white bg-opacity-20 px-2 py-1 rounded text-sm font-medium">{tasks.length}</span>
         </div>
-        <span className="board-column-count">{tasks.length}</span>
       </div>
       <div
-        className={`board-column-body ${isOver && canDrop ? "drop-over" : ""} ${isOver && !canDrop ? "drop-not-allowed" : ""}`}
-        style={{ minHeight: "400px" }}
+        className={`flex-1 p-3 min-h-[400px] ${isOver && canDrop ? "bg-purple-50 border-2 border-purple-300" : ""} ${isOver && !canDrop ? "bg-red-50 border-2 border-red-300" : ""}`}
       >
         {isOver && !canDrop && (
-          <div className="drop-blocked-indicator">
-            <span className="material-symbols-outlined">block</span>
-            <span>Transition not allowed</span>
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-red-600">
+            <span className="material-symbols-outlined text-4xl">block</span>
+            <span className="font-medium">Transition not allowed</span>
           </div>
         )}
         {tasks.length === 0 ? (
-          <div className="board-column-empty">Drop tasks here</div>
+          <div className="flex items-center justify-center py-8 text-gray-400 text-sm">Drop tasks here</div>
         ) : (
           tasks.map((task) => <TaskCard key={task._id} task={task} />)
         )}

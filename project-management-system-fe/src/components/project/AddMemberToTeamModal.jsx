@@ -3,7 +3,6 @@ import Select from "react-select";
 import { toast } from "react-toastify";
 import userService from "../../services/userService";
 import { addMemberToTeamInProject } from "../../services/projectService";
-import "../../styles/components/AddMemberToTeamModal.css";
 
 const AddMemberToTeamModal = ({ isOpen, onClose, projectKey, team, onMemberAdded, existingMemberIds = [] }) => {
   const [allUsers, setAllUsers] = useState([]);

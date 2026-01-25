@@ -13,7 +13,6 @@ import SprintSelector from "../../components/sprint/SprintSelector";
 import { isTransitionAllowed, getTransitionErrorMessage } from "../../utils/workflowTransitions";
 import { useAuth } from "../../contexts/AuthContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageSprint/ActiveSprintPage.css";
 
 const ActiveSprintPage = () => {
   const { projectKey } = useParams();

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import performanceService from "../../services/performanceService";
 import { toast } from "react-toastify";
-import "../../styles/components/PerformancePanel.css";
 
 const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStartDate, defaultEndDate, onClose }) => {
   const [loading, setLoading] = useState(true);

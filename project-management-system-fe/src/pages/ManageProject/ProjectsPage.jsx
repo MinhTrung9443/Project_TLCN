@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Form, Table, Badge } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { getProjects, getArchivedProjects, archiveProjectByKey, restoreProject, permanentlyDeleteProject } from "../../services/projectService";
@@ -9,7 +8,6 @@ import CreateProjectModal from "../../components/project/CreateProjectModal";
 import ProjectActionsMenu from "../../components/project/ProjectActionsMenu";
 import ArchivedProjectActionsMenu from "../../components/project/ArchivedProjectActionsMenu";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageProject/ProjectsPage.css";
 
 const ProjectsPage = () => {
   const { user } = useAuth();
@@ -202,33 +200,48 @@ const ProjectsPage = () => {
   };
 
   const renderFilters = () => (
-    <div className="projects-filters">
-      <Form.Select className="filter-select" value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
+    <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-lg border border-gray-200">
+      <select
+        value={filters.type}
+        onChange={(e) => handleFilterChange("type", e.target.value)}
+        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
         <option value="">All Types</option>
         <option value="Scrum">Scrum</option>
         <option value="Kanban">Kanban</option>
-      </Form.Select>
+      </select>
 
-      <Form.Select className="filter-select" value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
+      <select
+        value={filters.projectManager}
+        onChange={(e) => handleFilterChange("projectManager", e.target.value)}
+        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
         <option value="">All Project Managers</option>
         {getProjectManagers().map((pm) => (
           <option key={pm._id} value={pm._id}>
             {pm.fullname}
           </option>
         ))}
-      </Form.Select>
+      </select>
 
       {view === "active" && (
-        <Form.Select className="filter-select" value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
+        <select
+          value={filters.status}
+          onChange={(e) => handleFilterChange("status", e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
           <option value="">All Statuses</option>
           <option value="active">Active</option>
           <option value="completed">Completed</option>
-        </Form.Select>
+        </select>
       )}
 
-      <Button className="btn-clear-filters" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
+      <button
+        onClick={() => setFilters({ type: "", projectManager: "", status: "" })}
+        className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors font-medium"
+      >
         Clear Filters
-      </Button>
+      </button>
     </div>
   );
 
@@ -236,28 +249,38 @@ const ProjectsPage = () => {
     const paginatedProjects = getPaginatedProjects();
 
     return paginatedProjects.map((project) => (
-      <tr key={project._id} onClick={() => handleProjectSelect(project)} style={{ cursor: view === "active" ? "pointer" : "default" }}>
-        <td>
+      <tr
+        key={project._id}
+        className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+        style={{ cursor: view === "active" ? "pointer" : "default" }}
+      >
+        <td className="px-6 py-4">
           <a
             href="#"
             onClick={(e) => {
               e.preventDefault();
               handleProjectSelect(project);
             }}
-            className="project-name-link"
+            className="text-purple-600 hover:text-purple-700 font-medium no-underline"
           >
             {project.name}
           </a>
         </td>
-        <td>{project.key}</td>
-        <td>{project.type}</td>
-        <td>{project.projectManager?.fullname || "N/A"}</td>
-        <td>{getTotalMembers(project)}</td>
-        <td>{formatDate(view === "active" ? project.createdAt : project.deletedAt)}</td>
-        <td>
-          <Badge className={view === "active" ? "status-active" : "status-archived"}>{view === "active" ? project.status : "Archived"}</Badge>
+        <td className="px-6 py-4 text-sm text-gray-700">{project.key}</td>
+        <td className="px-6 py-4 text-sm text-gray-700">{project.type}</td>
+        <td className="px-6 py-4 text-sm text-gray-700">{project.projectManager?.fullname || "N/A"}</td>
+        <td className="px-6 py-4 text-sm text-gray-700">{getTotalMembers(project)}</td>
+        <td className="px-6 py-4 text-sm text-gray-700">{formatDate(view === "active" ? project.createdAt : project.deletedAt)}</td>
+        <td className="px-6 py-4">
+          <span
+            className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+              view === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+            }`}
+          >
+            {view === "active" ? project.status : "Archived"}
+          </span>
         </td>
-        <td>
+        <td className="px-6 py-4">
           {view === "active" ? (
             <ProjectActionsMenu project={project} onDelete={openArchiveModal} />
           ) : (
@@ -281,98 +304,117 @@ const ProjectsPage = () => {
         }"? This action cannot be undone.`}
       />
 
-      <div className="projects-page-container">
-        <div className="projects-hero">
-          <div className="hero-content">
-            <div className="hero-badge">
-              <span className="material-symbols-outlined">folder_open</span>
-              Project Management
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white py-8 px-6">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2 text-purple-100">
+                <span className="material-symbols-outlined">folder_open</span>
+                <span className="text-sm font-medium">Project Management</span>
+              </div>
+              <h1 className="text-4xl font-bold mb-1">Projects</h1>
+              <p className="text-purple-100">Manage and organize all your projects in one place</p>
             </div>
-            <h1 className="hero-title">Projects</h1>
-            <p className="hero-subtitle">Manage and organize all your projects in one place</p>
+            {view === "active" && user?.role === "admin" && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 bg-white text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-lg font-semibold transition-colors"
+              >
+                <span className="material-symbols-outlined">add</span>
+                Create Project
+              </button>
+            )}
           </div>
-          {view === "active" && user?.role === "admin" && (
-            <button className="btn-create-project" onClick={() => setIsModalOpen(true)}>
-              <span className="material-symbols-outlined">add</span>
-              Create Project
-            </button>
-          )}
         </div>
 
-        <div className="projects-content-wrapper">
-          <div className="projects-controls">
-            <div className="view-toggle">
-              <Button className={`toggle-btn ${view === "active" ? "active" : ""}`} onClick={() => setView("active")} variant="outline-primary">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setView("active")}
+                className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                  view === "active" ? "bg-purple-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                }`}
+              >
                 All Projects
-              </Button>
+              </button>
               {user?.role === "admin" && (
-                <Button className={`toggle-btn ${view === "archived" ? "active" : ""}`} onClick={() => setView("archived")} variant="outline-primary">
-                  Delete Project
-                </Button>
+                <button
+                  onClick={() => setView("archived")}
+                  className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                    view === "archived" ? "bg-purple-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  Archived Projects
+                </button>
               )}
             </div>
-            <Form.Control
+            <input
               type="search"
               placeholder="Search by name or key..."
-              className="search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 w-full md:w-80"
             />
           </div>
 
           {renderFilters()}
 
           {loading ? (
-            <div className="loading-container">Loading...</div>
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500 text-lg">Loading...</div>
+            </div>
           ) : (
-            <div className="table-wrapper">
-              <Table className="projects-table">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+              <table className="w-full">
                 <thead>
-                  <tr>
-                    <th>Project</th>
-                    <th>Key</th>
-                    <th>Type</th>
-                    <th>Project Manager</th>
-                    <th>Members</th>
-                    <th>{view === "active" ? "Created Date" : "Archived Date"}</th>
-                    <th>Status</th>
-                    <th></th>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Project</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Key</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Type</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Project Manager</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Members</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                      {view === "active" ? "Created Date" : "Archived Date"}
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {renderProjects().length > 0 ? (
                     renderProjects()
                   ) : (
-                    <tr className="no-projects-message">
-                      <td colSpan="8">No projects found.</td>
+                    <tr>
+                      <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                        No projects found.
+                      </td>
                     </tr>
                   )}
                 </tbody>
-              </Table>
+              </table>
             </div>
           )}
 
           {!loading && getTotalPages() > 1 && (
-            <div className="pagination-container">
-              <Button
-                className="pagination-btn"
+            <div className="flex items-center justify-between mt-6">
+              <button
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                variant="outline-primary"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Previous
-              </Button>
-              <div className="pagination-info">
+              </button>
+              <div className="text-sm text-gray-600">
                 Page {currentPage} of {getTotalPages()} ({getFilteredProjects().length} total projects)
               </div>
-              <Button
-                className="pagination-btn"
+              <button
                 onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
                 disabled={currentPage === getTotalPages()}
-                variant="outline-primary"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Next
-              </Button>
+              </button>
             </div>
           )}
         </div>

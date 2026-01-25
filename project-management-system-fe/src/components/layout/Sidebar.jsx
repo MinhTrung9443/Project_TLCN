@@ -1,7 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { ProjectContext } from "../../contexts/ProjectContext";
-import "../../styles/layout/Sidebar.css";
 import { useAuth } from "../../contexts/AuthContext";
 import { getProjects } from "../../services/projectService";
 
@@ -34,7 +33,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         const projects = res.data || [];
         const hasPermission = projects.some((project) => {
           const isPM = project.members?.some(
-            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
           );
           const isLeader = project.teams?.some((team) => team.leaderId._id === user._id || team.leaderId === user._id);
           return isPM || isLeader;

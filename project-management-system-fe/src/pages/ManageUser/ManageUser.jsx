@@ -4,7 +4,6 @@ import userService from "../../services/userService";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageUser/ManageUser.css";
 
 const Component = () => {
   const navigate = useNavigate();

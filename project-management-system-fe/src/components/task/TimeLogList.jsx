@@ -3,7 +3,6 @@ import timeLogService from "../../services/timeLogService";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
 import ConfirmationModal from "../common/ConfirmationModal";
-import "../../styles/components/task/TimeLogList.css";
 
 const TimeLogList = ({ taskId, onTimeLogsUpdate }) => {
   const [timeLogs, setTimeLogs] = useState([]);
@@ -80,75 +79,56 @@ const TimeLogList = ({ taskId, onTimeLogsUpdate }) => {
   };
 
   if (loading) {
-    return (
-      <div className="time-log-loading">
-        <div className="spinner"></div>
-        <span>Loading time logs...</span>
-      </div>
-    );
+    return <div className="flex items-center justify-center py-6 text-gray-500">Loading time logs...</div>;
   }
 
   if (timeLogs.length === 0) {
-    return (
-      <div className="time-log-empty">
-        <span className="material-symbols-outlined">schedule</span>
-        <p>No time logged yet</p>
-        <small>Click "Log Time" to start tracking your work</small>
-      </div>
-    );
+    return <div className="text-center py-6 text-gray-500">No time logs yet</div>;
   }
 
   return (
-    <div className="time-log-list">
-      <div className="time-log-header">
-        <h4>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
           <span className="material-symbols-outlined">history</span>
           Work Log ({timeLogs.length})
         </h4>
-        <span className="total-time">Total: {formatDuration(timeLogs.reduce((sum, log) => sum + log.timeSpent, 0))}</span>
+        <span className="text-sm text-gray-600">Total: {formatDuration(timeLogs.reduce((sum, log) => sum + log.timeSpent, 0))}</span>
       </div>
 
-      <div className="time-log-items">
-        {timeLogs.map((log) => (
-          <div key={log._id} className="time-log-item">
-            <div className="time-log-avatar">
-              {log.userId?.avatar ? (
-                <img src={log.userId.avatar} alt={log.userId.fullname} />
-              ) : (
-                <span className="material-symbols-outlined">person</span>
-              )}
-            </div>
-
-            <div className="time-log-content">
-              <div className="time-log-meta">
-                <span className="time-log-author">{log.userId?.fullname || "Unknown"}</span>
-                <span className="time-log-duration">
-                  <span className="material-symbols-outlined">schedule</span>
-                  {formatDuration(log.timeSpent)}
-                </span>
-                <span className="time-log-date">{formatDate(log.createdAt)}</span>
-              </div>
-
-              <div className="time-log-comment">{log.comment}</div>
-
-              {user?._id === log.userId?._id && (
-                <div className="time-log-actions">
-                  <button
-                    className="time-log-delete-btn"
-                    onClick={() => {
-                      setDeleteTimeLogId(log._id);
-                      setIsDeleteModalOpen(true);
-                    }}
-                    title="Delete"
-                  >
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
-              )}
-            </div>
+      {timeLogs.map((log) => (
+        <div key={log._id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+          <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+            {(log.userId?.fullname || "U")[0]}
           </div>
-        ))}
-      </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="text-sm font-semibold text-gray-900">{log.userId?.fullname || "Unknown"}</span>
+              <span className="text-xs text-gray-600 flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">schedule</span>
+                {formatDuration(log.timeSpent)}
+              </span>
+              <span className="text-xs text-gray-500">{formatDate(log.createdAt)}</span>
+            </div>
+
+            <div className="text-sm text-gray-700 break-words">{log.comment}</div>
+          </div>
+
+          {user?._id === log.userId?._id && (
+            <button
+              className="p-2 text-gray-600 hover:text-red-600 transition-colors flex-shrink-0"
+              onClick={() => {
+                setDeleteTimeLogId(log._id);
+                setIsDeleteModalOpen(true);
+              }}
+              title="Delete"
+            >
+              <span className="material-symbols-outlined text-sm">delete</span>
+            </button>
+          )}
+        </div>
+      ))}
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

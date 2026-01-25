@@ -12,7 +12,6 @@ import ActionsMenu from "../common/ActionsMenu";
 import CommentsTab from "./CommentsTab";
 import HistoryTab from "./HistoryTab";
 import ConfirmationModal from "../common/ConfirmationModal";
-import "../../styles/components/TaskDetailPanel.css";
 import { IconComponent } from "../common/IconPicker";
 import TaskDetailsTab from "./TaskDetailsTab";
 const PREDEFINED_TASKTYPE_ICONS = [
@@ -400,24 +399,28 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
   if (!task) return null;
 
   return (
-    <div className={`task-detail-panel ${task ? "open" : ""}`}>
+    <div className={`flex flex-col bg-white h-full ${task ? "" : "hidden"}`}>
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
-      <header className="panel-header">
-        <div className="panel-header-left">
-          <div className="task-key-container">
+      <header className="flex items-start gap-4 p-6 border-b border-gray-200 bg-gray-50">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-3">
             {typeIconInfo && (
-              <span className="task-type-icon-panel" style={{ backgroundColor: typeIconInfo.color }} title={editableTask.taskTypeId.name}>
+              <span
+                className="w-8 h-8 rounded flex items-center justify-center text-white text-lg"
+                style={{ backgroundColor: typeIconInfo.color }}
+                title={editableTask.taskTypeId.name}
+              >
                 <IconComponent name={editableTask.taskTypeId.icon} />
               </span>
             )}
-            <a href={`/app/task/${editableTask.key}`} className="task-key-display">
+            <a href={`/app/task/${editableTask.key}`} className="text-lg font-semibold text-purple-600 hover:text-purple-700 hover:underline">
               {editableTask.key}
             </a>
           </div>
 
-          <div className="editable-task-name-wrapper" data-replicated-value={editableTask.name}>
+          <div className="relative" data-replicated-value={editableTask.name}>
             <textarea
-              className="editable-task-name"
+              className="w-full text-xl font-semibold text-gray-900 border-none outline-none resize-none bg-transparent focus:ring-2 focus:ring-purple-500 rounded px-2 py-1"
               value={editableTask.name}
               onChange={(e) => setEditableTask((prev) => ({ ...prev, name: e.target.value }))}
               onBlur={() => handleUpdate("name", editableTask.name)}
@@ -433,29 +436,38 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
             />
           </div>
         </div>
-        <div className="panel-header-right">
+        <div className="flex items-start gap-2">
           <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
           {showCloseButton && (
-            <button onClick={onClose} className="close-btn">
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-3xl font-light leading-none p-1 hover:bg-gray-200 rounded">
               &times;
             </button>
           )}
         </div>
       </header>
-      <main className="panel-body">
-        <div className="panel-tabs">
-          <button className={`tab-btn ${activeTab === "Details" ? "active" : ""}`} onClick={() => setActiveTab("Details")}>
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex border-b border-gray-200 px-6 bg-white">
+          <button
+            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Details" ? "border-purple-600 text-purple-600" : "border-transparent text-gray-600 hover:text-gray-900"}`}
+            onClick={() => setActiveTab("Details")}
+          >
             Details
           </button>
-          <button className={`tab-btn ${activeTab === "Comments" ? "active" : ""}`} onClick={() => setActiveTab("Comments")}>
+          <button
+            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Comments" ? "border-purple-600 text-purple-600" : "border-transparent text-gray-600 hover:text-gray-900"}`}
+            onClick={() => setActiveTab("Comments")}
+          >
             Comments
           </button>
-          <button className={`tab-btn ${activeTab === "History" ? "active" : ""}`} onClick={() => setActiveTab("History")}>
+          <button
+            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "History" ? "border-purple-600 text-purple-600" : "border-transparent text-gray-600 hover:text-gray-900"}`}
+            onClick={() => setActiveTab("History")}
+          >
             History
           </button>
         </div>
 
-        <div className="panel-tab-content">
+        <div className="flex-1 overflow-y-auto p-6">
           {activeTab === "Details" && (
             <TaskDetailsTab
               editableTask={editableTask}

@@ -1,5 +1,4 @@
 import React from "react";
-import "../../styles/Setting/SettingMenu.css";
 
 const SettingMenu = ({ activeTab, onTabChange }) => {
   const menuItems = [
@@ -9,16 +8,18 @@ const SettingMenu = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <div className="setting-menu-wrapper">
-      <nav className="setting-tabs-nav">
+    <div className="bg-white rounded-xl shadow-sm p-4 h-fit sticky top-24">
+      <nav className="space-y-2">
         {menuItems.map((item) => (
           <button
             key={item.key}
-            className={`tab-nav-item ${activeTab.toLowerCase() === item.key.toLowerCase() ? "active" : ""}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab.toLowerCase() === item.key.toLowerCase() ? "bg-purple-100 text-purple-600" : "text-gray-700 hover:bg-gray-100"
+            }`}
             onClick={() => onTabChange(item.key)}
           >
             <span className="material-symbols-outlined">{item.icon}</span>
-            <span className="tab-label">{item.label}</span>
+            <span>{item.label}</span>
           </button>
         ))}
       </nav>

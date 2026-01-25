@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { getProjects } from "../../services/projectService";
 import { groupService } from "../../services/groupService";
 import userService from "../../services/userService";
-import "../../styles/components/gantt/GanttFilterPanel.css";
 
 // Handle date range filter
 // Đặt function này sau import, trong component
@@ -153,72 +152,86 @@ const GanttFilterPanel = ({ filter, setFilter, showFilterPanel, filterRef }) => 
   if (!showFilterPanel) return null;
 
   return (
-    <div className="gantt-filter-panel" ref={filterRef}>
-      <div className="gantt-filter-panel-header">
-        <h3>
+    <div
+      className="fixed top-24 left-6 w-80 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[calc(100vh-120px)] overflow-y-auto z-40"
+      ref={filterRef}
+    >
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
+        <h3 className="flex items-center gap-2 font-semibold text-gray-900">
           <span className="material-symbols-outlined">filter_alt</span>
           Filter
         </h3>
-        <button className="gantt-filter-clear-btn" onClick={handleClearAll}>
+        <button
+          className="text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded px-3 py-1 transition-colors"
+          onClick={handleClearAll}
+        >
           Clear All
         </button>
       </div>
 
       {loading ? (
-        <div className="gantt-filter-loading">
-          <div className="spinner"></div>
-          <span>Loading filters...</span>
+        <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+          <div className="w-6 h-6 border-3 border-purple-300 border-t-white rounded-full animate-spin mb-2"></div>
+          <span className="text-sm">Loading filters...</span>
         </div>
       ) : (
-        <div className="gantt-filter-panel-content">
+        <div className="space-y-4 p-4">
           {/* Date Range Section */}
-          <div className="gantt-filter-section">
-            <div className="gantt-filter-section-header">
-              <h4>Date Range</h4>
+          <div className="space-y-2 pb-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-gray-900 text-sm">Date Range</h4>
             </div>
-            <div className="gantt-filter-list gantt-filter-list-row">
+            <div className="flex items-center gap-2">
               <input
                 type="date"
                 name="startDate"
                 value={filter.startDate || ""}
                 onChange={handleDateChange}
-                className="gantt-filter-date"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Start date"
               />
-              <span className="gantt-filter-date-to">to</span>
+              <span className="text-gray-500 text-sm font-medium">to</span>
               <input
                 type="date"
                 name="endDate"
                 value={filter.endDate || ""}
                 onChange={handleDateChange}
-                className="gantt-filter-date"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="End date"
               />
             </div>
           </div>
           {/* Projects Section */}
-          <div className="gantt-filter-section">
-            <div className="gantt-filter-section-header">
-              <h4>
+          <div className="space-y-2 pb-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-gray-900 text-sm">
                 Projects ({filter.projectIds.length}/{projects.length})
               </h4>
-              <button className="gantt-filter-select-all" onClick={handleSelectAllProjects}>
+              <button
+                className="text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded px-2 py-1 transition-colors"
+                onClick={handleSelectAllProjects}
+              >
                 {filter.projectIds.length === projects.length ? "Deselect All" : "Select All"}
               </button>
             </div>
-            <div className="gantt-filter-list">
+            <div className="space-y-1">
               {projects.length === 0 ? (
-                <div className="gantt-filter-empty">No projects found</div>
+                <div className="text-sm text-gray-500 py-2">No projects found</div>
               ) : (
                 projects.map((project) => (
-                  <label key={project._id} className="gantt-filter-item">
-                    <input type="checkbox" checked={filter.projectIds.includes(project._id)} onChange={() => handleProjectToggle(project._id)} />
-                    <span className="gantt-filter-item-icon project-icon">
-                      <span className="material-symbols-outlined">folder</span>
+                  <label key={project._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filter.projectIds.includes(project._id)}
+                      onChange={() => handleProjectToggle(project._id)}
+                      className="w-4 h-4 rounded accent-purple-600"
+                    />
+                    <span className="flex items-center justify-center w-6 h-6 text-gray-600">
+                      <span className="material-symbols-outlined text-lg">folder</span>
                     </span>
-                    <span className="gantt-filter-item-text">
-                      <span className="gantt-filter-item-name">{project.name}</span>
-                      <span className="gantt-filter-item-key">{project.key}</span>
+                    <span className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">{project.name}</div>
+                      <div className="text-xs text-gray-500">{project.key}</div>
                     </span>
                   </label>
                 ))
@@ -227,28 +240,34 @@ const GanttFilterPanel = ({ filter, setFilter, showFilterPanel, filterRef }) => 
           </div>
 
           {/* Groups Section */}
-          <div className="gantt-filter-section">
-            <div className="gantt-filter-section-header">
-              <h4>
+          <div className="space-y-2 pb-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-gray-900 text-sm">
                 Groups ({filter.groupIds.length}/{groups.length})
               </h4>
-              <button className="gantt-filter-select-all" onClick={handleSelectAllGroups}>
+              <button
+                className="text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded px-2 py-1 transition-colors"
+                onClick={handleSelectAllGroups}
+              >
                 {filter.groupIds.length === groups.length ? "Deselect All" : "Select All"}
               </button>
             </div>
-            <div className="gantt-filter-list">
+            <div className="space-y-1">
               {groups.length === 0 ? (
-                <div className="gantt-filter-empty">No groups found</div>
+                <div className="text-sm text-gray-500 py-2">No groups found</div>
               ) : (
                 groups.map((group) => (
-                  <label key={group._id} className="gantt-filter-item">
-                    <input type="checkbox" checked={filter.groupIds.includes(group._id)} onChange={() => handleGroupToggle(group._id)} />
-                    <span className="gantt-filter-item-icon group-icon">
-                      <span className="material-symbols-outlined">group</span>
+                  <label key={group._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filter.groupIds.includes(group._id)}
+                      onChange={() => handleGroupToggle(group._id)}
+                      className="w-4 h-4 rounded accent-purple-600"
+                    />
+                    <span className="flex items-center justify-center w-6 h-6 text-purple-600">
+                      <span className="material-symbols-outlined text-lg">group</span>
                     </span>
-                    <span className="gantt-filter-item-text">
-                      <span className="gantt-filter-item-name">{group.name}</span>
-                    </span>
+                    <span className="text-sm font-medium text-gray-900 flex-1">{group.name}</span>
                   </label>
                 ))
               )}
@@ -256,42 +275,53 @@ const GanttFilterPanel = ({ filter, setFilter, showFilterPanel, filterRef }) => 
           </div>
 
           {/* Users Section */}
-          <div className="gantt-filter-section">
-            <div className="gantt-filter-section-header">
-              <h4>
+          <div className="space-y-2 pb-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-gray-900 text-sm">
                 Assignees ({filter.assigneeIds.length}/{users.length})
               </h4>
-              <button className="gantt-filter-select-all" onClick={handleSelectAllUsers}>
+              <button
+                className="text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded px-2 py-1 transition-colors"
+                onClick={handleSelectAllUsers}
+              >
                 {filter.assigneeIds.length === users.length ? "Deselect All" : "Select All"}
               </button>
             </div>
-            <div className="gantt-filter-list">
-              <label className="gantt-filter-item gantt-filter-item-special">
-                <input type="checkbox" checked={filter.includeUnassigned} onChange={handleUnassignedToggle} />
-                <span className="gantt-filter-item-icon unassigned-icon">
-                  <span className="material-symbols-outlined">person_off</span>
+            <div className="space-y-1">
+              <label className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filter.includeUnassigned}
+                  onChange={handleUnassignedToggle}
+                  className="w-4 h-4 rounded accent-purple-600"
+                />
+                <span className="flex items-center justify-center w-6 h-6 text-gray-400">
+                  <span className="material-symbols-outlined text-lg">person_off</span>
                 </span>
-                <span className="gantt-filter-item-text">
-                  <span className="gantt-filter-item-name">Unassigned Tasks</span>
-                </span>
+                <span className="text-sm font-medium text-gray-900 flex-1">Unassigned Tasks</span>
               </label>
 
               {users.length === 0 ? (
-                <div className="gantt-filter-empty">No users found</div>
+                <div className="text-sm text-gray-500 py-2">No users found</div>
               ) : (
                 users.map((user) => (
-                  <label key={user._id} className="gantt-filter-item">
-                    <input type="checkbox" checked={filter.assigneeIds.includes(user._id)} onChange={() => handleUserToggle(user._id)} />
+                  <label key={user._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filter.assigneeIds.includes(user._id)}
+                      onChange={() => handleUserToggle(user._id)}
+                      className="w-4 h-4 rounded accent-purple-600"
+                    />
                     {user.avatar ? (
-                      <img src={user.avatar} alt={user.fullname} className="gantt-filter-item-avatar" />
+                      <img src={user.avatar} alt={user.fullname} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                     ) : (
-                      <span className="gantt-filter-item-icon user-icon">
-                        <span className="material-symbols-outlined">person</span>
+                      <span className="flex items-center justify-center w-6 h-6 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold flex-shrink-0">
+                        {user.fullname?.charAt(0).toUpperCase()}
                       </span>
                     )}
-                    <span className="gantt-filter-item-text">
-                      <span className="gantt-filter-item-name">{user.fullname}</span>
-                      <span className="gantt-filter-item-email">{user.email}</span>
+                    <span className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">{user.fullname}</div>
+                      <div className="text-xs text-gray-500 truncate">{user.email}</div>
                     </span>
                   </label>
                 ))

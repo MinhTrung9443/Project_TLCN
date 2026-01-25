@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { FaTimes } from "react-icons/fa";
 import Select from "react-select";
-import "../../styles/components/FilterBar.css";
 
 // Component này giờ nhận props là dữ liệu đã được định dạng
 const FilterBar = ({ onApplyFilters, projects, users, statuses = [] }) => {
@@ -66,7 +65,7 @@ const FilterBar = ({ onApplyFilters, projects, users, statuses = [] }) => {
             options={filter.options}
             onChange={(selected) => handleFilterValueChange(filter.value, selected)}
             placeholder={`Select ${filter.label}...`}
-            className="filter-select-input"
+            className="flex-1"
             classNamePrefix="react-select"
           />
         );
@@ -76,33 +75,9 @@ const FilterBar = ({ onApplyFilters, projects, users, statuses = [] }) => {
   };
 
   return (
-    <div className="advanced-filter-bar">
-      <div className="active-filters-container">
+    <div className="flex flex-col gap-4 p-4 bg-white rounded-lg border border-gray-200">
+      <div className="flex flex-wrap gap-3">
         {activeFilters.map((filter) => (
-          <div key={filter.value} className="filter-pill">
-            <span className="filter-pill-label">{filter.label}:</span>
-            {renderFilterInput(filter)}
-            <button onClick={() => handleRemoveFilter(filter)} className="remove-filter-btn">
-              <FaTimes />
-            </button>
-          </div>
-        ))}
-      </div>
-      <div className="filter-actions">
-        <Select
-          options={availableFilters}
-          onChange={handleAddFilter}
-          placeholder="Add Filter..."
-          className="add-filter-select"
-          classNamePrefix="react-select"
-          value={null}
-        />
-        <button onClick={handleApply} className="search-btn">
-          Search
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default FilterBar;
+          <div key={filter.value} className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 min-w-max">
+            <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">{filter.label}:</span>
+            <div className="min-w-0 flex-shrink-0" style={{ width: "150px" }}>\n              {renderFilterInput(filter)}\n            </div>\n            <button onClick={() => handleRemoveFilter(filter)} className=\"flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors\">\n              <FaTimes size={14} />\n            </button>\n          </div>\n        ))}\n      </div>\n      <div className=\"flex items-center gap-2\">\n        <div className=\"flex-1 min-w-0\" style={{ maxWidth: \"300px\" }}>\n          <Select\n            options={availableFilters}\n            onChange={handleAddFilter}\n            placeholder=\"Add Filter...\"\n            classNamePrefix=\"react-select\"\n            value={null}\n          />\n        </div>\n        <button onClick={handleApply} className=\"px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors\">\n          Search\n        </button>\n      </div>\n    </div>\n  );\n};\n\nexport default FilterBar;

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { groupService } from "../services/groupService";
 import { useAuth } from "../contexts/AuthContext";
-import "../styles/pages/GroupListPage.css";
 
 import CreateEditGroupModal from "../components/group/CreateEditGroupModal";
 import ConfirmationModal from "../components/common/ConfirmationModal";
@@ -120,7 +119,7 @@ const GroupListPage = () => {
       const rafId = requestAnimationFrame(step);
       return () => cancelAnimationFrame(rafId);
     }, [end, duration]);
-    return <span className="stat-number">{value}</span>;
+    return <span className="text-3xl font-bold text-gray-900">{value}</span>;
   };
 
   const handleDeleteConfirm = async () => {
@@ -136,18 +135,21 @@ const GroupListPage = () => {
   };
 
   return (
-    <div className="groups-page-container">
-      <div className="groups-hero">
-        <div className="hero-content">
-          <div className="hero-badge">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl p-12 mb-8 shadow-lg flex justify-between items-center">
+        <div className="text-white">
+          <div className="inline-flex items-center gap-2 bg-white bg-opacity-20 rounded-full px-4 py-2 mb-4">
             <span className="material-symbols-outlined">groups</span>
-            Team Management
+            <span className="text-sm font-medium">Team Management</span>
           </div>
-          <h1 className="hero-title">Teams & Groups</h1>
-          <p className="hero-subtitle">Manage your organization teams and collaborate effectively</p>
+          <h1 className="text-4xl font-bold mb-2">Teams & Groups</h1>
+          <p className="text-purple-100">Manage your organization teams and collaborate effectively</p>
         </div>
         {isAdmin && (
-          <button onClick={handleOpenCreateModal} className="btn-create-group">
+          <button
+            onClick={handleOpenCreateModal}
+            className="flex items-center gap-2 bg-white text-purple-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors shadow-md"
+          >
             <span className="material-symbols-outlined">add</span>
             Create New Team
           </button>
@@ -155,102 +157,118 @@ const GroupListPage = () => {
       </div>
 
       {loading ? (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading teams...</p>
+        <div className="flex flex-col items-center justify-center min-h-[400px]">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-purple-600 rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600 text-sm font-medium">Loading teams...</p>
         </div>
       ) : groups.length === 0 ? (
-        <div className="empty-state">
-          <span className="material-symbols-outlined empty-icon">folder_open</span>
-          <h3>No teams found</h3>
-          <p>Create your first team to get started</p>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <span className="material-symbols-outlined text-6xl text-gray-400 mb-4">folder_open</span>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No teams found</h3>
+          <p className="text-gray-600 mb-6">Create your first team to get started</p>
           {isAdmin && (
-            <button onClick={handleOpenCreateModal} className="btn-empty-create">
+            <button
+              onClick={handleOpenCreateModal}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            >
               <span className="material-symbols-outlined">add</span>
               Create Team
             </button>
           )}
         </div>
       ) : (
-        <div className="groups-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <div key={group._id} className={`group-card ${group.status === "inactive" ? "inactive" : ""}`}>
-              <div className="group-card-header">
-                <div className="group-info">
-                  <h3 className="group-name">{group.name}</h3>
-                  <span className={`status-badge ${group.status}`}>
-                    <span className="status-dot"></span>
-                    {group.status === "active" ? "Active" : "Inactive"}
-                  </span>
+            <div
+              key={group._id}
+              className={`bg-white rounded-xl shadow-sm hover:shadow-lg transition-all ${group.status === "inactive" ? "opacity-60" : ""}`}
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{group.name}</h3>
+                    <span
+                      className={`inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full ${
+                        group.status === "active" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-current"></span>
+                      {group.status === "active" ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  {isAdmin && (
+                    <div className="relative" ref={openActionMenu === group._id ? menuRef : null}>
+                      <button
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+                        onClick={() => handleToggleActionMenu(group._id)}
+                      >
+                        <span className="material-symbols-outlined">more_vert</span>
+                      </button>
+                      {openActionMenu === group._id && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+                          <button
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => {
+                              handleOpenEditModal(group);
+                              setOpenActionMenu(null);
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-base">edit</span>
+                            Edit
+                          </button>
+                          <button
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => {
+                              handleToggleStatus(group);
+                              setOpenActionMenu(null);
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-base">{group.status === "active" ? "lock" : "lock_open"}</span>
+                            {group.status === "active" ? "Deactivate" : "Activate"}
+                          </button>
+                          <button
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                              handleOpenDeleteConfirm(group._id);
+                              setOpenActionMenu(null);
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {isAdmin && (
-                  <div className="action-menu-container" ref={openActionMenu === group._id ? menuRef : null}>
-                    <button className="action-menu-trigger" onClick={() => handleToggleActionMenu(group._id)}>
-                      <span className="material-symbols-outlined">more_vert</span>
-                    </button>
-                    {openActionMenu === group._id && (
-                      <div className="action-menu-dropdown">
-                        <button
-                          className="action-menu-item"
-                          onClick={() => {
-                            handleOpenEditModal(group);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <span className="material-symbols-outlined">edit</span>
-                          Edit
-                        </button>
-                        <button
-                          className="action-menu-item"
-                          onClick={() => {
-                            handleToggleStatus(group);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <span className="material-symbols-outlined">{group.status === "active" ? "lock" : "lock_open"}</span>
-                          {group.status === "active" ? "Deactivate" : "Activate"}
-                        </button>
-                        <button
-                          className="action-menu-item delete"
-                          onClick={() => {
-                            handleOpenDeleteConfirm(group._id);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <span className="material-symbols-outlined">delete</span>
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
 
-              <p className="group-description">{group.description || "No description provided"}</p>
+                <p className="text-gray-600 text-sm mb-6 min-h-[40px]">{group.description || "No description provided"}</p>
 
-              <div className="group-stats">
-                <div className="stat-item active">
-                  <div className="stat-icon">
-                    <span className="material-symbols-outlined">group</span>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                      <span className="material-symbols-outlined">group</span>
+                    </div>
+                    <div>
+                      <CountUp end={group.totalActives || 0} />
+                      <div className="text-xs text-gray-600">Active Members</div>
+                    </div>
                   </div>
-                  <div className="stat-details">
-                    <CountUp end={group.totalActives || 0} />
-                    <span className="stat-label">Active Members</span>
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
+                      <span className="material-symbols-outlined">person_off</span>
+                    </div>
+                    <div>
+                      <CountUp end={group.totalInactives || 0} />
+                      <div className="text-xs text-gray-600">Inactive Members</div>
+                    </div>
                   </div>
                 </div>
-                <div className="stat-item inactive">
-                  <div className="stat-icon">
-                    <span className="material-symbols-outlined">person_off</span>
-                  </div>
-                  <div className="stat-details">
-                    <CountUp end={group.totalInactives || 0} />
-                    <span className="stat-label">Inactive Members</span>
-                  </div>
-                </div>
-              </div>
 
-              <div className="group-card-footer">
-                <button className="btn-view-members" onClick={() => navigate(`/app/organization/group/${group._id}`)}>
+                <button
+                  className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                  onClick={() => navigate(`/app/organization/group/${group._id}`)}
+                >
                   View Members
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </button>

@@ -4,7 +4,6 @@ import SettingsTaskTypes from "./TaskType";
 import SettingsPriorities from "./Priority";
 import SettingsPlatforms from "./Platform";
 import SettingMenu from "../../components/Setting/SettingMenu";
-import "../../styles/Setting/GlobalSettingsPage.css";
 
 const GlobalSettingsPage = () => {
   const { tabName = "tasktypes" } = useParams();
@@ -27,18 +26,22 @@ const GlobalSettingsPage = () => {
   };
 
   return (
-    <div className="global-settings-page">
-      <div className="settings-hero-bg">
-        <div className="settings-hero-shape"></div>
-        <div className="settings-hero-content">
-          <h1 className="settings-hero-title">Global Settings</h1>
-          <p className="settings-hero-subtitle">Configure default task types, priorities, and platforms for your projects</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="relative bg-gradient-to-r from-purple-600 to-purple-700 p-12 mb-8 overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500 rounded-full opacity-10 -mr-32 -mt-32"></div>
+        <div className="relative max-w-7xl mx-auto">
+          <h1 className="text-4xl font-bold text-white mb-2">Global Settings</h1>
+          <p className="text-purple-100">Configure default task types, priorities, and platforms for your projects</p>
         </div>
       </div>
 
-      <div className="settings-main-container">
-        <SettingMenu activeTab={tabName} onTabChange={handleTabChange} />
-        <div className="settings-content-wrapper">{renderTabContent()}</div>
+      <div className="max-w-7xl mx-auto px-4 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="lg:col-span-1">
+            <SettingMenu activeTab={tabName} onTabChange={handleTabChange} />
+          </div>
+          <div className="lg:col-span-4">{renderTabContent()}</div>
+        </div>
       </div>
     </div>
   );

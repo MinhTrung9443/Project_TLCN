@@ -6,7 +6,6 @@ import { getProjectById } from "../../services/projectService";
 import sprintService from "../../services/sprintService";
 import { toast } from "react-toastify";
 import { ProjectContext } from "../../contexts/ProjectContext";
-import "../../styles/components/NotificationBell.css";
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -266,7 +265,13 @@ const NotificationBell = () => {
   };
 
   const getPriorityClass = (priority) => {
-    return `priority-${priority?.toLowerCase() || "low"}`;
+    const classes = {
+      critical: "border-l-4 border-red-500",
+      high: "border-l-4 border-orange-500",
+      medium: "border-l-4 border-blue-500",
+      low: "border-l-4 border-gray-400",
+    };
+    return classes[priority?.toLowerCase()] || classes.low;
   };
 
   const getTimeAgo = (date) => {
@@ -280,59 +285,71 @@ const NotificationBell = () => {
   };
 
   return (
-    <div className="notification-bell-container" ref={dropdownRef}>
-      <button className="notification-bell-button" onClick={() => setIsOpen(!isOpen)}>
-        <span className="material-symbols-outlined">notifications</span>
-        {unreadCount > 0 && <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+    <div className="relative" ref={dropdownRef}>
+      <button
+        className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="material-symbols-outlined text-gray-700">notifications</span>
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
       </button>
 
       {isOpen && (
-        <div className="notification-dropdown">
-          <div className="notification-dropdown-header">
-            <h3>Notifications</h3>
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900">Notifications</h3>
             {unreadCount > 0 && (
-              <button className="mark-all-read-btn" onClick={handleMarkAllAsRead}>
+              <button className="text-sm text-purple-600 hover:text-purple-700 font-medium" onClick={handleMarkAllAsRead}>
                 Mark all as read
               </button>
             )}
           </div>
 
-          <div className="notification-list" ref={listRef}>
+          <div className="overflow-y-auto flex-1" ref={listRef}>
             {notifications.length === 0 ? (
-              <div className="notification-empty">
-                <span className="material-symbols-outlined">notifications_off</span>
-                <p>No notifications yet</p>
+              <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                <span className="material-symbols-outlined text-4xl mb-2">notifications_off</span>
+                <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
               <>
                 {notifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className={`notification-item ${!notification.isRead ? "unread" : ""} ${getPriorityClass(notification.priority)}`}
+                    className={`flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      !notification.isRead ? "bg-purple-50" : ""
+                    } ${getPriorityClass(notification.priority)}`}
                     onClick={() => handleNotificationClick(notification)}
                   >
-                    <div className="notification-icon">
-                      <span className="material-symbols-outlined">{getNotificationIcon(notification.type)}</span>
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
+                      <span className="material-symbols-outlined text-xl">{getNotificationIcon(notification.type)}</span>
                     </div>
-                    <div className="notification-content">
-                      <div className="notification-title">{notification.title}</div>
-                      <div className="notification-message">{notification.message}</div>
-                      <div className="notification-time">{getTimeAgo(notification.createdAt)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-gray-900 text-sm">{notification.title}</div>
+                      <div className="text-sm text-gray-600 mt-1 line-clamp-2">{notification.message}</div>
+                      <div className="text-xs text-gray-500 mt-1">{getTimeAgo(notification.createdAt)}</div>
                     </div>
-                    {!notification.isRead && <div className="notification-unread-dot"></div>}
+                    {!notification.isRead && <div className="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0 mt-2"></div>}
                   </div>
                 ))}
 
                 {loading && (
-                  <div className="notification-loading">
-                    <div className="spinner"></div>
-                    <p>Loading more...</p>
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <div className="w-8 h-8 border-3 border-gray-200 border-t-purple-600 rounded-full animate-spin"></div>
+                    <p className="text-sm text-gray-600 mt-2">Loading more...</p>
                   </div>
                 )}
 
                 {!loading && hasMore && (
-                  <div className="notification-load-more">
-                    <button className="load-more-btn" onClick={loadMoreNotifications}>
+                  <div className="p-4">
+                    <button
+                      className="w-full flex items-center justify-center gap-2 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors font-medium"
+                      onClick={loadMoreNotifications}
+                    >
                       <span className="material-symbols-outlined">expand_more</span>
                       Load More Notifications
                     </button>
@@ -340,9 +357,9 @@ const NotificationBell = () => {
                 )}
 
                 {!loading && !hasMore && notifications.length > 0 && (
-                  <div className="notification-end">
-                    <span className="material-symbols-outlined">check_circle</span>
-                    <p>You've reached the end</p>
+                  <div className="flex flex-col items-center justify-center py-6 text-gray-500">
+                    <span className="material-symbols-outlined text-2xl mb-1">check_circle</span>
+                    <p className="text-sm">You've reached the end</p>
                   </div>
                 )}
               </>

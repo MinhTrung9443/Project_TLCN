@@ -5,7 +5,6 @@ import GanttHeader from "../../components/gantt/GanttHeader";
 import GanttLeftSection from "../../components/gantt/GanttLeftSection";
 import GanttRightSection from "../../components/gantt/GanttRightSection";
 import { generateTimelineColumns, calculateBarPosition, calculateDateRange } from "../../components/gantt/ganttUtils";
-import "../../styles/pages/Gantt/GanttPage.css";
 
 const GanttPage = () => {
   // Get user from AuthContext

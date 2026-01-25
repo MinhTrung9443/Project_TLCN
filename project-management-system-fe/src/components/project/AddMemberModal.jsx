@@ -4,7 +4,6 @@ import { toast } from "react-toastify";
 import userService from "../../services/userService";
 import { groupService } from "../../services/groupService";
 import { addMemberToProject, addMembersFromGroupToProject } from "../../services/projectService";
-import "../../styles/pages/ManageProject/AddMemberModal.css";
 
 const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMemberIds = [], existingTeamIds = [] }) => {
   const [addMode, setAddMode] = useState("individual");
