@@ -128,7 +128,7 @@ const GanttPage = () => {
             (task) =>
               task.key?.toLowerCase().includes(lowerKeyword) ||
               task.name?.toLowerCase().includes(lowerKeyword) ||
-              task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword)
+              task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword),
           );
         }
 
@@ -142,7 +142,7 @@ const GanttPage = () => {
                   (task) =>
                     task.key?.toLowerCase().includes(lowerKeyword) ||
                     task.name?.toLowerCase().includes(lowerKeyword) ||
-                    task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword)
+                    task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword),
                 );
               }
               return filteredSprint;
@@ -154,7 +154,7 @@ const GanttPage = () => {
       })
       .filter(
         (item) =>
-          item.name?.toLowerCase().includes(lowerKeyword) || (item.tasks && item.tasks.length > 0) || (item.sprints && item.sprints.length > 0)
+          item.name?.toLowerCase().includes(lowerKeyword) || (item.tasks && item.tasks.length > 0) || (item.sprints && item.sprints.length > 0),
       );
   };
 
@@ -234,46 +234,44 @@ const GanttPage = () => {
   const statistics = calculateStatistics();
 
   return (
-    <div className="gantt-page" data-timeview={timeView}>
-      {/* Header */}
-      <GanttHeader
-        filter={filter}
-        setFilter={setFilter}
-        showFilterPanel={showFilterPanel}
-        setShowFilterPanel={setShowFilterPanel}
-        groupBy={groupBy}
-        showGroupByPanel={showGroupByPanel}
-        setShowGroupByPanel={setShowGroupByPanel}
-        handleGroupByChange={handleGroupByChange}
-        timeView={timeView}
-        setTimeView={setTimeView}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        statistics={statistics}
-        searchKeyword={searchKeyword}
-        setSearchKeyword={setSearchKeyword}
-      />
-
-      {/* Gantt Chart */}
-      <div className="gantt-container">
-        {/* Left Section - Fixed */}
-        <GanttLeftSection
-          projects={filteredGanttData}
+    <div className="gantt-page-redesigned" data-timeview={timeView}>
+      <div className="gantt-page-wrapper">
+        <GanttHeader
+          filter={filter}
+          setFilter={setFilter}
+          showFilterPanel={showFilterPanel}
+          setShowFilterPanel={setShowFilterPanel}
           groupBy={groupBy}
-          expandedItems={expandedItems}
-          toggleExpand={toggleExpand}
-          leftSectionRef={leftSectionRef}
+          showGroupByPanel={showGroupByPanel}
+          setShowGroupByPanel={setShowGroupByPanel}
+          handleGroupByChange={handleGroupByChange}
+          timeView={timeView}
+          setTimeView={setTimeView}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          statistics={statistics}
+          searchKeyword={searchKeyword}
+          setSearchKeyword={setSearchKeyword}
         />
 
-        {/* Right Section - Scrollable */}
-        <GanttRightSection
-          projects={filteredGanttData}
-          groupBy={groupBy}
-          expandedItems={expandedItems}
-          timelineColumns={timelineColumns}
-          calculateBarPosition={calculatePosition}
-          rightSectionRef={rightSectionRef}
-        />
+        <div className="gantt-content-container">
+          <GanttLeftSection
+            projects={filteredGanttData}
+            groupBy={groupBy}
+            expandedItems={expandedItems}
+            toggleExpand={toggleExpand}
+            leftSectionRef={leftSectionRef}
+          />
+
+          <GanttRightSection
+            projects={filteredGanttData}
+            groupBy={groupBy}
+            expandedItems={expandedItems}
+            timelineColumns={timelineColumns}
+            calculateBarPosition={calculatePosition}
+            rightSectionRef={rightSectionRef}
+          />
+        </div>
       </div>
     </div>
   );

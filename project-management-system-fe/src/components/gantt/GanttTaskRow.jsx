@@ -9,7 +9,9 @@ const GanttTaskRow = ({ task }) => {
           <div className="gantt-item-icon task-icon">
             <span className="material-symbols-outlined">task</span>
           </div>
-          <span className="gantt-item-name">{task.name}</span>
+          <span className="gantt-item-name" title={task.name}>
+            {task.name}
+          </span>
         </div>
       </div>
     </div>

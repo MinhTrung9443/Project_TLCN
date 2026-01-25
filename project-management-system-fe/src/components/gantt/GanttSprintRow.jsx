@@ -14,7 +14,9 @@ const GanttSprintRow = ({ sprint, isExpanded, hasTasks, toggleExpand }) => {
           <div className="gantt-item-icon sprint-icon">
             <span className="material-symbols-outlined">sprint</span>
           </div>
-          <span className="gantt-item-name">{sprint.name}</span>
+          <span className="gantt-item-name" title={sprint.name}>
+            {sprint.name}
+          </span>
           <span className="gantt-item-count">{sprint.tasks?.length || 0}</span>
         </div>
       </div>

@@ -42,7 +42,11 @@
 }
 
 .profile-hero {
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  padding: 48px 40px;
+  border-radius: 16px;
   margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(111, 66, 193, 0.3);
 }
 
 .hero-content {
@@ -53,39 +57,44 @@
 .badge-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   color: white;
   padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  border-radius: 24px;
+  font-size: 0.8rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
+  width: fit-content;
 }
 
 .badge-pill .material-symbols-outlined {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .profile-title {
-  font-size: 2.5rem;
+  font-size: 2.4rem;
   font-weight: 700;
-  color: #1a237e;
-  margin: 0 0 0.5rem 0;
+  color: white;
+  margin: 0 0 12px 0;
   display: flex;
   align-items: center;
   gap: 12px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
 }
 
 .profile-title .material-symbols-outlined {
-  font-size: 2.5rem;
-  color: #6f42c1;
+  font-size: 2.4rem;
+  color: white;
 }
 
 .profile-subtitle {
-  font-size: 1.1rem;
-  color: #6c757d;
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.85);
   margin: 0;
+  font-weight: 400;
 }
 
 .profile-form-wrapper {

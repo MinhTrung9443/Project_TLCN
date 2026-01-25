@@ -14,7 +14,9 @@ const GanttProjectRow = ({ project, isExpanded, hasSprints, toggleExpand }) => {
           <div className="gantt-item-icon project-icon">
             <span className="material-symbols-outlined">folder</span>
           </div>
-          <span className="gantt-item-name">{project.name}</span>
+          <span className="gantt-item-name" title={project.name}>
+            {project.name}
+          </span>
           <span className="gantt-item-count">{project.sprints?.length || 0}</span>
         </div>
       </div>

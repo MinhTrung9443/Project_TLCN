@@ -47,130 +47,133 @@ const GanttHeader = ({
   }, [setShowGroupByPanel, setShowFilterPanel]);
 
   return (
-    <div className="gantt-header">
-      <div className="gantt-header-left">
-        <div style={{ position: "relative" }}>
-          <button className={`gantt-filter-btn ${filterCount > 0 ? "active" : ""}`} onClick={() => setShowFilterPanel(!showFilterPanel)}>
-            <span className="material-symbols-outlined">filter_alt</span>
-            Filter ({filterCount})
-          </button>
-
-          <GanttFilterPanel filter={filter} setFilter={setFilter} showFilterPanel={showFilterPanel} filterRef={filterRef} />
+    <>
+      <div className="gantt-hero-section">
+        <div className="gantt-hero-content">
+          <div className="gantt-hero-badge">
+            <span className="material-symbols-outlined">timeline</span>
+            Timeline Management
+          </div>
+          <h1 className="gantt-hero-title">Gantt Chart</h1>
+          <p className="gantt-hero-subtitle">Visualize project schedules and track task progress across all sprints</p>
         </div>
+      </div>
 
-        <div ref={groupByRef} style={{ position: "relative" }}>
-          <button className="gantt-groupby-btn" onClick={() => setShowGroupByPanel(!showGroupByPanel)}>
-            <span className="material-symbols-outlined">view_list</span>
-            Group by ({groupBy.length})
-          </button>
-
-          {/* Group By Dropdown */}
-          {showGroupByPanel && (
-            <div className="gantt-dropdown gantt-groupby-dropdown">
-              <div className="gantt-dropdown-header">GROUP BY</div>
-              <label className="gantt-dropdown-item">
-                <input type="checkbox" checked={groupBy.includes("project")} onChange={() => handleGroupByChange("project")} />
-                <span>Project</span>
-              </label>
-              <label className="gantt-dropdown-item">
-                <input type="checkbox" checked={groupBy.includes("sprint")} onChange={() => handleGroupByChange("sprint")} />
-                <span>Sprint</span>
-              </label>
-              <label className="gantt-dropdown-item">
-                <input type="checkbox" checked={groupBy.includes("task")} onChange={() => handleGroupByChange("task")} />
-                <span>Task</span>
-              </label>
+      <div className="gantt-header-redesigned">
+        <div className="gantt-header-controls">
+          <div className="gantt-controls-left">
+            <div ref={filterRef} style={{ position: "relative" }}>
+              <button className={`gantt-control-btn ${filterCount > 0 ? "active" : ""}`} onClick={() => setShowFilterPanel(!showFilterPanel)}>
+                <span className="material-symbols-outlined">filter_alt</span>
+                <span>Filter</span>
+                {filterCount > 0 && <span className="control-badge">{filterCount}</span>}
+              </button>
+              <GanttFilterPanel filter={filter} setFilter={setFilter} showFilterPanel={showFilterPanel} filterRef={filterRef} />
             </div>
-          )}
-        </div>
 
-        <div ref={statusRef} style={{ position: "relative" }}>
-          <button className={`gantt-groupby-btn ${statusFilter !== "active" ? "active" : ""}`} onClick={() => setShowStatusPanel(!showStatusPanel)}>
-            <span className="material-symbols-outlined">check_circle</span>
-            {statusFilter === "active"
-              ? "Active Projects"
-              : statusFilter === "all"
-              ? "All Projects"
-              : statusFilter === "completed"
-              ? "Completed"
-              : "Paused"}
-          </button>
+            <div ref={groupByRef} style={{ position: "relative" }}>
+              <button className="gantt-control-btn" onClick={() => setShowGroupByPanel(!showGroupByPanel)}>
+                <span className="material-symbols-outlined">view_list</span>
+                <span>Group By</span>
+                <span className="control-badge">{groupBy.length}</span>
+              </button>
 
-          {/* Status Filter Dropdown */}
-          {showStatusPanel && (
-            <div className="gantt-dropdown gantt-status-dropdown">
-              <div className="gantt-dropdown-header">PROJECT STATUS</div>
-              <div
-                className={`gantt-dropdown-item ${statusFilter === "active" ? "selected" : ""}`}
-                onClick={() => {
-                  setStatusFilter("active");
-                  setShowStatusPanel(false);
-                }}
-              >
-                <span className="material-symbols-outlined">play_circle</span>
-                <span>Active Projects</span>
-              </div>
-              <div
-                className={`gantt-dropdown-item ${statusFilter === "all" ? "selected" : ""}`}
-                onClick={() => {
-                  setStatusFilter("all");
-                  setShowStatusPanel(false);
-                }}
-              >
-                <span className="material-symbols-outlined">all_inclusive</span>
-                <span>All Projects</span>
-              </div>
-              <div
-                className={`gantt-dropdown-item ${statusFilter === "completed" ? "selected" : ""}`}
-                onClick={() => {
-                  setStatusFilter("completed");
-                  setShowStatusPanel(false);
-                }}
-              >
-                <span className="material-symbols-outlined">task_alt</span>
-                <span>Completed Projects</span>
-              </div>
-              <div
-                className={`gantt-dropdown-item ${statusFilter === "paused" ? "selected" : ""}`}
-                onClick={() => {
-                  setStatusFilter("paused");
-                  setShowStatusPanel(false);
-                }}
-              >
-                <span className="material-symbols-outlined">pause_circle</span>
-                <span>Paused Projects</span>
-              </div>
+              {showGroupByPanel && (
+                <div className="gantt-dropdown gantt-groupby-dropdown">
+                  <div className="gantt-dropdown-header">GROUP BY</div>
+                  <label className="gantt-dropdown-item">
+                    <input type="checkbox" checked={groupBy.includes("project")} onChange={() => handleGroupByChange("project")} />
+                    <span>Project</span>
+                  </label>
+                  <label className="gantt-dropdown-item">
+                    <input type="checkbox" checked={groupBy.includes("sprint")} onChange={() => handleGroupByChange("sprint")} />
+                    <span>Sprint</span>
+                  </label>
+                  <label className="gantt-dropdown-item">
+                    <input type="checkbox" checked={groupBy.includes("task")} onChange={() => handleGroupByChange("task")} />
+                    <span>Task</span>
+                  </label>
+                </div>
+              )}
             </div>
-          )}
+
+            <div ref={statusRef} style={{ position: "relative" }}>
+              <button
+                className={`gantt-control-btn ${statusFilter !== "active" ? "active" : ""}`}
+                onClick={() => setShowStatusPanel(!showStatusPanel)}
+              >
+                <span className="material-symbols-outlined">check_circle</span>
+                <span>
+                  {statusFilter === "active" ? "Active" : statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Paused"}
+                </span>
+              </button>
+
+              {showStatusPanel && (
+                <div className="gantt-dropdown gantt-status-dropdown">
+                  <div className="gantt-dropdown-header">PROJECT STATUS</div>
+                  <div
+                    className={`gantt-dropdown-item ${statusFilter === "active" ? "selected" : ""}`}
+                    onClick={() => {
+                      setStatusFilter("active");
+                      setShowStatusPanel(false);
+                    }}
+                  >
+                    <span className="material-symbols-outlined">play_circle</span>
+                    <span>Active Projects</span>
+                  </div>
+                  <div
+                    className={`gantt-dropdown-item ${statusFilter === "all" ? "selected" : ""}`}
+                    onClick={() => {
+                      setStatusFilter("all");
+                      setShowStatusPanel(false);
+                    }}
+                  >
+                    <span className="material-symbols-outlined">all_inclusive</span>
+                    <span>All Projects</span>
+                  </div>
+                  <div
+                    className={`gantt-dropdown-item ${statusFilter === "completed" ? "selected" : ""}`}
+                    onClick={() => {
+                      setStatusFilter("completed");
+                      setShowStatusPanel(false);
+                    }}
+                  >
+                    <span className="material-symbols-outlined">task_alt</span>
+                    <span>Completed Projects</span>
+                  </div>
+                  <div
+                    className={`gantt-dropdown-item ${statusFilter === "paused" ? "selected" : ""}`}
+                    onClick={() => {
+                      setStatusFilter("paused");
+                      setShowStatusPanel(false);
+                    }}
+                  >
+                    <span className="material-symbols-outlined">pause_circle</span>
+                    <span>Paused Projects</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="gantt-controls-right">
+            <input
+              type="text"
+              className="gantt-search-input"
+              placeholder="Search tasks..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+            />
+
+            <select className="gantt-timeview-select" value={timeView} onChange={(e) => setTimeView(e.target.value)}>
+              <option value="weeks">Weeks</option>
+              <option value="months">Months</option>
+              <option value="years">Years</option>
+            </select>
+          </div>
         </div>
       </div>
-
-      <div className="gantt-header-center">
-        <select className="gantt-timeview-select" value={timeView} onChange={(e) => setTimeView(e.target.value)}>
-          <option value="weeks">Weeks</option>
-          <option value="months">Months</option>
-          <option value="years">Years</option>
-        </select>
-      </div>
-
-      <div className="gantt-header-right">
-        <div className="gantt-status-badges">
-          {statistics.atRisk > 0 && <span className="status-badge status-at-risk">{statistics.atRisk} At Risk</span>}
-          {statistics.done > 0 && <span className="status-badge status-done">{statistics.done} Done</span>}
-          {statistics.delay > 0 && <span className="status-badge status-delay">{statistics.delay} Delay</span>}
-          {statistics.inProgress > 0 && <span className="status-badge status-in-progress">{statistics.inProgress} In Progress</span>}
-          {statistics.unplanned > 0 && <span className="status-badge status-unplanned">{statistics.unplanned} Unplanned</span>}
-          {statistics.total === 0 && <span className="status-badge status-empty">No tasks</span>}
-        </div>
-        <input
-          type="text"
-          className="gantt-search"
-          placeholder="Search tasks..."
-          value={searchKeyword}
-          onChange={(e) => setSearchKeyword(e.target.value)}
-        />
-      </div>
-    </div>
+    </>
   );
 };
 
