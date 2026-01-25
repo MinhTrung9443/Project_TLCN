@@ -282,12 +282,20 @@ const ProjectsPage = () => {
       />
 
       <div className="projects-page-container">
-        <div className="projects-header">
-          <h1 className="projects-title">Projects</h1>
+        <div className="projects-hero">
+          <div className="hero-content">
+            <div className="hero-badge">
+              <span className="material-symbols-outlined">folder_open</span>
+              Project Management
+            </div>
+            <h1 className="hero-title">Projects</h1>
+            <p className="hero-subtitle">Manage and organize all your projects in one place</p>
+          </div>
           {view === "active" && user?.role === "admin" && (
-            <Button className="projects-create-btn" onClick={() => setIsModalOpen(true)}>
+            <button className="btn-create-project" onClick={() => setIsModalOpen(true)}>
+              <span className="material-symbols-outlined">add</span>
               Create Project
-            </Button>
+            </button>
           )}
         </div>
 

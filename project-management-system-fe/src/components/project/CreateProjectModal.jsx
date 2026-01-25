@@ -91,12 +91,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.key ||
-      !formData.type ||
-      !formData.projectManagerId
-    ) {
+    if (!formData.name || !formData.key || !formData.type || !formData.projectManagerId) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -122,12 +117,26 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-header">Create Project</h2>
+        <div className="modal-header">
+          <div className="modal-header-content">
+            <div className="modal-icon">
+              <span className="material-symbols-outlined">folder_open</span>
+            </div>
+            <div>
+              <h2 className="modal-title">Create New Project</h2>
+              <p className="modal-subtitle">Set up your project workspace</p>
+            </div>
+          </div>
+          <button onClick={handleClose} className="modal-close-btn" type="button">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-grid">
             <div className="form-group">
               <label htmlFor="name" className="form-label">
+                <span className="material-symbols-outlined">title</span>
                 Project Name <span className="required-star">*</span>
               </label>
               <input
@@ -137,11 +146,14 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
                 value={formData.name}
                 onChange={handleInputChange}
                 className="form-input"
+                placeholder="Enter project name"
                 required
               />
             </div>
+
             <div className="form-group">
               <label htmlFor="key" className="form-label">
+                <span className="material-symbols-outlined">key</span>
                 Key <span className="required-star">*</span>
               </label>
               <input
@@ -151,27 +163,25 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
                 value={formData.key}
                 onChange={handleInputChange}
                 className="form-input"
+                placeholder="e.g., PROJ"
                 required
               />
             </div>
-            <div className="form-group form-group-span-2">
+
+            <div className="form-group">
               <label htmlFor="type" className="form-label">
+                <span className="material-symbols-outlined">category</span>
                 Type <span className="required-star">*</span>
               </label>
-              <select
-                name="type"
-                id="type"
-                value={formData.type}
-                onChange={handleInputChange}
-                className="form-select"
-                required
-              >
+              <select name="type" id="type" value={formData.type} onChange={handleInputChange} className="form-select" required>
                 <option value="Scrum">Scrum</option>
                 <option value="Kanban">Kanban</option>
               </select>
             </div>
-            <div className="form-group form-group-span-2">
+
+            <div className="form-group">
               <label htmlFor="projectManagerId" className="form-label">
+                <span className="material-symbols-outlined">person</span>
                 Project Manager <span className="required-star">*</span>
               </label>
               <select
@@ -193,49 +203,38 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
                   ))}
               </select>
             </div>
+
             <div className="form-group">
               <label htmlFor="startDate" className="form-label">
+                <span className="material-symbols-outlined">calendar_today</span>
                 Start Date
               </label>
-              <input
-                type="date"
-                name="startDate"
-                id="startDate"
-                value={formData.startDate}
-                onChange={handleInputChange}
-                className="form-input"
-              />
+              <input type="date" name="startDate" id="startDate" value={formData.startDate} onChange={handleInputChange} className="form-input" />
             </div>
+
             <div className="form-group">
               <label htmlFor="endDate" className="form-label">
+                <span className="material-symbols-outlined">event</span>
                 End Date
               </label>
-              <input
-                type="date"
-                name="endDate"
-                id="endDate"
-                value={formData.endDate}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-              {dateError && <p className="error-message">{dateError}</p>}
+              <input type="date" name="endDate" id="endDate" value={formData.endDate} onChange={handleInputChange} className="form-input" />
+              {dateError && (
+                <p className="error-message">
+                  <span className="material-symbols-outlined">error</span>
+                  {dateError}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="modal-actions">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="modal-btn modal-btn-cancel"
-            >
+            <button type="button" onClick={handleClose} className="modal-btn modal-btn-cancel">
+              <span className="material-symbols-outlined">close</span>
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="modal-btn modal-btn-primary"
-            >
-              {isSubmitting ? "Creating..." : "Create"}
+            <button type="submit" disabled={isSubmitting} className="modal-btn modal-btn-primary">
+              <span className="material-symbols-outlined">{isSubmitting ? "sync" : "check_circle"}</span>
+              {isSubmitting ? "Creating..." : "Create Project"}
             </button>
           </div>
         </form>

@@ -36,34 +36,26 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
   return (
     <div className="project-actions-menu" ref={menuRef} onClick={(e) => e.stopPropagation()}>
       <button onClick={() => setIsOpen(!isOpen)} className="actions-trigger-btn">
-        ⋮
+        <span className="material-symbols-outlined">more_vert</span>
       </button>
 
       {isOpen && (
-        <ul className="actions-dropdown">
-          <li>
-            <Link to={`/app/task-mgmt/projects/${project.key}/settings/general`} onClick={handleSettingsClick}>
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px", verticalAlign: "middle" }}>
-                settings
-              </span>
-              Project Settings
-            </Link>
-          </li>
-          <li>
-            <button
-              className="delete-option"
-              onClick={() => {
-                onDelete(project);
-                setIsOpen(false);
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px" }}>
-                delete
-              </span>
-              Delete Project
-            </button>
-          </li>
-        </ul>
+        <div className="actions-dropdown">
+          <Link to={`/app/task-mgmt/projects/${project.key}/settings/general`} onClick={handleSettingsClick} className="dropdown-item">
+            <span className="material-symbols-outlined">settings</span>
+            Project Settings
+          </Link>
+          <button
+            className="dropdown-item delete-item"
+            onClick={() => {
+              onDelete(project);
+              setIsOpen(false);
+            }}
+          >
+            <span className="material-symbols-outlined">delete</span>
+            Delete Project
+          </button>
+        </div>
       )}
     </div>
   );

@@ -22,39 +22,32 @@ const ArchivedProjectActionsMenu = ({ project, onRestore, onDelete }) => {
   return (
     <div className="project-actions-menu" ref={menuRef} onClick={(e) => e.stopPropagation()}>
       <button onClick={() => setIsOpen(!isOpen)} className="actions-trigger-btn">
-        ⋮
+        <span className="material-symbols-outlined">more_vert</span>
       </button>
 
       {isOpen && (
-        <ul className="actions-dropdown">
-          <li>
-            <button
-              onClick={() => {
-                onRestore(project);
-                setIsOpen(false);
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px" }}>
-                restore
-              </span>
-              Restore Project
-            </button>
-          </li>
-          <li>
-            <button
-              className="delete-option"
-              onClick={() => {
-                onDelete(project);
-                setIsOpen(false);
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginRight: "8px" }}>
-                delete
-              </span>
-              Delete Project
-            </button>
-          </li>
-        </ul>
+        <div className="actions-dropdown">
+          <button
+            className="dropdown-item"
+            onClick={() => {
+              onRestore(project);
+              setIsOpen(false);
+            }}
+          >
+            <span className="material-symbols-outlined">restore</span>
+            Restore Project
+          </button>
+          <button
+            className="dropdown-item delete-item"
+            onClick={() => {
+              onDelete(project);
+              setIsOpen(false);
+            }}
+          >
+            <span className="material-symbols-outlined">delete</span>
+            Delete Project
+          </button>
+        </div>
       )}
     </div>
   );
