@@ -68,7 +68,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         availableProjects = availableProjects.filter((project) => {
           // Check if PM
           const isPM = project.members?.some(
-            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+            (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
           );
 
           // Check if Leader
@@ -218,7 +218,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
 
     // Check if PM
     const isPM = currentProject.members?.some(
-      (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+      (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
     );
 
     if (isPM) return "PM";
@@ -805,7 +805,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
   };
 
   if (loading) {
-     return (
+    return (
       <div className="auditlog-loading">
         <div className="spinner"></div>
         <p>Loading audit log data...</p>
@@ -821,100 +821,104 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
     );
 
   return (
-    <div className="audit-log-container">
-      {/* Header với project selector */}
-      <div className="audit-header">
-        <div className="header-content">
-          <div>
-            <h1 className="page-title">
-              <span className="material-symbols-outlined">assessment</span>
-              Audit Log Overview
-            </h1>
-            <p className="page-subtitle">Monitor project activity and team member changes</p>
+    <div className="audit-log-container-redesigned">
+      {/* Header Section */}
+      <div className="audit-hero">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span className="material-symbols-outlined">assessment</span>
+            Audit Log
           </div>
-          <div className="project-selector">
-            <label htmlFor="project-select">Project:</label>
-            <select
-              id="project-select"
-              value={selectedProjectId}
-              onChange={(e) => {
-                setSelectedProjectId(e.target.value);
-                setPage(1);
-              }}
-            >
-              {projects.map((p) => (
-                <option key={p._id || p.id} value={p._id || p.id}>
-                  {p.name} ({p.key || p._id || p.id})
-                </option>
-              ))}
-            </select>
+          <h1 className="hero-title">Audit Log & Performance</h1>
+          <p className="hero-subtitle">Monitor project activities, team performance, and track all changes in real-time</p>
+        </div>
+        <div className="audit-project-selector-wrapper">
+          <label htmlFor="project-select" className="audit-selector-label">
+            PROJECT
+          </label>
+          <select
+            id="project-select"
+            value={selectedProjectId}
+            onChange={(e) => {
+              setSelectedProjectId(e.target.value);
+              setPage(1);
+            }}
+            className="audit-project-select"
+          >
+            {projects.map((p) => (
+              <option key={p._id || p.id} value={p._id || p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Key Metrics Section */}
+      <div className="audit-metrics-section">
+        <div className="metric-card metric-primary">
+          <div className="metric-header">
+            <span className="material-symbols-outlined metric-icon">activity_zone</span>
+            <div className="metric-info">
+              <p className="metric-label">Total Activities</p>
+              <h3 className="metric-value">{overview.actionStats?.total || 0}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card metric-success">
+          <div className="metric-header">
+            <span className="material-symbols-outlined metric-icon">add_circle</span>
+            <div className="metric-info">
+              <p className="metric-label">Created</p>
+              <h3 className="metric-value">{overview.actionStats?.create || 0}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card metric-warning">
+          <div className="metric-header">
+            <span className="material-symbols-outlined metric-icon">edit</span>
+            <div className="metric-info">
+              <p className="metric-label">Updated</p>
+              <h3 className="metric-value">{overview.actionStats?.update || 0}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card metric-danger">
+          <div className="metric-header">
+            <span className="material-symbols-outlined metric-icon">delete</span>
+            <div className="metric-info">
+              <p className="metric-label">Deleted</p>
+              <h3 className="metric-value">{overview.actionStats?.delete || 0}</h3>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="stats-grid">
-        <div className="stat-card primary">
-          <div className="stat-icon">
-            <span className="material-symbols-outlined">activity_zone</span>
+      {/* Analytics Section */}
+      <div className="audit-analytics-grid">
+        {/* Activity Trend Chart */}
+        <div className="audit-analytics-card">
+          <div className="audit-card-header">
+            <h3 className="audit-card-title">
+              <span className="material-symbols-outlined">show_chart</span>
+              Activity Trend (Last 7 Days)
+            </h3>
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{overview.actionStats?.total || 0}</div>
-            <div className="stat-label">Total Activities</div>
-          </div>
-        </div>
-
-        <div className="stat-card success">
-          <div className="stat-icon">
-            <span className="material-symbols-outlined">add_circle</span>
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{overview.actionStats?.create || 0}</div>
-            <div className="stat-label">Created</div>
-          </div>
-        </div>
-
-        <div className="stat-card warning">
-          <div className="stat-icon">
-            <span className="material-symbols-outlined">edit</span>
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{overview.actionStats?.update || 0}</div>
-            <div className="stat-label">Updated</div>
-          </div>
-        </div>
-
-        <div className="stat-card danger">
-          <div className="stat-icon">
-            <span className="material-symbols-outlined">delete</span>
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{overview.actionStats?.delete || 0}</div>
-            <div className="stat-label">Deleted</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="charts-section">
-        {/* Activity Chart */}
-        <div className="chart-card">
-          <h3 className="card-title">
-            <span className="material-symbols-outlined">show_chart</span>
-            Activity Trend (Last 7 Days)
-          </h3>
-          <div className="bar-chart">
+          <div className="audit-bar-chart">
             {Object.entries(overview.dayStats || {}).map(([day, count]) => {
               const maxCount = Math.max(...Object.values(overview.dayStats || {}), 1);
               const percentage = (count / maxCount) * 100;
               return (
-                <div key={day} className="bar-item">
-                  <div className="bar-label">{new Date(day).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                  <div className="bar-container">
-                    <div className="bar-fill" style={{ height: `${percentage}%` }} title={`${count} activities`}>
-                      <span className="bar-value">{count}</span>
+                <div key={day} className="audit-bar-item">
+                  <div className="audit-bar-container">
+                    <div className="audit-bar-fill" style={{ height: `${percentage}%` }}>
+                      <span className="audit-bar-value">{count}</span>
                     </div>
                   </div>
+                  <div className="audit-bar-label">{new Date(day).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                 </div>
               );
             })}
@@ -922,25 +926,25 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         </div>
 
         {/* Entity Distribution */}
-        <div className="chart-card">
-          <h3 className="card-title">
-            <span className="material-symbols-outlined">pie_chart</span>
-            Activity by Entity Type
-          </h3>
-          <div className="entity-stats">
+        <div className="audit-analytics-card">
+          <div className="audit-card-header">
+            <h3 className="audit-card-title">
+              <span className="material-symbols-outlined">pie_chart</span>
+              Activity by Entity
+            </h3>
+          </div>
+          <div className="audit-entity-list">
             {Object.entries(overview.entityStats || {}).map(([entity, count]) => {
               const total = overview.actionStats?.total || 1;
               const percentage = ((count / total) * 100).toFixed(1);
               return (
-                <div key={entity} className="entity-item">
-                  <div className="entity-info">
+                <div key={entity} className="audit-entity-item">
+                  <div className="entity-label-info">
                     <span className="entity-name">{entity}</span>
-                    <span className="entity-count">
-                      {count} ({percentage}%)
-                    </span>
+                    <span className="entity-badge">{count}</span>
                   </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${percentage}%` }}></div>
+                  <div className="entity-bar">
+                    <div className="entity-bar-fill" style={{ width: `${percentage}%` }}></div>
                   </div>
                 </div>
               );
@@ -949,64 +953,66 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         </div>
       </div>
 
-      {/* Export to Excel Section */}
-      <div className="export-section-card">
-        <div className="export-header">
-          <h3 className="card-title">
-            <span className="material-symbols-outlined">file_download</span>
-            Export Performance Report
-          </h3>
-          <p className="export-subtitle">Export detailed team member performance data to Excel</p>
-        </div>
-        <div className="export-controls">
-          <div className="export-date-range">
-            <div className="export-date-group">
-              <label htmlFor="exportStartDate">From:</label>
-              <input
-                type="date"
-                id="exportStartDate"
-                value={exportStartDate}
-                onChange={(e) => setExportStartDate(e.target.value)}
-                className="export-date-input"
-              />
-            </div>
-            <div className="export-date-group">
-              <label htmlFor="exportEndDate">To:</label>
-              <input
-                type="date"
-                id="exportEndDate"
-                value={exportEndDate}
-                onChange={(e) => setExportEndDate(e.target.value)}
-                className="export-date-input"
-              />
-            </div>
+      {/* Export Section */}
+      <div className="audit-export-section">
+        <div className="export-card">
+          <div className="export-card-header">
+            <h3 className="export-title">
+              <span className="material-symbols-outlined">file_download</span>
+              Export Performance Report
+            </h3>
+            <p className="export-subtitle">Generate detailed team performance data to Excel</p>
           </div>
-          <button className="export-excel-btn" onClick={exportToExcel} disabled={isExporting || !exportStartDate || !exportEndDate}>
-            {isExporting ? (
-              <>
-                <span className="spinner-small"></span>
-                Exporting...
-              </>
-            ) : (
-              <>
-                <span className="material-symbols-outlined">download</span>
-                Export to Excel
-              </>
-            )}
-          </button>
+          <div className="export-controls-group">
+            <div className="date-inputs-wrapper">
+              <div className="date-input-group">
+                <label htmlFor="exportStartDate">From</label>
+                <input
+                  type="date"
+                  id="exportStartDate"
+                  value={exportStartDate}
+                  onChange={(e) => setExportStartDate(e.target.value)}
+                  className="date-picker-input"
+                />
+              </div>
+              <div className="date-input-group">
+                <label htmlFor="exportEndDate">To</label>
+                <input
+                  type="date"
+                  id="exportEndDate"
+                  value={exportEndDate}
+                  onChange={(e) => setExportEndDate(e.target.value)}
+                  className="date-picker-input"
+                />
+              </div>
+            </div>
+            <button className="export-button" onClick={exportToExcel} disabled={isExporting || !exportStartDate || !exportEndDate}>
+              {isExporting ? (
+                <>
+                  <span className="spinner-small"></span>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined">download</span>
+                  Export to Excel
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* User Activity Section */}
-      <div className="user-activity-card">
-        <div className="card-header-with-nav">
-          <h3 className="card-title">
+      {/* Team Activity Section */}
+      <div className="audit-team-section">
+        <div className="team-section-header">
+          <h3 className="team-section-title">
             <span className="material-symbols-outlined">group</span>
-            Team Member Activity
+            Team Performance
           </h3>
           {viewMode === "members" && selectedTeam && (
             <button
-              className="back-to-teams-btn"
+              className="back-button"
               onClick={() => {
                 setViewMode("teams");
                 setSelectedTeam(null);
@@ -1021,24 +1027,26 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         {renderTeamMemberActivity()}
       </div>
 
-      {/* Detailed Logs Table */}
-      <div className="logs-table-card">
-        <h3 className="card-title">
-          <span className="material-symbols-outlined">receipt_long</span>
-          Detailed Audit Logs
-        </h3>
+      {/* Audit Logs Section */}
+      <div className="audit-logs-section">
+        <div className="logs-section-header">
+          <h3 className="logs-section-title">
+            <span className="material-symbols-outlined">receipt_long</span>
+            Detailed Audit Logs
+          </h3>
+        </div>
 
         {/* Filters */}
-        <div className="audit-filters" style={{ display: "flex", gap: "15px", marginBottom: "20px", flexWrap: "wrap" }}>
-          <div style={{ flex: "1", minWidth: "200px" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "500" }}>User</label>
+        <div className="audit-filters-group">
+          <div className="filter-control">
+            <label>User</label>
             <select
               value={filterUserId}
               onChange={(e) => {
                 setFilterUserId(e.target.value);
                 setPage(1);
               }}
-              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ddd" }}
+              className="filter-select"
             >
               <option value="">All Users</option>
               {overview?.userStats &&
@@ -1050,15 +1058,15 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
             </select>
           </div>
 
-          <div style={{ flex: "1", minWidth: "200px" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "500" }}>Action</label>
+          <div className="filter-control">
+            <label>Action</label>
             <select
               value={filterAction}
               onChange={(e) => {
                 setFilterAction(e.target.value);
                 setPage(1);
               }}
-              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ddd" }}
+              className="filter-select"
             >
               <option value="">All Actions</option>
               <option value="create">Create</option>
@@ -1067,15 +1075,15 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
             </select>
           </div>
 
-          <div style={{ flex: "1", minWidth: "200px" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "500" }}>Entity</label>
+          <div className="filter-control">
+            <label>Entity Type</label>
             <select
               value={filterEntity}
               onChange={(e) => {
                 setFilterEntity(e.target.value);
                 setPage(1);
               }}
-              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ddd" }}
+              className="filter-select"
             >
               <option value="">All Entities</option>
               <option value="Task">Tasks</option>
@@ -1091,41 +1099,33 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
           </div>
 
           {(filterUserId || filterAction || filterEntity) && (
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <button
-                onClick={() => {
-                  setFilterUserId("");
-                  setFilterAction("");
-                  setFilterEntity("");
-                  setPage(1);
-                }}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  background: "#f5f5f5",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                }}
-              >
-                Clear Filters
-              </button>
-            </div>
+            <button
+              className="clear-filters-btn"
+              onClick={() => {
+                setFilterUserId("");
+                setFilterAction("");
+                setFilterEntity("");
+                setPage(1);
+              }}
+            >
+              Clear Filters
+            </button>
           )}
         </div>
 
+        {/* Logs Table */}
         {loadingLogs ? (
-          <div style={{ textAlign: "center", padding: "40px" }}>
-            <p>Loading logs...</p>
+          <div className="logs-loading">
+            <p>Loading audit logs...</p>
           </div>
         ) : (
-          <div className="logs-table">
-            <table>
+          <div className="logs-table-wrapper">
+            <table className="logs-table-redesigned">
               <thead>
                 <tr>
                   <th>User</th>
                   <th>Action</th>
-                  <th>Entity</th>
+                  <th>Entity Type</th>
                   <th>Record</th>
                   <th>Timestamp</th>
                 </tr>
@@ -1133,20 +1133,20 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
               <tbody>
                 {logs.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ textAlign: "center", padding: "20px", color: "#999" }}>
-                      No logs found
+                    <td colSpan="5" className="no-logs-message">
+                      No audit logs found
                     </td>
                   </tr>
                 ) : (
                   logs.map((log, idx) => (
                     <tr key={idx}>
-                      <td className="user-cell">
-                        {log.userId?.avatar && <img src={log.userId.avatar} alt={log.userId.fullname} className="table-avatar" />}
+                      <td className="user-cell-redesigned">
+                        {log.userId?.avatar && <img src={log.userId.avatar} alt={log.userId.fullname} className="log-avatar" />}
                         <span>{log.userId?.fullname || "Unknown"}</span>
                       </td>
                       <td>
                         <span
-                          className={`action-badge ${
+                          className={`action-badge-redesigned ${
                             log.action?.includes("create") ? "create" : log.action?.includes("update") ? "update" : "delete"
                           }`}
                         >
@@ -1154,10 +1154,10 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
                         </span>
                       </td>
                       <td>
-                        <strong>{log.tableName}</strong>
+                        <span className="entity-type-badge">{log.tableName}</span>
                       </td>
-                      <td className="record-id">{log.recordName || log.recordId || "-"}</td>
-                      <td className="timestamp">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</td>
+                      <td className="record-cell">{log.recordName || log.recordId || "-"}</td>
+                      <td className="timestamp-cell">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</td>
                     </tr>
                   ))
                 )}
@@ -1167,13 +1167,13 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
         )}
 
         {/* Pagination */}
-        <div className="pagination">
-          <button className="pagination-btn" disabled={page === 1} onClick={() => setPage(page - 1)}>
+        <div className="pagination-wrapper">
+          <button className="pagination-button" disabled={page === 1} onClick={() => setPage(page - 1)}>
             <span className="material-symbols-outlined">chevron_left</span>
             Previous
           </button>
-          <span className="page-info">Page {page}</span>
-          <button className="pagination-btn" onClick={() => setPage(page + 1)} disabled={logs.length < limit}>
+          <span className="pagination-info">Page {page}</span>
+          <button className="pagination-button" onClick={() => setPage(page + 1)} disabled={logs.length < limit}>
             Next
             <span className="material-symbols-outlined">chevron_right</span>
           </button>
