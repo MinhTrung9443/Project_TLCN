@@ -2,6 +2,12 @@ import { useDrag, useDrop } from "react-dnd";
 import "../../styles/pages/ManageSprint/taskItem.css";
 import { IconComponent } from "../../components/common/IconPicker";
 
+// Utility function to truncate text
+const truncateText = (text, maxLength = 40) => {
+  if (!text) return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
+
 // Draggable Task Item
 const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
   const PREDEFINED_PRIORITY_ICONS = [
@@ -35,7 +41,7 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
         isDragging: !!monitor.isDragging(),
       }),
     }),
-    [task, source, canDragDrop]
+    [task, source, canDragDrop],
   );
   const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find((i) => i.name === task.taskTypeId?.icon);
 
@@ -61,7 +67,7 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
 
         <span className="task-key-display">{task.key || "No-Key"}</span>
         <span className="task-name" title={task.name}>
-          {task.name}
+          {truncateText(task.name, 40)}
         </span>
       </div>
       <div className="task-item-right">
@@ -115,7 +121,7 @@ const TaskList = ({ tasks, source, onDrop, canDragDrop = true, onTaskClick }) =>
         isOver: !!monitor.isOver(),
       }),
     }),
-    [onDrop, source, canDragDrop]
+    [onDrop, source, canDragDrop],
   );
 
   return (

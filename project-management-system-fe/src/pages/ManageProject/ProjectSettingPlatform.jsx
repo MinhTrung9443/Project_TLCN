@@ -7,7 +7,7 @@ import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
 import { useAuth } from "../../contexts/AuthContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
+import "../../styles/Setting/SettingsPage.css";
 
 const PREDEFINED_PLATFORM_ICONS = [
   { name: "FaCode", color: "#8E44AD" },
@@ -140,44 +140,46 @@ const ProjectSettingPlatform = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="settings-list-container">
-      <div className="settings-list-header">
-        <div className="header-col col-icon">Icon</div>
-        <div className="header-col col-name">Platform Name</div>
-        <div className="header-col col-description">Description</div>
+    <div className="settings-page-container">
+      <div className="settings-page-header">
+        <div className="header-left">
+          <h2>Platforms</h2>
+          <p>{platforms.length} platforms configured</p>
+        </div>
         {canEdit && (
-          <div className="header-col col-actions">
-            <button className="btn-add-icon" onClick={() => handleOpenModal()}>
-              <VscIcons.VscAdd />
-            </button>
-          </div>
+          <button className="btn-create" onClick={() => handleOpenModal()}>
+            <span className="material-symbols-outlined">add</span>
+            Create Platform
+          </button>
         )}
       </div>
-      <div className="settings-list-body">
+
+      <div className="settings-grid">
         {platforms.map((p) => {
           const iconInfo = PREDEFINED_PLATFORM_ICONS.find((i) => i.name === p.icon);
           return (
-            <div className="settings-list-row" key={p._id}>
-              <div className="row-col col-icon">
-                <span className="icon-wrapper" style={{ backgroundColor: iconInfo?.color || "#7A869A" }}>
-                  <IconComponent name={p.icon} />
-                </span>
+            <div className="settings-card" key={p._id}>
+              <div className="card-icon" style={{ backgroundColor: iconInfo?.color || "#7A869A" }}>
+                <IconComponent name={p.icon} />
               </div>
-              <div className="row-col col-name">{p.name}</div>
-              <div className="row-col col-description">{p.description || "-"}</div>
+              <div className="card-content">
+                <h3 className="card-title">{p.name}</h3>
+                <p className="card-description">{p.description || "No description"}</p>
+              </div>
               {canEdit && (
-                <div className="row-col col-actions">
-                  <button className="btn-edit" onClick={() => handleOpenModal(p)}>
-                    <FaIcons.FaPencilAlt />
+                <div className="card-actions">
+                  <button className="btn-icon-action" onClick={() => handleOpenModal(p)} title="Edit">
+                    <span className="material-symbols-outlined">edit</span>
                   </button>
                   <button
-                    className="btn-delete"
+                    className="btn-icon-action delete"
                     onClick={() => {
                       setDeletePlatformId(p._id);
                       setIsDeleteModalOpen(true);
                     }}
+                    title="Delete"
                   >
-                    <FaIcons.FaTrash />
+                    <span className="material-symbols-outlined">delete</span>
                   </button>
                 </div>
               )}
@@ -187,29 +189,36 @@ const ProjectSettingPlatform = () => {
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>{currentPlatform?._id ? "Edit Platform" : "Create Platform"}</h2>
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{currentPlatform?._id ? "Edit Platform" : "Create Platform"}</h2>
+              <button className="modal-close" onClick={handleCloseModal}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="name" className="required">
-                  Name
-                </label>
-                <input id="name" name="name" value={currentPlatform.name} onChange={handleChange} required />
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="name">
+                    Name <span className="required">*</span>
+                  </label>
+                  <input id="name" name="name" value={currentPlatform.name} onChange={handleChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Icon</label>
+                  <IconPicker selectedIcon={currentPlatform.icon} onSelect={handleIconSelect} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="description">Description</label>
+                  <textarea id="description" name="description" rows="3" value={currentPlatform.description || ""} onChange={handleChange}></textarea>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Icon</label>
-                <IconPicker selectedIcon={currentPlatform.icon} onSelect={handleIconSelect} />
-              </div>
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea id="description" name="description" rows="3" value={currentPlatform.description || ""} onChange={handleChange}></textarea>
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                <button type="submit" className="btn-primary" disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>

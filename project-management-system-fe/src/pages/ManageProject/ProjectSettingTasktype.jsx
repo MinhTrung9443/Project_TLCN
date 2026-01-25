@@ -6,7 +6,7 @@ import { getProjectByKey } from "../../services/projectService";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
+import "../../styles/Setting/SettingsPage.css";
 import { useAuth } from "../../contexts/AuthContext";
 const PREDEFINED_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
@@ -138,45 +138,47 @@ const ProjectSettingTaskType = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="settings-list-container">
-      <div className="settings-list-header">
-        <div className="header-col col-icon">Icon</div>
-        <div className="header-col col-name">Task Type</div>
-        <div className="header-col col-description">Description</div>
+    <div className="settings-page-container">
+      <div className="settings-page-header">
+        <div className="header-left">
+          <h2>Task Types</h2>
+          <p>{taskTypes.length} task types configured</p>
+        </div>
         {canEdit && (
-          <div className="header-col col-actions">
-            <button className="btn-add-icon" onClick={() => handleOpenModal()}>
-              <VscIcons.VscAdd />
-            </button>
-          </div>
+          <button className="btn-create" onClick={() => handleOpenModal()}>
+            <span className="material-symbols-outlined">add</span>
+            Create Task Type
+          </button>
         )}
       </div>
-      <div className="settings-list-body">
+
+      <div className="settings-grid">
         {taskTypes.map((tt) => {
           const iconInfo = PREDEFINED_ICONS.find((i) => i.name === tt.icon);
-          const iconColor = iconInfo ? iconInfo.color : "#4BADE8"; // Màu mặc định
+          const iconColor = iconInfo ? iconInfo.color : "#4BADE8";
           return (
-            <div className="settings-list-row" key={tt._id}>
-              <div className="row-col col-icon">
-                <span className="icon-wrapper" style={{ backgroundColor: iconColor }}>
-                  <IconComponent name={tt.icon} />
-                </span>
+            <div className="settings-card" key={tt._id}>
+              <div className="card-icon" style={{ backgroundColor: iconColor }}>
+                <IconComponent name={tt.icon} />
               </div>
-              <div className="row-col col-name">{tt.name}</div>
-              <div className="row-col col-description">{tt.description || "-"}</div>
+              <div className="card-content">
+                <h3 className="card-title">{tt.name}</h3>
+                <p className="card-description">{tt.description || "No description"}</p>
+              </div>
               {canEdit && (
-                <div className="row-col col-actions">
-                  <button className="btn-edit" onClick={() => handleOpenModal(tt)}>
-                    <FaIcons.FaPencilAlt />
+                <div className="card-actions">
+                  <button className="btn-icon-action" onClick={() => handleOpenModal(tt)} title="Edit">
+                    <span className="material-symbols-outlined">edit</span>
                   </button>
                   <button
-                    className="btn-delete"
+                    className="btn-icon-action delete"
                     onClick={() => {
                       setDeleteTaskTypeId(tt._id);
                       setIsDeleteModalOpen(true);
                     }}
+                    title="Delete"
                   >
-                    <FaIcons.FaTrash />
+                    <span className="material-symbols-outlined">delete</span>
                   </button>
                 </div>
               )}
@@ -186,31 +188,38 @@ const ProjectSettingTaskType = () => {
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>{currentTaskType._id ? "Edit Task Type" : "Create Task Type"}</h2>
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{currentTaskType._id ? "Edit Task Type" : "Create Task Type"}</h2>
+              <button className="modal-close" onClick={handleCloseModal}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="name" className="required">
-                  Task Type
-                </label>
-                <input id="name" name="name" value={currentTaskType.name} onChange={handleChange} required />
-              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="name">
+                    Task Type <span className="required">*</span>
+                  </label>
+                  <input id="name" name="name" value={currentTaskType.name} onChange={handleChange} required />
+                </div>
 
-              <div className="form-group">
-                <label>Icon</label>
-                <IconPicker selectedIcon={currentTaskType.icon} onSelect={handleIconSelect} />
-              </div>
+                <div className="form-group">
+                  <label>Icon</label>
+                  <IconPicker selectedIcon={currentTaskType.icon} onSelect={handleIconSelect} />
+                </div>
 
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea id="description" name="description" rows="3" value={currentTaskType.description || ""} onChange={handleChange}></textarea>
+                <div className="form-group">
+                  <label htmlFor="description">Description</label>
+                  <textarea id="description" name="description" rows="3" value={currentTaskType.description || ""} onChange={handleChange}></textarea>
+                </div>
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={handleCloseModal}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                <button type="submit" className="btn-primary" disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>
