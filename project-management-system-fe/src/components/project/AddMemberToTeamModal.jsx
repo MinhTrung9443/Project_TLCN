@@ -47,8 +47,14 @@ const AddMemberToTeamModal = ({ isOpen, onClose, projectKey, team, onMemberAdded
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Add Member to "{team?.teamId?.name}"</h2>
+      <div className="modal-content add-member-to-team-modal">
+        <div className="modal-header-modern">
+          <div className="modal-icon-wrapper">
+            <span className="material-symbols-outlined">group_add</span>
+          </div>
+          <h2 className="modal-title-modern">Add Member to "{team?.teamId?.name}"</h2>
+          <p className="modal-subtitle">Choose a user to join this team in the project</p>
+        </div>
         <div className="form-group">
           <label>Select a user</label>
           <Select
@@ -59,22 +65,35 @@ const AddMemberToTeamModal = ({ isOpen, onClose, projectKey, team, onMemberAdded
             menuPortalTarget={document.body}
             styles={{
               menuPortal: (base) => ({ ...base, zIndex: 99999 }),
-              control: (base) => ({
+              control: (base, state) => ({
                 ...base,
                 fontFamily: '"Poppins", sans-serif',
-                borderRadius: "8px",
-                border: "2px solid #e9ecef",
+                borderRadius: "10px",
+                border: state.isFocused ? "2px solid #6f42c1" : "2px solid #e9ecef",
+                boxShadow: state.isFocused ? "0 0 0 3px rgba(111, 66, 193, 0.1)" : "none",
                 "&:hover": { borderColor: "#6f42c1" },
+                padding: "4px",
               }),
             }}
           />
         </div>
-        <div className="modal-actions">
-          <button onClick={onClose} className="btn btn-secondary" disabled={isLoading}>
-            Cancel
+        <div className="modal-actions-modern">
+          <button onClick={onClose} className="btn-modern btn-secondary-modern" disabled={isLoading}>
+            <span className="material-symbols-outlined">close</span>
+            <span>Cancel</span>
           </button>
-          <button onClick={handleSubmit} className="btn btn-primary" disabled={isLoading}>
-            {isLoading ? "Adding..." : "Add"}
+          <button onClick={handleSubmit} className="btn-modern btn-primary-modern" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <span className="spinner-modern"></span>
+                <span>Adding...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined">person_add</span>
+                <span>Add</span>
+              </>
+            )}
           </button>
         </div>
       </div>

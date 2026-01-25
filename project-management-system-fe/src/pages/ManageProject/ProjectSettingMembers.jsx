@@ -146,6 +146,21 @@ const ProjectSettingMembers = () => {
 
   return (
     <div className="project-members-container">
+      <div className="members-actions-header">
+        <div className="header-stack">
+          <h2 className="section-title">Project Members</h2>
+          <p className="section-subtitle">Manage teams, roles, and collaborators for this project</p>
+        </div>
+        {canManageMembers && (
+          <div className="action-buttons">
+            <button onClick={() => setIsAddModalOpen(true)} className="btn btn-primary btn-gradient">
+              <span className="material-symbols-outlined">group_add</span>
+              <span>Add People / Team</span>
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Hiển thị thông tin PM */}
       {projectManager && (
         <div className="pm-info-section">
@@ -163,14 +178,6 @@ const ProjectSettingMembers = () => {
               <div className="pm-email">{projectManager.userId.email}</div>
             </div>
           </div>
-        </div>
-      )}
-
-      {canManageMembers && (
-        <div className="members-actions-header">
-          <button onClick={() => setIsAddModalOpen(true)} className="btn btn-primary">
-            Add People / Team
-          </button>
         </div>
       )}
 

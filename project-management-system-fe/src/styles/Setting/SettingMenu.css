@@ -9,6 +9,50 @@
   border: 1px solid #e9ecef;
 }
 
+/* Header */
+.setting-menu-header {
+  background: linear-gradient(135deg, #6f42c1 0%, #4a40c9 100%);
+  padding: 28px 24px;
+  color: white;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+}
+
+.page-title .material-symbols-outlined {
+  font-size: 28px;
+  color: #ffffff;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+/* Ensure white text inside gradient header regardless of global .page-title styles */
+.setting-menu-header .page-title,
+.setting-menu-header .page-subtitle {
+  color: #ffffff;
+}
+
+.setting-menu-header .page-title .material-symbols-outlined {
+  color: #ffffff;
+}
+
 /* Navigation Tabs */
 .setting-tabs-nav {
   display: flex;
@@ -76,6 +120,9 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .setting-menu-header {
+    padding: 20px 16px;
+  }
   .setting-tabs-nav {
     gap: 0;
     padding: 0 10px;

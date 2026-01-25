@@ -162,7 +162,7 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
         // Kiểm tra nếu có conflict về leader
         if (response.data?.hasLeaderConflict) {
           toast.warning(
-            response.data.message || "This team already has a leader. If you want to change the leader, please use the 'Change Leader' option."
+            response.data.message || "This team already has a leader. If you want to change the leader, please use the 'Change Leader' option.",
           );
         } else {
           toast.success("Team members added successfully!");
@@ -234,110 +234,179 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
   return (
     <div className="modal-overlay">
       <div className="modal-content add-member-modal">
-        <h2>Add people to project</h2>
-        <div className="add-mode-toggle">
-          <button className={`toggle-button ${addMode === "individual" ? "active" : ""}`} onClick={() => setAddMode("individual")}>
-            Add Individual
+        <div className="modal-header-modern">
+          <div className="modal-icon-wrapper">
+            <span className="material-symbols-outlined">group_add</span>
+          </div>
+          <h2 className="modal-title-modern">Add People to Project</h2>
+          <p className="modal-subtitle">Invite team members or groups to collaborate on this project</p>
+        </div>
+
+        <div className="add-mode-toggle-modern">
+          <button className={`toggle-button-modern ${addMode === "individual" ? "active" : ""}`} onClick={() => setAddMode("individual")}>
+            <span className="material-symbols-outlined">person_add</span>
+            <span>Individual</span>
           </button>
-          <button className={`toggle-button ${addMode === "team" ? "active" : ""}`} onClick={() => setAddMode("team")}>
-            Add Team
+          <button className={`toggle-button-modern ${addMode === "team" ? "active" : ""}`} onClick={() => setAddMode("team")}>
+            <span className="material-symbols-outlined">groups</span>
+            <span>Team</span>
           </button>
         </div>
 
-        <div className="form-content">
+        <div className="form-content-modern">
           {addMode === "individual" && (
             <>
-              <div className="form-group">
-                <label>Select a user</label>
+              <div className="form-group-modern">
+                <label className="form-label-modern">
+                  <span className="material-symbols-outlined">person_search</span>
+                  Select a User
+                </label>
                 <Select
                   options={userOptions}
                   value={selectedUser}
                   onChange={(option) => {
                     setSelectedUser(option);
-                    // Reset team selection khi đổi user
                     setSelectedUserTeam(null);
                     setSelectedTemporaryGroup(null);
                   }}
                   isLoading={isLoadingData}
+                  placeholder="Search for a user..."
                   menuPortalTarget={document.body}
-                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                  styles={{
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    control: (base, state) => ({
+                      ...base,
+                      fontFamily: '"Poppins", sans-serif',
+                      borderRadius: "10px",
+                      border: state.isFocused ? "2px solid #6f42c1" : "2px solid #e9ecef",
+                      boxShadow: state.isFocused ? "0 0 0 3px rgba(111, 66, 193, 0.1)" : "none",
+                      "&:hover": { borderColor: "#6f42c1" },
+                      padding: "4px",
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isSelected ? "#6f42c1" : state.isFocused ? "#f3efff" : "white",
+                      color: state.isSelected ? "white" : "#212529",
+                      fontFamily: '"Poppins", sans-serif',
+                      padding: "10px 12px",
+                      cursor: "pointer",
+                    }),
+                  }}
                   formatOptionLabel={(option) => (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       {option.userData?.avatar ? (
                         <img
                           src={option.userData.avatar}
                           alt={option.label}
                           style={{
-                            width: "32px",
-                            height: "32px",
+                            width: "36px",
+                            height: "36px",
                             borderRadius: "50%",
                             objectFit: "cover",
+                            border: "2px solid #e9ecef",
                           }}
                         />
                       ) : (
                         <div
                           style={{
-                            width: "32px",
-                            height: "32px",
+                            width: "36px",
+                            height: "36px",
                             borderRadius: "50%",
-                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            background: "linear-gradient(135deg, #6f42c1 0%, #4a40c9 100%)",
                             color: "white",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "14px",
-                            fontWeight: "600",
+                            fontSize: "15px",
+                            fontWeight: "700",
+                            border: "2px solid #e9ecef",
                           }}
                         >
                           {(option.userData?.fullname || option.userData?.username || "U").charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span>{option.label}</span>
+                      <span style={{ fontSize: "14px", fontWeight: "500" }}>{option.label}</span>
                     </div>
                   )}
                 />
               </div>
 
               {selectedUser && userTeamOptions.length > 1 && (
-                <div className="form-group">
-                  <label>User belongs to multiple teams - Select team for this project</label>
+                <div className="form-group-modern info-card">
+                  <div className="info-card-header">
+                    <span className="material-symbols-outlined">info</span>
+                    <span>Multiple Team Membership</span>
+                  </div>
+                  <label className="form-label-modern">Select Team for This Project</label>
                   <Select
                     options={userTeamOptions}
                     value={selectedUserTeam}
                     onChange={setSelectedUserTeam}
-                    placeholder="Select team..."
+                    placeholder="Choose a team..."
                     menuPortalTarget={document.body}
-                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (base, state) => ({
+                        ...base,
+                        fontFamily: '"Poppins", sans-serif',
+                        borderRadius: "10px",
+                        border: state.isFocused ? "2px solid #6f42c1" : "2px solid #e9ecef",
+                        boxShadow: state.isFocused ? "0 0 0 3px rgba(111, 66, 193, 0.1)" : "none",
+                        "&:hover": { borderColor: "#6f42c1" },
+                        padding: "4px",
+                      }),
+                    }}
                   />
-                  <small className="form-hint">This user will be added to the project under the selected team.</small>
+                  <small className="form-hint-modern">
+                    <span className="material-symbols-outlined">lightbulb</span>
+                    This user will be added under the selected team
+                  </small>
                 </div>
               )}
 
               {selectedUser && userTeamOptions.length === 1 && (
-                <div className="form-group">
-                  <label>Team</label>
-                  <input
-                    type="text"
-                    value={userTeamOptions[0].label}
-                    disabled
-                    className="form-control"
-                    style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
-                  />
+                <div className="form-group-modern">
+                  <label className="form-label-modern">
+                    <span className="material-symbols-outlined">group</span>
+                    Team Assignment
+                  </label>
+                  <div className="static-field">
+                    <span className="material-symbols-outlined">check_circle</span>
+                    <span>{userTeamOptions[0].label}</span>
+                  </div>
                 </div>
               )}
 
               {selectedUser && userTeamOptions.length === 0 && (
-                <div className="form-group">
-                  <label>Temporary Group (This user is not in any team)</label>
+                <div className="form-group-modern warning-card">
+                  <div className="warning-card-header">
+                    <span className="material-symbols-outlined">warning</span>
+                    <span>No Team Assignment</span>
+                  </div>
+                  <label className="form-label-modern">Select Temporary Group</label>
                   <Select
                     options={groupOptions}
                     value={selectedTemporaryGroup}
                     onChange={setSelectedTemporaryGroup}
-                    placeholder="Select a group for this project..."
+                    placeholder="Choose a group for this project..."
                     menuPortalTarget={document.body}
-                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (base, state) => ({
+                        ...base,
+                        fontFamily: '"Poppins", sans-serif',
+                        borderRadius: "10px",
+                        border: state.isFocused ? "2px solid #6f42c1" : "2px solid #e9ecef",
+                        boxShadow: state.isFocused ? "0 0 0 3px rgba(111, 66, 193, 0.1)" : "none",
+                        "&:hover": { borderColor: "#6f42c1" },
+                        padding: "4px",
+                      }),
+                    }}
                   />
-                  <small className="form-hint">This user will be temporarily assigned to the selected group in this project.</small>
+                  <small className="form-hint-modern">
+                    <span className="material-symbols-outlined">lightbulb</span>
+                    User will be temporarily assigned to this group in the project
+                  </small>
                 </div>
               )}
             </>
@@ -345,68 +414,81 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
 
           {addMode === "team" && (
             <>
-              <div className="form-group">
-                <label>Select a Team</label>
+              <div className="form-group-modern">
+                <label className="form-label-modern">
+                  <span className="material-symbols-outlined">groups</span>
+                  Select a Team
+                </label>
                 <Select
                   options={groupOptionsForTeamMode}
                   value={selectedGroup}
                   onChange={setSelectedGroup}
                   isLoading={isLoadingData}
+                  placeholder="Choose a team to add..."
                   menuPortalTarget={document.body}
-                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                  styles={{
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    control: (base, state) => ({
+                      ...base,
+                      fontFamily: '"Poppins", sans-serif',
+                      borderRadius: "10px",
+                      border: state.isFocused ? "2px solid #6f42c1" : "2px solid #e9ecef",
+                      boxShadow: state.isFocused ? "0 0 0 3px rgba(111, 66, 193, 0.1)" : "none",
+                      "&:hover": { borderColor: "#6f42c1" },
+                      padding: "4px",
+                    }),
+                  }}
                 />
               </div>
 
               {selectedGroup && teamMembers.length === 0 && (
-                <div className="form-group">
-                  <p className="text-warning">⚠️ All members from this team are already in the project.</p>
+                <div className="alert-card warning">
+                  <span className="material-symbols-outlined">info</span>
+                  <p>All members from this team are already in the project</p>
                 </div>
               )}
 
               {selectedGroup && teamMembers.length > 0 && (
-                <div className="form-group member-selection-list">
-                  <label>Select members to add ({teamMembers.length} available)</label>
-                  <div className="checkbox-list-container">
+                <div className="form-group-modern">
+                  <label className="form-label-modern">
+                    <span className="material-symbols-outlined">how_to_reg</span>
+                    Select Members to Add
+                    <span className="member-count-badge">{teamMembers.length} available</span>
+                  </label>
+                  <div className="member-selection-grid">
                     {teamMembers.map((member) => {
-                      // Kiểm tra xem member này có thuộc nhiều team không
                       const memberGroups = allGroups.filter((g) => g.members && g.members.includes(member._id));
                       const otherGroups = memberGroups.filter((g) => g._id !== selectedGroup.value);
 
                       return (
-                        <div key={member._id} className="checkbox-item">
+                        <label key={member._id} className="member-card-checkbox">
                           <input
                             type="checkbox"
-                            id={`member-${member._id}`}
                             checked={selectedTeamMemberIds.has(member._id)}
                             onChange={() => handleTeamMemberToggle(member._id)}
                           />
-                          <label htmlFor={`member-${member._id}`}>
+                          <div className="member-card-content">
                             {member.avatar ? (
-                              <img src={member.avatar} alt={member.fullname} className="item-avatar" />
+                              <img src={member.avatar} alt={member.fullname} className="member-avatar-modern" />
                             ) : (
-                              <div
-                                className="item-avatar"
-                                style={{
-                                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                  color: "white",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: "14px",
-                                  fontWeight: "600",
-                                }}
-                              >
+                              <div className="member-avatar-modern member-avatar-placeholder">
                                 {(member.fullname || member.username || "U").charAt(0).toUpperCase()}
                               </div>
                             )}
-                            <div className="member-info">
-                              <span className="member-name">{member.fullname || member.username}</span>
+                            <div className="member-details">
+                              <span className="member-name-modern">{member.fullname || member.username}</span>
                               {otherGroups.length > 0 && (
-                                <small className="member-other-teams">Also in: {otherGroups.map((g) => g.name).join(", ")}</small>
+                                <small className="member-teams-badge">
+                                  <span className="material-symbols-outlined">groups</span>
+                                  {otherGroups.map((g) => g.name).join(", ")}
+                                </small>
                               )}
                             </div>
-                          </label>
-                        </div>
+                            <span className="checkmark-indicator">
+                              <span className="material-symbols-outlined">check_circle</span>
+                            </span>
+                          </div>
+                        </label>
                       );
                     })}
                   </div>
@@ -414,20 +496,35 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
               )}
 
               {selectedGroup && teamMembers.length > 0 && (
-                <div className="form-group">
-                  <label>Select a Leader (optional - auto-detect if left blank)</label>
+                <div className="form-group-modern">
+                  <label className="form-label-modern">
+                    <span className="material-symbols-outlined">workspace_premium</span>
+                    Select Team Leader (Optional)
+                  </label>
                   <Select
                     options={leaderOptions}
                     value={selectedLeader}
                     onChange={setSelectedLeader}
                     isDisabled={leaderOptions.length === 0}
                     isClearable={true}
-                    placeholder="Select leader or leave blank to auto-detect..."
+                    placeholder="Auto-detect or choose manually..."
                     menuPortalTarget={document.body}
-                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      control: (base, state) => ({
+                        ...base,
+                        fontFamily: '"Poppins", sans-serif',
+                        borderRadius: "10px",
+                        border: state.isFocused ? "2px solid #6f42c1" : "2px solid #e9ecef",
+                        boxShadow: state.isFocused ? "0 0 0 3px rgba(111, 66, 193, 0.1)" : "none",
+                        "&:hover": { borderColor: "#6f42c1" },
+                        padding: "4px",
+                      }),
+                    }}
                   />
-                  <small className="form-hint">
-                    If not selected, the system will automatically use an existing LEADER from the project (if available).
+                  <small className="form-hint-modern">
+                    <span className="material-symbols-outlined">lightbulb</span>
+                    System will auto-detect existing leader if not specified
                   </small>
                 </div>
               )}
@@ -435,12 +532,23 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
           )}
         </div>
 
-        <div className="modal-actions">
-          <button onClick={handleClose} className="btn btn-secondary" disabled={isSaving}>
-            Cancel
+        <div className="modal-actions-modern">
+          <button onClick={handleClose} className="btn-modern btn-secondary-modern" disabled={isSaving}>
+            <span className="material-symbols-outlined">close</span>
+            <span>Cancel</span>
           </button>
-          <button onClick={handleSubmit} className="btn btn-primary" disabled={isSaving}>
-            {isSaving ? "Adding..." : "Add"}
+          <button onClick={handleSubmit} className="btn-modern btn-primary-modern" disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <span className="spinner-modern"></span>
+                <span>Adding...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined">group_add</span>
+                <span>Add to Project</span>
+              </>
+            )}
           </button>
         </div>
       </div>

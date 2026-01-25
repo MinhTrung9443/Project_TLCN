@@ -91,6 +91,46 @@
   gap: 1rem;
 }
 
+.members-actions-header .header-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.members-actions-header .section-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a237e;
+}
+
+.members-actions-header .section-subtitle {
+  margin: 6px 0 0;
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.btn-gradient {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #6f42c1 0%, #4a40c9 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
+}
+
+.btn-gradient .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
+}
+
 .members-list-table {
   display: flex;
   flex-direction: column;
