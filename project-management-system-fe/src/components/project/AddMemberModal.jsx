@@ -231,33 +231,43 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
   const leaderOptions = teamMembers.filter((m) => selectedTeamMemberIds.has(m._id)).map((u) => ({ value: u._id, label: u.fullname || u.username }));
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content add-member-modal">
-        <div className="modal-header-modern">
-          <div className="modal-icon-wrapper">
-            <span className="material-symbols-outlined">group_add</span>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-neutral-200">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary-600 text-2xl">group_add</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-900">Add People to Project</h2>
+              <p className="text-sm text-neutral-600 mt-1">Invite team members or groups to collaborate on this project</p>
+            </div>
           </div>
-          <h2 className="modal-title-modern">Add People to Project</h2>
-          <p className="modal-subtitle">Invite team members or groups to collaborate on this project</p>
         </div>
 
-        <div className="add-mode-toggle-modern">
-          <button className={`toggle-button-modern ${addMode === "individual" ? "active" : ""}`} onClick={() => setAddMode("individual")}>
-            <span className="material-symbols-outlined">person_add</span>
+        <div className="flex gap-2 p-4 bg-neutral-50 border-b border-neutral-200">
+          <button
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${addMode === "individual" ? "bg-primary-600 text-white shadow-md" : "bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-300"}`}
+            onClick={() => setAddMode("individual")}
+          >
+            <span className="material-symbols-outlined text-lg">person_add</span>
             <span>Individual</span>
           </button>
-          <button className={`toggle-button-modern ${addMode === "team" ? "active" : ""}`} onClick={() => setAddMode("team")}>
-            <span className="material-symbols-outlined">groups</span>
+          <button
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${addMode === "team" ? "bg-primary-600 text-white shadow-md" : "bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-300"}`}
+            onClick={() => setAddMode("team")}
+          >
+            <span className="material-symbols-outlined text-lg">groups</span>
             <span>Team</span>
           </button>
         </div>
 
-        <div className="form-content-modern">
+        <div className="p-6 space-y-6">
           {addMode === "individual" && (
             <>
-              <div className="form-group-modern">
-                <label className="form-label-modern">
-                  <span className="material-symbols-outlined">person_search</span>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+                  <span className="material-symbols-outlined text-lg">person_search</span>
                   Select a User
                 </label>
                 <Select
@@ -331,12 +341,12 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
               </div>
 
               {selectedUser && userTeamOptions.length > 1 && (
-                <div className="form-group-modern info-card">
-                  <div className="info-card-header">
-                    <span className="material-symbols-outlined">info</span>
+                <div className="space-y-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm font-medium text-blue-900 mb-3">
+                    <span className="material-symbols-outlined text-lg">info</span>
                     <span>Multiple Team Membership</span>
                   </div>
-                  <label className="form-label-modern">Select Team for This Project</label>
+                  <label className="text-sm font-medium text-neutral-700">Select Team for This Project</label>
                   <Select
                     options={userTeamOptions}
                     value={selectedUserTeam}
@@ -356,33 +366,33 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                       }),
                     }}
                   />
-                  <small className="form-hint-modern">
-                    <span className="material-symbols-outlined">lightbulb</span>
+                  <small className="flex items-center gap-1 text-xs text-blue-700 mt-2">
+                    <span className="material-symbols-outlined text-sm">lightbulb</span>
                     This user will be added under the selected team
                   </small>
                 </div>
               )}
 
               {selectedUser && userTeamOptions.length === 1 && (
-                <div className="form-group-modern">
-                  <label className="form-label-modern">
-                    <span className="material-symbols-outlined">group</span>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+                    <span className="material-symbols-outlined text-lg">group</span>
                     Team Assignment
                   </label>
-                  <div className="static-field">
-                    <span className="material-symbols-outlined">check_circle</span>
-                    <span>{userTeamOptions[0].label}</span>
+                  <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-green-900">
+                    <span className="material-symbols-outlined text-lg">check_circle</span>
+                    <span className="font-medium">{userTeamOptions[0].label}</span>
                   </div>
                 </div>
               )}
 
               {selectedUser && userTeamOptions.length === 0 && (
-                <div className="form-group-modern warning-card">
-                  <div className="warning-card-header">
-                    <span className="material-symbols-outlined">warning</span>
+                <div className="space-y-2 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm font-medium text-yellow-900 mb-3">
+                    <span className="material-symbols-outlined text-lg">warning</span>
                     <span>No Team Assignment</span>
                   </div>
-                  <label className="form-label-modern">Select Temporary Group</label>
+                  <label className="text-sm font-medium text-neutral-700">Select Temporary Group</label>
                   <Select
                     options={groupOptions}
                     value={selectedTemporaryGroup}
@@ -402,8 +412,8 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                       }),
                     }}
                   />
-                  <small className="form-hint-modern">
-                    <span className="material-symbols-outlined">lightbulb</span>
+                  <small className="flex items-center gap-1 text-xs text-yellow-700 mt-2">
+                    <span className="material-symbols-outlined text-sm">lightbulb</span>
                     User will be temporarily assigned to this group in the project
                   </small>
                 </div>
@@ -413,9 +423,9 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
 
           {addMode === "team" && (
             <>
-              <div className="form-group-modern">
-                <label className="form-label-modern">
-                  <span className="material-symbols-outlined">groups</span>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+                  <span className="material-symbols-outlined text-lg">groups</span>
                   Select a Team
                 </label>
                 <Select
@@ -441,51 +451,65 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
               </div>
 
               {selectedGroup && teamMembers.length === 0 && (
-                <div className="alert-card warning">
-                  <span className="material-symbols-outlined">info</span>
-                  <p>All members from this team are already in the project</p>
+                <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-300 rounded-lg text-yellow-900">
+                  <span className="material-symbols-outlined text-2xl">info</span>
+                  <p className="text-sm font-medium">All members from this team are already in the project</p>
                 </div>
               )}
 
               {selectedGroup && teamMembers.length > 0 && (
-                <div className="form-group-modern">
-                  <label className="form-label-modern">
-                    <span className="material-symbols-outlined">how_to_reg</span>
-                    Select Members to Add
-                    <span className="member-count-badge">{teamMembers.length} available</span>
+                <div className="space-y-3">
+                  <label className="flex items-center justify-between text-sm font-medium text-neutral-700">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-lg">how_to_reg</span>
+                      Select Members to Add
+                    </div>
+                    <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-xs font-semibold">
+                      {teamMembers.length} available
+                    </span>
                   </label>
-                  <div className="member-selection-grid">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {teamMembers.map((member) => {
                       const memberGroups = allGroups.filter((g) => g.members && g.members.includes(member._id));
                       const otherGroups = memberGroups.filter((g) => g._id !== selectedGroup.value);
 
                       return (
-                        <label key={member._id} className="member-card-checkbox">
+                        <label
+                          key={member._id}
+                          className="relative flex items-center p-3 bg-white border-2 border-neutral-200 rounded-lg cursor-pointer hover:border-primary-300 hover:bg-primary-50 transition-all"
+                        >
                           <input
                             type="checkbox"
                             checked={selectedTeamMemberIds.has(member._id)}
                             onChange={() => handleTeamMemberToggle(member._id)}
+                            className="sr-only"
                           />
-                          <div className="member-card-content">
+                          <div className="flex items-center gap-3 flex-1">
                             {member.avatar ? (
-                              <img src={member.avatar} alt={member.fullname} className="member-avatar-modern" />
+                              <img
+                                src={member.avatar}
+                                alt={member.fullname}
+                                className="w-10 h-10 rounded-full object-cover border-2 border-neutral-200"
+                              />
                             ) : (
-                              <div className="member-avatar-modern member-avatar-placeholder">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 text-white flex items-center justify-center text-sm font-bold border-2 border-neutral-200">
                                 {(member.fullname || member.username || "U").charAt(0).toUpperCase()}
                               </div>
                             )}
-                            <div className="member-details">
-                              <span className="member-name-modern">{member.fullname || member.username}</span>
+                            <div className="flex-1 min-w-0">
+                              <span className="block text-sm font-medium text-neutral-900 truncate">{member.fullname || member.username}</span>
                               {otherGroups.length > 0 && (
-                                <small className="member-teams-badge">
-                                  <span className="material-symbols-outlined">groups</span>
-                                  {otherGroups.map((g) => g.name).join(", ")}
+                                <small className="flex items-center gap-1 text-xs text-neutral-600 mt-1">
+                                  <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
+                                    groups
+                                  </span>
+                                  <span className="truncate">{otherGroups.map((g) => g.name).join(", ")}</span>
                                 </small>
                               )}
                             </div>
-                            <span className="checkmark-indicator">
-                              <span className="material-symbols-outlined">check_circle</span>
-                            </span>
+                            {selectedTeamMemberIds.has(member._id) && (
+                              <span className="material-symbols-outlined text-primary-600 text-xl">check_circle</span>
+                            )}
                           </div>
                         </label>
                       );
@@ -495,9 +519,9 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
               )}
 
               {selectedGroup && teamMembers.length > 0 && (
-                <div className="form-group-modern">
-                  <label className="form-label-modern">
-                    <span className="material-symbols-outlined">workspace_premium</span>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+                    <span className="material-symbols-outlined text-lg">workspace_premium</span>
                     Select Team Leader (Optional)
                   </label>
                   <Select
@@ -521,8 +545,8 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
                       }),
                     }}
                   />
-                  <small className="form-hint-modern">
-                    <span className="material-symbols-outlined">lightbulb</span>
+                  <small className="flex items-center gap-1 text-xs text-neutral-600 mt-2">
+                    <span className="material-symbols-outlined text-sm">lightbulb</span>
                     System will auto-detect existing leader if not specified
                   </small>
                 </div>
@@ -531,20 +555,28 @@ const AddMemberModal = ({ isOpen, onClose, projectKey, onMemberAdded, existingMe
           )}
         </div>
 
-        <div className="modal-actions-modern">
-          <button onClick={handleClose} className="btn-modern btn-secondary-modern" disabled={isSaving}>
-            <span className="material-symbols-outlined">close</span>
+        <div className="flex items-center justify-end gap-3 p-6 bg-neutral-50 border-t border-neutral-200">
+          <button
+            onClick={handleClose}
+            className="flex items-center gap-2 px-5 py-2.5 border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 rounded-lg font-medium transition-colors"
+            disabled={isSaving}
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
             <span>Cancel</span>
           </button>
-          <button onClick={handleSubmit} className="btn-modern btn-primary-modern" disabled={isSaving}>
+          <button
+            onClick={handleSubmit}
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSaving}
+          >
             {isSaving ? (
               <>
-                <span className="spinner-modern"></span>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>Adding...</span>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined">group_add</span>
+                <span className="material-symbols-outlined text-lg">group_add</span>
                 <span>Add to Project</span>
               </>
             )}

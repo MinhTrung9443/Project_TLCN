@@ -7,12 +7,12 @@ const GanttLeftSection = ({ projects, groupBy, expandedItems, toggleExpand, left
   // Safety check
   if (!Array.isArray(projects)) {
     return (
-      <div className="gantt-left-section" ref={leftSectionRef}>
-        <div className="gantt-left-header">
+      <div className="w-80 border-r border-neutral-200 bg-white" ref={leftSectionRef}>
+        <div className="h-16 flex items-center px-4 border-b border-neutral-200 bg-neutral-50 font-semibold text-neutral-900">
           <span>Name</span>
         </div>
-        <div className="gantt-body">
-          <div style={{ padding: "20px", textAlign: "center", color: "#6b7280" }}>Loading...</div>
+        <div className="bg-white">
+          <div className="p-5 text-center text-neutral-500">Loading...</div>
         </div>
       </div>
     );
@@ -24,14 +24,14 @@ const GanttLeftSection = ({ projects, groupBy, expandedItems, toggleExpand, left
   const hasTask = groupBy.includes("task");
 
   return (
-    <div className="gantt-left-section" ref={leftSectionRef}>
+    <div className="w-80 border-r border-neutral-200 bg-white" ref={leftSectionRef}>
       {/* Header */}
-      <div className="gantt-left-header">
+      <div className="h-16 flex items-center px-4 border-b border-neutral-200 bg-neutral-50 font-semibold text-neutral-900">
         <span>{hasProject ? "Project" : hasSprint ? "Sprint" : "Task"}</span>
       </div>
 
       {/* Body */}
-      <div className="gantt-body">
+      <div className="bg-white">
         {projects.map((item) => {
           // If displaying projects
           if (hasProject) {

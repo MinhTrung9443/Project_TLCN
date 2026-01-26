@@ -68,8 +68,8 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
           </span>
         )}
 
-        <span className="text-sm font-semibold text-purple-600 flex-shrink-0">{task.key || "No-Key"}</span>
-        <span className="text-sm text-gray-900 truncate" title={task.name}>
+        <span className="text-sm font-semibold text-primary-600 flex-shrink-0">{task.key || "No-Key"}</span>
+        <span className="text-sm text-neutral-900 truncate" title={task.name}>
           {truncateText(task.name, 40)}
         </span>
       </div>
@@ -91,7 +91,7 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
         </div>
         {/* Status Icon */}
         <div className="flex items-center" title={task.statusId?.name || "Status"}>
-          {task.statusId?.name === "To Do" && <span className="material-symbols-outlined text-gray-400">radio_button_unchecked</span>}
+          {task.statusId?.name === "To Do" && <span className="material-symbols-outlined text-neutral-400">radio_button_unchecked</span>}
           {task.statusId?.name === "In Progress" && <span className="material-symbols-outlined text-blue-500">schedule</span>}
           {task.statusId?.name === "Done" && <span className="material-symbols-outlined text-green-500">check_circle</span>}
         </div>
@@ -101,12 +101,12 @@ const DraggableTask = ({ task, source, canDragDrop, onTaskClick }) => {
             task.assigneeId.avatar ? (
               <img src={task.assigneeId.avatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-semibold">
+              <div className="w-6 h-6 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-semibold">
                 {(task.assigneeId.fullname || task.assigneeId.username || "U").charAt(0).toUpperCase()}
               </div>
             )
           ) : (
-            <span className="material-symbols-outlined text-gray-400 text-xl">person</span>
+            <span className="material-symbols-outlined text-neutral-400 text-xl">person</span>
           )}
         </div>
       </div>
@@ -131,13 +131,13 @@ const TaskList = ({ tasks, source, onDrop, canDragDrop = true, onTaskClick }) =>
   );
 
   return (
-    <div ref={drop} className={`min-h-[100px] p-2 rounded-lg ${isOver ? "bg-purple-50 border-2 border-purple-300" : ""}`}>
+    <div ref={drop} className={`min-h-[100px] p-2 rounded-lg ${isOver ? "bg-primary-50 border-2 border-primary-300" : ""}`}>
       {tasks && tasks.length > 0 ? (
         tasks.map((task, index) => (
           <DraggableTask key={task.id || index} task={task} source={source} canDragDrop={canDragDrop} onTaskClick={onTaskClick} />
         ))
       ) : (
-        <div className="text-center py-8 text-gray-500">No tasks</div>
+        <div className="text-center py-8 text-neutral-500">No tasks</div>
       )}
     </div>
   );

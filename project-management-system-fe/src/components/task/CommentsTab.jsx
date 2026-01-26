@@ -121,25 +121,38 @@ const CommentsTab = ({ taskId }) => {
     ));
   };
   return (
-    <div className="comments-section">
-      <div className="comment-list">{renderContent()}</div>
-      <form onSubmit={handlePostComment} className="comment-form">
-        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Add a comment..." rows="3" />
+    <div className="space-y-4">
+      <div className="space-y-3">{renderContent()}</div>
+      <form onSubmit={handlePostComment} className="space-y-3 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+        <textarea
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder="Add a comment..."
+          rows="3"
+          className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600 resize-none"
+        />
 
-        <div className="comment-attachments">
-          <label htmlFor="comment-file-upload" className="file-upload-label">
-            <span className="material-symbols-outlined">attach_file</span>
+        <div className="space-y-2">
+          <label
+            htmlFor="comment-file-upload"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 cursor-pointer transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">attach_file</span>
             Attach files
           </label>
           <input id="comment-file-upload" type="file" multiple onChange={handleFileChange} style={{ display: "none" }} />
 
           {selectedFiles.length > 0 && (
-            <div className="selected-files-list">
+            <div className="space-y-2">
               {selectedFiles.map((file, index) => (
-                <div key={index} className="selected-file-item">
-                  <span>{file.name}</span>
-                  <button type="button" onClick={() => handleRemoveFile(index)} className="remove-file-btn">
-                    <span className="material-symbols-outlined">close</span>
+                <div key={index} className="flex items-center justify-between p-2 bg-white border border-neutral-200 rounded-lg">
+                  <span className="text-sm text-neutral-700 truncate">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(index)}
+                    className="p-1 text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">close</span>
                   </button>
                 </div>
               ))}
@@ -147,7 +160,11 @@ const CommentsTab = ({ taskId }) => {
           )}
         </div>
 
-        <button type="submit" disabled={uploading}>
+        <button
+          type="submit"
+          disabled={uploading}
+          className="w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {uploading ? "Posting..." : "Post Comment"}
         </button>
       </form>

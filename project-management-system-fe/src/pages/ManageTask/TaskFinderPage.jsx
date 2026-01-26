@@ -5,12 +5,21 @@ import { useAuth } from "../../contexts/AuthContext";
 
 import { getProjects } from "../../services/projectService";
 import { searchTasks, deleteTask } from "../../services/taskService";
-import userService from "../../services/userService"; // Import default object
+import userService from "../../services/userService";
 import statusService from "../../services/workflowService";
 
 import CreateTaskModal from "../../components/task/CreateTaskModal";
 import TaskRow from "./TaskRow";
 import TaskDetailPanel from "../../components/task/TaskDetailPanel";
+
+// New UI Components
+import Button from "../../components/ui/Button";
+import Select from "../../components/ui/Select";
+import PageHeader from "../../components/ui/PageHeader";
+import FilterBar from "../../components/ui/FilterBar";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
+import { Table, TableHeader, TableBody, TableRow, TableHead } from "../../components/ui/Table";
 
 const TaskFinderPage = () => {
   const { user } = useAuth();
@@ -298,244 +307,224 @@ const TaskFinderPage = () => {
   };
 
   return (
-    <>
+    <div className="flex h-full bg-neutral-50">
       <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
-      <div className={`flex ${selectedTask ? "gap-0" : "gap-6"} h-full`}>
-        <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-8 py-6 bg-gradient-to-r from-purple-50 to-white border-b border-gray-200">
-            <div className="flex items-center justify-between gap-6">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 w-fit px-3 py-1.5 bg-purple-100 rounded-full">
-                  <span className="material-symbols-outlined text-purple-700 text-lg">task</span>
-                  <span className="text-sm font-semibold text-purple-700">Task Management</span>
-                </div>
 
-                <h1 className="text-3xl font-bold text-gray-900">Task Finder</h1>
-                <p className="text-gray-600">Search, filter, and manage tasks across your projects</p>
-              </div>
-
-              {canCreateTask && (
-                <button
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:shadow-lg hover:-translate-y-0.5 transition-all font-semibold whitespace-nowrap"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  <span className="material-symbols-outlined">add</span>
+      {/* Main Content */}
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${selectedTask ? "mr-0" : "mr-6"}`}>
+        <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+          {/* Page Header */}
+          <PageHeader
+            icon="task"
+            badge="Task Management"
+            title="Task Finder"
+            subtitle="Search, filter, and manage tasks across your projects"
+            actions={
+              canCreateTask && (
+                <Button variant="primary" size="lg" icon="add" onClick={() => setIsModalOpen(true)}>
                   Create Task
-                </button>
-              )}
-            </div>
+                </Button>
+              )
+            }
+          />
 
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-purple-500">
-                  <span className="material-symbols-outlined text-gray-400">search</span>
-                  <input
-                    type="text"
-                    placeholder="Search by name, key..."
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    className="flex-1 outline-none bg-transparent"
-                  />
-                </div>
-                <button
-                  className="flex items-center gap-2 px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
-                  onClick={clearAllFilters}
-                  title="Clear All Filters"
-                >
-                  <span className="material-symbols-outlined">filter_alt_off</span>
-                  Clear
-                </button>
-              </div>
+          {/* Filter Bar */}
+          <FilterBar searchValue={keyword} onSearchChange={setKeyword} searchPlaceholder="Search by name, key..." onClear={clearAllFilters}>
+            <select
+              className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[180px]"
+              value={projectStatus}
+              onChange={(e) => setProjectStatus(e.target.value)}
+            >
+              <option value="">All Project Status</option>
+              <option value="active">Active Projects</option>
+              <option value="paused">Paused Projects</option>
+              <option value="completed">Completed Projects</option>
+            </select>
 
-              <div className="flex items-center gap-3 flex-wrap">
-                <select
-                  className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={projectStatus}
-                  onChange={(e) => setProjectStatus(e.target.value)}
-                >
-                  <option value="">All Project Status</option>
-                  <option value="active">Active Projects</option>
-                  <option value="paused">Paused Projects</option>
-                  <option value="completed">Completed Projects</option>
-                </select>
+            {user?.role !== "admin" && (
+              <select
+                className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[150px]"
+                value={viewMode}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setViewMode(val);
+                  setActiveFilters((prev) => ({ ...prev, projectId: undefined }));
+                }}
+              >
+                <option value="MY_TASKS">My Tasks</option>
+                {hasManagedRole && <option value="MANAGED_TASKS">Managed Tasks</option>}
+              </select>
+            )}
 
-                {user?.role !== "admin" && (
-                  <select
-                    className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={viewMode}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setViewMode(val);
-                      setActiveFilters((prev) => ({ ...prev, projectId: undefined }));
-                    }}
-                  >
-                    <option value="MY_TASKS">My Tasks</option>
-                    {hasManagedRole && <option value="MANAGED_TASKS">Managed Tasks</option>}
-                  </select>
-                )}
-
-                <select
-                  className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={activeFilters.projectId || ""}
-                  onChange={(e) => handleFilterChange("projectId", e.target.value)}
-                >
-                  <option value="">All Projects</option>
-                  {user?.role !== "admin" && viewMode === "MANAGED_TASKS" ? (
-                    <>
-                      {groupedManagedProjects.pm.length > 0 && (
-                        <optgroup label="Managed Projects (PM)">
-                          {groupedManagedProjects.pm.map((p) => (
-                            <option key={p.value} value={p.value}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {groupedManagedProjects.leader.length > 0 && (
-                        <optgroup label="Led Projects">
-                          {groupedManagedProjects.leader.map((p) => (
-                            <option key={p.value} value={p.value}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {(() => {
-                        const pmIds = new Set((groupedManagedProjects.pm || []).map((p) => p.value?.toString()));
-                        const leaderIds = new Set((groupedManagedProjects.leader || []).map((p) => p.value?.toString()));
-                        const fallback = (projectsForDropdown || []).filter((opt) => {
-                          const id = opt.value?.toString();
-                          return !pmIds.has(id) && !leaderIds.has(id);
-                        });
-                        return fallback.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ));
-                      })()}
-                    </>
-                  ) : (
-                    (projectsForDropdown.length > 0 ? projectsForDropdown : selectOptions.projects).map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))
+            <select
+              className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px]"
+              value={activeFilters.projectId || ""}
+              onChange={(e) => handleFilterChange("projectId", e.target.value)}
+            >
+              <option value="">All Projects</option>
+              {user?.role !== "admin" && viewMode === "MANAGED_TASKS" ? (
+                <>
+                  {groupedManagedProjects.pm.length > 0 && (
+                    <optgroup label="Managed Projects (PM)">
+                      {groupedManagedProjects.pm.map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
                   )}
-                </select>
-
-                {viewMode !== "MY_TASKS" && (
-                  <select
-                    className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={activeFilters.assigneeId || ""}
-                    onChange={(e) => handleFilterChange("assigneeId", e.target.value)}
-                  >
-                    <option value="">All Assignees</option>
-                    {selectOptions.users.map((opt) => (
+                  {groupedManagedProjects.leader.length > 0 && (
+                    <optgroup label="Led Projects">
+                      {groupedManagedProjects.leader.map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {(() => {
+                    const pmIds = new Set((groupedManagedProjects.pm || []).map((p) => p.value?.toString()));
+                    const leaderIds = new Set((groupedManagedProjects.leader || []).map((p) => p.value?.toString()));
+                    const fallback = (projectsForDropdown || []).filter((opt) => {
+                      const id = opt.value?.toString();
+                      return !pmIds.has(id) && !leaderIds.has(id);
+                    });
+                    return fallback.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
                       </option>
-                    ))}
-                  </select>
-                )}
-
-                <select
-                  className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={activeFilters.reporterId || ""}
-                  onChange={(e) => handleFilterChange("reporterId", e.target.value)}
-                >
-                  <option value="">All Reporters</option>
-                  {selectOptions.users.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-
-                <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:border-gray-400 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeDone}
-                    onChange={(e) => setIncludeDone(e.target.checked)}
-                    className="w-4 h-4 rounded accent-purple-600"
-                  />
-                  <span className="font-medium text-gray-700">Include Done</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="grid grid-cols-[80px_2fr_100px_100px_80px_80px_80px_100px_100px] gap-4 px-6 py-4 bg-gray-50 border-b border-gray-200 font-semibold text-sm text-gray-900">
-              <div>Key</div>
-              <div>Name</div>
-              <div>Sprint</div>
-              <div>Platform</div>
-              <div>Assignee</div>
-              <div>Reporter</div>
-              <div>Priority</div>
-              <div>Status</div>
-              <div>Due Date</div>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {loading ? (
-                <div className="flex items-center justify-center w-full h-full">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-4 border-purple-300 border-t-white rounded-full animate-spin"></div>
-                    <p className="text-gray-600">Loading tasks...</p>
-                  </div>
-                </div>
-              ) : tasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center w-full h-full gap-3 text-gray-500">
-                  <span className="material-symbols-outlined text-5xl">task_alt</span>
-                  <h3 className="text-lg font-semibold">No tasks found</h3>
-                  <p className="text-sm">Try adjusting your filters or search criteria</p>
-                </div>
+                    ));
+                  })()}
+                </>
               ) : (
-                getPaginatedTasks().map((task) => <TaskRow key={task._id} task={task} onTaskClick={handleTaskClick} />)
+                (projectsForDropdown.length > 0 ? projectsForDropdown : selectOptions.projects).map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))
               )}
-            </div>
+            </select>
+
+            {viewMode !== "MY_TASKS" && (
+              <select
+                className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[160px]"
+                value={activeFilters.assigneeId || ""}
+                onChange={(e) => handleFilterChange("assigneeId", e.target.value)}
+              >
+                <option value="">All Assignees</option>
+                {selectOptions.users.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <select
+              className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[160px]"
+              value={activeFilters.reporterId || ""}
+              onChange={(e) => handleFilterChange("reporterId", e.target.value)}
+            >
+              <option value="">All Reporters</option>
+              {selectOptions.users.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+
+            <label className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg hover:border-neutral-400 cursor-pointer transition-colors">
+              <input
+                type="checkbox"
+                checked={includeDone}
+                onChange={(e) => setIncludeDone(e.target.checked)}
+                className="w-4 h-4 rounded accent-primary-600"
+              />
+              <span className="font-medium text-neutral-700">Include Done</span>
+            </label>
+          </FilterBar>
+
+          {/* Table Area */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {loading ? (
+              <div className="flex items-center justify-center w-full h-full">
+                <LoadingSpinner size="lg" text="Loading tasks..." />
+              </div>
+            ) : tasks.length === 0 ? (
+              <EmptyState icon="inbox" title="No tasks found" description="Try adjusting your filters or search criteria" />
+            ) : (
+              <div className="flex-1 overflow-auto">
+                <Table className="min-w-full">
+                  <TableHeader>
+                    <TableRow hoverable={false}>
+                      <TableHead>Key</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Sprint</TableHead>
+                      <TableHead>Platform</TableHead>
+                      <TableHead>Assignee</TableHead>
+                      <TableHead>Reporter</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Due Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getPaginatedTasks().map((task) => (
+                      <TaskRow key={task._id} task={task} onTaskClick={handleTaskClick} />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
 
+          {/* Pagination */}
           {!loading && getTotalPages() > 1 && (
-            <div className="flex items-center justify-center gap-4 px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <button
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            <div className="flex items-center justify-center gap-4 px-6 py-4 border-t border-neutral-200 bg-neutral-50">
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
+                icon="chevron_left"
+                iconPosition="left"
               >
-                <span className="material-symbols-outlined text-lg">chevron_left</span>
                 Previous
-              </button>
-              <span className="text-sm font-medium text-gray-700">
+              </Button>
+              <span className="text-sm font-medium text-neutral-700 px-4">
                 Page {currentPage} of {getTotalPages()}
               </span>
-              <button
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
                 disabled={currentPage === getTotalPages()}
+                icon="chevron_right"
+                iconPosition="right"
               >
                 Next
-                <span className="material-symbols-outlined text-lg">chevron_right</span>
-              </button>
+              </Button>
             </div>
           )}
         </div>
-        {selectedTask && (
-          <TaskDetailPanel
-            key={selectedTask?._id}
-            task={selectedTask}
-            onClose={() => setSelectedTask(null)}
-            onTaskUpdate={handleTaskUpdate}
-            onTaskDelete={handleTaskDelete}
-            statuses={selectOptions.statuses}
-            platforms={selectOptions.platforms}
-            priorities={selectOptions.priorities}
-            taskTypes={selectOptions.taskTypes}
-            sprints={selectOptions.sprints}
-          />
-        )}
       </div>
-    </>
+
+      {/* Task Detail Panel */}
+      {selectedTask && (
+        <TaskDetailPanel
+          key={selectedTask?._id}
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onTaskUpdate={handleTaskUpdate}
+          onTaskDelete={handleTaskDelete}
+          statuses={selectOptions.statuses}
+          platforms={selectOptions.platforms}
+          priorities={selectOptions.priorities}
+          taskTypes={selectOptions.taskTypes}
+          sprints={selectOptions.sprints}
+        />
+      )}
+    </div>
   );
 };
 

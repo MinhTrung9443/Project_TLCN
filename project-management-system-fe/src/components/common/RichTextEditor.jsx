@@ -57,16 +57,17 @@ const MenuBar = ({ editor }) => {
       >
         <span className="material-symbols-outlined">format_italic</span>
       </button>
-      <div className="color-picker-wrapper">
-        <span className="material-symbols-outlined">format_color_text</span>
+      <div className="relative flex items-center">
+        <span className="material-symbols-outlined text-neutral-600">format_color_text</span>
         <input
           type="color"
           onInput={(event) => editor.chain().focus().setColor(event.target.value).run()}
           value={editor.getAttributes("textStyle").color || "#000000"}
           title="Text Color"
+          className="ml-1 w-8 h-8 cursor-pointer"
         />
       </div>
-      <span className="divider"></span>
+      <span className="w-px h-6 bg-neutral-300 mx-2"></span>
       <button
         type="button"
         onClick={() => editor.chain().focus().setTextAlign("left").run()}
@@ -128,7 +129,7 @@ const RichTextEditor = ({ value, onChange }) => {
   }, [value, editor]);
 
   return (
-    <div className="tiptap-editor-wrapper">
+    <div className="border border-neutral-300 rounded-lg overflow-hidden focus-within:border-primary-600 focus-within:ring-1 focus-within:ring-primary-600 transition-all">
       <MenuBar editor={editor} />
       <EditorContent editor={editor} />
     </div>

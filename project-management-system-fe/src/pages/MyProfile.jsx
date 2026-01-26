@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
+import { useAuth } from "../contexts/AuthContext";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Badge from "../components/ui/Badge";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 import userService from "../services/userService";
 
 const MyProfilePage = () => {
@@ -40,13 +46,6 @@ const MyProfilePage = () => {
     setFormData((prevState) => ({
       ...prevState,
       [name]: value,
-    }));
-  };
-  const handleStatusToggle = (e) => {
-    const newStatus = e.target.checked ? "active" : "inactive";
-    setFormData((prevState) => ({
-      ...prevState,
-      status: newStatus,
     }));
   };
 
@@ -115,211 +114,144 @@ const MyProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-purple-600 rounded-full animate-spin"></div>
-        <p className="mt-4 text-gray-600 text-sm font-medium">Loading profile...</p>
+      <div className="min-h-[360px] flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading profile..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-8 mb-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-white bg-opacity-20 rounded-full px-4 py-2 mb-4">
-            <span className="material-symbols-outlined">person</span>
-            <span className="text-sm font-medium">Account Settings</span>
-          </div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="material-symbols-outlined text-4xl">account_circle</span>
-            <h1 className="text-4xl font-bold">My Profile</h1>
-          </div>
-          <p className="text-purple-100">Manage your personal details and account settings</p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-neutral-50">
+      <PageHeader title="My Profile" subtitle="Manage your personal details and account preferences" icon="account_circle" badge="Account settings" />
 
-      <form onSubmit={handleSubmit} className="max-w-7xl mx-auto px-4 pb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="mb-6">
-                <div className="relative w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white text-5xl font-bold overflow-hidden">
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <Card className="lg:col-span-1" padding={false}>
+            <div className="p-6 space-y-6">
+              <div className="relative flex flex-col items-center">
+                <div className="relative w-28 h-28 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-4xl font-semibold overflow-hidden">
                   {formData.avatar ? (
                     <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <span>{user.fullname ? user.fullname.charAt(0).toUpperCase() : "U"}</span>
                   )}
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
                 </div>
-                {isUploading && (
-                  <div className="absolute inset-0 rounded-full bg-black bg-opacity-40 flex items-center justify-center">
-                    <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-4 w-full"
+                  icon="cloud_upload"
+                  onClick={handleAvatarClick}
+                  disabled={isUploading}
+                >
+                  {isUploading ? "Uploading..." : "Upload avatar"}
+                </Button>
               </div>
-
-              <input type="file" ref={fileInputRef} style={{ display: "none" }} accept="image/*" onChange={handleFileChange} />
-
-              <button
-                type="button"
-                className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
-                onClick={handleAvatarClick}
-                disabled={isUploading}
-              >
-                <span className="material-symbols-outlined">cloud_upload</span>
-                {isUploading ? "Uploading..." : "Upload Avatar"}
-              </button>
 
               <div className="space-y-4">
-                <div className="border-b border-gray-200 pb-4">
-                  <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-purple-600 mt-1">badge</span>
-                    <div className="flex-1">
-                      <div className="text-xs font-medium text-gray-600 uppercase">Role</div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">{user?.role || "Member"}</div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-700 flex items-center justify-center">
+                      <span className="material-symbols-outlined">badge</span>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-neutral-500">Role</p>
+                      <p className="text-sm font-semibold text-neutral-900">{user?.role || "Member"}</p>
                     </div>
                   </div>
                 </div>
-                <div className="border-b border-gray-200 pb-4">
-                  <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-purple-600 mt-1">email</span>
-                    <div className="flex-1">
-                      <div className="text-xs font-medium text-gray-600 uppercase">Email</div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">{user?.email}</div>
-                    </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-700 flex items-center justify-center">
+                    <span className="material-symbols-outlined">mail</span>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-neutral-500">Email</p>
+                    <p className="text-sm font-semibold text-neutral-900 break-all">{user?.email}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-purple-600 mt-1">verified</span>
-                  <div className="flex-1">
-                    <div className="text-xs font-medium text-gray-600 uppercase">Status</div>
-                    <div className={`text-sm font-semibold mt-1 ${formData.status === "active" ? "text-green-600" : "text-gray-500"}`}>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-700 flex items-center justify-center">
+                    <span className="material-symbols-outlined">verified</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs uppercase tracking-wide text-neutral-500">Status</p>
+                    <Badge
+                      variant={formData.status === "active" ? "success" : "neutral"}
+                      size="sm"
+                      icon={formData.status === "active" ? "check" : "pause"}
+                    >
                       {formData.status === "active" ? "Active" : "Inactive"}
-                    </div>
+                    </Badge>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-sm p-8">
-              <div className="mb-8 pb-6 border-b border-gray-200">
-                <h3 className="flex items-center gap-2 text-xl font-bold text-gray-900 mb-2">
-                  <span className="material-symbols-outlined">info</span>
-                  Basic Information
-                </h3>
-                <p className="text-gray-600 text-sm">Update your personal details and contact information</p>
+          <Card className="lg:col-span-3">
+            <div className="flex flex-col gap-2 pb-4 border-b border-neutral-200 mb-6">
+              <div className="flex items-center gap-2 text-neutral-900 font-semibold text-lg">
+                <span className="material-symbols-outlined">info</span>
+                Basic information
               </div>
+              <p className="text-sm text-neutral-600">Update your personal details and contact information.</p>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                  <label htmlFor="fullname" className="flex items-center gap-1 text-sm font-semibold text-gray-900 mb-2">
-                    <span className="material-symbols-outlined text-base">person</span>
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="fullname"
-                    name="fullname"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={formData.fullname}
-                    onChange={handleChange}
-                    required
-                    placeholder="Enter your full name"
-                  />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="Full name"
+                name="fullname"
+                value={formData.fullname}
+                onChange={handleChange}
+                required
+                placeholder="Enter your full name"
+                icon="person"
+              />
+              <Input label="Username" name="username" value={formData.username} onChange={handleChange} disabled icon="alternate_email" />
+              <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} disabled icon="mail" />
+              <Input
+                label="Phone number"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Enter your phone number"
+                icon="call"
+              />
 
-                <div>
-                  <label htmlFor="username" className="flex items-center gap-1 text-sm font-semibold text-gray-900 mb-2">
-                    <span className="material-symbols-outlined text-base">alternate_email</span>
-                    Username <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                    value={formData.username}
-                    onChange={handleChange}
-                    required
-                    disabled
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="flex items-center gap-1 text-sm font-semibold text-gray-900 mb-2">
-                    <span className="material-symbols-outlined text-base">mail</span>
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    disabled
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="flex items-center gap-1 text-sm font-semibold text-gray-900 mb-2">
-                    <span className="material-symbols-outlined text-base">phone</span>
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="gender" className="flex items-center gap-1 text-sm font-semibold text-gray-900 mb-2">
-                    <span className="material-symbols-outlined text-base">wc</span>
-                    Gender
-                  </label>
-                  <select
-                    id="gender"
-                    name="gender"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={formData.gender}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 justify-end pt-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handleCancel}
-                  disabled={!hasChanges()}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Gender</label>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <span className="material-symbols-outlined">close</span>
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!hasChanges()}
-                >
-                  <span className="material-symbols-outlined">save</span>
-                  Save Changes
-                </button>
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
             </div>
-          </div>
+
+            <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-neutral-200">
+              <Button type="button" variant="secondary" icon="close" onClick={handleCancel} disabled={!hasChanges()}>
+                Cancel
+              </Button>
+              <Button type="submit" icon="save" disabled={!hasChanges()}>
+                Save changes
+              </Button>
+            </div>
+          </Card>
         </div>
       </form>
     </div>

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getTaskByKey, deleteTask } from "../../services/taskService";
 import TaskDetailPanel from "../../components/task/TaskDetailPanel";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 
 const TaskDetailPage = () => {
   const { taskKey } = useParams();
@@ -86,16 +87,13 @@ const TaskDetailPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center w-full h-screen">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-purple-300 border-t-white rounded-full animate-spin"></div>
-          <span className="text-gray-600">Loading task...</span>
-        </div>
+        <LoadingSpinner size="lg" text="Loading task..." />
       </div>
     );
   }
 
   if (!task) {
-    return <div className="flex items-center justify-center w-full h-screen text-gray-600">Task not found.</div>;
+    return <div className="flex items-center justify-center w-full h-screen text-neutral-600">Task not found.</div>;
   }
 
   return (

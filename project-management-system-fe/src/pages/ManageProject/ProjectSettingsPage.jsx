@@ -3,10 +3,14 @@
 
 import React, { useEffect, useContext } from "react";
 import { useParams, Outlet } from "react-router-dom";
+import { toast } from "react-toastify";
+import PageHeader from "../../components/ui/PageHeader";
+import Card from "../../components/ui/Card";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
+import ProjectSettingMenu from "../../components/project/ProjectSettingMenu";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { getProjectByKey } from "../../services/projectService";
-import { toast } from "react-toastify";
-import ProjectSettingMenu from "../../components/project/ProjectSettingMenu";
 
 const ProjectSettingsPage = () => {
   const { projectKey } = useParams();
@@ -32,18 +36,40 @@ const ProjectSettingsPage = () => {
   }, [projectKey, selectedProjectKey, setProject, setLoadingProject]);
 
   if (loadingProject) {
-    return <div className="flex items-center justify-center py-12 text-gray-500">Loading project...</div>;
+    return (
+      <div className="flex items-center justify-center py-16">
+        <LoadingSpinner size="lg" text="Loading project settings..." />
+      </div>
+    );
   }
 
   if (!projectData) {
-    return <div className="flex items-center justify-center py-12 text-gray-500">Project not found.</div>;
+    return (
+      <EmptyState
+        icon="folder_off"
+        title="Project not found"
+        description="We could not locate this project. Please check the URL or select another project."
+      />
+    );
   }
 
   return (
-    <div className="flex">
-      <ProjectSettingMenu />
-      <div className="flex-1">
-        <Outlet />
+    <div className="space-y-6">
+      <PageHeader
+        title="Project Settings"
+        subtitle={`Configure workspace details, workflows, and metadata for ${projectData.name || "this project"} (${projectData.key})`}
+        badge={projectData.status === "completed" ? "Completed" : "Active"}
+        icon="tune"
+      />
+
+      <div className="grid grid-cols-[280px_1fr] gap-6 items-start">
+        <Card padding={false} className="sticky top-24 self-start">
+          <ProjectSettingMenu />
+        </Card>
+
+        <div className="space-y-6">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { groupService } from "../services/groupService";
-import { useAuth } from "../contexts/AuthContext";
-
+import { toast } from "react-toastify";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import EmptyState from "../components/ui/EmptyState";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 import CreateEditGroupModal from "../components/group/CreateEditGroupModal";
 import ConfirmationModal from "../components/common/ConfirmationModal";
-import { toast } from "react-toastify";
+import { groupService } from "../services/groupService";
+import { useAuth } from "../contexts/AuthContext";
 
 const GroupListPage = () => {
   const { user } = useAuth();
@@ -119,7 +124,7 @@ const GroupListPage = () => {
       const rafId = requestAnimationFrame(step);
       return () => cancelAnimationFrame(rafId);
     }, [end, duration]);
-    return <span className="text-3xl font-bold text-gray-900">{value}</span>;
+    return <span className="text-3xl font-bold text-neutral-900">{value}</span>;
   };
 
   const handleDeleteConfirm = async () => {
@@ -134,80 +139,72 @@ const GroupListPage = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl p-12 mb-8 shadow-lg flex justify-between items-center">
-        <div className="text-white">
-          <div className="inline-flex items-center gap-2 bg-white bg-opacity-20 rounded-full px-4 py-2 mb-4">
-            <span className="material-symbols-outlined">groups</span>
-            <span className="text-sm font-medium">Team Management</span>
-          </div>
-          <h1 className="text-4xl font-bold mb-2">Teams & Groups</h1>
-          <p className="text-purple-100">Manage your organization teams and collaborate effectively</p>
-        </div>
-        {isAdmin && (
-          <button
-            onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 bg-white text-purple-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors shadow-md"
-          >
-            <span className="material-symbols-outlined">add</span>
-            Create New Team
-          </button>
-        )}
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <LoadingSpinner size="lg" text="Loading teams..." />
       </div>
+    );
+  }
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[400px]">
-          <div className="w-12 h-12 border-4 border-gray-200 border-t-purple-600 rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600 text-sm font-medium">Loading teams...</p>
-        </div>
-      ) : groups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-          <span className="material-symbols-outlined text-6xl text-gray-400 mb-4">folder_open</span>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No teams found</h3>
-          <p className="text-gray-600 mb-6">Create your first team to get started</p>
-          {isAdmin && (
-            <button
-              onClick={handleOpenCreateModal}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-            >
-              <span className="material-symbols-outlined">add</span>
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Teams & Groups"
+        subtitle="Manage your organization teams and collaborate effectively"
+        icon="groups"
+        badge="Team Management"
+        actions={
+          isAdmin && (
+            <Button icon="add" onClick={handleOpenCreateModal}>
               Create Team
-            </button>
-          )}
-        </div>
+            </Button>
+          )
+        }
+      />
+
+      {groups.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon="groups"
+            title="No teams yet"
+            description="Create your first team to get started with collaboration."
+            action={
+              isAdmin && (
+                <Button icon="add" onClick={handleOpenCreateModal}>
+                  Create Team
+                </Button>
+              )
+            }
+          />
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <div
+            <Card
               key={group._id}
-              className={`bg-white rounded-xl shadow-sm hover:shadow-lg transition-all ${group.status === "inactive" ? "opacity-60" : ""}`}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{group.name}</h3>
-                    <span
-                      className={`inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full ${
-                        group.status === "active" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      <span className="w-2 h-2 rounded-full bg-current"></span>
+              hoverable
+              className={`h-full ${group.status === "inactive" ? "opacity-60" : ""}`}
+              header={
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-neutral-900 truncate mb-2">{group.name}</h3>
+                    <Badge variant={group.status === "active" ? "success" : "neutral"} size="sm">
                       {group.status === "active" ? "Active" : "Inactive"}
-                    </span>
+                    </Badge>
                   </div>
                   {isAdmin && (
                     <div className="relative" ref={openActionMenu === group._id ? menuRef : null}>
                       <button
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+                        className="p-2 text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
                         onClick={() => handleToggleActionMenu(group._id)}
                       >
                         <span className="material-symbols-outlined">more_vert</span>
                       </button>
                       {openActionMenu === group._id && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2 z-10">
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                             onClick={() => {
                               handleOpenEditModal(group);
                               setOpenActionMenu(null);
@@ -217,7 +214,7 @@ const GroupListPage = () => {
                             Edit
                           </button>
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                             onClick={() => {
                               handleToggleStatus(group);
                               setOpenActionMenu(null);
@@ -227,7 +224,7 @@ const GroupListPage = () => {
                             {group.status === "active" ? "Deactivate" : "Activate"}
                           </button>
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-accent-600 hover:bg-accent-50"
                             onClick={() => {
                               handleOpenDeleteConfirm(group._id);
                               setOpenActionMenu(null);
@@ -241,39 +238,43 @@ const GroupListPage = () => {
                     </div>
                   )}
                 </div>
+              }
+            >
+              <div className="space-y-6">
+                <p className="text-sm text-neutral-600 leading-relaxed min-h-[40px]">{group.description || "No description provided"}</p>
 
-                <p className="text-gray-600 text-sm mb-6 min-h-[40px]">{group.description || "No description provided"}</p>
-
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-success-50 rounded-lg border border-success-100">
+                    <div className="w-10 h-10 rounded-lg bg-success-100 flex items-center justify-center text-success-600">
                       <span className="material-symbols-outlined">group</span>
                     </div>
                     <div>
                       <CountUp end={group.totalActives || 0} />
-                      <div className="text-xs text-gray-600">Active Members</div>
+                      <div className="text-xs text-neutral-600">Active</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
+                  <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-100">
+                    <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-600">
                       <span className="material-symbols-outlined">person_off</span>
                     </div>
                     <div>
                       <CountUp end={group.totalInactives || 0} />
-                      <div className="text-xs text-gray-600">Inactive Members</div>
+                      <div className="text-xs text-neutral-600">Inactive</div>
                     </div>
                   </div>
                 </div>
 
-                <button
-                  className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  icon="arrow_forward"
+                  iconPosition="right"
                   onClick={() => navigate(`/app/organization/group/${group._id}`)}
                 >
                   View Members
-                  <span className="material-symbols-outlined">arrow_forward</span>
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

@@ -233,8 +233,8 @@ const GanttPage = () => {
   const statistics = calculateStatistics();
 
   return (
-    <div className="gantt-page-redesigned" data-timeview={timeView}>
-      <div className="gantt-page-wrapper">
+    <div className="min-h-screen bg-neutral-50" data-timeview={timeView}>
+      <div className="h-screen flex flex-col">
         <GanttHeader
           filter={filter}
           setFilter={setFilter}
@@ -253,7 +253,7 @@ const GanttPage = () => {
           setSearchKeyword={setSearchKeyword}
         />
 
-        <div className="gantt-content-container">
+        <div className="flex-1 flex overflow-hidden">
           <GanttLeftSection
             projects={filteredGanttData}
             groupBy={groupBy}

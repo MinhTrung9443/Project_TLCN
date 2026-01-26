@@ -303,7 +303,7 @@ const NotificationBell = () => {
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900">Notifications</h3>
             {unreadCount > 0 && (
-              <button className="text-sm text-purple-600 hover:text-purple-700 font-medium" onClick={handleMarkAllAsRead}>
+              <button className="text-sm text-primary-600 hover:text-primary-700 font-medium" onClick={handleMarkAllAsRead}>
                 Mark all as read
               </button>
             )}
@@ -333,13 +333,13 @@ const NotificationBell = () => {
                       <div className="text-sm text-gray-600 mt-1 line-clamp-2">{notification.message}</div>
                       <div className="text-xs text-gray-500 mt-1">{getTimeAgo(notification.createdAt)}</div>
                     </div>
-                    {!notification.isRead && <div className="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0 mt-2"></div>}
+                    {!notification.isRead && <div className="w-2 h-2 rounded-full bg-primary-600 flex-shrink-0 mt-2"></div>}
                   </div>
                 ))}
 
                 {loading && (
                   <div className="flex flex-col items-center justify-center py-6">
-                    <div className="w-8 h-8 border-3 border-gray-200 border-t-purple-600 rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-3 border-neutral-200 border-t-primary-600 rounded-full animate-spin"></div>
                     <p className="text-sm text-gray-600 mt-2">Loading more...</p>
                   </div>
                 )}

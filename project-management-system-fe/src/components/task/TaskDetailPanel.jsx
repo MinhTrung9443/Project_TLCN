@@ -401,7 +401,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
   return (
     <div className={`flex flex-col bg-white h-full ${task ? "" : "hidden"}`}>
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
-      <header className="flex items-start gap-4 p-6 border-b border-gray-200 bg-gray-50">
+      <header className="flex items-start gap-4 p-6 border-b border-neutral-200 bg-neutral-50">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
             {typeIconInfo && (
@@ -413,14 +413,14 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
                 <IconComponent name={editableTask.taskTypeId.icon} />
               </span>
             )}
-            <a href={`/app/task/${editableTask.key}`} className="text-lg font-semibold text-purple-600 hover:text-purple-700 hover:underline">
+            <a href={`/app/task/${editableTask.key}`} className="text-lg font-semibold text-primary-600 hover:text-primary-700 hover:underline">
               {editableTask.key}
             </a>
           </div>
 
           <div className="relative" data-replicated-value={editableTask.name}>
             <textarea
-              className="w-full text-xl font-semibold text-gray-900 border-none outline-none resize-none bg-transparent focus:ring-2 focus:ring-purple-500 rounded px-2 py-1"
+              className="w-full text-xl font-semibold text-neutral-900 border-none outline-none resize-none bg-transparent focus:ring-2 focus:ring-primary-500 rounded px-2 py-1"
               value={editableTask.name}
               onChange={(e) => setEditableTask((prev) => ({ ...prev, name: e.target.value }))}
               onBlur={() => handleUpdate("name", editableTask.name)}
@@ -439,28 +439,31 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         <div className="flex items-start gap-2">
           <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
           {showCloseButton && (
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-3xl font-light leading-none p-1 hover:bg-gray-200 rounded">
+            <button
+              onClick={onClose}
+              className="text-neutral-500 hover:text-neutral-900 text-3xl font-light leading-none p-1 hover:bg-neutral-200 rounded"
+            >
               &times;
             </button>
           )}
         </div>
       </header>
       <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex border-b border-gray-200 px-6 bg-white">
+        <div className="flex border-b border-neutral-200 px-6 bg-white">
           <button
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Details" ? "border-purple-600 text-purple-600" : "border-transparent text-gray-600 hover:text-gray-900"}`}
+            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Details" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
             onClick={() => setActiveTab("Details")}
           >
             Details
           </button>
           <button
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Comments" ? "border-purple-600 text-purple-600" : "border-transparent text-gray-600 hover:text-gray-900"}`}
+            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Comments" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
             onClick={() => setActiveTab("Comments")}
           >
             Comments
           </button>
           <button
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "History" ? "border-purple-600 text-purple-600" : "border-transparent text-gray-600 hover:text-gray-900"}`}
+            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "History" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
             onClick={() => setActiveTab("History")}
           >
             History

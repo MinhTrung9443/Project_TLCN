@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
 
 const SprintEditModal = ({ isOpen, sprint, onClose, onSave, project }) => {
   const [form, setForm] = useState({
@@ -80,66 +82,38 @@ const SprintEditModal = ({ isOpen, sprint, onClose, onSave, project }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl w-full max-w-md shadow-xl">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900">Edit Sprint</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-3xl font-light leading-none p-1 hover:bg-gray-100 rounded">
-            &times;
+        <div className="flex justify-between items-center px-6 py-4 border-b border-neutral-200">
+          <h3 className="text-xl font-bold text-neutral-900">Edit Sprint</h3>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-neutral-500 transition-colors"
+          >
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <Input label="Name" name="name" value={form.name} onChange={handleChange} required />
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Name</label>
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
+            <label className="block text-sm font-semibold text-neutral-900 mb-2">Description</label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
               rows="3"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Start Date</label>
-              <input
-                type="date"
-                name="startDate"
-                value={form.startDate}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">End Date</label>
-              <input
-                type="date"
-                name="endDate"
-                value={form.endDate}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
+            <Input label="Start Date" type="date" name="startDate" value={form.startDate} onChange={handleChange} />
+            <Input label="End Date" type="date" name="endDate" value={form.endDate} onChange={handleChange} />
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
-              onClick={onClose}
-            >
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
+            <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
-            </button>
-            <button type="submit" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
+            </Button>
+            <Button type="submit" variant="primary">
               Save
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -11,6 +11,10 @@ import ConfirmationModal from "../../components/common/ConfirmationModal";
 import SprintEditModal from "../../components/sprint/SprintEditModal";
 import CreateTaskModal from "../../components/task/CreateTaskModal";
 import { getProjectByKey } from "../../services/projectService";
+import PageHeader from "../../components/ui/PageHeader";
+import Button from "../../components/ui/Button";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { VscRepo } from "react-icons/vsc";
 
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
@@ -27,6 +31,7 @@ const BacklogPage = () => {
   const [userProjectRole, setUserProjectRole] = useState(null);
   const [projectData, setProjectData] = useState(null);
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -88,6 +93,8 @@ const BacklogPage = () => {
       setTaskList(data.tasksWithoutSprint);
     } catch (error) {
       console.error("Error fetching sprint list:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -236,29 +243,33 @@ const BacklogPage = () => {
   const canCreateTask = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER");
   const canDragDrop = !isProjectCompleted && canManageSprints;
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="lg" text="Loading sprint data..." />
+      </div>
+    );
+  }
+
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="backlog-page">
-        <div className="backlog-hero-section">
-          <div className="backlog-hero-shape"></div>
-          <div className="backlog-hero-content">
-            <h1 className="backlog-page-title">Backlog & Sprints</h1>
-            <p className="backlog-page-subtitle">Plan and organize your project tasks</p>
-          </div>
-        </div>
-
-        <div className="backlog-container">
-          <div className="backlog-header-bar">
-            {canManageSprints && projectType !== "Kanban" && (
-              <button className="btn-create-sprint" onClick={handleCreateSprint}>
-                <span className="material-symbols-outlined">add</span>
+      <div className="min-h-screen bg-neutral-50">
+        <PageHeader
+          icon={VscRepo}
+          title="Backlog & Sprints"
+          description="Plan and organize your project tasks"
+          actions={
+            canManageSprints && projectType !== "Kanban" ? (
+              <Button onClick={handleCreateSprint} icon="add" iconPosition="left">
                 Create Sprint
-              </button>
-            )}
-          </div>
+              </Button>
+            ) : null
+          }
+        />
 
-          <div className="backlog-main-content">
-            <div className="backlog-sprints-section">
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
               <SprintList
                 sprintList={sprintList}
                 onDrop={handleDrop}
@@ -275,17 +286,16 @@ const BacklogPage = () => {
               />
             </div>
 
-            <div className="backlog-tasks-section">
-              <div className="backlog-tasks-header">
-                <h2 className="backlog-tasks-title">Backlog</h2>
-                <span className="backlog-tasks-count">{taskList.length}</span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-neutral-200">
+                <h2 className="text-xl font-semibold text-neutral-900">Backlog</h2>
+                <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-semibold">{taskList.length}</span>
               </div>
               <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} canDragDrop={canDragDrop} onTaskClick={handleTaskClick} />
               {canCreateTask && (
-                <button className="btn-create-task" onClick={() => setIsCreateTaskModalOpen(true)}>
-                  <span className="material-symbols-outlined">add</span>
+                <Button variant="secondary" onClick={() => setIsCreateTaskModalOpen(true)} icon="add" iconPosition="left">
                   Create Task
-                </button>
+                </Button>
               )}
             </div>
           </div>

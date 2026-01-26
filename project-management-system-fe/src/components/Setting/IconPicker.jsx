@@ -10,7 +10,7 @@ const IconPicker = ({ icons, selectedIcon, onSelect }) => {
           key={icon.name}
           type="button"
           className={`p-2 rounded-lg border-2 transition-all hover:scale-110 ${
-            selectedIcon === icon.name ? "border-purple-600 bg-purple-50 shadow-md" : "border-gray-200 hover:border-purple-300"
+            selectedIcon === icon.name ? "border-primary-600 bg-primary-50 shadow-md" : "border-neutral-200 hover:border-primary-300"
           }`}
           onClick={() => onSelect(icon.name)}
           title={icon.name}

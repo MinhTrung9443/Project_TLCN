@@ -63,29 +63,29 @@ const SprintItem = ({
         onTaskCreated={handleTaskCreated}
         defaultProjectId={sprint.projectId}
       />
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4" key={sprint._id}>
-        <div ref={drop} className={`p-4 ${isOver ? "bg-purple-50 border-2 border-purple-300" : ""}`}>
+      <div className="bg-white rounded-lg border border-neutral-200 shadow-sm mb-4" key={sprint._id}>
+        <div ref={drop} className={`p-4 ${isOver ? "bg-primary-50 border-2 border-primary-300" : ""}`}>
           <div className="flex items-center gap-3 mb-3">
-            <button className="p-1 hover:bg-gray-100 rounded transition-colors" onClick={() => setExpanded((prev) => !prev)}>
-              <span className={`material-symbols-outlined text-gray-600 transition-transform ${expanded ? "rotate-90" : ""}`}>chevron_right</span>
+            <button className="p-1 hover:bg-neutral-100 rounded transition-colors" onClick={() => setExpanded((prev) => !prev)}>
+              <span className={`material-symbols-outlined text-neutral-600 transition-transform ${expanded ? "rotate-90" : ""}`}>chevron_right</span>
             </button>
             <span
-              className={`text-lg font-semibold text-gray-900 flex-1 ${sprint.status === "Started" ? "cursor-pointer hover:text-purple-600" : ""}`}
+              className={`text-lg font-semibold text-neutral-900 flex-1 ${sprint.status === "Started" ? "cursor-pointer hover:text-primary-600" : ""}`}
               onClick={() => onSprintNameClick && sprint.status === "Started" && onSprintNameClick(sprint)}
             >
               {sprint.name}
             </span>
-            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">{sprint.tasks?.length || 0} Tasks</span>
+            <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">{sprint.tasks?.length || 0} Tasks</span>
             {!isKanbanBoard && canManageSprints && sprint.status !== "Completed" && (
               <div className="relative" ref={openMenuId === sprint._id ? menuRef : null}>
-                <button onClick={() => handleMenuToggle(sprint._id)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <span className="material-symbols-outlined text-gray-600">more_horiz</span>
+                <button onClick={() => handleMenuToggle(sprint._id)} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
+                  <span className="material-symbols-outlined text-neutral-600">more_horiz</span>
                 </button>
                 {openMenuId === sprint._id && (
-                  <ul className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                  <ul className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-10">
                     <li>
                       <button
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 transition-colors"
+                        className="w-full text-left px-4 py-2 hover:bg-neutral-100 text-neutral-700 transition-colors"
                         onClick={() => {
                           onEdit(sprint);
                           setOpenMenuId(null);
@@ -97,7 +97,7 @@ const SprintItem = ({
                     {sprint.status === "Not Start" && (
                       <li>
                         <button
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-neutral-100 text-neutral-700 transition-colors"
                           onClick={() => {
                             onStart(sprint);
                             setOpenMenuId(null);
@@ -110,7 +110,7 @@ const SprintItem = ({
                     {sprint.status === "Started" && (
                       <li>
                         <button
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-neutral-100 text-neutral-700 transition-colors"
                           onClick={() => {
                             onComplete(sprint);
                             setOpenMenuId(null);
@@ -140,13 +140,13 @@ const SprintItem = ({
             <>
               <div className="mb-3">
                 <div className="flex items-center gap-3">
-                  {sprint.status === "Not Start" && <span className="material-symbols-outlined text-gray-400">radio_button_unchecked</span>}
+                  {sprint.status === "Not Start" && <span className="material-symbols-outlined text-neutral-400">radio_button_unchecked</span>}
                   {sprint.status === "Started" && <span className="material-symbols-outlined text-blue-500">schedule</span>}
                   {sprint.status === "Completed" && <span className="material-symbols-outlined text-green-500">check_circle</span>}
-                  <span className="text-sm font-medium text-gray-700">{sprint.status}</span>
+                  <span className="text-sm font-medium text-neutral-700">{sprint.status}</span>
                   {/* Ẩn ngày nếu là Kanban Board */}
                   {!isKanbanBoard && (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-neutral-500">
                       {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
                     </span>
                   )}
@@ -155,13 +155,13 @@ const SprintItem = ({
               <div className="mb-3">
                 <TaskList tasks={sprint.tasks} source={sprint._id} onDrop={onDrop} canDragDrop={canDragDrop} onTaskClick={onTaskClick} />
               </div>
-              <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+              <div className="flex items-center gap-2 pt-2 border-t border-neutral-200">
                 {canCreateTask && sprint.status !== "Completed" && (
                   <>
-                    <button className="text-purple-600 hover:text-purple-700">
+                    <button className="text-primary-600 hover:text-primary-700">
                       <span className="material-symbols-outlined">add_circle</span>
                     </button>
-                    <span className="text-sm text-purple-600 hover:text-purple-700 cursor-pointer font-medium" onClick={() => setIsModalOpen(true)}>
+                    <span className="text-sm text-primary-600 hover:text-primary-700 cursor-pointer font-medium" onClick={() => setIsModalOpen(true)}>
                       Create Task
                     </span>
                   </>

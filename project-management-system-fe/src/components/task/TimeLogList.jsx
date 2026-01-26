@@ -79,45 +79,48 @@ const TimeLogList = ({ taskId, onTimeLogsUpdate }) => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center py-6 text-gray-500">Loading time logs...</div>;
+    return <div className="flex items-center justify-center py-6 text-neutral-500">Loading time logs...</div>;
   }
 
   if (timeLogs.length === 0) {
-    return <div className="text-center py-6 text-gray-500">No time logs yet</div>;
+    return <div className="text-center py-6 text-neutral-500">No time logs yet</div>;
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+        <h4 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
           <span className="material-symbols-outlined">history</span>
           Work Log ({timeLogs.length})
         </h4>
-        <span className="text-sm text-gray-600">Total: {formatDuration(timeLogs.reduce((sum, log) => sum + log.timeSpent, 0))}</span>
+        <span className="text-sm text-neutral-600">Total: {formatDuration(timeLogs.reduce((sum, log) => sum + log.timeSpent, 0))}</span>
       </div>
 
       {timeLogs.map((log) => (
-        <div key={log._id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
-          <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+        <div
+          key={log._id}
+          className="flex items-start gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200 hover:bg-neutral-100 transition-colors"
+        >
+          <div className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
             {(log.userId?.fullname || "U")[0]}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-gray-900">{log.userId?.fullname || "Unknown"}</span>
-              <span className="text-xs text-gray-600 flex items-center gap-1">
+              <span className="text-sm font-semibold text-neutral-900">{log.userId?.fullname || "Unknown"}</span>
+              <span className="text-xs text-neutral-600 flex items-center gap-1">
                 <span className="material-symbols-outlined text-xs">schedule</span>
                 {formatDuration(log.timeSpent)}
               </span>
-              <span className="text-xs text-gray-500">{formatDate(log.createdAt)}</span>
+              <span className="text-xs text-neutral-500">{formatDate(log.createdAt)}</span>
             </div>
 
-            <div className="text-sm text-gray-700 break-words">{log.comment}</div>
+            <div className="text-sm text-neutral-700 break-words">{log.comment}</div>
           </div>
 
           {user?._id === log.userId?._id && (
             <button
-              className="p-2 text-gray-600 hover:text-red-600 transition-colors flex-shrink-0"
+              className="p-2 text-neutral-600 hover:text-red-600 transition-colors flex-shrink-0"
               onClick={() => {
                 setDeleteTimeLogId(log._id);
                 setIsDeleteModalOpen(true);

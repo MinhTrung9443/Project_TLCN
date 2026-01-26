@@ -62,8 +62,8 @@ const TaskCard = ({ task, onStatusChange }) => {
       onClick={handleCardClick}
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="material-symbols-outlined text-gray-400 text-lg">check_box</span>
-        <span className="text-sm font-semibold text-purple-600">{task.key}</span>
+        <span className="material-symbols-outlined text-neutral-400 text-lg">check_box</span>
+        <span className="text-sm font-semibold text-primary-600">{task.key}</span>
       </div>
 
       <div className="flex items-center gap-2 mb-3">
@@ -74,10 +74,10 @@ const TaskCard = ({ task, onStatusChange }) => {
         >
           <IconComponent name={typeIcon.name} />
         </span>
-        <span className="text-xs text-gray-600">{task.taskTypeId?.name || "Task"}</span>
+        <span className="text-xs text-neutral-600">{task.taskTypeId?.name || "Task"}</span>
       </div>
 
-      <div className="text-sm font-medium text-gray-900 mb-4 line-clamp-2">{task.name}</div>
+      <div className="text-sm font-medium text-neutral-900 mb-4 line-clamp-2">{task.name}</div>
 
       <div className="flex items-center justify-between">
         <span
@@ -89,7 +89,7 @@ const TaskCard = ({ task, onStatusChange }) => {
         </span>
         <div className="flex items-center">
           {task.assigneeId ? (
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center" title={task.assigneeId.fullname}>
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-600 flex items-center justify-center" title={task.assigneeId.fullname}>
               {task.assigneeId.avatar ? (
                 <img src={task.assigneeId.avatar} alt={task.assigneeId.fullname} className="w-full h-full object-cover" />
               ) : (
@@ -97,8 +97,8 @@ const TaskCard = ({ task, onStatusChange }) => {
               )}
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center" title="Unassigned">
-              <span className="material-symbols-outlined text-gray-600 text-lg">person</span>
+            <div className="w-8 h-8 rounded-full bg-neutral-300 flex items-center justify-center" title="Unassigned">
+              <span className="material-symbols-outlined text-neutral-600 text-lg">person</span>
             </div>
           )}
         </div>

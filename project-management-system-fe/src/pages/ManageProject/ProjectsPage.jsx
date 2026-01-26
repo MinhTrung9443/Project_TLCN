@@ -8,10 +8,17 @@ import CreateProjectModal from "../../components/project/CreateProjectModal";
 import ProjectActionsMenu from "../../components/project/ProjectActionsMenu";
 import ArchivedProjectActionsMenu from "../../components/project/ArchivedProjectActionsMenu";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
+import PageHeader from "../../components/ui/PageHeader";
+import Button from "../../components/ui/Button";
+import Badge from "../../components/ui/Badge";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../../components/ui/Table";
+import Input from "../../components/ui/Input";
+import Select from "../../components/ui/Select";
 
 const ProjectsPage = () => {
   const { user } = useAuth();
-  const { selectedProjectKey, setProject, clearProject } = useContext(ProjectContext);
+  const { setProject } = useContext(ProjectContext);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -200,48 +207,33 @@ const ProjectsPage = () => {
   };
 
   const renderFilters = () => (
-    <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-lg border border-gray-200">
-      <select
-        value={filters.type}
-        onChange={(e) => handleFilterChange("type", e.target.value)}
-        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-      >
+    <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-lg border border-neutral-200">
+      <Select value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
         <option value="">All Types</option>
         <option value="Scrum">Scrum</option>
         <option value="Kanban">Kanban</option>
-      </select>
+      </Select>
 
-      <select
-        value={filters.projectManager}
-        onChange={(e) => handleFilterChange("projectManager", e.target.value)}
-        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-      >
+      <Select value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
         <option value="">All Project Managers</option>
         {getProjectManagers().map((pm) => (
           <option key={pm._id} value={pm._id}>
             {pm.fullname}
           </option>
         ))}
-      </select>
+      </Select>
 
       {view === "active" && (
-        <select
-          value={filters.status}
-          onChange={(e) => handleFilterChange("status", e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-        >
+        <Select value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
           <option value="">All Statuses</option>
           <option value="active">Active</option>
           <option value="completed">Completed</option>
-        </select>
+        </Select>
       )}
 
-      <button
-        onClick={() => setFilters({ type: "", projectManager: "", status: "" })}
-        className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors font-medium"
-      >
+      <Button variant="secondary" size="md" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
         Clear Filters
-      </button>
+      </Button>
     </div>
   );
 
@@ -249,45 +241,34 @@ const ProjectsPage = () => {
     const paginatedProjects = getPaginatedProjects();
 
     return paginatedProjects.map((project) => (
-      <tr
-        key={project._id}
-        className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-        style={{ cursor: view === "active" ? "pointer" : "default" }}
-      >
-        <td className="px-6 py-4">
-          <a
-            href="#"
+      <TableRow key={project._id}>
+        <TableCell>
+          <button
             onClick={(e) => {
               e.preventDefault();
               handleProjectSelect(project);
             }}
-            className="text-purple-600 hover:text-purple-700 font-medium no-underline"
+            className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
           >
             {project.name}
-          </a>
-        </td>
-        <td className="px-6 py-4 text-sm text-gray-700">{project.key}</td>
-        <td className="px-6 py-4 text-sm text-gray-700">{project.type}</td>
-        <td className="px-6 py-4 text-sm text-gray-700">{project.projectManager?.fullname || "N/A"}</td>
-        <td className="px-6 py-4 text-sm text-gray-700">{getTotalMembers(project)}</td>
-        <td className="px-6 py-4 text-sm text-gray-700">{formatDate(view === "active" ? project.createdAt : project.deletedAt)}</td>
-        <td className="px-6 py-4">
-          <span
-            className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-              view === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-            }`}
-          >
-            {view === "active" ? project.status : "Archived"}
-          </span>
-        </td>
-        <td className="px-6 py-4">
+          </button>
+        </TableCell>
+        <TableCell>{project.key}</TableCell>
+        <TableCell>{project.type}</TableCell>
+        <TableCell>{project.projectManager?.fullname || "N/A"}</TableCell>
+        <TableCell>{getTotalMembers(project)}</TableCell>
+        <TableCell>{formatDate(view === "active" ? project.createdAt : project.deletedAt)}</TableCell>
+        <TableCell>
+          <Badge variant={view === "active" ? "success" : "danger"}>{view === "active" ? project.status : "Archived"}</Badge>
+        </TableCell>
+        <TableCell>
           {view === "active" ? (
             <ProjectActionsMenu project={project} onDelete={openArchiveModal} />
           ) : (
             <ArchivedProjectActionsMenu project={project} onRestore={handleRestore} onDelete={openPermanentDeleteModal} />
           )}
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
     ));
   };
   return (
@@ -304,57 +285,40 @@ const ProjectsPage = () => {
         }"? This action cannot be undone.`}
       />
 
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white py-8 px-6">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2 text-purple-100">
-                <span className="material-symbols-outlined">folder_open</span>
-                <span className="text-sm font-medium">Project Management</span>
-              </div>
-              <h1 className="text-4xl font-bold mb-1">Projects</h1>
-              <p className="text-purple-100">Manage and organize all your projects in one place</p>
-            </div>
-            {view === "active" && user?.role === "admin" && (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 bg-white text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-lg font-semibold transition-colors"
-              >
-                <span className="material-symbols-outlined">add</span>
+      <div className="min-h-screen bg-neutral-50">
+        <PageHeader
+          icon="folder_open"
+          badge={view === "active" ? "Active" : "Archived"}
+          title="Projects"
+          subtitle="Manage and organize all your projects in one place"
+          actions={
+            view === "active" &&
+            user?.role === "admin" && (
+              <Button variant="primary" size="md" onClick={() => setIsModalOpen(true)} icon="add">
                 Create Project
-              </button>
-            )}
-          </div>
-        </div>
+              </Button>
+            )
+          }
+        />
 
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex gap-2">
-              <button
-                onClick={() => setView("active")}
-                className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                  view === "active" ? "bg-purple-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                }`}
-              >
+              <Button variant={view === "active" ? "primary" : "secondary"} size="md" onClick={() => setView("active")}>
                 All Projects
-              </button>
+              </Button>
               {user?.role === "admin" && (
-                <button
-                  onClick={() => setView("archived")}
-                  className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                    view === "archived" ? "bg-purple-600 text-white" : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
+                <Button variant={view === "archived" ? "primary" : "secondary"} size="md" onClick={() => setView("archived")}>
                   Archived Projects
-                </button>
+                </Button>
               )}
             </div>
-            <input
+            <Input
               type="search"
               placeholder="Search by name or key..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 w-full md:w-80"
+              icon="search"
             />
           </div>
 
@@ -362,59 +326,61 @@ const ProjectsPage = () => {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-gray-500 text-lg">Loading...</div>
+              <LoadingSpinner size="lg" text="Loading projects..." />
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Project</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Key</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Type</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Project Manager</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Members</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      {view === "active" ? "Created Date" : "Archived Date"}
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900"></th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="bg-white rounded-lg border border-neutral-200 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-neutral-50">
+                    <TableHead>Project</TableHead>
+                    <TableHead>Key</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Project Manager</TableHead>
+                    <TableHead>Members</TableHead>
+                    <TableHead>{view === "active" ? "Created Date" : "Archived Date"}</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {renderProjects().length > 0 ? (
                     renderProjects()
                   ) : (
-                    <tr>
-                      <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                    <TableRow>
+                      <TableCell colSpan="8" className="text-center py-8 text-neutral-500">
                         No projects found.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
 
           {!loading && getTotalPages() > 1 && (
             <div className="flex items-center justify-between mt-6">
-              <button
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                icon="arrow_back"
               >
                 Previous
-              </button>
-              <div className="text-sm text-gray-600">
+              </Button>
+              <div className="text-sm text-neutral-600">
                 Page {currentPage} of {getTotalPages()} ({getFilteredProjects().length} total projects)
               </div>
-              <button
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
                 disabled={currentPage === getTotalPages()}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                icon="arrow_forward"
               >
                 Next
-              </button>
+              </Button>
             </div>
           )}
         </div>

@@ -89,155 +89,185 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
   const { summary, tasks } = performance;
 
   return (
-    <div className="performance-panel-overlay" onClick={onClose}>
-      <div className="performance-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="performance-header">
-          <div className="performance-header-left">
-            <div className="user-avatar-large">
-              {userAvatar ? <img src={userAvatar} alt={userName} /> : <div className="avatar-placeholder-large">{userName?.[0] || "?"}</div>}
+        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center">
+              {userAvatar ? (
+                <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="text-white text-2xl font-bold">{userName?.[0] || "?"}</div>
+              )}
             </div>
-            <div className="user-info-header">
-              <h2>{userName}</h2>
-              <p className="performance-subtitle">Performance Analysis</p>
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-900">{userName}</h2>
+              <p className="text-sm text-neutral-600">Performance Analysis</p>
             </div>
           </div>
-          <button className="close-btn-performance" onClick={onClose}>
-            <span className="material-symbols-outlined">close</span>
+          <button className="p-2 hover:bg-neutral-100 rounded-lg transition-colors" onClick={onClose}>
+            <span className="material-symbols-outlined text-neutral-600">close</span>
           </button>
         </div>
 
         {/* Date Range Filter */}
-        <div className="performance-date-filter">
-          <div className="date-filter-group">
-            <label htmlFor="startDate">From:</label>
-            <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="date-input" />
+        <div className="flex items-center gap-4 p-4 bg-neutral-50 border-b border-neutral-200">
+          <div className="flex items-center gap-2">
+            <label htmlFor="startDate" className="text-sm font-medium text-neutral-700">
+              From:
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
+            />
           </div>
-          <div className="date-filter-group">
-            <label htmlFor="endDate">To:</label>
-            <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="date-input" />
+          <div className="flex items-center gap-2">
+            <label htmlFor="endDate" className="text-sm font-medium text-neutral-700">
+              To:
+            </label>
+            <input
+              type="date"
+              id="endDate"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
+            />
           </div>
           {(startDate || endDate) && (
             <button
-              className="clear-filter-btn"
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
               onClick={() => {
                 setStartDate("");
                 setEndDate("");
               }}
             >
-              <span className="material-symbols-outlined">clear</span>
+              <span className="material-symbols-outlined text-lg">clear</span>
               Clear
             </button>
           )}
         </div>
 
         {/* Tabs */}
-        <div className="performance-tabs">
-          <button className={`performance-tab ${activeTab === "overview" ? "active" : ""}`} onClick={() => setActiveTab("overview")}>
-            <span className="material-symbols-outlined">analytics</span>
+        <div className="flex border-b border-neutral-200">
+          <button
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${activeTab === "overview" ? "text-primary-600 border-b-2 border-primary-600" : "text-neutral-600 hover:text-neutral-900"}`}
+            onClick={() => setActiveTab("overview")}
+          >
+            <span className="material-symbols-outlined text-lg">analytics</span>
             Overview
           </button>
-          <button className={`performance-tab ${activeTab === "tasks" ? "active" : ""}`} onClick={() => setActiveTab("tasks")}>
-            <span className="material-symbols-outlined">task_alt</span>
+          <button
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${activeTab === "tasks" ? "text-primary-600 border-b-2 border-primary-600" : "text-neutral-600 hover:text-neutral-900"}`}
+            onClick={() => setActiveTab("tasks")}
+          >
+            <span className="material-symbols-outlined text-lg">task_alt</span>
             Tasks ({tasks.length})
           </button>
         </div>
 
         {/* Content */}
-        <div className="performance-content">
+        <div className="p-6">
           {activeTab === "overview" && (
-            <div className="overview-tab">
+            <div className="space-y-6">
               {/* Overall Efficiency Card */}
-              <div className="spi-card-large">
-                <div className="spi-label">Overall Efficiency</div>
-                <div className="spi-value-large" style={{ color: getEfficiencyColor(summary.overallEfficiency) }}>
+              <div className="p-6 bg-gradient-to-br from-primary-50 to-blue-50 rounded-2xl border border-primary-200">
+                <div className="text-sm font-medium text-neutral-600 mb-2">Overall Efficiency</div>
+                <div className="text-5xl font-bold mb-3" style={{ color: getEfficiencyColor(summary.overallEfficiency) }}>
                   {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
                 </div>
-                <div className="spi-rating" style={{ backgroundColor: getRatingColor(summary.performanceRating) }}>
+                <div
+                  className="inline-block px-4 py-1 rounded-full text-white text-sm font-semibold mb-4"
+                  style={{ backgroundColor: getRatingColor(summary.performanceRating) }}
+                >
                   {summary.performanceRating}
                 </div>
-                <div className="spi-formula">
+                <div className="space-y-2 text-sm text-neutral-700">
                   <p>
-                    Efficiency = (<span className="formula-highlight">Total Est</span> / <span className="formula-highlight">Total Act</span>) × 100%
+                    Efficiency = (<span className="font-semibold text-primary-700">Total Est</span> /{" "}
+                    <span className="font-semibold text-primary-700">Total Act</span>) × 100%
                   </p>
-                  <p className="formula-detail">
+                  <p className="text-neutral-600">
                     Efficiency = ({summary.totalEstimatedTime}h) / ({summary.totalActualTime}h) × 100% ={" "}
                     {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
                   </p>
-                  <p className="formula-note" style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px" }}>
-                    * Chỉ tính cho các task đã hoàn thành (Done)
-                  </p>
+                  <p className="text-xs text-neutral-500 mt-2">* Chỉ tính cho các task đã hoàn thành (Done)</p>
                 </div>
               </div>
 
               {/* Stats Grid */}
-              <div className="performance-stats-grid">
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#e0e7ff" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#6366f1" }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#e0e7ff" }}>
+                    <span className="material-symbols-outlined text-2xl" style={{ color: "#6366f1" }}>
                       schedule
                     </span>
                   </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Estimated Time</div>
-                    <div className="stat-value">{formatHours(summary.totalEstimatedTime)}</div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium text-neutral-600">Estimated Time</div>
+                    <div className="text-2xl font-bold text-neutral-900">{formatHours(summary.totalEstimatedTime)}</div>
                   </div>
                 </div>
 
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#fef3c7" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#f59e0b" }}>
+                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#fef3c7" }}>
+                    <span className="material-symbols-outlined text-2xl" style={{ color: "#f59e0b" }}>
                       timelapse
                     </span>
                   </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Actual Time</div>
-                    <div className="stat-value">{formatHours(summary.totalActualTime)}</div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium text-neutral-600">Actual Time</div>
+                    <div className="text-2xl font-bold text-neutral-900">{formatHours(summary.totalActualTime)}</div>
                   </div>
                 </div>
 
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#dbeafe" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#3b82f6" }}>
+                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#dbeafe" }}>
+                    <span className="material-symbols-outlined text-2xl" style={{ color: "#3b82f6" }}>
                       speed
                     </span>
                   </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Efficiency</div>
-                    <div className="stat-value">{summary.efficiency}</div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium text-neutral-600">Efficiency</div>
+                    <div className="text-2xl font-bold text-neutral-900">{summary.efficiency}</div>
                   </div>
                 </div>
 
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#d1fae5" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#10b981" }}>
+                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#d1fae5" }}>
+                    <span className="material-symbols-outlined text-2xl" style={{ color: "#10b981" }}>
                       check_circle_outline
                     </span>
                   </div>
-                  <div className="stat-content">
-                    <div className="stat-label">On-Time Completion</div>
-                    <div className="stat-value">{summary.onTimePercentage !== null ? `${summary.onTimePercentage.toFixed(0)}%` : "N/A"}</div>
-                    <div className="stat-detail" style={{ fontSize: "11px", color: "#6b7280", marginTop: "4px" }}>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium text-neutral-600">On-Time Completion</div>
+                    <div className="text-2xl font-bold text-neutral-900">
+                      {summary.onTimePercentage !== null ? `${summary.onTimePercentage.toFixed(0)}%` : "N/A"}
+                    </div>
+                    <div className="text-xs text-neutral-500 mt-1">
                       {summary.onTimeCount || 0} / {summary.tasksWithDueDate || 0} tasks
                     </div>
                   </div>
                 </div>
 
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#e0f2fe" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#0284c7" }}>
+                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#e0f2fe" }}>
+                    <span className="material-symbols-outlined text-2xl" style={{ color: "#0284c7" }}>
                       check_circle
                     </span>
                   </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Completed Tasks</div>
-                    <div className="stat-value">{summary.completedTasks}</div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium text-neutral-600">Completed Tasks</div>
+                    <div className="text-2xl font-bold text-neutral-900">{summary.completedTasks}</div>
                   </div>
                 </div>
 
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#fce7f3" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#ec4899" }}>
+                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#fce7f3" }}>
+                    <span className="material-symbols-outlined text-2xl" style={{ color: "#ec4899" }}>
                       pending
                     </span>
                   </div>
@@ -327,10 +357,10 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
                           </div>
                         )}
                         <div className="task-detail-item">
-                          <div className="progress-bar-mini">
-                            <div className="progress-fill-mini" style={{ width: "100%" }}></div>
+                          <div className="flex-1 h-1 bg-neutral-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary-600 rounded-full" style={{ width: "100%" }}></div>
                           </div>
-                          <span>100%</span>
+                          <span className="text-xs font-semibold text-neutral-600">100%</span>
                         </div>
                       </div>
                     </div>

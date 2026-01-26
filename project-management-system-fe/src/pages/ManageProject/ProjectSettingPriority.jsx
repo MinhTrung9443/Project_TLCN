@@ -1,12 +1,18 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import priorityService from "../../services/priorityService";
-import { getProjectByKey } from "../../services/projectService";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
+import PageHeader from "../../components/ui/PageHeader";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
+import EmptyState from "../../components/ui/EmptyState";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import priorityService from "../../services/priorityService";
+import { getProjectByKey } from "../../services/projectService";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -27,19 +33,37 @@ const IconComponent = ({ name }) => {
 };
 
 const IconPicker = ({ selectedIcon, onSelect }) => (
-  <div className="flex flex-wrap gap-4">
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
     {PREDEFINED_PRIORITY_ICONS.map((icon) => (
       <button
         key={icon.name}
         type="button"
-        className={`p-3 rounded-lg border-2 transition-all ${selectedIcon === icon.name ? "border-purple-600 bg-purple-50" : "border-gray-200 hover:border-gray-300"}`}
+        className={`group flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
+          selectedIcon === icon.name ? "border-primary-500 bg-primary-50 shadow-sm" : "border-neutral-200 hover:border-neutral-300"
+        }`}
         onClick={() => onSelect(icon.name)}
       >
-        <div className="w-12 h-12 flex items-center justify-center text-xl text-white" style={{ backgroundColor: icon.color }}>
+        <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white shadow-sm" style={{ backgroundColor: icon.color }}>
           <IconComponent name={icon.name} />
         </div>
+        <span className="text-sm font-semibold text-neutral-800">{icon.name.replace("Fa", "")}</span>
       </button>
     ))}
+  </div>
+);
+
+const Modal = ({ title, onClose, children, footer }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+    <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl border border-neutral-200" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
+        <h3 className="text-lg font-semibold text-neutral-900 m-0">{title}</h3>
+        <button className="p-2 text-neutral-500 hover:text-neutral-800 rounded-lg hover:bg-neutral-100" onClick={onClose}>
+          <span className="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div className="p-6 space-y-5">{children}</div>
+      {footer && <div className="px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-xl flex justify-end gap-3">{footer}</div>}
+    </div>
   </div>
 );
 
@@ -98,39 +122,27 @@ const DraggablePriorityItem = ({ item, index, moveItem, openEditModal, openDelet
   return (
     <div
       ref={ref}
-      className={`flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 mb-3 hover:shadow-md transition-all ${isDragging ? "opacity-50" : ""}`}
+      className={`flex items-center gap-4 p-4 bg-white rounded-lg border border-neutral-200 shadow-sm hover:shadow-md transition-all ${isDragging ? "opacity-50" : ""}`}
     >
       {canEdit && (
-        <div className="cursor-move text-gray-400 hover:text-gray-600" ref={handleRef}>
+        <div className="cursor-move text-neutral-400 hover:text-neutral-600" ref={handleRef}>
           <span className="material-symbols-outlined">drag_indicator</span>
         </div>
       )}
       <div
-        className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl flex-shrink-0"
+        className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl flex-shrink-0 shadow-sm"
         style={{ backgroundColor: iconInfo?.color || "#7A869A" }}
       >
         <IconComponent name={item.icon} />
       </div>
       <div className="flex-1">
-        <div className="text-base font-semibold text-gray-900">{item.name}</div>
-        <div className="text-sm text-gray-600">Level {item.level}</div>
+        <div className="text-base font-semibold text-neutral-900">{item.name}</div>
+        <div className="text-sm text-neutral-600">Level {item.level}</div>
       </div>
       {canEdit && (
         <div className="flex gap-2">
-          <button
-            className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-            onClick={handleEditClick}
-            title="Edit"
-          >
-            <span className="material-symbols-outlined">edit</span>
-          </button>
-          <button
-            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            onClick={handleDeleteClick}
-            title="Delete"
-          >
-            <span className="material-symbols-outlined">delete</span>
-          </button>
+          <Button size="sm" variant="ghost" icon="edit" onClick={handleEditClick} />
+          <Button size="sm" variant="ghost" className="text-accent-600 hover:bg-accent-50" icon="delete" onClick={handleDeleteClick} />
         </div>
       )}
     </div>
@@ -193,8 +205,7 @@ const ProjectSettingPriority = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setIsSaving(true);
     const payload = { name: currentPriority.name, icon: currentPriority.icon, projectKey: projectKey };
     try {
@@ -262,102 +273,103 @@ const ProjectSettingPriority = () => {
   // Check if user has permission (admin or PM)
   const canEdit = user?.role === "admin" || userProjectRole === "PROJECT_MANAGER";
 
-  if (loading && priorities.length === 0) return <div className="flex items-center justify-center py-8 text-gray-500">Loading priorities...</div>;
+  if (loading && priorities.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <LoadingSpinner size="lg" text="Loading priorities..." />
+      </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="bg-white">
-        <div className="flex justify-between items-start mb-8 pb-6 border-b border-gray-200">
-          <div className="flex flex-col">
-            <h2 className="text-3xl font-bold text-blue-900 m-0">Priorities</h2>
-            <p className="text-gray-600 text-base mt-2">{priorities.length} priorities configured • Drag to reorder</p>
-          </div>
-          {canEdit && (
-            <button
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white border-none rounded-lg font-semibold shadow-lg shadow-purple-300/30 hover:shadow-lg hover:shadow-purple-400/40 hover:-translate-y-0.5 transition-all"
-              onClick={() => handleOpenModal()}
-            >
-              <span className="material-symbols-outlined text-xl">add</span>
-              Create Priority
-            </button>
-          )}
-        </div>
+      <div className="space-y-6">
+        <PageHeader
+          title="Priorities"
+          subtitle="Define and reorder priority levels for this project"
+          icon="flag"
+          badge={`${priorities.length} configured`}
+          actions={
+            canEdit && (
+              <Button icon="add" onClick={() => handleOpenModal()}>
+                Create priority
+              </Button>
+            )
+          }
+        />
 
-        <div className="space-y-0">
-          {priorities.map((item, index) => (
-            <DraggablePriorityItem
-              key={item._id}
-              item={item}
-              index={index}
-              moveItem={movePriority}
-              openEditModal={handleOpenModal}
-              openDeleteConfirm={openDeleteConfirm}
-              canEdit={canEdit}
+        <Card>
+          {priorities.length === 0 ? (
+            <EmptyState
+              icon="flag"
+              title="No priorities yet"
+              description="Set up priorities so tasks can be ranked."
+              action={
+                canEdit && (
+                  <Button icon="add" onClick={() => handleOpenModal()}>
+                    Add priority
+                  </Button>
+                )
+              }
             />
-          ))}
-        </div>
-      </div>
-
-      {isModalOpen ? (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleCloseModal}>
-          <div className="bg-white rounded-xl w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">{currentPriority?._id ? "Edit Priority" : "Create Priority"}</h2>
-              <button className="text-gray-500 hover:text-gray-900 p-2 hover:bg-gray-100 rounded-lg transition-colors" onClick={handleCloseModal}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
+          ) : (
+            <div className="space-y-3">
+              {priorities.map((item, index) => (
+                <DraggablePriorityItem
+                  key={item._id}
+                  item={item}
+                  index={index}
+                  moveItem={movePriority}
+                  openEditModal={handleOpenModal}
+                  openDeleteConfirm={openDeleteConfirm}
+                  canEdit={canEdit}
+                />
+              ))}
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="p-6 space-y-5">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-2">
-                    Priority Name <span className="text-red-600">*</span>
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    value={currentPriority.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">Icon</label>
-                  <IconPicker selectedIcon={currentPriority.icon} onSelect={handleIconSelect} />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-white font-medium transition-colors"
-                  onClick={handleCloseModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+          )}
+        </Card>
 
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setDeletePriorityId(null);
-        }}
-        onConfirm={handleDelete}
-        title="Delete Priority"
-        message="Are you sure you want to delete this priority? This might affect projects using it."
-      />
+        {isModalOpen && (
+          <Modal
+            title={currentPriority?._id ? "Edit Priority" : "Create Priority"}
+            onClose={handleCloseModal}
+            footer={
+              <>
+                <Button variant="secondary" onClick={handleCloseModal}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSubmit} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+              </>
+            }
+          >
+            <Input
+              label="Priority name"
+              name="name"
+              value={currentPriority.name}
+              onChange={handleChange}
+              placeholder="Critical, High, Medium..."
+              required
+            />
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-neutral-700">Icon</p>
+              <IconPicker selectedIcon={currentPriority.icon} onSelect={handleIconSelect} />
+            </div>
+          </Modal>
+        )}
+
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setDeletePriorityId(null);
+          }}
+          onConfirm={handleDelete}
+          title="Delete Priority"
+          message="Are you sure you want to delete this priority? This might affect projects using it."
+        />
+      </div>
     </DndProvider>
   );
 };

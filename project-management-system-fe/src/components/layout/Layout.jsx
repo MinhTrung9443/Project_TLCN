@@ -14,7 +14,7 @@ const Layout = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-light">
+    <div className="flex flex-col min-h-screen bg-neutral-50">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         {user && <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />}

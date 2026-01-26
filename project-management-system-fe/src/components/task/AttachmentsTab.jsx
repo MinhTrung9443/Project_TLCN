@@ -47,8 +47,8 @@ const AttachmentsTab = ({ attachments = [], onAdd, onDelete }) => {
 
   return (
     <div className="space-y-4">
-      <div className="pb-4 border-b border-gray-200">
-        <h4 className="text-lg font-semibold text-gray-900">Attachments ({Array.isArray(attachments) ? attachments.length : 0})</h4>
+      <div className="pb-4 border-b border-neutral-200">
+        <h4 className="text-lg font-semibold text-neutral-900">Attachments ({Array.isArray(attachments) ? attachments.length : 0})</h4>
       </div>
 
       <div className="flex items-center gap-4 overflow-x-auto pb-2" ref={scrollContainerRef}>
@@ -60,7 +60,7 @@ const AttachmentsTab = ({ attachments = [], onAdd, onDelete }) => {
                 <a
                   href={att.url}
                   download={att.filename}
-                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white text-gray-900 hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white text-neutral-900 hover:bg-neutral-100 transition-colors"
                   title="Download"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -79,9 +79,9 @@ const AttachmentsTab = ({ attachments = [], onAdd, onDelete }) => {
                 href={att.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow min-w-max"
+                className="flex flex-col items-center gap-2 p-4 bg-white border border-neutral-200 rounded-lg hover:shadow-md transition-shadow min-w-max"
               >
-                <div className="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-lg text-2xl text-gray-600">
+                <div className="w-16 h-16 flex items-center justify-center bg-neutral-50 rounded-lg text-2xl text-neutral-600">
                   {att.filename.match(/\.(jpeg|jpg|gif|png|svg)$/i) ? (
                     <img src={att.url} alt={att.filename} className="w-full h-full object-cover rounded" />
                   ) : (
@@ -89,8 +89,8 @@ const AttachmentsTab = ({ attachments = [], onAdd, onDelete }) => {
                   )}
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-sm font-medium text-gray-900 truncate max-w-[120px]">{att.filename}</span>
-                  <span className="text-xs text-gray-500 mt-1">
+                  <span className="text-sm font-medium text-neutral-900 truncate max-w-[120px]">{att.filename}</span>
+                  <span className="text-xs text-neutral-500 mt-1">
                     {new Date(att.uploadedAt).toLocaleString("en-GB", {
                       day: "numeric",
                       month: "short",
@@ -105,7 +105,7 @@ const AttachmentsTab = ({ attachments = [], onAdd, onDelete }) => {
           ))}
 
         <button
-          className="flex-shrink-0 flex items-center justify-center w-20 h-24 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-gray-400 hover:text-purple-600 text-3xl"
+          className="flex-shrink-0 flex items-center justify-center w-20 h-24 border-2 border-dashed border-neutral-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-neutral-400 hover:text-primary-600 text-3xl"
           onClick={onAdd}
           title="Add attachment"
         >

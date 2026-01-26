@@ -36,7 +36,7 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
   };
 
   return (
-    <div className="flex flex-col bg-gray-50 rounded-lg border border-gray-200 min-w-[300px]" ref={drop}>
+    <div className="flex flex-col bg-neutral-50 rounded-lg border border-neutral-200 min-w-[300px]" ref={drop}>
       <div className={`bg-gradient-to-r ${getCategoryColor()} text-white px-4 py-3 rounded-t-lg`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -47,7 +47,7 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
         </div>
       </div>
       <div
-        className={`flex-1 p-3 min-h-[400px] ${isOver && canDrop ? "bg-purple-50 border-2 border-purple-300" : ""} ${isOver && !canDrop ? "bg-red-50 border-2 border-red-300" : ""}`}
+        className={`flex-1 p-3 min-h-[400px] ${isOver && canDrop ? "bg-primary-50 border-2 border-primary-300" : ""} ${isOver && !canDrop ? "bg-red-50 border-2 border-red-300" : ""}`}
       >
         {isOver && !canDrop && (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-red-600">
@@ -56,7 +56,7 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
           </div>
         )}
         {tasks.length === 0 ? (
-          <div className="flex items-center justify-center py-8 text-gray-400 text-sm">Drop tasks here</div>
+          <div className="flex items-center justify-center py-8 text-neutral-400 text-sm">Drop tasks here</div>
         ) : (
           tasks.map((task) => <TaskCard key={task._id} task={task} />)
         )}

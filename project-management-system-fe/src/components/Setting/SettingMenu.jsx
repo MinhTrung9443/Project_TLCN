@@ -14,7 +14,7 @@ const SettingMenu = ({ activeTab, onTabChange }) => {
           <button
             key={item.key}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-              activeTab.toLowerCase() === item.key.toLowerCase() ? "bg-purple-100 text-purple-600" : "text-gray-700 hover:bg-gray-100"
+              activeTab.toLowerCase() === item.key.toLowerCase() ? "bg-primary-100 text-primary-600" : "text-neutral-700 hover:bg-neutral-100"
             }`}
             onClick={() => onTabChange(item.key)}
           >

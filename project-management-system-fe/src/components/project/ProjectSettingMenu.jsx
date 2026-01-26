@@ -16,28 +16,36 @@ const ProjectSettingMenu = () => {
   ];
 
   return (
-    <div className="setting-menu-wrapper">
-      <div className="setting-menu-header">
-        <div className="header-info">
-          <h1 className="page-title">
-            <span className="material-symbols-outlined">settings</span>
+    <div className="mb-8">
+      <div className="bg-white border-b border-neutral-200">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <h1 className="flex items-center gap-3 text-3xl font-bold text-neutral-900 mb-2">
+            <span className="material-symbols-outlined text-primary-600">settings</span>
             {projectData?.name || "Project"} Settings
           </h1>
-          <p className="page-subtitle">Configure project settings, members, and workflows</p>
+          <p className="text-neutral-600">Configure project settings, members, and workflows</p>
         </div>
       </div>
 
-      <nav className="setting-tabs-nav">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={`/app/task-mgmt/projects/${projectKey}/settings/${item.path}`}
-            className={({ isActive }) => `tab-nav-item ${isActive ? "active" : ""}`}
-          >
-            <span className="material-symbols-outlined">{item.icon}</span>
-            <span className="tab-label">{item.label}</span>
-          </NavLink>
-        ))}
+      <nav className="bg-white border-b border-neutral-200">
+        <div className="max-w-7xl mx-auto px-6 flex gap-1">
+          {menuItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={`/app/task-mgmt/projects/${projectKey}/settings/${item.path}`}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  isActive
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300"
+                }`
+              }
+            >
+              <span className="material-symbols-outlined text-lg">{item.icon}</span>
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </div>
       </nav>
     </div>
   );

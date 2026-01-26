@@ -36,17 +36,17 @@ const ProjectActionsMenu = ({ project, onDelete, onClone }) => {
     <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-neutral-600 transition-colors"
       >
         <span className="material-symbols-outlined">more_vert</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2 z-10">
           <Link
             to={`/app/task-mgmt/projects/${project.key}/settings/general`}
             onClick={handleSettingsClick}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors no-underline"
+            className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors no-underline"
           >
             <span className="material-symbols-outlined text-base">settings</span>
             Project Settings

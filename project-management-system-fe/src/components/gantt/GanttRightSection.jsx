@@ -8,11 +8,11 @@ const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, 
   // Safety check
   if (!Array.isArray(projects)) {
     return (
-      <div className="gantt-right-section" ref={rightSectionRef}>
-        <div className="gantt-wrapper">
+      <div className="flex-1 overflow-x-auto" ref={rightSectionRef}>
+        <div className="inline-block min-w-full">
           <GanttTimeline timelineColumns={timelineColumns} />
-          <div className="gantt-body">
-            <div style={{ padding: "20px", textAlign: "center", color: "#6b7280" }}>Loading...</div>
+          <div className="bg-white">
+            <div className="p-5 text-center text-neutral-500">Loading...</div>
           </div>
         </div>
       </div>
@@ -49,13 +49,13 @@ const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, 
   const hasTask = groupBy.includes("task");
 
   return (
-    <div className="gantt-right-section" ref={rightSectionRef}>
-      <div className="gantt-wrapper" style={wrapperStyle}>
+    <div className="flex-1 overflow-x-auto" ref={rightSectionRef}>
+      <div className="inline-block min-w-full" style={wrapperStyle}>
         {/* Header */}
         <GanttTimeline timelineColumns={timelineColumns} />
 
         {/* Body */}
-        <div className="gantt-body">
+        <div className="bg-white">
           {projects.map((item) => {
             // If displaying projects
             if (hasProject) {

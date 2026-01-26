@@ -48,14 +48,20 @@ const GanttHeader = ({
 
   return (
     <>
-      <div className="gantt-hero-section">
-        <div className="gantt-hero-content">
-          <div className="gantt-hero-badge">
-            <span className="material-symbols-outlined">timeline</span>
-            Timeline Management
+      <div className="bg-white border-b border-neutral-200 px-6 py-5">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-100">
+            <span className="material-symbols-outlined text-primary-600 text-xl">timeline</span>
           </div>
-          <h1 className="gantt-hero-title">Gantt Chart</h1>
-          <p className="gantt-hero-subtitle">Visualize project schedules and track task progress across all sprints</p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-neutral-900">Gantt Chart</h1>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                Timeline Management
+              </span>
+            </div>
+            <p className="text-sm text-neutral-600 mt-0.5">Visualize project schedules and track task progress across all sprints</p>
+          </div>
         </div>
       </div>
 

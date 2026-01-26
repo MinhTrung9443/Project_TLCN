@@ -1,8 +1,12 @@
 // src/pages/ManageProject/ProjectSettingsGeneral.jsx
 // [PHIÊN BẢN HOÀN THIỆN]
-import React, { useState, useEffect, useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { updateProjectByKey, getProjectByKey } from "../../services/projectService";
 import { useAuth } from "../../contexts/AuthContext";
@@ -150,75 +154,63 @@ const ProjectSettingsGeneral = () => {
   };
 
   if (!projectData) {
-    return <div className="flex items-center justify-center py-8 text-gray-500">Loading general settings...</div>;
+    return (
+      <div className="flex items-center justify-center py-16">
+        <LoadingSpinner size="lg" text="Loading general settings..." />
+      </div>
+    );
   }
   const managerOptions = canChangeManager ? allUsers : projectData.members.map((m) => m.userId) || [];
   const selectedManager = managerOptions.find((u) => u._id === formData.projectManagerId) || null;
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6">
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">
-            Project Name <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
+    <Card className="max-w-3xl" padding>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-4">
+          <Input
+            label="Project name"
             name="name"
             value={formData.name}
             onChange={handleChange}
             required
             disabled={!canEditGeneralInfo}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            error={errors.name}
+            placeholder="Project X"
           />
-          {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">
-            Key <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
+          <Input
+            label="Key"
             name="key"
             value={formData.key}
             onChange={handleChange}
             required
             disabled={!canEditSensitiveInfo}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-          />
-          {errors.key && <p className="text-sm text-red-600 mt-1">{errors.key}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">Type</label>
-          <input
-            type="text"
-            name="type"
-            value={formData.type}
-            disabled
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+            error={errors.key}
+            placeholder="PROJ"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">Status</label>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            disabled={!canEditGeneralInfo}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-          >
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-          </select>
+        <div className="grid md:grid-cols-3 gap-4">
+          <Input label="Type" name="type" value={formData.type} disabled />
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Status</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              disabled={!canEditGeneralInfo}
+              className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50"
+            >
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="startDate" className="block text-sm font-semibold text-gray-900 mb-2">
-              Start Date
+            <label htmlFor="startDate" className="block text-sm font-medium text-neutral-700 mb-2">
+              Start date
             </label>
             <input
               id="startDate"
@@ -227,12 +219,12 @@ const ProjectSettingsGeneral = () => {
               value={formData.startDate}
               onChange={handleChange}
               disabled={!canEditGeneralInfo}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50"
             />
           </div>
           <div>
-            <label htmlFor="endDate" className="block text-sm font-semibold text-gray-900 mb-2">
-              End Date
+            <label htmlFor="endDate" className="block text-sm font-medium text-neutral-700 mb-2">
+              End date
             </label>
             <input
               id="endDate"
@@ -241,27 +233,28 @@ const ProjectSettingsGeneral = () => {
               value={formData.endDate}
               onChange={handleChange}
               disabled={!canEditGeneralInfo}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50"
             />
-            {errors.endDate && <p className="text-sm text-red-600 mt-1">{errors.endDate}</p>}
+            {errors.endDate && <p className="text-sm text-accent-600 mt-1">{errors.endDate}</p>}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-2">Description</label>
           <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
             rows="4"
             disabled={!canEditGeneralInfo}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50"
+            placeholder="What is this project about?"
           />
         </div>
 
-        <div>
-          <label htmlFor="projectManagerId" className="block text-sm font-semibold text-gray-900 mb-2">
-            Project Manager <span className="text-red-600">*</span>
+        <div className="space-y-2">
+          <label htmlFor="projectManagerId" className="block text-sm font-medium text-neutral-700">
+            Project Manager
           </label>
           <select
             id="projectManagerId"
@@ -269,7 +262,7 @@ const ProjectSettingsGeneral = () => {
             value={formData.projectManagerId}
             onChange={handleChange}
             disabled={!canChangeManager}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50"
           >
             <option value="">-- Select a Manager --</option>
             {managerOptions.map((u) => (
@@ -278,49 +271,33 @@ const ProjectSettingsGeneral = () => {
               </option>
             ))}
           </select>
-          {errors.projectManagerId && <p className="text-sm text-red-600 mt-1">{errors.projectManagerId}</p>}
+          {errors.projectManagerId && <p className="text-sm text-accent-600">{errors.projectManagerId}</p>}
 
           {selectedManager && (
-            <div className="mt-3 flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-              <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-semibold">
+            <div className="mt-3 flex items-center gap-3 p-3 bg-primary-50 rounded-lg border border-primary-200">
+              <div className="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold">
                 {(selectedManager.fullname || "")[0] || "U"}
               </div>
               <div>
-                <div className="font-medium text-gray-900">{selectedManager.fullname}</div>
-                <div className="text-sm text-gray-600">{selectedManager.email}</div>
+                <div className="font-medium text-neutral-900">{selectedManager.fullname}</div>
+                <div className="text-sm text-neutral-600">{selectedManager.email}</div>
               </div>
             </div>
           )}
         </div>
-      </div>
 
-      {canSaveChanges && (
-        <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={handleCancel}
-            disabled={!hasChanges()}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving || !hasChanges()}
-            className="px-6 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            {isSaving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-purple-300 border-t-white rounded-full animate-spin"></div>
-                Saving...
-              </>
-            ) : (
-              "Save"
-            )}
-          </button>
-        </div>
-      )}
-    </form>
+        {canSaveChanges && (
+          <div className="flex gap-3 pt-4 border-t border-neutral-200">
+            <Button variant="secondary" type="button" onClick={handleCancel} disabled={!hasChanges()}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving || !hasChanges()}>
+              {isSaving ? "Saving..." : "Save changes"}
+            </Button>
+          </div>
+        )}
+      </form>
+    </Card>
   );
 };
 

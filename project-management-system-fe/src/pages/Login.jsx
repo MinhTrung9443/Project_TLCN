@@ -41,18 +41,18 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-light flex items-center justify-center px-4 font-sans">
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 font-sans">
       <div className="w-full max-w-lg">
         <div className="bg-white rounded-2xl shadow-sm p-12">
           <div className="text-center mb-8">
             <img src={logo} alt="Logo" className="w-32 h-auto mx-auto mb-6" />
             <h2 className="text-4xl font-bold text-blue-900 mb-2">Sign in</h2>
-            <p className="text-lg text-gray-600 leading-relaxed">Welcome back! Please enter your details.</p>
+            <p className="text-lg text-neutral-600 leading-relaxed">Welcome back! Please enter your details.</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-base font-semibold text-gray-900 mb-2">
+              <label className="block text-base font-semibold text-neutral-900 mb-2">
                 Email <span className="text-red-600">*</span>
               </label>
               <input
@@ -60,12 +60,12 @@ const LoginPage = () => {
                 name="email"
                 placeholder="your.email@example.com"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-base focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
               />
             </div>
 
             <div>
-              <label className="block text-base font-semibold text-gray-900 mb-2">
+              <label className="block text-base font-semibold text-neutral-900 mb-2">
                 Password <span className="text-red-600">*</span>
               </label>
               <input
@@ -73,19 +73,19 @@ const LoginPage = () => {
                 name="password"
                 placeholder="Enter password"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-base focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
               />
             </div>
 
             <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-purple-600 no-underline text-sm font-medium hover:text-purple-700 transition-colors">
+              <Link to="/forgot-password" className="text-primary-600 no-underline text-sm font-medium hover:text-primary-700 transition-colors">
                 Forgot your password?
               </Link>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-6 rounded-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
             >
               Sign in
             </button>

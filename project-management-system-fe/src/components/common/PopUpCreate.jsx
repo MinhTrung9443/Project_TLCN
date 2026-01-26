@@ -41,12 +41,12 @@ const PopUpCreate = ({ open, onClose, onSubmit, title = "Create Item", initialDa
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-xl w-full max-w-md shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-xl font-bold text-gray-900 mb-6">{title}</h3>
+        <h3 className="text-xl font-bold text-neutral-900 mb-6">{title}</h3>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Name</label>
+            <label className="block text-sm font-semibold text-neutral-900 mb-2">Name</label>
             <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               name="name"
               value={form.name}
               onChange={handleChange}
@@ -56,9 +56,9 @@ const PopUpCreate = ({ open, onClose, onSubmit, title = "Create Item", initialDa
           </div>
           {isPri ? null : (
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
+              <label className="block text-sm font-semibold text-neutral-900 mb-2">Description</label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
                 name="description"
                 value={form.description}
                 onChange={handleChange}
@@ -68,14 +68,16 @@ const PopUpCreate = ({ open, onClose, onSubmit, title = "Create Item", initialDa
             </div>
           )}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-3">Icon</label>
+            <label className="block text-sm font-semibold text-neutral-900 mb-3">Icon</label>
             <div className="flex flex-wrap gap-3">
               {ICONS.map((icon) => (
                 <button
                   key={icon}
                   type="button"
                   className={`flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-all ${
-                    form.icon === icon ? "border-purple-600 bg-purple-50 text-purple-600" : "border-gray-200 text-gray-600 hover:border-gray-300"
+                    form.icon === icon
+                      ? "border-primary-600 bg-primary-50 text-primary-600"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
                   }`}
                   onClick={() => handleIconSelect(icon)}
                   title={icon}
@@ -85,13 +87,16 @@ const PopUpCreate = ({ open, onClose, onSubmit, title = "Create Item", initialDa
               ))}
             </div>
           </div>
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <button type="submit" className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
+          <div className="flex gap-3 pt-4 border-t border-neutral-200">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
+            >
               {title.includes("Edit") ? "Save" : "Create"}
             </button>
             <button
               type="button"
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition-colors"
               onClick={onClose}
             >
               Cancel

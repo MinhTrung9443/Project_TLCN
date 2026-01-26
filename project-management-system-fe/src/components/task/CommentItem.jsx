@@ -108,21 +108,41 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
   };
 
   return (
-    <div className="comment-item-container">
-      <div className="comment-item">
-        <img src={comment.userId.avatar || DEFAULT_AVATAR} alt={comment.userId.fullname || "Unknown User"} className="avatar" />
-        <div className="comment-body">
-          <div className="comment-header">
-            <strong>{comment.userId.fullname || "Unknown User"}</strong>
-            <span>{moment(comment.createdAt).fromNow()}</span>
+    <div className="space-y-4">
+      <div className="flex gap-3 p-4 bg-white rounded-lg border border-neutral-200">
+        <img
+          src={comment.userId.avatar || DEFAULT_AVATAR}
+          alt={comment.userId.fullname || "Unknown User"}
+          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <strong className="text-neutral-900">{comment.userId.fullname || "Unknown User"}</strong>
+            <span className="text-xs text-neutral-500">{moment(comment.createdAt).fromNow()}</span>
           </div>
 
           {/* --- BỔ SUNG LẠI NỘI DUNG COMMENT BỊ THIẾU --- */}
           {isEditing ? (
-            <div className="comment-edit-form">
-              <textarea value={editedContent} onChange={(e) => setEditedContent(e.target.value)} />
-              <button onClick={handleUpdate}>Save</button>
-              <button onClick={() => setIsEditing(false)}>Cancel</button>
+            <div className="space-y-3 mb-3 p-3 bg-neutral-50 rounded-lg">
+              <textarea
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleUpdate}
+                  className="flex-1 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 px-3 py-2 border border-neutral-300 text-neutral-700 rounded-lg text-sm font-medium hover:bg-neutral-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -130,12 +150,12 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
 
               {/* Display attachments */}
               {comment.attachments && comment.attachments.length > 0 && (
-                <div className="comment-attachments-list">
+                <div className="flex flex-wrap gap-3 mt-3 mb-3">
                   {comment.attachments.map((attachment, index) => (
-                    <div key={index} className="attachment-item">
+                    <div key={index} className="flex-shrink-0">
                       {isImage(attachment.filename) ? (
-                        <div className="attachment-image">
-                          <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                        <div className="flex flex-col gap-1">
+                          <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="inline-block">
                             <img
                               src={attachment.url}
                               alt={attachment.filename}
@@ -148,12 +168,17 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
                               }}
                             />
                           </a>
-                          <div className="attachment-filename">{attachment.filename}</div>
+                          <span className="text-xs text-neutral-500 truncate max-w-[150px]">{attachment.filename}</span>
                         </div>
                       ) : (
-                        <div className="attachment-file">
-                          <span className="material-symbols-outlined">attach_file</span>
-                          <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-2 p-2 bg-neutral-50 border border-neutral-200 rounded-lg">
+                          <span className="material-symbols-outlined text-sm text-neutral-600">attach_file</span>
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary-600 hover:text-primary-700 truncate"
+                          >
                             {attachment.filename}
                           </a>
                         </div>
@@ -166,23 +191,46 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
           )}
 
           {/* --- Reactions và Actions đặt ở đây --- */}
-          <div className="comment-footer">
-            <div className="comment-reactions">
+          <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-neutral-200">
+            <div className="flex flex-wrap items-center gap-2">
               {groupedReactions.map(({ emoji, count }) => (
-                <span key={emoji} className="reaction-chip">
-                  {emoji} {count}
-                </span>
+                <button
+                  key={emoji}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-neutral-100 hover:bg-neutral-200 rounded-full transition-colors"
+                  title={emoji}
+                >
+                  {emoji} <span className="text-neutral-600">{count}</span>
+                </button>
               ))}
-              <button className="add-reaction-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="Add reaction">
+              <button
+                className="inline-flex items-center justify-center w-6 h-6 text-lg bg-neutral-100 hover:bg-neutral-200 rounded-full transition-colors"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                title="Add reaction"
+              >
                 +
               </button>
             </div>
-            <div className="comment-actions">
-              <button onClick={() => setActiveReplyId(isReplying ? null : comment._id)}>{isReplying ? "Cancel" : "Reply"}</button>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <button
+                onClick={() => setActiveReplyId(isReplying ? null : comment._id)}
+                className="px-2 py-1 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded transition-colors"
+              >
+                {isReplying ? "Cancel" : "Reply"}
+              </button>
               {isOwner && (
                 <>
-                  <button onClick={() => setIsEditing(true)}>Edit</button>
-                  <button onClick={() => setIsDeleteModalOpen(true)}>Delete</button>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-2 py-1 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    className="px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                  >
+                    Delete
+                  </button>
                 </>
               )}
             </div>
@@ -192,28 +240,34 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
 
       {/* Emoji picker nằm ngoài luồng bình thường */}
       {showEmojiPicker && (
-        <div className="emoji-picker-container">
+        <div className="p-2 bg-white rounded-lg border border-neutral-200 shadow-lg">
           <EmojiPicker onEmojiClick={handleEmojiClick} />
         </div>
       )}
 
       {/* Form Reply */}
       {isReplying && (
-        <form onSubmit={handlePostReply} className="comment-form reply-form">
+        <form onSubmit={handlePostReply} className="ml-11 p-3 space-y-2 bg-neutral-50 rounded-lg border border-neutral-200">
           <textarea
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
             placeholder={`Replying to ${comment.userId.fullname}...`}
             rows="2"
             autoFocus
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
           />
-          <button type="submit">Post Reply</button>
+          <button
+            type="submit"
+            className="w-full px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Post Reply
+          </button>
         </form>
       )}
 
       {/* Render comment con (đệ quy) */}
       {comment.children && comment.children.length > 0 && (
-        <div className="comment-replies">
+        <div className="ml-11 mt-3 space-y-3 pl-3 border-l-2 border-neutral-200">
           {comment.children.map((childComment) => (
             <CommentItem
               key={childComment._id}

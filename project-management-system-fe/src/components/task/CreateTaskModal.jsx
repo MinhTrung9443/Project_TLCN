@@ -340,9 +340,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
         className="bg-white rounded-lg w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 flex items-center justify-between border-b border-purple-800">
+        <div className="sticky top-0 bg-neutral-900 text-white px-6 py-4 flex items-center justify-between border-b border-neutral-800">
           <h2 className="text-xl font-bold">Create Task</h2>
-          <button onClick={onClose} className="text-white hover:bg-purple-600 p-2 rounded-lg transition-colors">
+          <button onClick={onClose} className="text-white hover:bg-neutral-800 p-2 rounded-lg transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -350,7 +350,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="projectId" className="block text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="projectId" className="block text-sm font-semibold text-neutral-900 mb-2">
                   Project <span className="text-red-600">*</span>
                 </label>
                 <select
@@ -359,7 +359,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                   value={formData.projectId}
                   onChange={handleInputChange}
                   disabled={!!defaultProjectId}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select Project</option>
                   {projects.map((p) => (
@@ -371,7 +371,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                 {errors.projectId && <p className="text-sm text-red-600 mt-1">{errors.projectId}</p>}
               </div>
               <div>
-                <label htmlFor="taskTypeId" className="block text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="taskTypeId" className="block text-sm font-semibold text-neutral-900 mb-2">
                   Type <span className="text-red-600">*</span>
                 </label>
                 <select
@@ -380,7 +380,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                   value={formData.taskTypeId}
                   onChange={handleInputChange}
                   disabled={!formData.projectId}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select Type</option>
                   {settings.taskTypes.map((t) => (
@@ -394,7 +394,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
             </div>
 
             <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-2">
+              <label htmlFor="name" className="block text-sm font-semibold text-neutral-900 mb-2">
                 Task Name <span className="text-red-600">*</span>
               </label>
               <input
@@ -403,19 +403,19 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
               {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
+              <label className="block text-sm font-semibold text-neutral-900 mb-2">Description</label>
               <RichTextEditor value={formData.description} onChange={handleDescriptionChange} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="priorityId" className="block text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="priorityId" className="block text-sm font-semibold text-neutral-900 mb-2">
                   Priority <span className="text-red-600">*</span>
                 </label>
                 <select
@@ -424,7 +424,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                   value={formData.priorityId}
                   onChange={handleInputChange}
                   disabled={!formData.projectId}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select Priority</option>
                   {settings.priorities.map((p) => (
@@ -436,7 +436,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                 {errors.priorityId && <p className="text-sm text-red-600 mt-1">{errors.priorityId}</p>}
               </div>
               <div>
-                <label htmlFor="dueDate" className="block text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="dueDate" className="block text-sm font-semibold text-neutral-900 mb-2">
                   Due Date
                 </label>
                 <input
@@ -445,7 +445,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                   name="dueDate"
                   value={formData.dueDate}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
                 {errors.dueDate && <p className="text-sm text-red-600 mt-1">{errors.dueDate}</p>}
               </div>
@@ -453,7 +453,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="assigneeId" className="block text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="assigneeId" className="block text-sm font-semibold text-neutral-900 mb-2">
                   Assignee
                 </label>
                 <select
@@ -462,7 +462,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                   value={formData.assigneeId}
                   onChange={handleInputChange}
                   disabled={!formData.projectId}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Unassigned</option>
                   {settings.members.map((m) => (
@@ -473,19 +473,19 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Reporter</label>
+                <label className="block text-sm font-semibold text-neutral-900 mb-2">Reporter</label>
                 <input
                   type="text"
                   value={user.fullname}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg bg-neutral-100 text-neutral-700 cursor-not-allowed"
                 />
               </div>
             </div>
 
             <button
               type="button"
-              className="px-4 py-2 text-purple-600 font-medium hover:bg-purple-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-primary-600 font-medium hover:bg-primary-50 rounded-lg transition-colors"
               onClick={() => setShowMore(!showMore)}
             >
               {showMore ? "Hide" : "Show"} more fields
@@ -494,7 +494,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
             {showMore && (
               <div className="space-y-6">
                 <div>
-                  <label htmlFor="platformId" className="block text-sm font-semibold text-gray-900 mb-2">
+                  <label htmlFor="platformId" className="block text-sm font-semibold text-neutral-900 mb-2">
                     Platform
                   </label>
                   <select
@@ -503,7 +503,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                     value={formData.platformId}
                     onChange={handleInputChange}
                     disabled={!formData.projectId}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Select Platform</option>
                     {settings.platforms.map((p) => (
@@ -517,22 +517,22 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
             )}
           </div>
 
-          <div className="flex gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex gap-3 px-6 py-4 border-t border-neutral-200 bg-neutral-50">
             <button
               type="button"
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-white font-medium transition-colors"
+              className="px-4 py-2 border border-neutral-300 rounded-lg text-neutral-700 hover:bg-white font-medium transition-colors"
               onClick={onClose}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-purple-300 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-primary-300 border-t-white rounded-full animate-spin"></div>
                   Creating...
                 </>
               ) : (
