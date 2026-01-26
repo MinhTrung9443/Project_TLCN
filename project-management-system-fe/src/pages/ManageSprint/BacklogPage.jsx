@@ -15,7 +15,6 @@ import PageHeader from "../../components/ui/PageHeader";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { VscRepo } from "react-icons/vsc";
-
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -35,199 +34,45 @@ const BacklogPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch project details to get type
   const fetchProjectDetails = async () => {
-    try {
-      const response = await getProjectByKey(selectedProjectKey);
-      setProjectType(response.data.type);
-      setProjectData(response.data);
+    const res = await getProjectByKey(selectedProjectKey);
+    setProjectType(res.data.type);
+    setProjectData(res.data);
 
-      // Xác định vai trò của user trong project (ưu tiên: admin > PM > LEADER > MEMBER)
-      let role = null;
-      const userId = user._id;
-      if (user.role === "admin") {
-        role = "ADMIN";
-      } else {
-        // Check PM
-        const member = response.data.members?.find((m) => {
-          const memId = m.userId?._id || m.userId;
-          return memId === userId;
-        });
-        if (member && member.role === "PROJECT_MANAGER") {
-          role = "PROJECT_MANAGER";
-        } else {
-          // Check LEADER trong các team
-          const isLeader = (response.data.teams || []).some((team) => {
-            const leaderId = team.leaderId?._id || team.leaderId;
-            return leaderId === userId;
-          });
-          if (isLeader) {
-            role = "LEADER";
-          } else {
-            // Check là member trong bất kỳ team nào
-            const isTeamMember = (response.data.teams || []).some((team) =>
-              (team.members || []).some((m) => {
-                const memId = m?._id || m;
-                return memId === userId;
-              }),
-            );
-            if (isTeamMember) {
-              role = "MEMBER";
-            } else {
-              role = null;
-            }
-          }
-        }
-      }
-      console.log("Determined user project role:", role);
-      setUserProjectRole(role);
-    } catch (error) {
-      console.error("Error fetching project details:", error);
+    let role = null;
+    const uid = user._id;
+
+    if (user.role === "admin") role = "ADMIN";
+    else {
+      const pm = res.data.members?.find((m) => (m.userId?._id || m.userId) === uid && m.role === "PROJECT_MANAGER");
+      if (pm) role = "PROJECT_MANAGER";
+      else if (res.data.teams?.some((t) => (t.leaderId?._id || t.leaderId) === uid)) role = "LEADER";
+      else if (res.data.teams?.some((t) => t.members?.some((m) => (m?._id || m) === uid))) role = "MEMBER";
     }
+
+    setUserProjectRole(role);
   };
 
   const fetchSprintList = async () => {
-    try {
-      const data = await sprintService.getSprints(selectedProjectKey);
-      setSprintList(data.sprint);
-      setTaskList(data.tasksWithoutSprint);
-    } catch (error) {
-      console.error("Error fetching sprint list:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateSprint = async () => {
-    try {
-      await sprintService.createSprint(selectedProjectKey);
-      fetchSprintList();
-    } catch (error) {
-      console.error("Error creating sprint:", error);
-    }
+    const data = await sprintService.getSprints(selectedProjectKey);
+    setSprintList(data.sprint);
+    setTaskList(data.tasksWithoutSprint);
+    setLoading(false);
   };
 
   const handleDrop = async (draggedItem, target) => {
-    const { task, source } = draggedItem;
-    console.log(`Dropped task: ${task.name} from ${source} to ${target}`);
+    const { task } = draggedItem;
 
-    // Check if target sprint is completed
     if (target !== "backlog") {
-      const targetSprint = sprintList.find((s) => s._id === target);
-      if (targetSprint && targetSprint.status === "Completed") {
+      const sprint = sprintList.find((s) => s._id === target);
+      if (sprint?.status === "Completed") {
         toast.error("Cannot add tasks to a completed sprint.");
         return;
       }
     }
 
-    // Validate task dates against sprint dates if moving to a sprint
-    if (target !== "backlog" && task.startDate && task.dueDate) {
-      const targetSprint = sprintList.find((s) => s._id === target);
-      // Nếu sprint không có ngày bắt đầu hoặc kết thúc thì bỏ qua validate
-      if (targetSprint && targetSprint.startDate && targetSprint.endDate) {
-        const taskStart = new Date(task.startDate).setHours(0, 0, 0, 0);
-        const taskEnd = new Date(task.dueDate).setHours(0, 0, 0, 0);
-
-        const sprintStart = new Date(targetSprint.startDate).setHours(0, 0, 0, 0);
-        const sprintEnd = new Date(targetSprint.endDate).setHours(0, 0, 0, 0);
-
-        if (taskStart < sprintStart || taskEnd > sprintEnd) {
-          toast.error(
-            `Task dates (${new Date(task.startDate).toLocaleDateString()} - ${new Date(
-              task.dueDate,
-            ).toLocaleDateString()}) must be within sprint dates (${new Date(targetSprint.startDate).toLocaleDateString()} - ${new Date(
-              targetSprint.endDate,
-            ).toLocaleDateString()})`,
-          );
-          return;
-        }
-      }
-    }
-
-    try {
-      await updateTaskSprint(selectedProjectKey, task._id, target === "backlog" ? null : target);
-      fetchSprintList();
-    } catch (error) {
-      const msg = error?.response?.data?.message || "Có lỗi xảy ra khi cập nhật sprint cho task!";
-      toast.error(msg);
-      console.error("Error updating task sprint:", error);
-    }
-  };
-
-  const handleEditSprint = (sprint) => {
-    setSprintToEdit(sprint);
-    setEditModalOpen(true);
-  };
-
-  const handleSaveEditSprint = async (form) => {
-    try {
-      await sprintService.updateSprint(sprintToEdit._id, form);
-      setEditModalOpen(false);
-      setSprintToEdit(null);
-      fetchSprintList();
-    } catch (error) {
-      console.error("Error updating sprint:", error);
-    }
-  };
-
-  const handleStartSprint = async (sprint) => {
-    try {
-      if (!sprint.tasks || sprint.tasks.length === 0) {
-        toast.error("Cannot start a sprint with no tasks.");
-        return;
-      }
-      await sprintService.updateSprint(sprint._id, { status: "Started" });
-      toast.success("Sprint started successfully!");
-
-      // Navigate to active sprint page with sprint ID
-      navigate(`/app/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
-    } catch (error) {
-      console.error("Error starting sprint:", error);
-    }
-  };
-
-  const handleSprintNameClick = (sprint) => {
-    if (sprint.status === "Started") {
-      navigate(`/app/task-mgmt/projects/${selectedProjectKey}/active-sprint?sprint=${sprint._id}`);
-    }
-  };
-
-  const handleCompleteSprint = async (sprint) => {
-    try {
-      await sprintService.updateSprint(sprint._id, { status: "Completed" });
-      fetchSprintList();
-    } catch (error) {
-      console.error("Error completing sprint:", error);
-    }
-  };
-
-  const handleDeleteSprint = (sprint) => {
-    setSprintToDelete(sprint);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteSprint = async () => {
-    if (sprintToDelete) {
-      try {
-        await sprintService.deleteSprint(sprintToDelete._id);
-        toast.success("Sprint deleted successfully!");
-        await fetchSprintList();
-        setShowDeleteModal(false);
-        setSprintToDelete(null);
-      } catch (error) {
-        console.error("Error deleting sprint:", error);
-        toast.error(error.response?.data?.message || "Failed to delete sprint");
-      }
-    }
-  };
-
-  const handleBacklogTaskCreated = (newTask) => {
-    setTaskList((prev) => [...prev, newTask]);
-    setIsCreateTaskModalOpen(false);
-  };
-
-  const handleTaskClick = (task) => {
-    navigate(`/app/task/${task.key}`);
+    await updateTaskSprint(selectedProjectKey, task._id, target === "backlog" ? null : target);
+    fetchSprintList();
   };
 
   useEffect(() => {
@@ -237,10 +82,9 @@ const BacklogPage = () => {
     }
   }, [selectedProjectKey]);
 
-  // Permission checks
   const isProjectCompleted = projectData?.status === "completed";
   const canManageSprints = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER");
-  const canCreateTask = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER" || userProjectRole === "LEADER");
+  const canCreateTask = !isProjectCompleted && ["admin", "PROJECT_MANAGER", "LEADER"].includes(user?.role || userProjectRole);
   const canDragDrop = !isProjectCompleted && canManageSprints;
 
   if (loading) {
@@ -260,25 +104,23 @@ const BacklogPage = () => {
           description="Plan and organize your project tasks"
           actions={
             canManageSprints && projectType !== "Kanban" ? (
-              <Button onClick={handleCreateSprint} icon="add" iconPosition="left">
-                Create Sprint
-              </Button>
+              <Button onClick={() => sprintService.createSprint(selectedProjectKey)}>Create Sprint</Button>
             ) : null
           }
         />
 
         <div className="max-w-7xl mx-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
+          <div className="relative flex gap-6 pr-[26rem]">
+            <div className="flex-1 max-w-5xl space-y-4">
               <SprintList
                 sprintList={sprintList}
                 onDrop={handleDrop}
-                onEdit={handleEditSprint}
-                onStart={handleStartSprint}
-                onComplete={handleCompleteSprint}
-                onDelete={handleDeleteSprint}
-                onSprintNameClick={handleSprintNameClick}
-                onTaskClick={handleTaskClick}
+                onEdit={setSprintToEdit}
+                onStart={() => {}}
+                onComplete={() => {}}
+                onDelete={setSprintToDelete}
+                onSprintNameClick={() => {}}
+                onTaskClick={(t) => navigate(`/app/task/${t.key}`)}
                 projectType={projectType}
                 canManageSprints={canManageSprints}
                 canCreateTask={canCreateTask}
@@ -286,18 +128,32 @@ const BacklogPage = () => {
               />
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-neutral-200">
-                <h2 className="text-xl font-semibold text-neutral-900">Backlog</h2>
-                <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-semibold">{taskList.length}</span>
+            <aside className="w-96 fixed right-6 top-45 h-[65vh] shrink-0 z-30">
+              <div className="h-full flex flex-col bg-white border border-neutral-200 rounded-lg">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h2 className="text-lg font-semibold">Backlog</h2>
+                  <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">{taskList.length}</span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-3">
+                  <TaskList
+                    tasks={taskList}
+                    source="backlog"
+                    onDrop={handleDrop}
+                    canDragDrop={canDragDrop}
+                    onTaskClick={(t) => navigate(`/app/task/${t.key}`)}
+                  />
+                </div>
+
+                {canCreateTask && (
+                  <div className="p-3 border-t">
+                    <Button variant="secondary" className="w-full" onClick={() => setIsCreateTaskModalOpen(true)}>
+                      Create Task
+                    </Button>
+                  </div>
+                )}
               </div>
-              <TaskList tasks={taskList} source="backlog" onDrop={handleDrop} canDragDrop={canDragDrop} onTaskClick={handleTaskClick} />
-              {canCreateTask && (
-                <Button variant="secondary" onClick={() => setIsCreateTaskModalOpen(true)} icon="add" iconPosition="left">
-                  Create Task
-                </Button>
-              )}
-            </div>
+            </aside>
           </div>
         </div>
 
@@ -305,26 +161,22 @@ const BacklogPage = () => {
           isOpen={showDeleteModal}
           title="Confirm Delete"
           message={`Are you sure you want to delete sprint "${sprintToDelete?.name}"?`}
-          onConfirm={confirmDeleteSprint}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSprintToDelete(null);
-          }}
+          onConfirm={() => {}}
+          onClose={() => setShowDeleteModal(false)}
         />
+
         <SprintEditModal
           isOpen={editModalOpen}
           sprint={sprintToEdit}
           project={projectData}
-          onClose={() => {
-            setEditModalOpen(false);
-            setSprintToEdit(null);
-          }}
-          onSave={handleSaveEditSprint}
+          onClose={() => setEditModalOpen(false)}
+          onSave={() => {}}
         />
+
         <CreateTaskModal
           isOpen={isCreateTaskModalOpen}
           onClose={() => setIsCreateTaskModalOpen(false)}
-          onTaskCreated={handleBacklogTaskCreated}
+          onTaskCreated={(t) => setTaskList((p) => [...p, t])}
           defaultProjectId={projectData?._id}
         />
       </div>

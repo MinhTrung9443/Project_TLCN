@@ -176,13 +176,9 @@ export const SettingsPlatforms = () => {
                             <p className="text-sm text-neutral-500">Platform level {p.level || 1}</p>
                           </div>
                         </div>
-                        {p.projectId ? (
+                        {p.projectId && (
                           <Badge variant="primary" size="sm" icon="hub">
                             Project
-                          </Badge>
-                        ) : (
-                          <Badge variant="success" size="sm" icon="check">
-                            Default
                           </Badge>
                         )}
                       </div>

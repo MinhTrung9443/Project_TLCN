@@ -95,23 +95,11 @@ const GroupMembersPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-neutral-600">
-        <Link to="/app/organization/group" className="flex items-center gap-1 hover:text-primary-600 transition-colors">
-          <span className="material-symbols-outlined text-base">groups</span>
-          <span>Teams</span>
-        </Link>
-        <span>/</span>
-        <span className="text-neutral-900 font-medium">{group?.name || "Team Members"}</span>
-      </div>
-
       <PageHeader
         icon={VscOrganization}
         title={group?.name || "Team Members"}
         description="Manage team members and their access"
-        badge={{
-          text: `${members.length} members`,
-          variant: "neutral",
-        }}
+        badge={`${members.length} members`}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -182,13 +182,9 @@ const SettingTaskTypePage = () => {
                             <p className="text-sm text-neutral-500">{tt.level ? `Level ${tt.level}` : "Standard"}</p>
                           </div>
                         </div>
-                        {tt.projectId ? (
+                        {tt.projectId && (
                           <Badge variant="primary" size="sm" icon="hub">
                             Project
-                          </Badge>
-                        ) : (
-                          <Badge variant="success" size="sm" icon="check">
-                            Default
                           </Badge>
                         )}
                       </div>

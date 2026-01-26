@@ -34,20 +34,19 @@ const IconComponent = ({ name }) => {
 };
 
 const IconPicker = ({ selectedIcon, onSelect }) => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+  <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
     {PREDEFINED_ICONS.map((icon) => (
       <button
         key={icon.name}
         type="button"
-        className={`group flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
-          selectedIcon === icon.name ? "border-primary-500 bg-primary-50 shadow-sm" : "border-neutral-200 hover:border-neutral-300"
+        className={`p-3 rounded-lg border-2 transition-all ${
+          selectedIcon === icon.name ? "border-primary-500 bg-primary-50 shadow-md" : "border-neutral-200 hover:border-neutral-300 hover:scale-105"
         }`}
         onClick={() => onSelect(icon.name)}
       >
-        <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white shadow-sm" style={{ backgroundColor: icon.color }}>
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl text-white shadow-sm" style={{ backgroundColor: icon.color }}>
           <IconComponent name={icon.name} />
         </div>
-        <span className="text-sm font-semibold text-neutral-800">{icon.name.replace("Fa", "")}</span>
       </button>
     ))}
   </div>

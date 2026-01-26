@@ -218,72 +218,94 @@ const ManageUserPage = () => {
           {currentUsers.length === 0 ? (
             <EmptyState icon="search_off" title="No users found" description="Try adjusting your search or filters" />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
               {currentUsers.map((u) => (
-                <Card key={u._id} hoverable className="h-full">
-                  <div className="flex items-start justify-between gap-3" onClick={() => navigate(`/app/Organization/User/${u._id}`)}>
-                    <div className="flex items-center gap-3">
-                      {renderAvatar(u)}
-                      <div>
-                        <p className="text-base font-semibold text-neutral-900">{u.fullname}</p>
-                        <p className="text-sm text-neutral-500">@{u.username}</p>
-                        <div className="flex items-center gap-2 mt-2 text-sm text-neutral-600">
-                          <span className="material-symbols-outlined text-[18px]">email</span>
-                          <span className="truncate">{u.email}</span>
+                <Card key={u._id} hoverable className="h-full overflow-hidden">
+                  {/* Header with gradient background */}
+                  <div className="relative h-20 bg-gradient-to-br from-primary-500 to-primary-600 -mx-6 -mt-6 mb-4">
+                    <div className="absolute -bottom-8 left-6">
+                      {u.avatar ? (
+                        <img src={u.avatar} alt={u.fullname} className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center font-bold text-xl text-primary-600">
+                          {u.fullname?.charAt(0)?.toUpperCase()}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-neutral-600">
-                          <span className="material-symbols-outlined text-[18px]">call</span>
-                          <span>{u.phone || "N/A"}</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                    <div className="flex flex-col gap-2 items-end">
-                      <Badge variant={u.role === "admin" ? "primary" : "neutral"} size="sm" icon={u.role === "admin" ? "shield" : "person"}>
+                    <div className="absolute top-3 right-3 flex gap-2">
+                      <Badge variant={u.role === "admin" ? "primary" : "neutral"} size="sm">
                         {u.role === "admin" ? "Admin" : "User"}
                       </Badge>
-                      <Badge variant={u.status === "active" ? "success" : "neutral"} size="sm" icon={u.status === "active" ? "check" : "pause"}>
+                      <Badge variant={u.status === "active" ? "success" : "neutral"} size="sm">
                         {u.status}
                       </Badge>
                     </div>
                   </div>
 
-                  {u.group?.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {u.group.slice(0, 3).map((g) => (
-                        <Badge key={g._id} variant="neutral" size="sm">
-                          {g.name}
-                        </Badge>
-                      ))}
-                      {u.group.length > 3 && (
-                        <Badge variant="neutral" size="sm">
-                          +{u.group.length - 3}
-                        </Badge>
-                      )}
+                  {/* Content */}
+                  <div className="pt-6 space-y-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-neutral-900 mb-1">{u.fullname}</h3>
+                      <p className="text-sm text-neutral-500">@{u.username}</p>
                     </div>
-                  )}
 
-                  <div className="mt-4 flex items-center justify-between text-sm text-neutral-500">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px]">schedule</span>
-                      <span>Last login: {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : "Never"}</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-neutral-600">
+                        <span className="material-symbols-outlined text-base">email</span>
+                        <span className="truncate">{u.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-neutral-600">
+                        <span className="material-symbols-outlined text-base">call</span>
+                        <span>{u.phone || "No phone"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-neutral-600">
+                        <span className="material-symbols-outlined text-base">schedule</span>
+                        <span>Last login: {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : "Never"}</span>
+                      </div>
                     </div>
+
+                    {/* Groups */}
+                    {u.group?.length > 0 && (
+                      <div className="pt-3 border-t border-neutral-200">
+                        <p className="text-xs font-medium text-neutral-500 mb-2">TEAMS</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {u.group.slice(0, 3).map((g) => (
+                            <Badge key={g._id} variant="neutral" size="sm">
+                              {g.name}
+                            </Badge>
+                          ))}
+                          {u.group.length > 3 && (
+                            <Badge variant="neutral" size="sm">
+                              +{u.group.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
                     {user.role === "admin" && (
-                      <div className="flex gap-2">
-                        <Button variant="secondary" size="sm" icon="open_in_new" onClick={() => navigate(`/app/Organization/User/${u._id}`)}>
-                          View
+                      <div className="pt-3 flex gap-2 border-t border-neutral-200">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon="open_in_new"
+                          className="flex-1"
+                          onClick={() => navigate(`/app/Organization/User/${u._id}`)}
+                        >
+                          View Details
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-accent-600 hover:bg-accent-50"
+                          className="text-error-600 hover:bg-error-50 hover:text-error-700"
                           icon="block"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setDeleteUserData({ userId: u._id, userName: u.fullname });
                             setIsDeleteModalOpen(true);
                           }}
-                        >
-                          Deactivate
-                        </Button>
+                        />
                       </div>
                     )}
                   </div>

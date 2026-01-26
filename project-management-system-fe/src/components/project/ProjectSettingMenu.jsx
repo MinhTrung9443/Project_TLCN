@@ -7,47 +7,40 @@ const ProjectSettingMenu = () => {
   const { projectData } = useContext(ProjectContext);
 
   const menuItems = [
-    { path: "general", label: "General", icon: "settings" },
-    { path: "members", label: "Members", icon: "group" },
-    { path: "tasktype", label: "Task Type", icon: "task" },
-    { path: "priority", label: "Priority", icon: "flag" },
-    { path: "platform", label: "Platform", icon: "devices" },
-    { path: "workflow", label: "Workflow", icon: "account_tree" },
+    { path: "general", label: "General", icon: "info", description: "Basic info" },
+    { path: "members", label: "Members", icon: "group", description: "Team access" },
+    { path: "tasktype", label: "Task Type", icon: "category", description: "Work categories" },
+    { path: "priority", label: "Priority", icon: "flag", description: "Urgency levels" },
+    { path: "platform", label: "Platform", icon: "devices_other", description: "Target platforms" },
+    { path: "workflow", label: "Workflow", icon: "account_tree", description: "Status flow" },
   ];
 
   return (
-    <div className="mb-8">
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <h1 className="flex items-center gap-3 text-3xl font-bold text-neutral-900 mb-2">
-            <span className="material-symbols-outlined text-primary-600">settings</span>
-            {projectData?.name || "Project"} Settings
-          </h1>
-          <p className="text-neutral-600">Configure project settings, members, and workflows</p>
-        </div>
-      </div>
-
-      <nav className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-6 flex gap-1">
-          {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={`/app/task-mgmt/projects/${projectKey}/settings/${item.path}`}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  isActive
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300"
-                }`
-              }
-            >
-              <span className="material-symbols-outlined text-lg">{item.icon}</span>
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </div>
-      </nav>
-    </div>
+    <nav className="p-3 space-y-1">
+      {menuItems.map((item) => (
+        <NavLink
+          key={item.path}
+          to={`/app/task-mgmt/projects/${projectKey}/settings/${item.path}`}
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              isActive ? "bg-primary-50 text-primary-700 shadow-sm" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+            }`
+          }
+        >
+          <div
+            className={({ isActive }) =>
+              `w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? "bg-primary-100" : "bg-neutral-100"}`
+            }
+          >
+            <span className="material-symbols-outlined text-lg">{item.icon}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold">{item.label}</div>
+            <div className="text-xs text-neutral-500">{item.description}</div>
+          </div>
+        </NavLink>
+      ))}
+    </nav>
   );
 };
 

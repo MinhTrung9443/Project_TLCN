@@ -57,18 +57,33 @@ const ProjectSettingsPage = () => {
     <div className="space-y-6">
       <PageHeader
         title="Project Settings"
-        subtitle={`Configure workspace details, workflows, and metadata for ${projectData.name || "this project"} (${projectData.key})`}
-        badge={projectData.status === "completed" ? "Completed" : "Active"}
+        subtitle={`Configure workspace details, workflows, and metadata for ${projectData.name || "this project"}`}
+        badge={projectData.key}
         icon="tune"
       />
 
-      <div className="grid grid-cols-[280px_1fr] gap-6 items-start">
-        <Card padding={false} className="sticky top-24 self-start">
-          <ProjectSettingMenu />
-        </Card>
+      <div className="flex gap-6 items-start">
+        <div className="w-64 flex-shrink-0 sticky top-6">
+          <Card className="overflow-hidden">
+            <div className="bg-gradient-to-br from-primary-500 to-primary-600 px-4 py-6 -mx-6 -mt-6 mb-4">
+              <div className="flex items-center gap-3 text-white">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                  <span className="material-symbols-outlined text-2xl">settings</span>
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg">{projectData?.name || "Project"}</h2>
+                  <p className="text-sm text-primary-100">Settings & Configuration</p>
+                </div>
+              </div>
+            </div>
+            <ProjectSettingMenu />
+          </Card>
+        </div>
 
-        <div className="space-y-6">
-          <Outlet />
+        <div className="flex-1 min-w-0">
+          <Card>
+            <Outlet />
+          </Card>
         </div>
       </div>
     </div>
