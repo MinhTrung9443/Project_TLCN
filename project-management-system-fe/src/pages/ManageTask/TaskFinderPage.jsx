@@ -14,9 +14,7 @@ import TaskDetailPanel from "../../components/task/TaskDetailPanel";
 
 // New UI Components
 import Button from "../../components/ui/Button";
-import Select from "../../components/ui/Select";
 import PageHeader from "../../components/ui/PageHeader";
-import FilterBar from "../../components/ui/FilterBar";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import EmptyState from "../../components/ui/EmptyState";
 import { Table, TableHeader, TableBody, TableRow, TableHead } from "../../components/ui/Table";
@@ -307,12 +305,14 @@ const TaskFinderPage = () => {
   };
 
   return (
-    <div className="flex h-full bg-neutral-50">
+    <div className="flex h-screen gap-3 bg-neutral-50 px-6 py-6 overflow-hidden">
       <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${selectedTask ? "mr-0" : "mr-6"}`}>
-        <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+      <div
+        className={`flex flex-col transition-all duration-300 ${selectedTask ? "flex-1 min-w-0" : "flex-1"} overflow-hidden bg-white rounded-lg shadow-sm border border-neutral-200`}
+      >
+        <div className="flex flex-col h-full bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
           {/* Page Header */}
           <PageHeader
             icon="task"
@@ -329,120 +329,129 @@ const TaskFinderPage = () => {
           />
 
           {/* Filter Bar */}
-          <FilterBar searchValue={keyword} onSearchChange={setKeyword} searchPlaceholder="Search by name, key..." onClear={clearAllFilters}>
-            <select
-              className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[180px]"
-              value={projectStatus}
-              onChange={(e) => setProjectStatus(e.target.value)}
-            >
-              <option value="">All Project Status</option>
-              <option value="active">Active Projects</option>
-              <option value="paused">Paused Projects</option>
-              <option value="completed">Completed Projects</option>
-            </select>
-
-            {user?.role !== "admin" && (
-              <select
-                className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[150px]"
-                value={viewMode}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setViewMode(val);
-                  setActiveFilters((prev) => ({ ...prev, projectId: undefined }));
-                }}
-              >
-                <option value="MY_TASKS">My Tasks</option>
-                {hasManagedRole && <option value="MANAGED_TASKS">Managed Tasks</option>}
-              </select>
-            )}
-
-            <select
-              className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px]"
-              value={activeFilters.projectId || ""}
-              onChange={(e) => handleFilterChange("projectId", e.target.value)}
-            >
-              <option value="">All Projects</option>
-              {user?.role !== "admin" && viewMode === "MANAGED_TASKS" ? (
-                <>
-                  {groupedManagedProjects.pm.length > 0 && (
-                    <optgroup label="Managed Projects (PM)">
-                      {groupedManagedProjects.pm.map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {groupedManagedProjects.leader.length > 0 && (
-                    <optgroup label="Led Projects">
-                      {groupedManagedProjects.leader.map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {(() => {
-                    const pmIds = new Set((groupedManagedProjects.pm || []).map((p) => p.value?.toString()));
-                    const leaderIds = new Set((groupedManagedProjects.leader || []).map((p) => p.value?.toString()));
-                    const fallback = (projectsForDropdown || []).filter((opt) => {
-                      const id = opt.value?.toString();
-                      return !pmIds.has(id) && !leaderIds.has(id);
-                    });
-                    return fallback.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ));
-                  })()}
-                </>
-              ) : (
-                (projectsForDropdown.length > 0 ? projectsForDropdown : selectOptions.projects).map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))
+          <div className="flex flex-col gap-2 p-3 bg-neutral-50 border-b border-neutral-200">
+            {/* Search row */}
+            <div className="flex items-center gap-2">
+              <div className="flex-1 max-w-sm relative">
+                <input
+                  type="text"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder="Search by name, key..."
+                  className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <span className="absolute right-3 top-2.5 text-neutral-400 material-symbols-outlined text-[20px]">search</span>
+              </div>
+              {keyword && (
+                <button onClick={clearAllFilters} className="text-sm font-medium text-primary-600 hover:text-primary-700 whitespace-nowrap">
+                  Clear
+                </button>
               )}
-            </select>
+            </div>
 
-            {viewMode !== "MY_TASKS" && (
+            {/* Filters row */}
+            <div className="flex flex-wrap items-center gap-2">
               <select
-                className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[160px]"
-                value={activeFilters.assigneeId || ""}
-                onChange={(e) => handleFilterChange("assigneeId", e.target.value)}
+                className="px-2 py-1.5 text-sm border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={projectStatus}
+                onChange={(e) => setProjectStatus(e.target.value)}
               >
-                <option value="">All Assignees</option>
+                <option value="">All Project Status</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="completed">Completed</option>
+              </select>
+
+              {user?.role !== "admin" && (
+                <select
+                  className="px-2 py-1.5 text-sm border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  value={viewMode}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setViewMode(val);
+                    setActiveFilters((prev) => ({ ...prev, projectId: undefined }));
+                  }}
+                >
+                  <option value="MY_TASKS">My Tasks</option>
+                  {hasManagedRole && <option value="MANAGED_TASKS">Managed Tasks</option>}
+                </select>
+              )}
+
+              <select
+                className="px-2 py-1.5 text-sm border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={activeFilters.projectId || ""}
+                onChange={(e) => handleFilterChange("projectId", e.target.value)}
+              >
+                <option value="">All Projects</option>
+                {user?.role !== "admin" && viewMode === "MANAGED_TASKS" ? (
+                  <>
+                    {groupedManagedProjects.pm.length > 0 && (
+                      <optgroup label="Managed (PM)">
+                        {groupedManagedProjects.pm.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {groupedManagedProjects.leader.length > 0 && (
+                      <optgroup label="Led Projects">
+                        {groupedManagedProjects.leader.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </>
+                ) : (
+                  (projectsForDropdown.length > 0 ? projectsForDropdown : selectOptions.projects).map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              {viewMode !== "MY_TASKS" && (
+                <select
+                  className="px-2 py-1.5 text-sm border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  value={activeFilters.assigneeId || ""}
+                  onChange={(e) => handleFilterChange("assigneeId", e.target.value)}
+                >
+                  <option value="">All Assignees</option>
+                  {selectOptions.users.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <select
+                className="px-2 py-1.5 text-sm border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={activeFilters.reporterId || ""}
+                onChange={(e) => handleFilterChange("reporterId", e.target.value)}
+              >
+                <option value="">All Reporters</option>
                 {selectOptions.users.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
               </select>
-            )}
 
-            <select
-              className="px-4 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 hover:border-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[160px]"
-              value={activeFilters.reporterId || ""}
-              onChange={(e) => handleFilterChange("reporterId", e.target.value)}
-            >
-              <option value="">All Reporters</option>
-              {selectOptions.users.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-
-            <label className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg hover:border-neutral-400 cursor-pointer transition-colors">
-              <input
-                type="checkbox"
-                checked={includeDone}
-                onChange={(e) => setIncludeDone(e.target.checked)}
-                className="w-4 h-4 rounded accent-primary-600"
-              />
-              <span className="font-medium text-neutral-700">Include Done</span>
-            </label>
-          </FilterBar>
+              <label className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-white border border-neutral-300 rounded-lg hover:border-neutral-400 cursor-pointer transition-colors whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={includeDone}
+                  onChange={(e) => setIncludeDone(e.target.checked)}
+                  className="w-4 h-4 rounded accent-primary-600"
+                />
+                <span className="font-medium text-neutral-700">Include Done</span>
+              </label>
+            </div>
+          </div>
 
           {/* Table Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -453,19 +462,19 @@ const TaskFinderPage = () => {
             ) : tasks.length === 0 ? (
               <EmptyState icon="inbox" title="No tasks found" description="Try adjusting your filters or search criteria" />
             ) : (
-              <div className="flex-1 overflow-auto">
-                <Table className="min-w-full">
+              <div className="flex-1 overflow-y-auto">
+                <Table className="min-w-full text-sm">
                   <TableHeader>
                     <TableRow hoverable={false}>
-                      <TableHead>Key</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Sprint</TableHead>
-                      <TableHead>Platform</TableHead>
-                      <TableHead>Assignee</TableHead>
-                      <TableHead>Reporter</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Due Date</TableHead>
+                      <TableHead className="py-2 px-2">Key</TableHead>
+                      <TableHead className="py-2 px-2">Task</TableHead>
+                      <TableHead className="py-2 px-2">Sprint</TableHead>
+                      <TableHead className="py-2 px-2">Platform</TableHead>
+                      <TableHead className="py-2 px-2">Assignee</TableHead>
+                      <TableHead className="py-2 px-2">Reporter</TableHead>
+                      <TableHead className="py-2 px-2">Priority</TableHead>
+                      <TableHead className="py-2 px-2">Status</TableHead>
+                      <TableHead className="py-2 px-2">Due Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -480,23 +489,23 @@ const TaskFinderPage = () => {
 
           {/* Pagination */}
           {!loading && getTotalPages() > 1 && (
-            <div className="flex items-center justify-center gap-4 px-6 py-4 border-t border-neutral-200 bg-neutral-50">
+            <div className="flex items-center justify-center gap-2 px-3 py-2 border-t border-neutral-200 bg-neutral-50">
               <Button
                 variant="secondary"
-                size="md"
+                size="sm"
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 icon="chevron_left"
                 iconPosition="left"
               >
-                Previous
+                Prev
               </Button>
-              <span className="text-sm font-medium text-neutral-700 px-4">
-                Page {currentPage} of {getTotalPages()}
+              <span className="text-xs font-medium text-neutral-700 px-2">
+                {currentPage} / {getTotalPages()}
               </span>
               <Button
                 variant="secondary"
-                size="md"
+                size="sm"
                 onClick={() => setCurrentPage((prev) => Math.min(getTotalPages(), prev + 1))}
                 disabled={currentPage === getTotalPages()}
                 icon="chevron_right"
@@ -511,18 +520,21 @@ const TaskFinderPage = () => {
 
       {/* Task Detail Panel */}
       {selectedTask && (
-        <TaskDetailPanel
-          key={selectedTask?._id}
-          task={selectedTask}
-          onClose={() => setSelectedTask(null)}
-          onTaskUpdate={handleTaskUpdate}
-          onTaskDelete={handleTaskDelete}
-          statuses={selectOptions.statuses}
-          platforms={selectOptions.platforms}
-          priorities={selectOptions.priorities}
-          taskTypes={selectOptions.taskTypes}
-          sprints={selectOptions.sprints}
-        />
+        <div className="w-1/2 h-full flex-shrink-0 flex flex-col bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
+          <TaskDetailPanel
+            key={selectedTask?._id}
+            task={selectedTask}
+            onClose={() => setSelectedTask(null)}
+            onTaskUpdate={handleTaskUpdate}
+            onTaskDelete={handleTaskDelete}
+            statuses={selectOptions.statuses}
+            platforms={selectOptions.platforms}
+            priorities={selectOptions.priorities}
+            taskTypes={selectOptions.taskTypes}
+            sprints={selectOptions.sprints}
+            isCompact={false}
+          />
+        </div>
       )}
     </div>
   );

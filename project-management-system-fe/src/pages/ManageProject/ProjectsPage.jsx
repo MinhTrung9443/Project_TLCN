@@ -208,27 +208,36 @@ const ProjectsPage = () => {
 
   const renderFilters = () => (
     <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-lg border border-neutral-200">
-      <Select value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
-        <option value="">All Types</option>
-        <option value="Scrum">Scrum</option>
-        <option value="Kanban">Kanban</option>
-      </Select>
+      <label className="flex items-center gap-2 text-sm text-neutral-600">
+        <span className="text-xs font-semibold uppercase text-neutral-500">Type</span>
+        <Select value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)} placeholder={null}>
+          <option value="">All Types</option>
+          <option value="Scrum">Scrum</option>
+          <option value="Kanban">Kanban</option>
+        </Select>
+      </label>
 
-      <Select value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)}>
-        <option value="">All Project Managers</option>
-        {getProjectManagers().map((pm) => (
-          <option key={pm._id} value={pm._id}>
-            {pm.fullname}
-          </option>
-        ))}
-      </Select>
+      <label className="flex items-center gap-2 text-sm text-neutral-600">
+        <span className="text-xs font-semibold uppercase text-neutral-500">Manager</span>
+        <Select value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)} placeholder={null}>
+          <option value="">All Project Managers</option>
+          {getProjectManagers().map((pm) => (
+            <option key={pm._id} value={pm._id}>
+              {pm.fullname}
+            </option>
+          ))}
+        </Select>
+      </label>
 
       {view === "active" && (
-        <Select value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)}>
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
-        </Select>
+        <label className="flex items-center gap-2 text-sm text-neutral-600">
+          <span className="text-xs font-semibold uppercase text-neutral-500">Status</span>
+          <Select value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)} placeholder={null}>
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </Select>
+        </label>
       )}
 
       <Button variant="secondary" size="md" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
@@ -302,24 +311,26 @@ const ProjectsPage = () => {
         />
 
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col gap-3 mb-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex gap-2">
               <Button variant={view === "active" ? "primary" : "secondary"} size="md" onClick={() => setView("active")}>
                 All Projects
               </Button>
               {user?.role === "admin" && (
                 <Button variant={view === "archived" ? "primary" : "secondary"} size="md" onClick={() => setView("archived")}>
-                  Archived Projects
+                  Deleted Projects
                 </Button>
               )}
             </div>
-            <Input
-              type="search"
-              placeholder="Search by name or key..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              icon="search"
-            />
+            <div className="w-full lg:max-w-sm">
+              <Input
+                type="search"
+                placeholder="Search by name or key..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                icon="search"
+              />
+            </div>
           </div>
 
           {renderFilters()}

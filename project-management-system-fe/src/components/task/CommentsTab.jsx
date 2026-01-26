@@ -75,7 +75,15 @@ const CommentsTab = ({ taskId }) => {
   };
 
   const handleCommentUpdated = (updatedComment) => {
-    setComments(comments.map((c) => (c._id === updatedComment._id ? updatedComment : c)));
+    // Kiểm tra xem comment đã tồn tại chưa
+    const exists = comments.some((c) => c._id === updatedComment._id);
+    if (exists) {
+      // Update comment hiện có
+      setComments(comments.map((c) => (c._id === updatedComment._id ? updatedComment : c)));
+    } else {
+      // Thêm comment mới (reply)
+      setComments((prevComments) => [...prevComments, updatedComment]);
+    }
   };
 
   const handleCommentDeleted = (commentId) => {
@@ -121,38 +129,38 @@ const CommentsTab = ({ taskId }) => {
     ));
   };
   return (
-    <div className="space-y-4">
-      <div className="space-y-3">{renderContent()}</div>
-      <form onSubmit={handlePostComment} className="space-y-3 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+    <div className="space-y-2">
+      <div className="space-y-2">{renderContent()}</div>
+      <form onSubmit={handlePostComment} className="space-y-2 p-3 bg-neutral-50 rounded border border-neutral-200">
         <textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Add a comment..."
-          rows="3"
-          className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600 resize-none"
+          rows="2"
+          className="w-full px-2 py-1 text-sm border border-neutral-300 rounded focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600 resize-none"
         />
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label
             htmlFor="comment-file-upload"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 cursor-pointer transition-colors"
+            className="inline-flex items-center gap-2 px-2 py-1 text-xs font-medium text-neutral-700 bg-white border border-neutral-300 rounded hover:bg-neutral-50 cursor-pointer transition-colors"
           >
-            <span className="material-symbols-outlined text-lg">attach_file</span>
+            <span className="material-symbols-outlined text-sm">attach_file</span>
             Attach files
           </label>
           <input id="comment-file-upload" type="file" multiple onChange={handleFileChange} style={{ display: "none" }} />
 
           {selectedFiles.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {selectedFiles.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-white border border-neutral-200 rounded-lg">
-                  <span className="text-sm text-neutral-700 truncate">{file.name}</span>
+                <div key={index} className="flex items-center justify-between p-1.5 bg-white border border-neutral-200 rounded text-sm">
+                  <span className="text-xs text-neutral-700 truncate">{file.name}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveFile(index)}
-                    className="p-1 text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    className="p-0.5 text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                   >
-                    <span className="material-symbols-outlined text-lg">close</span>
+                    <span className="material-symbols-outlined text-sm">close</span>
                   </button>
                 </div>
               ))}
@@ -163,7 +171,7 @@ const CommentsTab = ({ taskId }) => {
         <button
           type="submit"
           disabled={uploading}
-          className="w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {uploading ? "Posting..." : "Post Comment"}
         </button>

@@ -2,7 +2,6 @@ import React from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { IconComponent } from "../../components/common/IconPicker";
 import { TableRow, TableCell } from "../../components/ui/Table";
-import Badge from "../../components/ui/Badge";
 
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
@@ -81,12 +80,12 @@ const TaskRow = ({ task, onTaskClick }) => {
   const statusClass = statusCategoryStyles[task.statusId?.category] || statusCategoryStyles.default;
 
   return (
-    <TableRow onClick={() => onTaskClick(task)}>
-      <TableCell className="whitespace-nowrap font-semibold text-primary-700">
+    <TableRow onClick={() => onTaskClick(task)} className="hover:bg-neutral-50 cursor-pointer">
+      <TableCell className="whitespace-nowrap font-semibold text-primary-700 py-2 px-2 text-sm">
         <div className="flex items-center gap-2">
           {typeIconInfo && (
             <span
-              className="w-8 h-8 rounded-md text-white flex items-center justify-center text-base"
+              className="w-7 h-7 rounded text-white flex items-center justify-center text-base flex-shrink-0"
               style={{ backgroundColor: typeIconInfo.color }}
               title={task.taskTypeId.name}
             >
@@ -99,22 +98,22 @@ const TaskRow = ({ task, onTaskClick }) => {
         </div>
       </TableCell>
 
-      <TableCell className="max-w-xs">
+      <TableCell className="max-w-xs py-2 px-2 text-sm">
         <p className="text-neutral-900 font-medium truncate" title={task.name}>
           {task.name}
         </p>
       </TableCell>
 
-      <TableCell>
-        <Badge variant="neutral" size="sm" className="text-[13px]">
+      <TableCell className="py-2 px-2 text-sm">
+        <span className="inline-block px-2 py-1 text-xs font-medium text-neutral-700 bg-neutral-100 rounded border border-neutral-200">
           {task.sprintId?.name || "Backlog"}
-        </Badge>
+        </span>
       </TableCell>
 
-      <TableCell>
+      <TableCell className="py-2 px-2 text-sm">
         {platformIconInfo && (
           <span
-            className="w-9 h-9 rounded-lg text-white flex items-center justify-center text-lg"
+            className="w-8 h-8 rounded text-white flex items-center justify-center text-lg"
             style={{ backgroundColor: platformIconInfo.color }}
             title={task.platformId.name}
           >
@@ -123,18 +122,18 @@ const TaskRow = ({ task, onTaskClick }) => {
         )}
       </TableCell>
 
-      <TableCell>
+      <TableCell className="py-2 px-2 text-sm">
         <Avatar user={task.assigneeId} />
       </TableCell>
 
-      <TableCell>
+      <TableCell className="py-2 px-2 text-sm">
         <Avatar user={task.reporterId} />
       </TableCell>
 
-      <TableCell>
+      <TableCell className="py-2 px-2 text-sm">
         {priorityIconInfo && (
           <span
-            className="w-9 h-9 rounded-lg text-white flex items-center justify-center text-lg"
+            className="w-8 h-8 rounded text-white flex items-center justify-center text-sm"
             style={{ backgroundColor: priorityIconInfo.color }}
             title={task.priorityId.name}
           >
@@ -143,17 +142,15 @@ const TaskRow = ({ task, onTaskClick }) => {
         )}
       </TableCell>
 
-      <TableCell>
+      <TableCell className="py-2 px-2 text-sm">
         {task.statusId ? (
-          <Badge variant="neutral" size="sm" className={`${statusClass} border`}>
-            {task.statusId.name}
-          </Badge>
+          <span className={`inline-block px-2 py-1 text-xs font-medium rounded border ${statusClass}`}>{task.statusId.name}</span>
         ) : (
-          <span className="text-neutral-400">-</span>
+          <span className="text-neutral-400 text-xs">-</span>
         )}
       </TableCell>
 
-      <TableCell className="whitespace-nowrap text-neutral-700">
+      <TableCell className="whitespace-nowrap text-neutral-700 py-2 px-2 text-sm">
         {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : <span className="text-neutral-400">-</span>}
       </TableCell>
     </TableRow>

@@ -1,6 +1,18 @@
 import React from "react";
 
-const Select = ({ label, error, helperText, options = [], className = "", containerClassName = "", placeholder = "Select an option", ...props }) => {
+const Select = ({
+  label,
+  error,
+  helperText,
+  options = [],
+  className = "",
+  containerClassName = "",
+  placeholder = "Select an option",
+  children,
+  ...props
+}) => {
+  const hasChildren = React.Children.count(children) > 0;
+
   return (
     <div className={`w-full ${containerClassName}`}>
       {label && <label className="block text-sm font-medium text-neutral-700 mb-1.5">{label}</label>}
@@ -22,12 +34,14 @@ const Select = ({ label, error, helperText, options = [], className = "", contai
           `}
           {...props}
         >
-          {placeholder && <option value="">{placeholder}</option>}
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+          {placeholder !== null && <option value="">{placeholder}</option>}
+          {hasChildren
+            ? children
+            : options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
         </select>
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
           <span className="material-symbols-outlined text-[20px]">expand_more</span>

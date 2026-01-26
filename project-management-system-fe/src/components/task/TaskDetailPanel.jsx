@@ -28,7 +28,14 @@ const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaFileAlt", color: "#00B8D9" },
 ];
 
-const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [], showCloseButton = true }) => {
+const statusCategoryStyles = {
+  "To Do": "bg-neutral-100 text-neutral-700 border-neutral-200",
+  "In Progress": "bg-primary-100 text-primary-700 border-primary-200",
+  Done: "bg-success-100 text-success-700 border-success-200",
+  default: "bg-neutral-100 text-neutral-700 border-neutral-200",
+};
+
+const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [], showCloseButton = true, isCompact = false }) => {
   const { user } = useAuth();
   const { userProjectRole } = useContext(ProjectContext);
   const [editableTask, setEditableTask] = useState(task);
@@ -399,106 +406,151 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
   if (!task) return null;
 
   return (
-    <div className={`flex flex-col bg-white h-full ${task ? "" : "hidden"}`}>
+    <div className={`flex flex-col bg-white h-full overflow-x-hidden ${task ? "" : "hidden"}`}>
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
-      <header className="flex items-start gap-4 p-6 border-b border-neutral-200 bg-neutral-50">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-3">
+      <header className={`flex items-start gap-3 ${isCompact ? "p-3 border-b border-neutral-200" : "p-6 border-b border-neutral-200 bg-neutral-50"}`}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
             {typeIconInfo && (
               <span
-                className="w-8 h-8 rounded flex items-center justify-center text-white text-lg"
+                className="w-7 h-7 rounded flex items-center justify-center text-white text-sm flex-shrink-0"
                 style={{ backgroundColor: typeIconInfo.color }}
                 title={editableTask.taskTypeId.name}
               >
                 <IconComponent name={editableTask.taskTypeId.icon} />
               </span>
             )}
-            <a href={`/app/task/${editableTask.key}`} className="text-lg font-semibold text-primary-600 hover:text-primary-700 hover:underline">
+            <a
+              href={`/app/task/${editableTask.key}`}
+              className={`font-semibold text-primary-600 hover:text-primary-700 hover:underline truncate ${isCompact ? "text-sm" : "text-lg"}`}
+            >
               {editableTask.key}
             </a>
           </div>
 
-          <div className="relative" data-replicated-value={editableTask.name}>
-            <textarea
-              className="w-full text-xl font-semibold text-neutral-900 border-none outline-none resize-none bg-transparent focus:ring-2 focus:ring-primary-500 rounded px-2 py-1"
-              value={editableTask.name}
-              onChange={(e) => setEditableTask((prev) => ({ ...prev, name: e.target.value }))}
-              onBlur={() => handleUpdate("name", editableTask.name)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  e.target.blur();
-                }
-              }}
-              rows="1"
-              spellCheck="false"
-              placeholder="Enter a task name..."
-            />
+          {!isCompact && (
+            <div className="relative" data-replicated-value={editableTask.name}>
+              <textarea
+                className="w-full text-xl font-semibold text-neutral-900 border-none outline-none resize-none bg-transparent focus:ring-2 focus:ring-primary-500 rounded px-2 py-1"
+                value={editableTask.name}
+                onChange={(e) => setEditableTask((prev) => ({ ...prev, name: e.target.value }))}
+                onBlur={() => handleUpdate("name", editableTask.name)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    e.target.blur();
+                  }
+                }}
+                rows="1"
+                spellCheck="false"
+                placeholder="Enter a task name..."
+              />
+            </div>
+          )}
+        </div>
+        {!isCompact && (
+          <div className="flex items-start gap-2 flex-shrink-0">
+            <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
+            {showCloseButton && (
+              <button
+                onClick={onClose}
+                className="text-neutral-500 hover:text-neutral-900 text-3xl font-light leading-none p-1 hover:bg-neutral-200 rounded"
+              >
+                &times;
+              </button>
+            )}
           </div>
-        </div>
-        <div className="flex items-start gap-2">
-          <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
-          {showCloseButton && (
-            <button
-              onClick={onClose}
-              className="text-neutral-500 hover:text-neutral-900 text-3xl font-light leading-none p-1 hover:bg-neutral-200 rounded"
-            >
-              &times;
-            </button>
-          )}
-        </div>
+        )}
+        {isCompact && (
+          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-900 text-2xl font-light leading-none p-0.5 flex-shrink-0">
+            ×
+          </button>
+        )}
       </header>
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex border-b border-neutral-200 px-6 bg-white">
-          <button
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Details" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
-            onClick={() => setActiveTab("Details")}
-          >
-            Details
-          </button>
-          <button
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Comments" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
-            onClick={() => setActiveTab("Comments")}
-          >
-            Comments
-          </button>
-          <button
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "History" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
-            onClick={() => setActiveTab("History")}
-          >
-            History
-          </button>
-        </div>
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 overflow-x-hidden">
+        {!isCompact && (
+          <div className="flex border-b border-neutral-200 px-6 bg-white flex-shrink-0">
+            <button
+              className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Details" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
+              onClick={() => setActiveTab("Details")}
+            >
+              Details
+            </button>
+            <button
+              className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Comments" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
+              onClick={() => setActiveTab("Comments")}
+            >
+              Comments
+            </button>
+            <button
+              className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "History" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
+              onClick={() => setActiveTab("History")}
+            >
+              History
+            </button>
+          </div>
+        )}
 
-        <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === "Details" && (
-            <TaskDetailsTab
-              editableTask={editableTask}
-              setEditableTask={setEditableTask}
-              handleUpdate={handleUpdate}
-              statuses={allowedStatuses.length > 0 ? allowedStatuses : statuses}
-              projectMembers={projectMembers}
-              projectTaskTypes={projectTaskTypes}
-              projectPriorities={projectPriorities}
-              projectPlatforms={projectPlatforms}
-              projectSprints={projectSprints}
-              allProjectTasks={allProjectTasks}
-              onLinkTask={handleLinkTask}
-              onUnlinkTask={(linkId) => {
-                setSelectedLinkId(linkId);
-                setIsDeleteLinkModalOpen(true);
-              }}
-              onAddAttachment={handleAddAttachment}
-              onDeleteAttachment={(attachmentId) => {
-                setSelectedAttachmentId(attachmentId);
-                setIsDeleteAttachmentModalOpen(true);
-              }}
-              userProjectRole={userProjectRole}
-              user={user}
-            />
+        <div className={`flex-1 overflow-y-auto overflow-x-hidden ${isCompact ? "p-3" : "p-6"} min-h-0`}>
+          {!isCompact ? (
+            <>
+              {activeTab === "Details" && (
+                <TaskDetailsTab
+                  editableTask={editableTask}
+                  setEditableTask={setEditableTask}
+                  handleUpdate={handleUpdate}
+                  statuses={allowedStatuses.length > 0 ? allowedStatuses : statuses}
+                  projectMembers={projectMembers}
+                  projectTaskTypes={projectTaskTypes}
+                  projectPriorities={projectPriorities}
+                  projectPlatforms={projectPlatforms}
+                  projectSprints={projectSprints}
+                  allProjectTasks={allProjectTasks}
+                  onLinkTask={handleLinkTask}
+                  onUnlinkTask={(linkId) => {
+                    setSelectedLinkId(linkId);
+                    setIsDeleteLinkModalOpen(true);
+                  }}
+                  onAddAttachment={handleAddAttachment}
+                  onDeleteAttachment={(attachmentId) => {
+                    setSelectedAttachmentId(attachmentId);
+                    setIsDeleteAttachmentModalOpen(true);
+                  }}
+                  userProjectRole={userProjectRole}
+                  user={user}
+                />
+              )}
+              {activeTab === "Comments" && <CommentsTab taskId={editableTask._id} />}
+              {activeTab === "History" && <HistoryTab taskId={editableTask._id} />}
+            </>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-xs font-semibold text-neutral-500 uppercase">Sprint</p>
+                <p className="text-neutral-900 font-medium">{editableTask.sprintId?.name || "Backlog"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-neutral-500 uppercase">Status</p>
+                <p
+                  className={`inline-block px-2 py-1 text-xs font-medium rounded border ${statusCategoryStyles[editableTask.statusId?.category] || statusCategoryStyles.default}`}
+                >
+                  {editableTask.statusId?.name || "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-neutral-500 uppercase">Assignee</p>
+                <p className="text-neutral-900 font-medium">{editableTask.assigneeId?.fullname || "-"}</p>
+              </div>
+              <div className="pt-2 border-t border-neutral-200">
+                <button
+                  onClick={() => setActiveTab("Details")}
+                  className="w-full text-center px-2 py-1.5 text-xs font-medium text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                >
+                  View Full Details
+                </button>
+              </div>
+            </div>
           )}
-          {activeTab === "Comments" && <CommentsTab taskId={editableTask._id} />}
-          {activeTab === "History" && <HistoryTab taskId={editableTask._id} />}
         </div>
       </main>
 
