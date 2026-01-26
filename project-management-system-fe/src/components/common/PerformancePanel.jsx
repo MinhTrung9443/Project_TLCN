@@ -71,11 +71,11 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
 
   if (loading) {
     return (
-      <div className="performance-panel-overlay" onClick={onClose}>
-        <div className="performance-panel" onClick={(e) => e.stopPropagation()}>
-          <div className="performance-loading">
-            <div className="spinner-large"></div>
-            <p>Loading performance data...</p>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-3 text-slate-700">
+            <span className="material-symbols-outlined animate-spin text-sky-600">progress_activity</span>
+            Loading performance data...
           </div>
         </div>
       </div>
@@ -89,79 +89,76 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
   const { summary, tasks } = performance;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-sky-50 to-slate-50 px-6 py-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center">
-              {userAvatar ? (
-                <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-white text-2xl font-bold">{userName?.[0] || "?"}</div>
-              )}
+            <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-sky-200 flex items-center justify-center bg-sky-100 text-sky-700 font-semibold text-lg">
+              {userAvatar ? <img src={userAvatar} alt={userName} className="h-full w-full object-cover" /> : <span>{userName?.[0] || "?"}</span>}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-neutral-900">{userName}</h2>
-              <p className="text-sm text-neutral-600">Performance Analysis</p>
+              <h2 className="text-xl font-bold text-slate-900">{userName}</h2>
+              <p className="text-sm text-slate-500">Performance Analysis</p>
             </div>
           </div>
-          <button className="p-2 hover:bg-neutral-100 rounded-lg transition-colors" onClick={onClose}>
-            <span className="material-symbols-outlined text-neutral-600">close</span>
+          <button className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition" onClick={onClose}>
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         {/* Date Range Filter */}
-        <div className="flex items-center gap-4 p-4 bg-neutral-50 border-b border-neutral-200">
-          <div className="flex items-center gap-2">
-            <label htmlFor="startDate" className="text-sm font-medium text-neutral-700">
-              From:
-            </label>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-slate-50 px-6 py-3">
+          <label className="text-sm text-slate-600 flex flex-col gap-1">
+            From:
             <input
               type="date"
-              id="startDate"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="endDate" className="text-sm font-medium text-neutral-700">
-              To:
-            </label>
+          </label>
+          <label className="text-sm text-slate-600 flex flex-col gap-1">
+            To:
             <input
               type="date"
-              id="endDate"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
             />
-          </div>
+          </label>
           {(startDate || endDate) && (
             <button
-              className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white transition-colors"
               onClick={() => {
                 setStartDate("");
                 setEndDate("");
               }}
             >
-              <span className="material-symbols-outlined text-lg">clear</span>
+              <span className="material-symbols-outlined text-base">refresh</span>
               Clear
             </button>
           )}
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-neutral-200">
+        <div className="flex border-b border-slate-200">
           <button
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${activeTab === "overview" ? "text-primary-600 border-b-2 border-primary-600" : "text-neutral-600 hover:text-neutral-900"}`}
+            className={`flex items-center gap-2 px-6 py-3 text-sm font-semibold transition-colors ${
+              activeTab === "overview" ? "border-b-2 border-sky-600 text-sky-600" : "text-slate-600 hover:text-slate-900"
+            }`}
             onClick={() => setActiveTab("overview")}
           >
             <span className="material-symbols-outlined text-lg">analytics</span>
             Overview
           </button>
           <button
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${activeTab === "tasks" ? "text-primary-600 border-b-2 border-primary-600" : "text-neutral-600 hover:text-neutral-900"}`}
+            className={`flex items-center gap-2 px-6 py-3 text-sm font-semibold transition-colors ${
+              activeTab === "tasks" ? "border-b-2 border-sky-600 text-sky-600" : "text-slate-600 hover:text-slate-900"
+            }`}
             onClick={() => setActiveTab("tasks")}
           >
             <span className="material-symbols-outlined text-lg">task_alt</span>
@@ -174,194 +171,181 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
           {activeTab === "overview" && (
             <div className="space-y-6">
               {/* Overall Efficiency Card */}
-              <div className="p-6 bg-gradient-to-br from-primary-50 to-blue-50 rounded-2xl border border-primary-200">
-                <div className="text-sm font-medium text-neutral-600 mb-2">Overall Efficiency</div>
-                <div className="text-5xl font-bold mb-3" style={{ color: getEfficiencyColor(summary.overallEfficiency) }}>
-                  {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
+              <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-blue-50 p-6 space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Overall Efficiency</div>
+                <div className="flex items-end gap-4">
+                  <div className="flex-1">
+                    <div className="text-5xl font-bold" style={{ color: getEfficiencyColor(summary.overallEfficiency) }}>
+                      {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
+                    </div>
+                    <div
+                      className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold text-white"
+                      style={{ backgroundColor: getRatingColor(summary.performanceRating) }}
+                    >
+                      {summary.performanceRating}
+                    </div>
+                  </div>
                 </div>
-                <div
-                  className="inline-block px-4 py-1 rounded-full text-white text-sm font-semibold mb-4"
-                  style={{ backgroundColor: getRatingColor(summary.performanceRating) }}
-                >
-                  {summary.performanceRating}
-                </div>
-                <div className="space-y-2 text-sm text-neutral-700">
+                <div className="space-y-2 text-sm text-slate-700">
                   <p>
-                    Efficiency = (<span className="font-semibold text-primary-700">Total Est</span> /{" "}
-                    <span className="font-semibold text-primary-700">Total Act</span>) × 100%
+                    Efficiency = <span className="font-semibold text-sky-700">Total Est</span> /{" "}
+                    <span className="font-semibold text-sky-700">Total Act</span> × 100%
                   </p>
-                  <p className="text-neutral-600">
-                    Efficiency = ({summary.totalEstimatedTime}h) / ({summary.totalActualTime}h) × 100% ={" "}
+                  <p className="text-slate-600">
+                    = ({summary.totalEstimatedTime}h) / ({summary.totalActualTime}h) × 100% ={" "}
                     {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
                   </p>
-                  <p className="text-xs text-neutral-500 mt-2">* Chỉ tính cho các task đã hoàn thành (Done)</p>
+                  <p className="text-xs text-slate-500 italic">* Only calculated for completed tasks (Done)</p>
                 </div>
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#e0e7ff" }}>
-                    <span className="material-symbols-outlined text-2xl" style={{ color: "#6366f1" }}>
-                      schedule
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-medium text-neutral-600">Estimated Time</div>
-                    <div className="text-2xl font-bold text-neutral-900">{formatHours(summary.totalEstimatedTime)}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#fef3c7" }}>
-                    <span className="material-symbols-outlined text-2xl" style={{ color: "#f59e0b" }}>
-                      timelapse
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-medium text-neutral-600">Actual Time</div>
-                    <div className="text-2xl font-bold text-neutral-900">{formatHours(summary.totalActualTime)}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#dbeafe" }}>
-                    <span className="material-symbols-outlined text-2xl" style={{ color: "#3b82f6" }}>
-                      speed
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-medium text-neutral-600">Efficiency</div>
-                    <div className="text-2xl font-bold text-neutral-900">{summary.efficiency}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#d1fae5" }}>
-                    <span className="material-symbols-outlined text-2xl" style={{ color: "#10b981" }}>
-                      check_circle_outline
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-medium text-neutral-600">On-Time Completion</div>
-                    <div className="text-2xl font-bold text-neutral-900">
-                      {summary.onTimePercentage !== null ? `${summary.onTimePercentage.toFixed(0)}%` : "N/A"}
-                    </div>
-                    <div className="text-xs text-neutral-500 mt-1">
-                      {summary.onTimeCount || 0} / {summary.tasksWithDueDate || 0} tasks
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  {
+                    label: "Estimated Time",
+                    value: formatHours(summary.totalEstimatedTime),
+                    icon: "schedule",
+                    color: "text-indigo-600",
+                    bg: "bg-indigo-50",
+                  },
+                  {
+                    label: "Actual Time",
+                    value: formatHours(summary.totalActualTime),
+                    icon: "timelapse",
+                    color: "text-amber-600",
+                    bg: "bg-amber-50",
+                  },
+                  {
+                    label: "On-Time Completion",
+                    value: summary.onTimePercentage !== null ? `${summary.onTimePercentage.toFixed(0)}%` : "N/A",
+                    icon: "check_circle_outline",
+                    color: "text-emerald-600",
+                    bg: "bg-emerald-50",
+                    sub: `${summary.onTimeCount || 0} / ${summary.tasksWithDueDate || 0} tasks`,
+                  },
+                  { label: "Completed Tasks", value: summary.completedTasks, icon: "check_circle", color: "text-cyan-600", bg: "bg-cyan-50" },
+                  { label: "In Progress", value: summary.inProgressTasks, icon: "pending", color: "text-rose-600", bg: "bg-rose-50" },
+                  { label: "To Do", value: summary.todoTasks || 0, icon: "inbox", color: "text-slate-600", bg: "bg-slate-100" },
+                ].map((stat, idx) => (
+                  <div key={idx} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-10 w-10 rounded-lg ${stat.bg} flex items-center justify-center ${stat.color}`}>
+                        <span className="material-symbols-outlined text-xl">{stat.icon}</span>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">{stat.label}</p>
+                        <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                        {stat.sub && <p className="text-xs text-slate-500 mt-0.5">{stat.sub}</p>}
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#e0f2fe" }}>
-                    <span className="material-symbols-outlined text-2xl" style={{ color: "#0284c7" }}>
-                      check_circle
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-medium text-neutral-600">Completed Tasks</div>
-                    <div className="text-2xl font-bold text-neutral-900">{summary.completedTasks}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-200 hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#fce7f3" }}>
-                    <span className="material-symbols-outlined text-2xl" style={{ color: "#ec4899" }}>
-                      pending
-                    </span>
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-label">In Progress</div>
-                    <div className="stat-value">{summary.inProgressTasks}</div>
-                  </div>
-                </div>
+                ))}
               </div>
 
-              {/* Performance Interpretation */}
-              <div className="performance-info-box">
-                <h4>
-                  <span className="material-symbols-outlined">info</span>
+              {/* Performance Guide */}
+              <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <span className="material-symbols-outlined text-sky-600">info</span>
                   Understanding Efficiency
-                </h4>
-                <ul>
-                  <li>
-                    <strong>Efficiency ≥ 100%:</strong> Excellent - Completed faster than estimated
+                </div>
+                <ul className="space-y-2 text-sm text-slate-700">
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-emerald-600 min-w-fit">Efficiency ≥ 100%:</span>
+                    <span>Excellent - Completed faster than estimated</span>
                   </li>
-                  <li>
-                    <strong>Efficiency ≥ 80%:</strong> Good - Close to estimated time
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-sky-600 min-w-fit">Efficiency ≥ 80%:</span>
+                    <span>Good - Close to estimated time</span>
                   </li>
-                  <li>
-                    <strong>Efficiency ≥ 60%:</strong> Average - Slightly over estimated time
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-amber-600 min-w-fit">Efficiency ≥ 60%:</span>
+                    <span>Average - Slightly over estimated time</span>
                   </li>
-                  <li>
-                    <strong>Efficiency &lt; 60%:</strong> Needs Improvement - Significantly over estimated time
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-rose-600 min-w-fit">Efficiency &lt; 60%:</span>
+                    <span>Needs Improvement - Significantly over estimated time</span>
                   </li>
                 </ul>
-                <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#f0f9ff", borderRadius: "6px" }}>
-                  <strong style={{ color: "#0284c7" }}>On-Time Completion:</strong>
-                  <p style={{ fontSize: "13px", color: "#475569", marginTop: "4px" }}>
-                    Percentage of completed tasks finished before or on their due date
-                  </p>
+                <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm">
+                  <p className="font-semibold text-sky-900">On-Time Completion</p>
+                  <p className="text-slate-600 mt-1">Percentage of completed tasks finished before or on their due date</p>
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === "tasks" && (
-            <div className="tasks-tab">
+            <div className="space-y-3">
               {tasks.length === 0 ? (
-                <div className="empty-state">
-                  <span className="material-symbols-outlined">inbox</span>
-                  <p>No completed tasks found</p>
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-slate-600">
+                  <div className="flex justify-center mb-2">
+                    <span className="material-symbols-outlined text-4xl text-slate-400">inbox</span>
+                  </div>
+                  <p className="font-medium">No completed tasks found</p>
                 </div>
               ) : (
-                <div className="tasks-list">
+                <div className="space-y-2">
                   {tasks.map((task) => (
-                    <div key={task._id} className="task-performance-item">
-                      <div className="task-performance-header">
-                        <div className="task-info">
-                          <span className="task-key">{task.key}</span>
-                          <span className="task-name">{task.name}</span>
+                    <div key={task._id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-sky-600">{task.key}</span>
+                            <span className="font-semibold text-slate-900">{task.name}</span>
+                          </div>
                         </div>
-                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
                           {task.isOnTime !== null && (
-                            <div
-                              className="task-spi-badge"
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white"
                               style={{ backgroundColor: task.isOnTime ? "#10b981" : "#ef4444" }}
-                              title={task.isOnTime ? "Completed on time" : "Completed late"}
                             >
+                              <span className="material-symbols-outlined text-base">{task.isOnTime ? "check_circle" : "schedule"}</span>
                               {task.isOnTime ? "On Time" : "Late"}
-                            </div>
+                            </span>
                           )}
                           {task.efficiency !== null && (
-                            <div className="task-spi-badge" style={{ backgroundColor: getEfficiencyColor(task.efficiency) }}>
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white"
+                              style={{ backgroundColor: getEfficiencyColor(task.efficiency) }}
+                            >
                               {task.efficiency.toFixed(0)}%
-                            </div>
+                            </span>
                           )}
                         </div>
                       </div>
-                      <div className="task-performance-details">
-                        <div className="task-detail-item">
-                          <span className="material-symbols-outlined">schedule</span>
-                          <span>Est: {formatHours(task.estimatedTime)}</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base text-sky-600">schedule</span>
+                          <div>
+                            <p className="text-xs text-slate-500">Est</p>
+                            <p className="font-semibold">{formatHours(task.estimatedTime)}</p>
+                          </div>
                         </div>
-                        <div className="task-detail-item">
-                          <span className="material-symbols-outlined">timelapse</span>
-                          <span>Act: {formatHours(task.actualTime)}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base text-amber-600">timelapse</span>
+                          <div>
+                            <p className="text-xs text-slate-500">Act</p>
+                            <p className="font-semibold">{formatHours(task.actualTime)}</p>
+                          </div>
                         </div>
                         {task.dueDate && (
-                          <div className="task-detail-item">
-                            <span className="material-symbols-outlined">event</span>
-                            <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-slate-600">event</span>
+                            <div>
+                              <p className="text-xs text-slate-500">Due</p>
+                              <p className="font-semibold">{new Date(task.dueDate).toLocaleDateString()}</p>
+                            </div>
                           </div>
                         )}
-                        <div className="task-detail-item">
-                          <div className="flex-1 h-1 bg-neutral-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary-600 rounded-full" style={{ width: "100%" }}></div>
-                          </div>
-                          <span className="text-xs font-semibold text-neutral-600">100%</span>
+                        <div>
+                          <p className="text-xs text-slate-500">Complete</p>
+                          <p className="font-semibold text-emerald-600">100%</p>
                         </div>
+                      </div>
+                      <div className="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full w-full bg-emerald-500 rounded-full"></div>
                       </div>
                     </div>
                   ))}

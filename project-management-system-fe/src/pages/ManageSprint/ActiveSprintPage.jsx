@@ -212,20 +212,19 @@ const ActiveSprintPage = () => {
           title="Active Sprint"
           description="Manage and track your sprint board"
           actions={
-            currentSprint && canManageSprints && !isKanbanProject ? (
-              <Button onClick={handleCompleteSprint} disabled={isCompleting} icon="check_circle" iconPosition="left" variant="success">
-                {isCompleting ? "Completing..." : "Complete Sprint"}
-              </Button>
-            ) : null
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
+              {currentSprint && canManageSprints && !isKanbanProject ? (
+                <Button onClick={handleCompleteSprint} disabled={isCompleting} icon="check_circle" iconPosition="left" variant="success">
+                  {isCompleting ? "Completing..." : "Complete Sprint"}
+                </Button>
+              ) : null}
+            </div>
           }
         />
 
-        <div className="sprint-container">
-          <div className="sprint-controls">
-            <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
-          </div>
-
-          <div className="active-sprint-board">
+        <div className="sprint-container flex flex-col gap-3 pt-2">
+          <div className="active-sprint-board flex items-start justify-center gap-3 overflow-x-auto pb-6 pt-2 pr-2 w-full snap-x snap-mandatory">
             {workflowStatuses.map((status) => (
               <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
             ))}

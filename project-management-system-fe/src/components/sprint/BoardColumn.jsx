@@ -36,8 +36,11 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
   };
 
   return (
-    <div className="flex flex-col bg-neutral-50 rounded-lg border border-neutral-200 min-w-[300px]" ref={drop}>
-      <div className={`bg-gradient-to-r ${getCategoryColor()} text-white px-4 py-3 rounded-t-lg`}>
+    <div
+      className="flex flex-col bg-neutral-50 rounded-lg border border-neutral-200 min-w-[260px] max-w-[280px] h-[65vh] shadow-sm snap-start shrink-0"
+      ref={drop}
+    >
+      <div className={`bg-gradient-to-r ${getCategoryColor()} text-white px-3 py-2.5 rounded-t-lg`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{status.name}</span>
@@ -47,7 +50,7 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
         </div>
       </div>
       <div
-        className={`flex-1 p-3 min-h-[400px] ${isOver && canDrop ? "bg-primary-50 border-2 border-primary-300" : ""} ${isOver && !canDrop ? "bg-red-50 border-2 border-red-300" : ""}`}
+        className={`flex-1 p-3 overflow-y-auto min-h-0 ${isOver && canDrop ? "bg-primary-50 border-2 border-primary-300" : ""} ${isOver && !canDrop ? "bg-red-50 border-2 border-red-300" : ""}`}
       >
         {isOver && !canDrop && (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-red-600">

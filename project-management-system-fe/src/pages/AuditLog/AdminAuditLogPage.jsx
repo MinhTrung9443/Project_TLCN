@@ -236,7 +236,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
     const currentProject = getCurrentProject();
 
     if (!currentProject) {
-      return <div className="no-data">No project selected</div>;
+      return <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No project selected</div>;
     }
 
     // For Admin and PM: Show teams or members based on viewMode
@@ -253,7 +253,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
       const leaderTeam = currentProject.teams?.find((team) => (team.leaderId._id || team.leaderId) === user._id);
 
       if (!leaderTeam) {
-        return <div className="no-data">No team found</div>;
+        return <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No team found</div>;
       }
 
       // Auto-set the team for leader if not already set
@@ -264,7 +264,11 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
       return renderLeaderMemberCards(leaderTeam);
     }
 
-    return <div className="no-data">No permission to view this section</div>;
+    return (
+      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        No permission to view this section
+      </div>
+    );
   };
 
   // Render team cards for Admin/PM
@@ -278,15 +282,15 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
 
     if (teams.length === 0 && projectManagers.length === 0) {
       return (
-        <div className="no-data">
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
           <p>No teams or project managers found in this project.</p>
-          <p style={{ fontSize: "14px", color: "#666", marginTop: "8px" }}>Please add teams to this project in Project Settings.</p>
+          <p className="text-xs text-slate-500 mt-1">Please add teams to this project in Project Settings.</p>
         </div>
       );
     }
 
     return (
-      <div className="team-cards-grid">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* PM Cards */}
         {projectManagers.map((pm) => {
           const pmId = pm._id || pm;
@@ -298,7 +302,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
           return (
             <div
               key={`pm-${pmId}`}
-              className="team-card pm-card clickable"
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md cursor-pointer"
               onClick={() => {
                 setSelectedUser({
                   userId: pmId,
@@ -307,39 +311,45 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
                 });
               }}
             >
-              <div className="team-header pm-header">
-                <div className="pm-badge">PM</div>
-                <div className="pm-avatar-section">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center font-semibold">PM</div>
+                <div>
+                  <h4 className="text-slate-900 font-semibold">{pmName}</h4>
+                  <p className="text-xs text-slate-500">Project Manager</p>
+                </div>
+                <div className="ml-auto">
                   {pmAvatar ? (
-                    <img src={pmAvatar} alt={pmName} className="pm-avatar" />
+                    <img src={pmAvatar} alt={pmName} className="h-10 w-10 rounded-full object-cover" />
                   ) : (
-                    <div className="pm-avatar-placeholder">{(pmName?.[0] || "P").toUpperCase()}</div>
+                    <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold">
+                      {(pmName?.[0] || "P").toUpperCase()}
+                    </div>
                   )}
                 </div>
-                <h4>{pmName}</h4>
               </div>
-              <div className="team-stats-summary">
-                <div className="stat-row">
-                  <span className="stat-label">Tasks:</span>
-                  <span className="stat-value">
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>Tasks</span>
+                  <span className="font-semibold text-slate-900">
                     {stats.tasksCompleted} / {stats.tasksAssigned}
                   </span>
                 </div>
-                <div className="progress-bar-mini">
-                  <div className="progress-fill-mini" style={{ width: `${completionRate}%` }}></div>
+                <div className="h-2 rounded-full bg-slate-100">
+                  <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${completionRate}%` }}></div>
                 </div>
-                <div className="stat-row">
-                  <span className="stat-label">Time Logged:</span>
-                  <span className="stat-value">{stats.totalTime || 0}h</span>
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>Time Logged</span>
+                  <span className="font-semibold text-slate-900">{stats.totalTime || 0}h</span>
                 </div>
               </div>
-              <div className="view-team-btn">
-                <span className="material-symbols-outlined">person</span>
+              <div className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-sky-600">
+                <span className="material-symbols-outlined text-base">person</span>
                 View Performance
               </div>
             </div>
           );
         })}
+
         {/* Team Cards */}
         {teams.map((team) => {
           const teamId = team.teamId?._id || team._id;
@@ -347,43 +357,45 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
           const stats = teamStats[teamId] || { totalTasks: 0, completedTasks: 0, totalTime: 0 };
           const completionRate = stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0;
 
-          console.log(`Team ${teamName} stats:`, stats);
-
           return (
             <div
               key={teamId}
-              className="team-card clickable"
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md cursor-pointer"
               onClick={() => {
                 setSelectedTeam(team);
                 setViewMode("members");
                 setUserPage(1);
               }}
             >
-              <div className="team-header">
-                <h4>{teamName}</h4>
-                <span className="member-count-badge">{team.members?.length || 0} members</span>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-slate-900 font-semibold">{teamName}</h4>
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">group</span>
+                    {team.members?.length || 0} members
+                  </p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                  Leader: {team.leaderId?.fullname || "N/A"}
+                </span>
               </div>
-              <div className="team-leader">
-                <span className="label">Leader:</span>
-                <span className="value">{team.leaderId?.fullname || "N/A"}</span>
-              </div>
-              <div className="team-stats-summary">
-                <div className="stat-row">
-                  <span className="stat-label">Tasks:</span>
-                  <span className="stat-value">
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>Tasks</span>
+                  <span className="font-semibold text-slate-900">
                     {stats.completedTasks} / {stats.totalTasks}
                   </span>
                 </div>
-                <div className="progress-bar-mini">
-                  <div className="progress-fill-mini" style={{ width: `${completionRate}%` }}></div>
+                <div className="h-2 rounded-full bg-slate-100">
+                  <div className="h-2 rounded-full bg-sky-500" style={{ width: `${completionRate}%` }}></div>
                 </div>
-                <div className="stat-row">
-                  <span className="stat-label">Time Logged:</span>
-                  <span className="stat-value">{stats.totalTime || 0}h</span>
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>Time Logged</span>
+                  <span className="font-semibold text-slate-900">{stats.totalTime || 0}h</span>
                 </div>
               </div>
-              <div className="view-team-btn">
-                <span className="material-symbols-outlined">arrow_forward</span>
+              <div className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-sky-600">
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
                 View Members
               </div>
             </div>
@@ -417,30 +429,36 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
     return (
       <>
         {members.length > usersPerPage && (
-          <div className="user-pagination-nav">
-            <button className="nav-btn" disabled={userPage === 1} onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}>
-              <span className="material-symbols-outlined">chevron_left</span>
+          <div className="flex items-center justify-between text-sm text-slate-700 mb-2">
+            <button
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+              disabled={userPage === 1}
+              onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}
+            >
+              <span className="material-symbols-outlined text-base">chevron_left</span>
+              Prev
             </button>
-            <span className="page-indicator">
+            <span className="text-slate-500">
               {userPage} / {Math.ceil(members.length / usersPerPage)}
             </span>
             <button
-              className="nav-btn"
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
               disabled={userPage >= Math.ceil(members.length / usersPerPage)}
               onClick={() => setUserPage((prev) => prev + 1)}
             >
-              <span className="material-symbols-outlined">chevron_right</span>
+              Next
+              <span className="material-symbols-outlined text-base">chevron_right</span>
             </button>
           </div>
         )}
-        <div className="user-stats-grid">
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           {paginatedMembers.map((member) => {
             const memberId = member._id || member;
 
             return (
               <div
                 key={memberId}
-                className="user-stat-item clickable-user"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm hover:bg-white hover:shadow-md transition cursor-pointer"
                 onClick={() => {
                   setSelectedUser({
                     userId: memberId,
@@ -449,15 +467,18 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
                   });
                 }}
               >
-                <div className="user-avatar">
-                  {member.avatar ? (
-                    <img src={member.avatar} alt={member.fullname} />
-                  ) : (
-                    <div className="avatar-placeholder">{member.fullname?.[0] || "?"}</div>
-                  )}
-                </div>
-                <div className="user-info">
-                  <div className="user-name">{member.fullname || "Unknown"}</div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                    {member.avatar ? (
+                      <img src={member.avatar} alt={member.fullname} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="text-slate-700 font-semibold">{member.fullname?.[0] || "?"}</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{member.fullname || "Unknown"}</div>
+                    <div className="text-xs text-slate-500">Team Member</div>
+                  </div>
                 </div>
               </div>
             );
@@ -489,23 +510,29 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
     return (
       <>
         {members.length > usersPerPage && (
-          <div className="user-pagination-nav">
-            <button className="nav-btn" disabled={userPage === 1} onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}>
-              <span className="material-symbols-outlined">chevron_left</span>
+          <div className="flex items-center justify-between text-sm text-slate-700 mb-2">
+            <button
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+              disabled={userPage === 1}
+              onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}
+            >
+              <span className="material-symbols-outlined text-base">chevron_left</span>
+              Prev
             </button>
-            <span className="page-indicator">
+            <span className="text-slate-500">
               {userPage} / {Math.ceil(members.length / usersPerPage)}
             </span>
             <button
-              className="nav-btn"
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
               disabled={userPage >= Math.ceil(members.length / usersPerPage)}
               onClick={() => setUserPage((prev) => prev + 1)}
             >
-              <span className="material-symbols-outlined">chevron_right</span>
+              Next
+              <span className="material-symbols-outlined text-base">chevron_right</span>
             </button>
           </div>
         )}
-        <div className="user-stats-grid">
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           {paginatedMembers.map((member) => {
             const memberId = member._id || member;
 
@@ -526,7 +553,7 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
             return (
               <div
                 key={memberId}
-                className="user-stat-item clickable-user"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm hover:bg-white hover:shadow-md transition cursor-pointer"
                 onClick={() => {
                   setSelectedUser({
                     userId: memberId,
@@ -535,15 +562,18 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
                   });
                 }}
               >
-                <div className="user-avatar">
-                  {member.avatar ? (
-                    <img src={member.avatar} alt={member.fullname} />
-                  ) : (
-                    <div className="avatar-placeholder">{member.fullname?.[0] || "?"}</div>
-                  )}
-                </div>
-                <div className="user-info">
-                  <div className="user-name">{member.fullname || "Unknown"}</div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                    {member.avatar ? (
+                      <img src={member.avatar} alt={member.fullname} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="text-slate-700 font-semibold">{member.fullname?.[0] || "?"}</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{member.fullname || "Unknown"}</div>
+                    <div className="text-xs text-slate-500">Team Member</div>
+                  </div>
                 </div>
               </div>
             );
@@ -805,381 +835,399 @@ const AdminAuditLogPage = ({ projectId: initialProjectId }) => {
 
   if (loading) {
     return (
-      <div className="auditlog-loading">
-        <div className="spinner"></div>
-        <p>Loading audit log data...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm text-slate-700">
+          <span className="material-symbols-outlined animate-spin text-sky-600">progress_activity</span>
+          Loading audit log data...
+        </div>
       </div>
     );
   }
 
   if (!overview)
     return (
-      <div className="audit-log-container">
-        <div className="no-data">No data available.</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white px-5 py-4 text-slate-700 shadow-sm">No data available.</div>
       </div>
     );
 
   return (
-    <div className="audit-log-container-redesigned">
-      {/* Header Section */}
-      <div className="audit-hero">
-        <div className="hero-content">
-          <div className="hero-badge">
-            <span className="material-symbols-outlined">assessment</span>
+    <div className="bg-slate-50 min-h-screen">
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+        {/* Hero */}
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-sky-600">
+            <span className="material-symbols-outlined text-base">assessment</span>
             Audit Log
           </div>
-          <h1 className="hero-title">Audit Log & Performance</h1>
-          <p className="hero-subtitle">Monitor project activities, team performance, and track all changes in real-time</p>
-        </div>
-        <div className="audit-project-selector-wrapper">
-          <label htmlFor="project-select" className="audit-selector-label">
-            PROJECT
-          </label>
-          <select
-            id="project-select"
-            value={selectedProjectId}
-            onChange={(e) => {
-              setSelectedProjectId(e.target.value);
-              setPage(1);
-            }}
-            className="audit-project-select"
-          >
-            {projects.map((p) => (
-              <option key={p._id || p.id} value={p._id || p.id}>
-                {p.name}
-              </option>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">Audit Log & Performance</h1>
+              <p className="text-slate-500 text-sm mt-1">Monitor activities, team performance, and track changes in real time.</p>
+            </div>
+            <div className="flex flex-col gap-2 md:items-end">
+              <label htmlFor="project-select" className="text-xs font-semibold text-slate-500 tracking-wide">
+                PROJECT
+              </label>
+              <select
+                id="project-select"
+                value={selectedProjectId}
+                onChange={(e) => {
+                  setSelectedProjectId(e.target.value);
+                  setPage(1);
+                }}
+                className="min-w-[220px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              >
+                {projects.map((p) => (
+                  <option key={p._id || p.id} value={p._id || p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              {
+                label: "Total Activities",
+                value: overview.actionStats?.total || 0,
+                icon: "activity_zone",
+                color: "text-sky-600",
+                bg: "bg-sky-50",
+              },
+              {
+                label: "Created",
+                value: overview.actionStats?.create || 0,
+                icon: "add_circle",
+                color: "text-emerald-600",
+                bg: "bg-emerald-50",
+              },
+              {
+                label: "Updated",
+                value: overview.actionStats?.update || 0,
+                icon: "edit",
+                color: "text-amber-600",
+                bg: "bg-amber-50",
+              },
+              {
+                label: "Deleted",
+                value: overview.actionStats?.delete || 0,
+                icon: "delete",
+                color: "text-rose-600",
+                bg: "bg-rose-50",
+              },
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div className={`h-10 w-10 rounded-lg ${item.bg} flex items-center justify-center ${item.color}`}>
+                  <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">{item.label}</p>
+                  <p className="text-lg font-semibold text-slate-900">{item.value}</p>
+                </div>
+              </div>
             ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Key Metrics Section */}
-      <div className="audit-metrics-section">
-        <div className="metric-card metric-primary">
-          <div className="metric-header">
-            <span className="material-symbols-outlined metric-icon">activity_zone</span>
-            <div className="metric-info">
-              <p className="metric-label">Total Activities</p>
-              <h3 className="metric-value">{overview.actionStats?.total || 0}</h3>
-            </div>
           </div>
         </div>
 
-        <div className="metric-card metric-success">
-          <div className="metric-header">
-            <span className="material-symbols-outlined metric-icon">add_circle</span>
-            <div className="metric-info">
-              <p className="metric-label">Created</p>
-              <h3 className="metric-value">{overview.actionStats?.create || 0}</h3>
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card metric-warning">
-          <div className="metric-header">
-            <span className="material-symbols-outlined metric-icon">edit</span>
-            <div className="metric-info">
-              <p className="metric-label">Updated</p>
-              <h3 className="metric-value">{overview.actionStats?.update || 0}</h3>
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card metric-danger">
-          <div className="metric-header">
-            <span className="material-symbols-outlined metric-icon">delete</span>
-            <div className="metric-info">
-              <p className="metric-label">Deleted</p>
-              <h3 className="metric-value">{overview.actionStats?.delete || 0}</h3>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Analytics Section */}
-      <div className="audit-analytics-grid">
-        {/* Activity Trend Chart */}
-        <div className="audit-analytics-card">
-          <div className="audit-card-header">
-            <h3 className="audit-card-title">
-              <span className="material-symbols-outlined">show_chart</span>
+        {/* Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+            <div className="flex items-center gap-2 text-slate-800 font-semibold">
+              <span className="material-symbols-outlined text-xl text-sky-600">show_chart</span>
               Activity Trend (Last 7 Days)
-            </h3>
+            </div>
+            <div className="grid grid-cols-7 gap-3 items-end">
+              {Object.entries(overview.dayStats || {}).map(([day, count]) => {
+                const maxCount = Math.max(...Object.values(overview.dayStats || {}), 1);
+                const percentage = (count / maxCount) * 100;
+                return (
+                  <div key={day} className="flex flex-col items-center gap-2">
+                    <div className="w-full rounded-lg bg-slate-100 h-32 overflow-hidden">
+                      <div
+                        className="bg-sky-500 w-full text-center text-white text-xs font-semibold flex items-end justify-center"
+                        style={{ height: `${percentage}%` }}
+                      >
+                        <span className="pb-1">{count}</span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-slate-500 text-center whitespace-nowrap">
+                      {new Date(day).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="audit-bar-chart">
-            {Object.entries(overview.dayStats || {}).map(([day, count]) => {
-              const maxCount = Math.max(...Object.values(overview.dayStats || {}), 1);
-              const percentage = (count / maxCount) * 100;
-              return (
-                <div key={day} className="audit-bar-item">
-                  <div className="audit-bar-container">
-                    <div className="audit-bar-fill" style={{ height: `${percentage}%` }}>
-                      <span className="audit-bar-value">{count}</span>
+
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+            <div className="flex items-center gap-2 text-slate-800 font-semibold">
+              <span className="material-symbols-outlined text-xl text-sky-600">pie_chart</span>
+              Activity by Entity
+            </div>
+            <div className="space-y-3">
+              {Object.entries(overview.entityStats || {}).map(([entity, count]) => {
+                const total = overview.actionStats?.total || 1;
+                const percentage = ((count / total) * 100).toFixed(1);
+                return (
+                  <div key={entity} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm text-slate-800">
+                      <span className="font-semibold">{entity}</span>
+                      <span className="text-slate-500">{count}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-sky-500" style={{ width: `${percentage}%` }}></div>
                     </div>
                   </div>
-                  <div className="audit-bar-label">{new Date(day).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Entity Distribution */}
-        <div className="audit-analytics-card">
-          <div className="audit-card-header">
-            <h3 className="audit-card-title">
-              <span className="material-symbols-outlined">pie_chart</span>
-              Activity by Entity
-            </h3>
-          </div>
-          <div className="audit-entity-list">
-            {Object.entries(overview.entityStats || {}).map(([entity, count]) => {
-              const total = overview.actionStats?.total || 1;
-              const percentage = ((count / total) * 100).toFixed(1);
-              return (
-                <div key={entity} className="audit-entity-item">
-                  <div className="entity-label-info">
-                    <span className="entity-name">{entity}</span>
-                    <span className="entity-badge">{count}</span>
-                  </div>
-                  <div className="entity-bar">
-                    <div className="entity-bar-fill" style={{ width: `${percentage}%` }}></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Export Section */}
-      <div className="audit-export-section">
-        <div className="export-card">
-          <div className="export-card-header">
-            <h3 className="export-title">
-              <span className="material-symbols-outlined">file_download</span>
-              Export Performance Report
-            </h3>
-            <p className="export-subtitle">Generate detailed team performance data to Excel</p>
-          </div>
-          <div className="export-controls-group">
-            <div className="date-inputs-wrapper">
-              <div className="date-input-group">
-                <label htmlFor="exportStartDate">From</label>
-                <input
-                  type="date"
-                  id="exportStartDate"
-                  value={exportStartDate}
-                  onChange={(e) => setExportStartDate(e.target.value)}
-                  className="date-picker-input"
-                />
-              </div>
-              <div className="date-input-group">
-                <label htmlFor="exportEndDate">To</label>
-                <input
-                  type="date"
-                  id="exportEndDate"
-                  value={exportEndDate}
-                  onChange={(e) => setExportEndDate(e.target.value)}
-                  className="date-picker-input"
-                />
-              </div>
+                );
+              })}
             </div>
-            <button className="export-button" onClick={exportToExcel} disabled={isExporting || !exportStartDate || !exportEndDate}>
+          </div>
+        </div>
+
+        {/* Export */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <span className="material-symbols-outlined text-xl text-sky-600">file_download</span>
+                Export Performance Report
+              </h3>
+              <p className="text-sm text-slate-500">Generate detailed performance data to Excel.</p>
+            </div>
+            <button
+              className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={exportToExcel}
+              disabled={isExporting || !exportStartDate || !exportEndDate}
+            >
               {isExporting ? (
                 <>
-                  <span className="spinner-small"></span>
+                  <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
                   Exporting...
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined">download</span>
+                  <span className="material-symbols-outlined text-base">download</span>
                   Export to Excel
                 </>
               )}
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Team Activity Section */}
-      <div className="audit-team-section">
-        <div className="team-section-header">
-          <h3 className="team-section-title">
-            <span className="material-symbols-outlined">group</span>
-            Team Performance
-          </h3>
-          {viewMode === "members" && selectedTeam && (
-            <button
-              className="back-button"
-              onClick={() => {
-                setViewMode("teams");
-                setSelectedTeam(null);
-                setUserPage(1);
-              }}
-            >
-              <span className="material-symbols-outlined">arrow_back</span>
-              Back to Teams
-            </button>
-          )}
-        </div>
-        {renderTeamMemberActivity()}
-      </div>
-
-      {/* Audit Logs Section */}
-      <div className="audit-logs-section">
-        <div className="logs-section-header">
-          <h3 className="logs-section-title">
-            <span className="material-symbols-outlined">receipt_long</span>
-            Detailed Audit Logs
-          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="text-sm text-slate-600 flex flex-col gap-1">
+              From
+              <input
+                type="date"
+                value={exportStartDate}
+                onChange={(e) => setExportStartDate(e.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              />
+            </label>
+            <label className="text-sm text-slate-600 flex flex-col gap-1">
+              To
+              <input
+                type="date"
+                value={exportEndDate}
+                onChange={(e) => setExportEndDate(e.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              />
+            </label>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="audit-filters-group">
-          <div className="filter-control">
-            <label>User</label>
-            <select
-              value={filterUserId}
-              onChange={(e) => {
-                setFilterUserId(e.target.value);
-                setPage(1);
-              }}
-              className="filter-select"
-            >
-              <option value="">All Users</option>
-              {overview?.userStats &&
-                Object.entries(overview.userStats).map(([userId, userData]) => (
-                  <option key={userId} value={userId}>
-                    {userData.name || "Unknown"}
-                  </option>
-                ))}
-            </select>
+        {/* Team performance */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-xl text-sky-600">group</span>
+              Team Performance
+            </h3>
+            {viewMode === "members" && selectedTeam && (
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => {
+                  setViewMode("teams");
+                  setSelectedTeam(null);
+                  setUserPage(1);
+                }}
+              >
+                <span className="material-symbols-outlined text-base">arrow_back</span>
+                Back to Teams
+              </button>
+            )}
           </div>
-
-          <div className="filter-control">
-            <label>Action</label>
-            <select
-              value={filterAction}
-              onChange={(e) => {
-                setFilterAction(e.target.value);
-                setPage(1);
-              }}
-              className="filter-select"
-            >
-              <option value="">All Actions</option>
-              <option value="create">Create</option>
-              <option value="update">Update</option>
-              <option value="delete">Delete</option>
-            </select>
-          </div>
-
-          <div className="filter-control">
-            <label>Entity Type</label>
-            <select
-              value={filterEntity}
-              onChange={(e) => {
-                setFilterEntity(e.target.value);
-                setPage(1);
-              }}
-              className="filter-select"
-            >
-              <option value="">All Entities</option>
-              <option value="Task">Tasks</option>
-              <option value="Sprint">Sprints</option>
-              <option value="Project">Projects</option>
-              <option value="Platform">Platforms</option>
-              <option value="TaskType">Task Types</option>
-              <option value="Priority">Priorities</option>
-              <option value="TimeLog">Time Logs</option>
-              <option value="Group">Groups</option>
-              <option value="User">Users</option>
-            </select>
-          </div>
-
-          {(filterUserId || filterAction || filterEntity) && (
-            <button
-              className="clear-filters-btn"
-              onClick={() => {
-                setFilterUserId("");
-                setFilterAction("");
-                setFilterEntity("");
-                setPage(1);
-              }}
-            >
-              Clear Filters
-            </button>
-          )}
+          {renderTeamMemberActivity()}
         </div>
 
-        {/* Logs Table */}
-        {loadingLogs ? (
-          <div className="logs-loading">
-            <p>Loading audit logs...</p>
+        {/* Logs */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-xl text-sky-600">receipt_long</span>
+              Detailed Audit Logs
+            </h3>
+            {(filterUserId || filterAction || filterEntity) && (
+              <button
+                className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-800"
+                onClick={() => {
+                  setFilterUserId("");
+                  setFilterAction("");
+                  setFilterEntity("");
+                  setPage(1);
+                }}
+              >
+                <span className="material-symbols-outlined text-base">refresh</span>
+                Clear filters
+              </button>
+            )}
           </div>
-        ) : (
-          <div className="logs-table-wrapper">
-            <table className="logs-table-redesigned">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Action</th>
-                  <th>Entity Type</th>
-                  <th>Record</th>
-                  <th>Timestamp</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="no-logs-message">
-                      No audit logs found
-                    </td>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <label className="text-sm text-slate-600 flex flex-col gap-1">
+              User
+              <select
+                value={filterUserId}
+                onChange={(e) => {
+                  setFilterUserId(e.target.value);
+                  setPage(1);
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              >
+                <option value="">All Users</option>
+                {overview?.userStats &&
+                  Object.entries(overview.userStats).map(([userId, userData]) => (
+                    <option key={userId} value={userId}>
+                      {userData.name || "Unknown"}
+                    </option>
+                  ))}
+              </select>
+            </label>
+
+            <label className="text-sm text-slate-600 flex flex-col gap-1">
+              Action
+              <select
+                value={filterAction}
+                onChange={(e) => {
+                  setFilterAction(e.target.value);
+                  setPage(1);
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              >
+                <option value="">All Actions</option>
+                <option value="create">Create</option>
+                <option value="update">Update</option>
+                <option value="delete">Delete</option>
+              </select>
+            </label>
+
+            <label className="text-sm text-slate-600 flex flex-col gap-1">
+              Entity Type
+              <select
+                value={filterEntity}
+                onChange={(e) => {
+                  setFilterEntity(e.target.value);
+                  setPage(1);
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              >
+                <option value="">All Entities</option>
+                <option value="Task">Tasks</option>
+                <option value="Sprint">Sprints</option>
+                <option value="Project">Projects</option>
+                <option value="Platform">Platforms</option>
+                <option value="TaskType">Task Types</option>
+                <option value="Priority">Priorities</option>
+                <option value="TimeLog">Time Logs</option>
+                <option value="Group">Groups</option>
+                <option value="User">Users</option>
+              </select>
+            </label>
+          </div>
+
+          {loadingLogs ? (
+            <div className="flex items-center justify-center py-10 text-slate-500">Loading audit logs...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-left text-slate-500 text-xs uppercase tracking-wide">
+                    <th className="px-3 py-2">User</th>
+                    <th className="px-3 py-2">Action</th>
+                    <th className="px-3 py-2">Entity Type</th>
+                    <th className="px-3 py-2">Record</th>
+                    <th className="px-3 py-2">Timestamp</th>
                   </tr>
-                ) : (
-                  logs.map((log, idx) => (
-                    <tr key={idx}>
-                      <td className="user-cell-redesigned">
-                        {log.userId?.avatar && <img src={log.userId.avatar} alt={log.userId.fullname} className="log-avatar" />}
-                        <span>{log.userId?.fullname || "Unknown"}</span>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {logs.length === 0 ? (
+                    <tr>
+                      <td className="px-3 py-6 text-center text-slate-500" colSpan="5">
+                        No audit logs found
                       </td>
-                      <td>
-                        <span
-                          className={`action-badge-redesigned ${
-                            log.action?.includes("create") ? "create" : log.action?.includes("update") ? "update" : "delete"
-                          }`}
-                        >
-                          {log.action}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="entity-type-badge">{log.tableName}</span>
-                      </td>
-                      <td className="record-cell">{log.recordName || log.recordId || "-"}</td>
-                      <td className="timestamp-cell">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  ) : (
+                    logs.map((log, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="px-3 py-3 text-slate-800 flex items-center gap-3">
+                          {log.userId?.avatar && (
+                            <img src={log.userId.avatar} alt={log.userId.fullname} className="h-8 w-8 rounded-full object-cover" />
+                          )}
+                          <span>{log.userId?.fullname || "Unknown"}</span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                              log.action?.includes("create")
+                                ? "bg-emerald-50 text-emerald-700"
+                                : log.action?.includes("update")
+                                  ? "bg-amber-50 text-amber-700"
+                                  : "bg-rose-50 text-rose-700"
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-base">
+                              {log.action?.includes("create") ? "add_circle" : log.action?.includes("update") ? "edit" : "delete"}
+                            </span>
+                            {log.action}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-slate-700">
+                          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{log.tableName}</span>
+                        </td>
+                        <td className="px-3 py-3 text-slate-800">{log.recordName || log.recordId || "-"}</td>
+                        <td className="px-3 py-3 text-slate-600">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        {/* Pagination */}
-        <div className="pagination-wrapper">
-          <button className="pagination-button" disabled={page === 1} onClick={() => setPage(page - 1)}>
-            <span className="material-symbols-outlined">chevron_left</span>
-            Previous
-          </button>
-          <span className="pagination-info">Page {page}</span>
-          <button className="pagination-button" onClick={() => setPage(page + 1)} disabled={logs.length < limit}>
-            Next
-            <span className="material-symbols-outlined">chevron_right</span>
-          </button>
+          <div className="flex items-center justify-between pt-2 text-sm text-slate-700">
+            <div className="flex items-center gap-2">
+              <button
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
+                <span className="material-symbols-outlined text-base">chevron_left</span>
+                Previous
+              </button>
+              <span className="text-slate-500">Page {page}</span>
+              <button
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                onClick={() => setPage(page + 1)}
+                disabled={logs.length < limit}
+              >
+                Next
+                <span className="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Performance Panel */}
       {selectedUser && (
         <PerformancePanel
           userId={selectedUser.userId}
