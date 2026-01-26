@@ -8,14 +8,15 @@ const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, 
   // Safety check
   if (!Array.isArray(projects)) {
     return (
-      <div className="flex-1 overflow-x-auto" ref={rightSectionRef}>
-        <div className="inline-block min-w-full">
-          <GanttTimeline timelineColumns={timelineColumns} />
-          <div className="flex items-center justify-center bg-white">
-            <div className="flex flex-col items-center gap-2 p-6">
-              <span className="material-symbols-outlined text-slate-400 text-3xl">schedule</span>
-              <p className="text-sm text-slate-500">Loading...</p>
-            </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header - fixed, doesn't scroll */}
+        <GanttTimeline timelineColumns={timelineColumns} />
+
+        {/* Body - scrollable both directions */}
+        <div className="flex-1 overflow-x-auto overflow-y-auto flex items-center justify-center" ref={rightSectionRef}>
+          <div className="flex flex-col items-center gap-2 p-6">
+            <span className="material-symbols-outlined text-slate-400 text-3xl">schedule</span>
+            <p className="text-sm text-slate-500">Loading...</p>
           </div>
         </div>
       </div>

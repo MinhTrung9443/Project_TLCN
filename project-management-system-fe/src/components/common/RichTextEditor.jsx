@@ -40,57 +40,57 @@ const MenuBar = ({ editor }) => {
   };
 
   return (
-    <div className="tiptap-menu-bar">
+    <div className="flex items-center gap-1 p-2 border-b border-neutral-200 bg-neutral-50">
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleBold().run()}
-        className={`icon-button ${editor.isActive("bold") ? "is-active" : ""}`}
+        className={`p-2 rounded hover:bg-neutral-200 transition-colors ${editor.isActive("bold") ? "bg-primary-100 text-primary-700" : "text-neutral-700"}`}
         title="Bold"
       >
-        <span className="material-symbols-outlined">format_bold</span>
+        <span className="material-symbols-outlined text-[20px]">format_bold</span>
       </button>
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleItalic().run()}
-        className={`icon-button ${editor.isActive("italic") ? "is-active" : ""}`}
+        className={`p-2 rounded hover:bg-neutral-200 transition-colors ${editor.isActive("italic") ? "bg-primary-100 text-primary-700" : "text-neutral-700"}`}
         title="Italic"
       >
-        <span className="material-symbols-outlined">format_italic</span>
+        <span className="material-symbols-outlined text-[20px]">format_italic</span>
       </button>
-      <div className="relative flex items-center">
-        <span className="material-symbols-outlined text-neutral-600">format_color_text</span>
+      <div className="flex items-center gap-1 p-2 rounded hover:bg-neutral-200">
+        <span className="material-symbols-outlined text-[20px] text-neutral-600">format_color_text</span>
         <input
           type="color"
           onInput={(event) => editor.chain().focus().setColor(event.target.value).run()}
           value={editor.getAttributes("textStyle").color || "#000000"}
           title="Text Color"
-          className="ml-1 w-8 h-8 cursor-pointer"
+          className="ml-1 w-8 h-8 cursor-pointer rounded"
         />
       </div>
-      <span className="w-px h-6 bg-neutral-300 mx-2"></span>
+      <span className="w-px h-6 bg-neutral-300 mx-1"></span>
       <button
         type="button"
         onClick={() => editor.chain().focus().setTextAlign("left").run()}
-        className={`icon-button ${editor.isActive({ textAlign: "left" }) ? "is-active" : ""}`}
+        className={`p-2 rounded hover:bg-neutral-200 transition-colors ${editor.isActive({ textAlign: "left" }) ? "bg-primary-100 text-primary-700" : "text-neutral-700"}`}
         title="Align Left"
       >
-        <span className="material-symbols-outlined">format_align_left</span>
+        <span className="material-symbols-outlined text-[20px]">format_align_left</span>
       </button>
       <button
         type="button"
         onClick={() => editor.chain().focus().setTextAlign("center").run()}
-        className={`icon-button ${editor.isActive({ textAlign: "center" }) ? "is-active" : ""}`}
+        className={`p-2 rounded hover:bg-neutral-200 transition-colors ${editor.isActive({ textAlign: "center" }) ? "bg-primary-100 text-primary-700" : "text-neutral-700"}`}
         title="Align Center"
       >
-        <span className="material-symbols-outlined">format_align_center</span>
+        <span className="material-symbols-outlined text-[20px]">format_align_center</span>
       </button>
       <button
         type="button"
         onClick={() => editor.chain().focus().setTextAlign("right").run()}
-        className={`icon-button ${editor.isActive({ textAlign: "right" }) ? "is-active" : ""}`}
+        className={`p-2 rounded hover:bg-neutral-200 transition-colors ${editor.isActive({ textAlign: "right" }) ? "bg-primary-100 text-primary-700" : "text-neutral-700"}`}
         title="Align Right"
       >
-        <span className="material-symbols-outlined">format_align_right</span>
+        <span className="material-symbols-outlined text-[20px]">format_align_right</span>
       </button>
     </div>
   );
@@ -103,7 +103,7 @@ const RichTextEditor = ({ value, onChange }) => {
     extensions: [StarterKit, TextAlign.configure({ types: ["heading", "paragraph"] }), Image, TextStyle, Color],
     editorProps: {
       attributes: {
-        class: "prose-mirror-editor",
+        class: "p-4 min-h-[200px] focus:outline-none prose max-w-none text-neutral-900",
       },
     },
     content: value || "",

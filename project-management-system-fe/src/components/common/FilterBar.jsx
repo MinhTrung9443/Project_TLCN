@@ -75,7 +75,7 @@ const FilterBar = ({ onApplyFilters, projects, users, statuses = [] }) => {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-white rounded-lg border border-gray-200">
+    <div className="flex flex-col gap-4 p-4 bg-white rounded-lg border border-neutral-200">
       <div className="flex flex-wrap gap-3">
         {activeFilters.map((filter) => (
           <div key={filter.value} className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 min-w-max">

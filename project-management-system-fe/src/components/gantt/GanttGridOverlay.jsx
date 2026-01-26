@@ -2,9 +2,9 @@ import React from "react";
 
 const GanttGridOverlay = ({ timelineColumns }) => {
   return (
-    <div className="gantt-grid-overlay">
+    <div className="absolute inset-0 flex pointer-events-none z-0">
       {timelineColumns.map((col, idx) => (
-        <div key={idx} className="gantt-grid-line" />
+        <div key={idx} className="flex-1 border-r border-slate-200" />
       ))}
     </div>
   );

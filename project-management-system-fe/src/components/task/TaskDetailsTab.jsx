@@ -6,24 +6,10 @@ import LinkedTasksTab from "./LinkedTasksTab";
 import LogTimeModal from "./LogTimeModal";
 import TimeLogList from "./TimeLogList";
 const statusCategoryStyles = {
-  "To Do": {
-    backgroundColor: "#dfe1e6", // Xám
-    color: "#42526E",
-  },
-  "In Progress": {
-    backgroundColor: "#deebff", // Xanh dương nhạt
-    color: "#0747A6",
-  },
-  Done: {
-    backgroundColor: "#e3fcef", // Xanh lá nhạt
-    color: "#0B875B",
-  },
-  // Thêm màu cho các category khác nếu có
-  default: {
-    // Màu mặc định nếu không khớp
-    backgroundColor: "#dfe1e6",
-    color: "#42526E",
-  },
+  "To Do": "bg-neutral-100 text-neutral-700 border border-neutral-200",
+  "In Progress": "bg-primary-100 text-primary-700 border border-primary-200",
+  Done: "bg-success-100 text-success-700 border border-success-200",
+  default: "bg-neutral-100 text-neutral-700 border border-neutral-200",
 };
 const TaskDetailsTab = ({
   editableTask,
@@ -87,21 +73,10 @@ const TaskDetailsTab = ({
   const selectedStatusOption = statusOptions.find((opt) => opt.value === currentStatusId);
 
   const formatOptionLabel = ({ label, category }) => {
-    const style = statusCategoryStyles[category] || statusCategoryStyles.default;
+    const styleClass = statusCategoryStyles[category] || statusCategoryStyles.default;
     return (
-      <div style={{ display: "inline-block" }}>
-        <span
-          style={{
-            ...style,
-            borderRadius: "3px",
-            padding: "3px 8px",
-            fontWeight: 600,
-            fontSize: "12px",
-            textTransform: "uppercase", // In hoa cho đẹp
-          }}
-        >
-          {label}
-        </span>
+      <div className="inline-block">
+        <span className={`${styleClass} rounded px-2 py-1 font-semibold text-xs uppercase`}>{label}</span>
       </div>
     );
   };
