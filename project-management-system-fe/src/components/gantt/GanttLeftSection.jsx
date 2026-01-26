@@ -7,12 +7,15 @@ const GanttLeftSection = ({ projects, groupBy, expandedItems, toggleExpand, left
   // Safety check
   if (!Array.isArray(projects)) {
     return (
-      <div className="w-80 border-r border-neutral-200 bg-white" ref={leftSectionRef}>
-        <div className="h-16 flex items-center px-4 border-b border-neutral-200 bg-neutral-50 font-semibold text-neutral-900">
+      <div className="w-80 border-r border-slate-200 bg-white flex flex-col">
+        <div className="flex h-14 items-center border-b border-slate-200 bg-slate-50 px-4 font-semibold text-slate-900 flex-shrink-0">
           <span>Name</span>
         </div>
-        <div className="bg-white">
-          <div className="p-5 text-center text-neutral-500">Loading...</div>
+        <div className="flex items-center justify-center bg-white p-6 flex-1 overflow-y-auto" ref={leftSectionRef}>
+          <div className="flex flex-col items-center gap-2">
+            <span className="material-symbols-outlined text-slate-400 text-3xl">schedule</span>
+            <p className="text-sm text-slate-500">Loading...</p>
+          </div>
         </div>
       </div>
     );
@@ -24,14 +27,14 @@ const GanttLeftSection = ({ projects, groupBy, expandedItems, toggleExpand, left
   const hasTask = groupBy.includes("task");
 
   return (
-    <div className="w-80 border-r border-neutral-200 bg-white" ref={leftSectionRef}>
+    <div className="w-80 border-r border-slate-200 bg-white flex flex-col">
       {/* Header */}
-      <div className="h-16 flex items-center px-4 border-b border-neutral-200 bg-neutral-50 font-semibold text-neutral-900">
+      <div className="flex h-14 items-center border-b border-slate-200 bg-slate-50 px-4 font-semibold text-slate-900 flex-shrink-0">
         <span>{hasProject ? "Project" : hasSprint ? "Sprint" : "Task"}</span>
       </div>
 
       {/* Body */}
-      <div className="bg-white">
+      <div className="bg-white divide-y divide-slate-100 overflow-y-auto flex-1" ref={leftSectionRef}>
         {projects.map((item) => {
           // If displaying projects
           if (hasProject) {

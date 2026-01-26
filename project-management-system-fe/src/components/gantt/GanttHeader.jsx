@@ -48,134 +48,155 @@ const GanttHeader = ({
 
   return (
     <>
-      <div className="bg-white border-b border-neutral-200 px-6 py-5">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-100">
-            <span className="material-symbols-outlined text-primary-600 text-xl">timeline</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-neutral-900">Gantt Chart</h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                Timeline Management
-              </span>
+      <div className="border-b border-slate-200 bg-white">
+        <div className="px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100">
+              <span className="material-symbols-outlined text-sky-600 text-xl">timeline</span>
             </div>
-            <p className="text-sm text-neutral-600 mt-0.5">Visualize project schedules and track task progress across all sprints</p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-slate-900">Gantt Chart</h1>
+                <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+                  <span className="material-symbols-outlined text-base">schedule</span>
+                  Timeline Management
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-slate-500">Visualize project schedules and track task progress across all sprints</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="gantt-header-redesigned">
-        <div className="gantt-header-controls">
-          <div className="gantt-controls-left">
-            <div ref={filterRef} style={{ position: "relative" }}>
-              <button className={`gantt-control-btn ${filterCount > 0 ? "active" : ""}`} onClick={() => setShowFilterPanel(!showFilterPanel)}>
-                <span className="material-symbols-outlined">filter_alt</span>
-                <span>Filter</span>
-                {filterCount > 0 && <span className="control-badge">{filterCount}</span>}
-              </button>
-              <GanttFilterPanel filter={filter} setFilter={setFilter} showFilterPanel={showFilterPanel} filterRef={filterRef} />
+        <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
+          <div className="flex flex-wrap items-center gap-3 lg:gap-4">
+            <div className="flex items-center gap-2">
+              <div ref={filterRef} className="relative">
+                <button
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                    filterCount > 0 ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                  onClick={() => setShowFilterPanel(!showFilterPanel)}
+                >
+                  <span className="material-symbols-outlined text-base">filter_alt</span>
+                  <span>Filter</span>
+                  {filterCount > 0 && (
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white">
+                      {filterCount}
+                    </span>
+                  )}
+                </button>
+                <GanttFilterPanel filter={filter} setFilter={setFilter} showFilterPanel={showFilterPanel} filterRef={filterRef} />
+              </div>
+
+              <div ref={groupByRef} className="relative">
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => setShowGroupByPanel(!showGroupByPanel)}
+                >
+                  <span className="material-symbols-outlined text-base">view_list</span>
+                  <span>Group By</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">
+                    {groupBy.length}
+                  </span>
+                </button>
+
+                {showGroupByPanel && (
+                  <div className="absolute top-10 left-0 z-10 min-w-[200px] rounded-lg border border-slate-200 bg-white shadow-lg">
+                    <div className="border-b border-slate-200 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-600">Group By</div>
+                    <label className="flex cursor-pointer items-center gap-2 px-4 py-2.5 hover:bg-slate-50 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={groupBy.includes("project")}
+                        onChange={() => handleGroupByChange("project")}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm text-slate-700">Project</span>
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 px-4 py-2.5 hover:bg-slate-50 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={groupBy.includes("sprint")}
+                        onChange={() => handleGroupByChange("sprint")}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm text-slate-700">Sprint</span>
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 px-4 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-200">
+                      <input type="checkbox" checked={groupBy.includes("task")} onChange={() => handleGroupByChange("task")} className="h-4 w-4" />
+                      <span className="text-sm text-slate-700">Task</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div ref={statusRef} className="relative">
+                <button
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                    statusFilter !== "active"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                  onClick={() => setShowStatusPanel(!showStatusPanel)}
+                >
+                  <span className="material-symbols-outlined text-base">check_circle</span>
+                  <span>
+                    {statusFilter === "active" ? "Active" : statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Paused"}
+                  </span>
+                </button>
+
+                {showStatusPanel && (
+                  <div className="absolute top-10 left-0 z-10 min-w-[220px] rounded-lg border border-slate-200 bg-white shadow-lg">
+                    <div className="border-b border-slate-200 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      Project Status
+                    </div>
+                    {[
+                      { value: "active", label: "Active Projects", icon: "play_circle" },
+                      { value: "all", label: "All Projects", icon: "all_inclusive" },
+                      { value: "completed", label: "Completed Projects", icon: "task_alt" },
+                      { value: "paused", label: "Paused Projects", icon: "pause_circle" },
+                    ].map((option) => (
+                      <div
+                        key={option.value}
+                        className={`flex cursor-pointer items-center gap-2 px-4 py-2.5 transition-colors ${
+                          statusFilter === option.value ? "bg-sky-50" : "hover:bg-slate-50"
+                        } ${option.value === "paused" ? "border-b border-slate-200" : ""}`}
+                        onClick={() => {
+                          setStatusFilter(option.value);
+                          setShowStatusPanel(false);
+                        }}
+                      >
+                        <span className={`material-symbols-outlined text-base ${statusFilter === option.value ? "text-sky-600" : "text-slate-600"}`}>
+                          {option.icon}
+                        </span>
+                        <span className={`text-sm ${statusFilter === option.value ? "font-semibold text-sky-700" : "text-slate-700"}`}>
+                          {option.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div ref={groupByRef} style={{ position: "relative" }}>
-              <button className="gantt-control-btn" onClick={() => setShowGroupByPanel(!showGroupByPanel)}>
-                <span className="material-symbols-outlined">view_list</span>
-                <span>Group By</span>
-                <span className="control-badge">{groupBy.length}</span>
-              </button>
+            <div className="ml-auto flex items-center gap-3">
+              <input
+                type="text"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                placeholder="Search tasks..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+              />
 
-              {showGroupByPanel && (
-                <div className="gantt-dropdown gantt-groupby-dropdown">
-                  <div className="gantt-dropdown-header">GROUP BY</div>
-                  <label className="gantt-dropdown-item">
-                    <input type="checkbox" checked={groupBy.includes("project")} onChange={() => handleGroupByChange("project")} />
-                    <span>Project</span>
-                  </label>
-                  <label className="gantt-dropdown-item">
-                    <input type="checkbox" checked={groupBy.includes("sprint")} onChange={() => handleGroupByChange("sprint")} />
-                    <span>Sprint</span>
-                  </label>
-                  <label className="gantt-dropdown-item">
-                    <input type="checkbox" checked={groupBy.includes("task")} onChange={() => handleGroupByChange("task")} />
-                    <span>Task</span>
-                  </label>
-                </div>
-              )}
-            </div>
-
-            <div ref={statusRef} style={{ position: "relative" }}>
-              <button
-                className={`gantt-control-btn ${statusFilter !== "active" ? "active" : ""}`}
-                onClick={() => setShowStatusPanel(!showStatusPanel)}
+              <select
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                value={timeView}
+                onChange={(e) => setTimeView(e.target.value)}
               >
-                <span className="material-symbols-outlined">check_circle</span>
-                <span>
-                  {statusFilter === "active" ? "Active" : statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Paused"}
-                </span>
-              </button>
-
-              {showStatusPanel && (
-                <div className="gantt-dropdown gantt-status-dropdown">
-                  <div className="gantt-dropdown-header">PROJECT STATUS</div>
-                  <div
-                    className={`gantt-dropdown-item ${statusFilter === "active" ? "selected" : ""}`}
-                    onClick={() => {
-                      setStatusFilter("active");
-                      setShowStatusPanel(false);
-                    }}
-                  >
-                    <span className="material-symbols-outlined">play_circle</span>
-                    <span>Active Projects</span>
-                  </div>
-                  <div
-                    className={`gantt-dropdown-item ${statusFilter === "all" ? "selected" : ""}`}
-                    onClick={() => {
-                      setStatusFilter("all");
-                      setShowStatusPanel(false);
-                    }}
-                  >
-                    <span className="material-symbols-outlined">all_inclusive</span>
-                    <span>All Projects</span>
-                  </div>
-                  <div
-                    className={`gantt-dropdown-item ${statusFilter === "completed" ? "selected" : ""}`}
-                    onClick={() => {
-                      setStatusFilter("completed");
-                      setShowStatusPanel(false);
-                    }}
-                  >
-                    <span className="material-symbols-outlined">task_alt</span>
-                    <span>Completed Projects</span>
-                  </div>
-                  <div
-                    className={`gantt-dropdown-item ${statusFilter === "paused" ? "selected" : ""}`}
-                    onClick={() => {
-                      setStatusFilter("paused");
-                      setShowStatusPanel(false);
-                    }}
-                  >
-                    <span className="material-symbols-outlined">pause_circle</span>
-                    <span>Paused Projects</span>
-                  </div>
-                </div>
-              )}
+                <option value="weeks">Weeks</option>
+                <option value="months">Months</option>
+                <option value="years">Years</option>
+              </select>
             </div>
-          </div>
-
-          <div className="gantt-controls-right">
-            <input
-              type="text"
-              className="gantt-search-input"
-              placeholder="Search tasks..."
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-            />
-
-            <select className="gantt-timeview-select" value={timeView} onChange={(e) => setTimeView(e.target.value)}>
-              <option value="weeks">Weeks</option>
-              <option value="months">Months</option>
-              <option value="years">Years</option>
-            </select>
           </div>
         </div>
       </div>

@@ -11,16 +11,14 @@ const GanttTaskBar = ({ task, barStyle }) => {
   if (!hasValidDates) {
     // Không hiển thị thanh timeline nếu thiếu ngày
     return (
-      <div className="gantt-row gantt-row-task">
-        <div className="gantt-right">
-          <div className="gantt-timeline">{/* Không hiển thị bar */}</div>
-        </div>
+      <div className="flex items-center border-b border-slate-100 hover:bg-slate-50 transition-colors">
+        <div className="w-full h-14 flex items-center justify-center">{/* Không hiển thị bar */}</div>
       </div>
     );
   }
 
-  // Determine status class based on task status and dates
-  const getStatusClass = () => {
+  // Determine status color based on task status and dates
+  const getStatusColor = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const statusCategory = (task.status?.category || task.statusId?.category || "").toString().toLowerCase();
@@ -32,39 +30,39 @@ const GanttTaskBar = ({ task, barStyle }) => {
       if (task.lastLogTime) {
         const lastLog = new Date(task.lastLogTime);
         lastLog.setHours(0, 0, 0, 0);
-        if (lastLog <= dueDate) return "status-done"; // completed on time
+        if (lastLog <= dueDate) return "bg-emerald-500"; // completed on time
       }
       // If done but no lastLog or lastLog after dueDate, fall through to check overdue
     }
 
     // Overdue (past due) -> red (regardless of done)
     if (dueDate < today) {
-      return "status-delay";
+      return "bg-rose-500";
     }
 
     // Upcoming due (within 3 days) -> orange
     if (daysUntilDue >= 0 && daysUntilDue <= 3) {
-      return "status-at-risk";
+      return "bg-amber-500";
     }
 
     // Default: use in-progress or not-started mapping
-    if (statusCategory === "to do" || statusCategory === "todo") return "status-not-started";
-    if (statusCategory === "in progress" || statusCategory === "in-progress") return "status-in-progress";
+    if (statusCategory === "to do" || statusCategory === "todo") return "bg-slate-400";
+    if (statusCategory === "in progress" || statusCategory === "in-progress") return "bg-sky-500";
 
-    return "status-in-progress";
+    return "bg-sky-500";
   };
 
   const tooltip = `${formatDate(task.startDate)} - ${formatDate(endDate)}`;
-  const statusClass = getStatusClass();
+  const statusColor = getStatusColor();
 
   return (
-    <div className="gantt-row gantt-row-task">
-      <div className="gantt-right">
-        <div className="gantt-timeline">
-          <div className={`gantt-bar gantt-bar-task ${statusClass}`} style={barStyle} title={tooltip}>
-            <span className="gantt-bar-label">{task.name}</span>
-          </div>
-        </div>
+    <div className="border-b border-slate-100 hover:bg-slate-50 transition-colors h-14 relative flex items-center">
+      <div
+        className={`${statusColor} rounded-md px-2 py-1 text-xs font-semibold text-white shadow-sm hover:shadow-md transition-shadow overflow-hidden absolute h-7 flex items-center`}
+        style={barStyle}
+        title={tooltip}
+      >
+        <span className="truncate">{task.name}</span>
       </div>
     </div>
   );

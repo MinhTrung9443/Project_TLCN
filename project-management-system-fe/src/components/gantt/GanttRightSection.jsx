@@ -11,8 +11,11 @@ const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, 
       <div className="flex-1 overflow-x-auto" ref={rightSectionRef}>
         <div className="inline-block min-w-full">
           <GanttTimeline timelineColumns={timelineColumns} />
-          <div className="bg-white">
-            <div className="p-5 text-center text-neutral-500">Loading...</div>
+          <div className="flex items-center justify-center bg-white">
+            <div className="flex flex-col items-center gap-2 p-6">
+              <span className="material-symbols-outlined text-slate-400 text-3xl">schedule</span>
+              <p className="text-sm text-slate-500">Loading...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -49,95 +52,98 @@ const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, 
   const hasTask = groupBy.includes("task");
 
   return (
-    <div className="flex-1 overflow-x-auto" ref={rightSectionRef}>
-      <div className="inline-block min-w-full" style={wrapperStyle}>
-        {/* Header */}
-        <GanttTimeline timelineColumns={timelineColumns} />
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Header - fixed, doesn't scroll */}
+      <GanttTimeline timelineColumns={timelineColumns} />
 
-        {/* Body */}
-        <div className="bg-white">
-          {projects.map((item) => {
-            // If displaying projects
-            if (hasProject) {
-              const project = item;
-              const isExpanded = expandedItems.has(project.id);
-              const hasSprints = hasSprint && project.sprints?.length > 0;
-              const hasTasks = hasTask && project.tasks?.length > 0;
-              const barStyle = calculateBarPosition(project.startDate, project.endDate);
+      {/* Body - scrollable both directions */}
+      <div className="flex-1 overflow-x-auto overflow-y-auto" ref={rightSectionRef}>
+        <div className="inline-block min-w-full" style={wrapperStyle}>
+          {/* Body */}
+          <div className="bg-white">
+            {projects.map((item) => {
+              // If displaying projects
+              if (hasProject) {
+                const project = item;
+                const isExpanded = expandedItems.has(project.id);
+                const hasSprints = hasSprint && project.sprints?.length > 0;
+                const hasTasks = hasTask && project.tasks?.length > 0;
+                const barStyle = calculateBarPosition(project.startDate, project.endDate);
 
-              return (
-                <React.Fragment key={project.id}>
-                  {/* Project Bar */}
-                  <GanttProjectBar project={project} barStyle={barStyle} />
+                return (
+                  <React.Fragment key={project.id}>
+                    {/* Project Bar */}
+                    <GanttProjectBar project={project} barStyle={barStyle} />
 
-                  {isExpanded && (
-                    <>
-                      {/* Sprint Bars (when groupBy includes sprint) */}
-                      {hasSprints &&
-                        project.sprints.map((sprint) => {
-                          const isSprintExpanded = expandedItems.has(sprint.id);
-                          const hasSprintTasks = hasTask && sprint.tasks?.length > 0;
-                          const sprintBarStyle = calculateBarPosition(sprint.startDate, sprint.endDate);
+                    {isExpanded && (
+                      <>
+                        {/* Sprint Bars (when groupBy includes sprint) */}
+                        {hasSprints &&
+                          project.sprints.map((sprint) => {
+                            const isSprintExpanded = expandedItems.has(sprint.id);
+                            const hasSprintTasks = hasTask && sprint.tasks?.length > 0;
+                            const sprintBarStyle = calculateBarPosition(sprint.startDate, sprint.endDate);
 
-                          return (
-                            <React.Fragment key={sprint.id}>
-                              <GanttSprintBar sprint={sprint} barStyle={sprintBarStyle} />
+                            return (
+                              <React.Fragment key={sprint.id}>
+                                <GanttSprintBar sprint={sprint} barStyle={sprintBarStyle} />
 
-                              {/* Task Bars under Sprint */}
-                              {isSprintExpanded &&
-                                hasSprintTasks &&
-                                sprint.tasks.map((task) => {
-                                  const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
-                                  return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
-                                })}
-                            </React.Fragment>
-                          );
-                        })}
+                                {/* Task Bars under Sprint */}
+                                {isSprintExpanded &&
+                                  hasSprintTasks &&
+                                  sprint.tasks.map((task) => {
+                                    const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
+                                    return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
+                                  })}
+                              </React.Fragment>
+                            );
+                          })}
 
-                      {/* Task Bars directly under Project (when groupBy has task but not sprint) */}
-                      {hasTasks &&
-                        !hasSprint &&
-                        project.tasks.map((task) => {
-                          const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
-                          return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
-                        })}
-                    </>
-                  )}
-                </React.Fragment>
-              );
-            }
+                        {/* Task Bars directly under Project (when groupBy has task but not sprint) */}
+                        {hasTasks &&
+                          !hasSprint &&
+                          project.tasks.map((task) => {
+                            const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
+                            return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
+                          })}
+                      </>
+                    )}
+                  </React.Fragment>
+                );
+              }
 
-            // If displaying sprints (no project)
-            else if (hasSprint) {
-              const sprint = item;
-              const isExpanded = expandedItems.has(sprint.id);
-              const hasSprintTasks = hasTask && sprint.tasks?.length > 0;
-              const sprintBarStyle = calculateBarPosition(sprint.startDate, sprint.endDate);
+              // If displaying sprints (no project)
+              else if (hasSprint) {
+                const sprint = item;
+                const isExpanded = expandedItems.has(sprint.id);
+                const hasSprintTasks = hasTask && sprint.tasks?.length > 0;
+                const sprintBarStyle = calculateBarPosition(sprint.startDate, sprint.endDate);
 
-              return (
-                <React.Fragment key={sprint.id}>
-                  <GanttSprintBar sprint={sprint} barStyle={sprintBarStyle} />
+                return (
+                  <React.Fragment key={sprint.id}>
+                    <GanttSprintBar sprint={sprint} barStyle={sprintBarStyle} />
 
-                  {/* Task Bars under Sprint */}
-                  {isExpanded &&
-                    hasSprintTasks &&
-                    sprint.tasks.map((task) => {
-                      const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
-                      return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
-                    })}
-                </React.Fragment>
-              );
-            }
+                    {/* Task Bars under Sprint */}
+                    {isExpanded &&
+                      hasSprintTasks &&
+                      sprint.tasks.map((task) => {
+                        const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
+                        return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
+                      })}
+                  </React.Fragment>
+                );
+              }
 
-            // If displaying tasks only (no project, no sprint)
-            else if (hasTask) {
-              const task = item;
-              const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
-              return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
-            }
+              // If displaying tasks only (no project, no sprint)
+              else if (hasTask) {
+                const task = item;
+                const taskBarStyle = calculateBarPosition(task.startDate, task.dueDate);
+                return <GanttTaskBar key={task.id} task={task} barStyle={taskBarStyle} />;
+              }
 
-            return null;
-          })}
+              return null;
+            })}
+          </div>
         </div>
       </div>
     </div>
