@@ -189,7 +189,7 @@ const ProjectSettingsGeneral = () => {
           />
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
           <Input label="Type" name="type" value={formData.type} disabled />
           <div className="flex flex-col">
             <label className="block text-sm font-medium text-neutral-700 mb-2">Status</label>
@@ -204,7 +204,6 @@ const ProjectSettingsGeneral = () => {
               <option value="completed">Completed</option>
             </select>
           </div>
-          <div />
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
