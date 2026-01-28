@@ -25,6 +25,7 @@ const auditLogRoutes = require("./routes/auditLogRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const timeLogRoutes = require("./routes/timeLogRoutes");
 const performanceRoutes = require("./routes/performanceRoutes");
+const meetingRoutes = require("./routes/meetingRoutes.js");
 
 const corsOptions = {
   origin: "http://localhost:3000",
@@ -73,5 +74,6 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/timelogs", timeLogRoutes);
 app.use("/api/performance", performanceRoutes);
+app.use("/api/meetings", meetingRoutes);
 
 module.exports = app;
