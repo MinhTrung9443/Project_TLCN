@@ -13,7 +13,7 @@ export const getMeetings = (projectId, status, teamId, memberId) => {
   if (status) params.status = status;
   if (teamId) params.teamId = teamId;
   if (memberId) params.memberId = memberId;
-  
+
   return apiClient.get("/meetings", { params });
 };
 
@@ -39,5 +39,5 @@ export const rsvpToMeeting = (meetingId, status, reason) => {
 
 // You can add other service functions here as needed, e.g.:
 export const createMeeting = (meetingData) => apiClient.post("/meetings", meetingData);
-// export const updateMeeting = (meetingId, updateData) => apiClient.put(`/meetings/${meetingId}`, updateData);
-// export const deleteMeeting = (meetingId) => apiClient.delete(`/meetings/${meetingId}`);
+export const updateMeeting = (meetingId, updateData) => apiClient.put(`/meetings/${meetingId}`, updateData);
+export const deleteMeeting = (meetingId) => apiClient.delete(`/meetings/${meetingId}`);

@@ -1,6 +1,5 @@
 const Meeting = require("../models/Meeting");
 const Project = require("../models/Project");
-const NotificationService = require("./NotificationService"); // Giả định NotificationService đã có
 const mongoose = require("mongoose");
 
 const MeetingService = {
@@ -12,10 +11,10 @@ const MeetingService = {
    */
   async createMeeting(meetingData, creatorId) {
     const { projectId, participants = [] } = meetingData;
-
-    const project = await Project.findById(projectId).select('members teams').lean();
+    console.log("Creating meeting with data:", meetingData, "by user:", creatorId);
+    const project = await Project.findById(projectId).select("members teams").lean();
     if (!project) {
-      throw new Error('Project not found.');
+      throw new Error("Project not found.");
     }
 
     // Kiểm tra xem người tạo có phải là thành viên của dự án không
@@ -35,6 +34,10 @@ const MeetingService = {
       creatorParticipant.status = "accepted";
     }
 
+    meetingData.members.forEach((t) => {
+      participants.push({ userId: t, status: "pending" });
+    });
+
     const meeting = new Meeting({
       ...meetingData,
       createdBy: creatorId,
@@ -45,19 +48,8 @@ const MeetingService = {
     await meeting.populate("createdBy", "fullname avatar");
     await meeting.populate("participants.userId", "fullname avatar");
 
-    // Gửi thông báo đến những người được mời (trừ người tạo)
-    const notificationPromises = meeting.participants
-      .filter((p) => !p.userId.equals(creatorId))
-      .map((p) =>
-        NotificationService.createNotification(
-          p.userId._id,
-          `You were invited to a meeting "${meeting.title}" by ${meeting.createdBy.fullname}.`,
-          `/app/projects/${project.key}/meetings`, // Link tới trang chi tiết cuộc họp
-        ),
-      );
-
-    await Promise.all(notificationPromises);
-
+    // Gửi thông báo đến tất cả người tham gia ngoại trừ người tạo
+    // code hoàn thiện sau
     return meeting;
   },
 
@@ -65,17 +57,26 @@ const MeetingService = {
    * Lấy danh sách các cuộc họp theo dự án, có thể lọc theo trạng thái
    * @param {string} userId ID người dùng hiện tại
    * @param {string} projectId ID dự án
-   * @param {string|null} status Trạng thái tham gia ('pending', 'accepted', 'declined')
    * @returns {Promise<Array>} Danh sách cuộc họp
+   * @param {string|null} status Trạng thái tham gia ('pending', 'accepted', 'declined')
+   * @param {string|null} teamId ID đội (nếu lọc theo đội)
+   * @param {string|null} memberId ID thành viên (nếu lọc theo thành viên)
    */
-  async getMeetingsByProject(userId, projectId, status) {
-    const query = { projectId, "participants.userId": userId };
-    if (status) {
-      query["participants.status"] = status;
+  async getMeetingsByProject(userId, projectId, status, teamId, memberId) {
+    const query = { projectId, participants: { $elemMatch: { userId: userId, status: status || "accepted" } } };
+
+    if (teamId) {
+      query.relatedTeamId = teamId;
     }
+    if (memberId) {
+      query["participants.userId"] = memberId;
+    }
+
     return Meeting.find(query)
       .populate("createdBy", "fullname avatar")
       .populate("participants.userId", "fullname avatar")
+      .populate("relatedTeamId", "name")
+      .populate("relatedTaskId", "key name")
       .sort({ startTime: -1 })
       .lean();
   },
@@ -88,18 +89,18 @@ const MeetingService = {
    */
   async getMeetingsForPM(projectId, filters = {}) {
     const query = { projectId };
-    
+
     if (filters.memberId) {
-      query['participants.userId'] = filters.memberId;
+      query["participants.userId"] = filters.memberId;
     }
-    
+
     if (filters.teamId) {
       query.relatedTeamId = filters.teamId;
     }
 
     return Meeting.find(query)
-      .populate('createdBy', 'fullname avatar')
-      .populate('participants.userId', 'fullname avatar')
+      .populate("createdBy", "fullname avatar")
+      .populate("participants.userId", "fullname avatar")
       .sort({ startTime: -1 })
       .lean();
   },
@@ -110,27 +111,27 @@ const MeetingService = {
    * @param {string} leaderId ID của leader
    * @returns {Promise<Array>} Danh sách cuộc họp
    */
-  async getMeetingsForLeader(projectId, leaderId) {
-    const project = await Project.findById(projectId).select('teams').lean();
-    if (!project) throw new Error('Project not found.');
+  async getMeetingsForLeader(projectId, leaderId, filters = {}) {
+    const project = await Project.findById(projectId).select("teams").lean();
+    if (!project) throw new Error("Project not found.");
 
     // Tìm tất cả các team mà người này làm leader
-    const ledTeams = project.teams.filter(team => team.leaderId.equals(leaderId));
-    const ledTeamIds = ledTeams.map(team => team.teamId);
+    const ledTeams = project.teams.filter((team) => team.leaderId.equals(leaderId));
+    const ledTeamIds = ledTeams.map((team) => team.teamId);
 
     const query = {
       projectId,
       $or: [
         // Các cuộc họp của các team mình lead
-        { relatedTo: 'team', relatedId: { $in: ledTeamIds } },
+        { relatedTo: "team", relatedId: { $in: ledTeamIds } },
         // Các cuộc họp mình được mời tham gia trực tiếp
-        { 'participants.userId': leaderId }
-      ]
+        { "participants.userId": leaderId },
+      ],
     };
 
     return Meeting.find(query)
-      .populate('createdBy', 'fullname avatar')
-      .populate('participants.userId', 'fullname avatar')
+      .populate("createdBy", "fullname avatar")
+      .populate("participants.userId", "fullname avatar")
       .sort({ startTime: -1 })
       .lean();
   },
@@ -188,17 +189,7 @@ const MeetingService = {
     await meeting.save();
 
     // Gửi thông báo về việc cập nhật cuộc họp
-    const notificationPromises = meeting.participants
-      .filter((p) => !p.userId.equals(userId))
-      .map((p) =>
-        NotificationService.createNotification(
-          p.userId,
-          `The meeting "${meeting.title}" has been updated by ${meeting.createdBy}.`,
-          `/app/projects/${meeting.projectId}/meetings`, // Link tới trang chi tiết cuộc họp
-        ),
-      );
 
-    await Promise.all(notificationPromises);
     return meeting;
   },
 
@@ -209,7 +200,7 @@ const MeetingService = {
    * @param {string} status 'accepted' hoặc 'declined'
    * @returns {Promise<object>} Cuộc họp đã cập nhật
    */
-  async handleRsvp(meetingId, userId, status) {
+  async handleRsvp(meetingId, userId, status, reason) {
     const meeting = await Meeting.findOne({ _id: meetingId, "participants.userId": userId });
     if (!meeting) {
       throw new Error("Invitation to this meeting not found.");
@@ -220,19 +211,12 @@ const MeetingService = {
     const participant = meeting.participants.find((p) => p.userId.equals(userId));
     if (participant) {
       participant.status = status;
+      if (status === "declined" && reason) {
+        participant.reason = reason;
+      }
     }
 
     await meeting.save();
-
-    // Gửi thông báo cho người tạo cuộc họp
-    if (!meeting.createdBy.equals(userId)) {
-      const user = await mongoose.model("User").findById(userId, "fullname");
-      await NotificationService.createNotification(
-        meeting.createdBy,
-        `${user.fullname} has ${status === "accepted" ? "accepted" : "declined"} the invitation to the meeting "${meeting.title}".`,
-        `/app/meetings/${meeting._id}`, // Cần điều chỉnh link
-      );
-    }
 
     return meeting;
   },
@@ -259,7 +243,7 @@ const MeetingService = {
       throw new Error("Cannot delete a completed meeting.");
     }
 
-    await meeting.remove();
+    await meeting.deleteOne();
     return { message: "The meeting has been successfully deleted." };
   },
 };

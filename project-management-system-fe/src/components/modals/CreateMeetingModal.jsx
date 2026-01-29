@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect, useMemo } from "react";
 import { ProjectContext } from "../../contexts/ProjectContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { getProjectDetails } from "../../services/projectService";
 import { createMeeting } from "../../services/meetingService";
@@ -8,6 +9,7 @@ import Avatar from "../common/Avatar";
 
 const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
   const { projectData } = useContext(ProjectContext);
+  const { user } = useAuth();
   const [detailedProjectData, setDetailedProjectData] = useState(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -47,8 +49,9 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
         memberMap.set(m._id, m);
       });
     });
-    return Array.from(memberMap.values());
-  }, [detailedProjectData]);
+    const currentUserId = user?._id?.toString();
+    return Array.from(memberMap.values()).filter((member) => member?._id?.toString() !== currentUserId);
+  }, [detailedProjectData, user?._id]);
 
   useEffect(() => {
     let initialMembers = [];
@@ -114,8 +117,8 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
         startTime,
         endTime,
         scope,
-        teamId: scope === "team" ? selectedTeam : null,
-        taskId: scope === "task" ? selectedTask : null,
+        relatedTeamId: scope === "team" ? selectedTeam : null,
+        relatedTaskId: scope === "task" ? selectedTask : null,
         members: members.map((m) => m._id),
         projectId: projectData._id,
       };

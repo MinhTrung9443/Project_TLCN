@@ -43,6 +43,7 @@ const MeetingSchema = new Schema(
     },
     relatedTeamId: {
       type: Schema.Types.ObjectId,
+      ref: "Group"
     },
     relatedTaskId: {
       type: Schema.Types.ObjectId,

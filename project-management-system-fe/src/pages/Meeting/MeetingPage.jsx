@@ -4,9 +4,10 @@ import PageHeader from '../../components/ui/PageHeader';
 import MeetingListComponent from '../../components/meetings/MeetingListComponent';
 import InvitationListComponent from '../../components/meetings/InvitationListComponent';
 import CreateMeetingModal from '../../components/modals/CreateMeetingModal';
-
+import { useAuth } from '../../contexts/AuthContext';
 const MeetingPage = () => {
   const { projectKey } = useParams();
+  const {user} = useAuth();
   const [activeTab, setActiveTab] = useState('list'); // 'list' or 'invitations'
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Add refresh key
@@ -30,53 +31,46 @@ const MeetingPage = () => {
 
   return (
     <div className="flex flex-col h-screen bg-neutral-50">
-      <PageHeader
-        icon="groups"
-        badge={projectKey}
-        title="Meetings"
-        subtitle="Schedule and manage project meetings"
-      />
-      
+      <PageHeader icon="groups" badge={projectKey} title="Meetings" subtitle="Schedule and manage project meetings" />
+
       <div className="flex-1 overflow-hidden p-4 md:p-6">
         <div className="h-full bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col">
           {/* Tab Navigation */}
           <div className="p-4 border-b border-neutral-200 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setActiveTab('list')}
-                className={tabClass('list')}
-              >
+              <button onClick={() => setActiveTab("list")} className={tabClass("list")}>
                 All Meetings
               </button>
-              <button
-                onClick={() => setActiveTab('invitations')}
-                className={tabClass('invitations')}
-              >
-                Invitations
-              </button>
+              {!(user.role === "admin") && (
+                <button onClick={() => setActiveTab("invitations")} className={tabClass("invitations")}>
+                  Invitations
+                </button>
+              )}
+              {!(user.role === "admin") && (
+                <button onClick={() => setActiveTab("managed")} className={tabClass("managed")}>
+                  Managed Meetings
+                </button>
+              )}
             </div>
             <button
-                onClick={() => setCreateModalOpen(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600 flex items-center gap-2"
+              onClick={() => setCreateModalOpen(true)}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600 flex items-center gap-2"
             >
-                <span className="material-symbols-outlined">add</span>
-                Create Meeting
+              <span className="material-symbols-outlined">add</span>
+              Create Meeting
             </button>
           </div>
-          
+
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto">
-            {activeTab === 'list' && <MeetingListComponent key={refreshKey} />}
-            {activeTab === 'invitations' && <InvitationListComponent />}
+            {activeTab === "list" && <MeetingListComponent key={refreshKey} />}
+            {activeTab === "invitations" && <InvitationListComponent />}
+            {activeTab === "managed" && <MeetingListComponent managedOnly={true} key={refreshKey} />}
           </div>
         </div>
       </div>
       {isCreateModalOpen && (
-        <CreateMeetingModal 
-          isOpen={isCreateModalOpen}
-          onClose={() => setCreateModalOpen(false)}
-          onMeetingCreated={handleMeetingCreated}
-        />
+        <CreateMeetingModal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} onMeetingCreated={handleMeetingCreated} />
       )}
     </div>
   );

@@ -32,32 +32,8 @@ const MeetingController = {
         return res.status(404).json({ message: 'Không tìm thấy dự án.' });
       }
 
-      let meetings;
-
-      // 1. Kiểm tra có phải là Project Manager không?
-      const pmInfo = project.members.find(m => m.userId.equals(userId) && m.role === 'PROJECT_MANAGER') || req.user.role === 'admin';
-      if (pmInfo) {
-        const filters = { teamId, memberId };
-        meetings = await MeetingService.getMeetingsForPM(projectId, filters);
-        return res.status(200).json(meetings);
-      }
-
-      // 2. Nếu không phải PM, kiểm tra có phải là Leader không?
-      const isLeader = project.teams.some(t => t.leaderId.equals(userId));
-      if (isLeader) {
-        meetings = await MeetingService.getMeetingsForLeader(projectId, userId);
-        return res.status(200).json(meetings);
-      }
-
-      // 3. Nếu không phải cả hai, kiểm tra có phải là Member không?
-      const memberInfo = project.teams.some((t) => t.members.some((m) => m.equals(userId)));
-      if (memberInfo) {
-        meetings = await MeetingService.getMeetingsByProject(userId, projectId, status);
-        return res.status(200).json(meetings);
-      }
-      
-      // 4. Nếu không phải tất cả các vai trò trên
-      return res.status(403).json({ message: 'You are not authorized to view this data.' });
+      let meetings = await MeetingService.getMeetingsByProject(userId, projectId, status);
+      return res.status(200).json(meetings);
 
     } catch (error) {
       res.status(500).json({ message: 'Server error', error: error.message });
@@ -93,11 +69,11 @@ const MeetingController = {
    */
   async handleRsvp(req, res) {
     try {
-      const { status } = req.body;
+      const { status, reason } = req.body;
       if (!["accepted", "declined"].includes(status)) {
         return res.status(400).json({ message: "Invalid status." });
       }
-      const meeting = await MeetingService.handleRsvp(req.params.meetingId, req.user._id, status);
+      const meeting = await MeetingService.handleRsvp(req.params.meetingId, req.user._id, status, reason);
       res.status(200).json(meeting);
     } catch (error) {
       res.status(400).json({ message: "Fail to process RSVP", error: error.message });
