@@ -24,6 +24,7 @@ import TaskFinderPage from "./pages/ManageTask/TaskFinderPage"; // <-- IMPORT
 import TaskDetailPage from "./pages/ManageTask/TaskDetailPage";
 import BacklogPage from "./pages/ManageSprint/BacklogPage";
 import ActiveSprintPage from "./pages/ManageSprint/ActiveSprintPage";
+import MeetingPage from "./pages/Meeting/MeetingPage";
 import GanttPage from "./pages/Gantt/GantPage.jsx";
 import AdminAuditLogPage from "./pages/AuditLog/AdminAuditLogPage.jsx";
 import ProjectSettingsGeneral from "./pages/ManageProject/ProjectSettingsGeneral";
@@ -69,6 +70,7 @@ function App() {
                 {/* Các route khác thuộc một project */}
                 <Route path="task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
                 <Route path="task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
+                <Route path="task-mgmt/projects/:projectKey/meetings" element={<MeetingPage />} />
 
                 {/* --- Organization Routes - All users can view, only admin can manage --- */}
                 <Route path="organization">

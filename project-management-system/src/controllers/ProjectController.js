@@ -239,6 +239,17 @@ const handleRemoveMemberFromTeam = async (req, res) => {
   }
 };
 
+
+const handleGetProjectDetails = async (req, res) => {
+  try {
+    const { projectKey } = req.params;
+    const projectDetails = await projectService.getProjectDetails(projectKey);
+    res.status(200).json(projectDetails);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
+};
+
 module.exports = {
   // Admin
   handleCreateProject,
@@ -256,6 +267,7 @@ module.exports = {
   handleGetProjectByKey,
   handleGetProjectById,
   handleGetProjectMembers,
+  handleGetProjectDetails,
 
   handleRemoveMember,
   handleRemoveTeam,

@@ -35,7 +35,7 @@ const MeetingController = {
       let meetings;
 
       // 1. Kiểm tra có phải là Project Manager không?
-      const pmInfo = project.members.find(m => m.userId.equals(userId) && m.role === 'PROJECT_MANAGER');
+      const pmInfo = project.members.find(m => m.userId.equals(userId) && m.role === 'PROJECT_MANAGER') || req.user.role === 'admin';
       if (pmInfo) {
         const filters = { teamId, memberId };
         meetings = await MeetingService.getMeetingsForPM(projectId, filters);
@@ -50,7 +50,7 @@ const MeetingController = {
       }
 
       // 3. Nếu không phải cả hai, kiểm tra có phải là Member không?
-      const memberInfo = project.teams.some(t => t.members.includes(userId));
+      const memberInfo = project.teams.some((t) => t.members.some((m) => m.equals(userId)));
       if (memberInfo) {
         meetings = await MeetingService.getMeetingsByProject(userId, projectId, status);
         return res.status(200).json(meetings);

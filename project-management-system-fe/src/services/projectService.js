@@ -28,6 +28,10 @@ export const getProjectByKey = (key) => {
   return apiClient.get(`/projects/key/${key}`);
 };
 
+export const getProjectDetails = (projectKey) => {
+  return apiClient.get(`/projects/key/${projectKey}/details`);
+};
+
 export const getProjectById = (id) => {
   return apiClient.get(`/projects/${id}`);
 };

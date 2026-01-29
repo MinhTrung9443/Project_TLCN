@@ -91,6 +91,14 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       </span>
                     </NavLink>
 
+                    <NavLink to={getProjectPath("meetings")} className={navItemClass}>
+                      <span className="material-symbols-outlined">groups</span>
+                      <span className="flex items-center gap-1">
+                        <span>Meetings</span>
+                        <span className="text-xs text-neutral-400">({selectedProjectKey})</span>
+                      </span>
+                    </NavLink>
+
                     <NavLink to={getProjectPath("settings/general")} className={navItemClass}>
                       <span className="material-symbols-outlined">settings</span>
                       <span className="flex items-center gap-1">
