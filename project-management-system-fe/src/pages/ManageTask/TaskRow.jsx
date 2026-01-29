@@ -99,9 +99,11 @@ const TaskRow = ({ task, onTaskClick }) => {
       </TableCell>
 
       <TableCell className="max-w-xs py-2 px-2 text-sm">
-        <p className="text-neutral-900 font-medium truncate" title={task.name}>
+        <div className="flex items-center h-9 w-full">
+        <div className="text-neutral-900 font-medium truncate" title={task.name}>
           {task.name}
-        </p>
+        </div>
+        </div>
       </TableCell>
 
       <TableCell className="py-2 px-2 text-sm">

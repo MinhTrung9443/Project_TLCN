@@ -517,7 +517,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
             )}
           </div>
 
-          <div className="flex gap-3 px-6 py-4 border-t border-neutral-200 bg-neutral-50">
+          <div className="flex gap-3 px-6 py-4 border-t border-neutral-200 bg-neutral-50 justify-end">
             <button
               type="button"
               className="px-4 py-2 border border-neutral-300 rounded-lg text-neutral-700 hover:bg-white font-medium transition-colors"

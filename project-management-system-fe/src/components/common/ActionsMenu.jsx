@@ -19,31 +19,37 @@ const ActionsMenu = ({ onDelete, onAddAttachment }) => {
     };
   }, []);
 
-  const handleActionClick = (action) => {
+  const handleActionClick = (action, event) => {
+    if (event && event.stopPropagation) event.stopPropagation();
     setIsOpen(false);
-    action();
+    // Delay calling the action to allow the click event to finish
+    // This prevents modal/popover opened by the action from immediately
+    // receiving the same click as an 'outside' click and closing.
+    setTimeout(() => {
+      if (typeof action === "function") action();
+    }, 0);
   };
 
   return (
     <div className="relative" ref={menuRef}>
-      <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" onClick={() => setIsOpen(!isOpen)}>
+      <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}>
         <FaEllipsisV />
       </button>
       {isOpen && (
-        <ul className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+        <ul className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 list-none p-0 m-0">
           <li
-            className="px-4 py-2 hover:bg-gray-100 text-gray-700 cursor-pointer flex items-center gap-3 transition-colors"
-            onClick={() => handleActionClick(onAddAttachment)}
+            className="px-3 py-2 hover:bg-gray-100 text-gray-700 cursor-pointer flex items-center gap-3 transition-colors"
+            onClick={(e) => handleActionClick(onAddAttachment, e)}
           >
-            <FaPaperclip />
-            <span>Add Attachment</span>
+            <span className="w-5 flex items-center justify-center text-base text-neutral-600"><FaPaperclip /></span>
+            <span className="truncate">Add Attachment</span>
           </li>
           <li
-            className="px-4 py-2 hover:bg-red-50 text-red-600 cursor-pointer flex items-center gap-3 transition-colors"
-            onClick={() => handleActionClick(onDelete)}
+            className="px-3 py-2 hover:bg-red-50 text-red-600 cursor-pointer flex items-center gap-3 transition-colors"
+            onClick={(e) => handleActionClick(onDelete, e)}
           >
-            <FaTrash />
-            <span>Delete Task</span>
+            <span className="w-5 flex items-center justify-center text-base text-red-600"><FaTrash /></span>
+            <span className="truncate">Delete Task</span>
           </li>
         </ul>
       )}
