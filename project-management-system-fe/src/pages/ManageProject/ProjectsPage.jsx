@@ -30,6 +30,7 @@ const ProjectsPage = () => {
   const [archivedProjects, setArchivedProjects] = useState([]);
   const [view, setView] = useState("active");
   const [loading, setLoading] = useState(true);
+  const [layoutMode, setLayoutMode] = useState("compact");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -82,6 +83,64 @@ const ProjectsPage = () => {
     setSelectedProject(project);
     setDeleteAction("archive");
     setIsDeleteModalOpen(true);
+  };
+
+  const renderGridProjects = () => {
+    const paginatedProjects = getPaginatedProjects();
+
+    return paginatedProjects.map((project) => (
+      <div key={project._id} className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4 flex flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleProjectSelect(project);
+                }}
+                className="text-primary-600 hover:text-primary-700 font-semibold text-lg"
+              >
+                {project.name}
+              </button>
+              <div className="text-xs text-neutral-500 mt-1">{project.key} • {project.type || "-"}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={view === "active" ? "success" : "danger"}>{view === "active" ? project.status : "Archived"}</Badge>
+            </div>
+          </div>
+
+          <div className="mt-3 text-sm text-neutral-600 grid grid-cols-2 gap-2">
+            <div>
+              <div className="text-xs text-neutral-500">Manager</div>
+              <div className="truncate">{project.projectManager?.fullname || "N/A"}</div>
+            </div>
+            <div>
+              <div className="text-xs text-neutral-500">Members</div>
+              <div>{getTotalMembers(project)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-neutral-500">{view === "active" ? "Created" : "Archived"}</div>
+              <div>{formatDate(view === "active" ? project.createdAt : project.deletedAt)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-neutral-500">Type</div>
+              <div>{project.type || "-"}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-xs text-neutral-500">Key: {project.key}</div>
+          <div>
+            {view === "active" ? (
+              <ProjectActionsMenu project={project} onDelete={openArchiveModal} />
+            ) : (
+              <ArchivedProjectActionsMenu project={project} onRestore={handleRestore} onDelete={openPermanentDeleteModal} />
+            )}
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   const openPermanentDeleteModal = (project) => {
@@ -207,42 +266,48 @@ const ProjectsPage = () => {
   };
 
   const renderFilters = () => (
-    <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-lg border border-neutral-200">
-      <label className="flex items-center gap-2 text-sm text-neutral-600">
-        <span className="text-xs font-semibold uppercase text-neutral-500">Type</span>
-        <Select value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)} placeholder={null}>
-          <option value="">All Types</option>
-          <option value="Scrum">Scrum</option>
-          <option value="Kanban">Kanban</option>
-        </Select>
-      </label>
-
-      <label className="flex items-center gap-2 text-sm text-neutral-600">
-        <span className="text-xs font-semibold uppercase text-neutral-500">Manager</span>
-        <Select value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)} placeholder={null}>
-          <option value="">All Project Managers</option>
-          {getProjectManagers().map((pm) => (
-            <option key={pm._id} value={pm._id}>
-              {pm.fullname}
-            </option>
-          ))}
-        </Select>
-      </label>
-
-      {view === "active" && (
-        <label className="flex items-center gap-2 text-sm text-neutral-600">
-          <span className="text-xs font-semibold uppercase text-neutral-500">Status</span>
-          <Select value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)} placeholder={null}>
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
+    <div className="p-4 bg-white rounded-lg border border-neutral-200 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+        <div>
+          <label className="block text-xs font-semibold text-neutral-500 mb-1">Type</label>
+          <Select value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)} placeholder={null}>
+            <option value="">All Types</option>
+            <option value="Scrum">Scrum</option>
+            <option value="Kanban">Kanban</option>
           </Select>
-        </label>
-      )}
+        </div>
 
-      <Button variant="secondary" size="md" onClick={() => setFilters({ type: "", projectManager: "", status: "" })}>
-        Clear Filters
-      </Button>
+        <div>
+          <label className="block text-xs font-semibold text-neutral-500 mb-1">Manager</label>
+          <Select value={filters.projectManager} onChange={(e) => handleFilterChange("projectManager", e.target.value)} placeholder={null}>
+            <option value="">All Project Managers</option>
+            {getProjectManagers().map((pm) => (
+              <option key={pm._id} value={pm._id}>
+                {pm.fullname}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        {view === "active" ? (
+          <div>
+            <label className="block text-xs font-semibold text-neutral-500 mb-1">Status</label>
+            <Select value={filters.status} onChange={(e) => handleFilterChange("status", e.target.value)} placeholder={null}>
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </Select>
+          </div>
+        ) : (
+          <div />
+        )}
+
+        <div className="flex items-center justify-end">
+          <Button variant="secondary" size="md" onClick={() => setFilters({ type: "", projectManager: "", status: "" })} className="w-full">
+            Clear Filters
+          </Button>
+        </div>
+      </div>
     </div>
   );
 
@@ -321,6 +386,14 @@ const ProjectsPage = () => {
                   Deleted Projects
                 </Button>
               )}
+                <div className="flex items-center gap-2 ml-2">
+                  <Button variant={layoutMode === "compact" ? "primary" : "secondary"} size="sm" onClick={() => setLayoutMode("compact")} icon="view_list">
+                    Compact
+                  </Button>
+                  <Button variant={layoutMode === "grid" ? "primary" : "secondary"} size="sm" onClick={() => setLayoutMode("grid")} icon="grid_view">
+                    Grid
+                  </Button>
+                </div>
             </div>
             <div className="w-full lg:max-w-sm">
               <Input
@@ -341,31 +414,41 @@ const ProjectsPage = () => {
             </div>
           ) : (
             <div className="bg-white rounded-lg border border-neutral-200 overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-neutral-50">
-                    <TableHead>Project</TableHead>
-                    <TableHead>Key</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Project Manager</TableHead>
-                    <TableHead>Members</TableHead>
-                    <TableHead>{view === "active" ? "Created Date" : "Archived Date"}</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {renderProjects().length > 0 ? (
-                    renderProjects()
+              {layoutMode === "grid" ? (
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {renderGridProjects().length > 0 ? (
+                    renderGridProjects()
                   ) : (
-                    <TableRow>
-                      <TableCell colSpan="8" className="text-center py-8 text-neutral-500">
-                        No projects found.
-                      </TableCell>
-                    </TableRow>
+                    <div className="col-span-full text-center py-12 text-neutral-500">No projects found.</div>
                   )}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                <Table className="text-sm">
+                  <TableHeader>
+                    <TableRow className="bg-neutral-50">
+                      <TableHead>Project</TableHead>
+                      <TableHead>Key</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Project Manager</TableHead>
+                      <TableHead>Members</TableHead>
+                      <TableHead>{view === "active" ? "Created Date" : "Archived Date"}</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {renderProjects().length > 0 ? (
+                      renderProjects()
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan="8" className="text-center py-8 text-neutral-500">
+                          No projects found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           )}
 
