@@ -13,13 +13,17 @@ const MeetingService = {
   async createMeeting(meetingData, creatorId) {
     const { projectId, participants = [] } = meetingData;
 
+    const project = await Project.findById(projectId).select('members teams').lean();
+    if (!project) {
+      throw new Error('Project not found.');
+    }
+
     // Kiểm tra xem người tạo có phải là thành viên của dự án không
-    const project = await Project.findById(projectId);
-    if (
-      !project ||
-      !project.members.some((m) => m.userId.equals(creatorId)) ||
-      (project.teams.some((t) => t.leaderId.equals(creatorId)) === false && project.teams.every((t) => !t.members.includes(creatorId)))
-    ) {
+    const isProjectMember = project.members.some((m) => m.userId.equals(creatorId));
+    const isTeamLeader = project.teams.some((t) => t.leaderId.equals(creatorId));
+    const isTeamMember = project.teams.some((t) => t.members.some((m) => m.equals(creatorId)));
+
+    if (!project || (!isProjectMember && !isTeamLeader && !isTeamMember)) {
       throw new Error("You are not a member of the project.");
     }
 
