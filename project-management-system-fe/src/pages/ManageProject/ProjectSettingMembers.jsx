@@ -176,10 +176,10 @@ const ProjectSettingMembers = () => {
               <img
                 src={projectManager.userId.avatar}
                 alt=""
-                className="w-17 h-17 rounded-full object-cover border-4 border-neutral-200 flex-shrink-0"
+                className="w-16 h-16 rounded-full object-cover border-2 border-neutral-200 flex-shrink-0"
               />
             ) : (
-              <div className="w-17 h-17 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 text-white flex items-center justify-center text-2xl font-bold flex-shrink-0 shadow-md">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 text-white flex items-center justify-center text-2xl font-bold flex-shrink-0 shadow-md">
                 {(projectManager.userId.fullname || projectManager.userId.username || "PM").charAt(0).toUpperCase()}
               </div>
             )}

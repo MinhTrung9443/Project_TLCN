@@ -60,6 +60,65 @@ const BacklogPage = () => {
     setLoading(false);
   };
 
+  const [creatingSprint, setCreatingSprint] = useState(false);
+
+  const handleCreateSprint = async () => {
+    if (!selectedProjectKey) return;
+    try {
+      setCreatingSprint(true);
+      await sprintService.createSprint(selectedProjectKey);
+      toast.success("Sprint created.");
+      await fetchSprintList();
+    } catch (error) {
+      toast.error("Failed to create sprint.");
+    } finally {
+      setCreatingSprint(false);
+    }
+  };
+
+  const handleEditSprint = (sprint) => {
+    setSprintToEdit(sprint);
+    setEditModalOpen(true);
+  };
+
+  const handleStartSprint = async (sprint) => {
+    try {
+      await sprintService.updateSprint(sprint._id, { status: "Started" });
+      toast.success("Sprint started.");
+      fetchSprintList();
+    } catch (error) {
+      toast.error("Failed to start sprint.");
+    }
+  };
+
+  const handleCompleteSprint = async (sprint) => {
+    try {
+      await sprintService.updateSprint(sprint._id, { status: "Completed" });
+      toast.success("Sprint completed.");
+      fetchSprintList();
+    } catch (error) {
+      toast.error("Failed to complete sprint.");
+    }
+  };
+
+  const handleRequestDeleteSprint = (sprint) => {
+    setSprintToDelete(sprint);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDeleteSprint = async () => {
+    if (!sprintToDelete) return;
+    try {
+      await sprintService.deleteSprint(sprintToDelete._id);
+      toast.success("Sprint deleted.");
+      setShowDeleteModal(false);
+      setSprintToDelete(null);
+      fetchSprintList();
+    } catch (error) {
+      toast.error("Failed to delete sprint.");
+    }
+  };
+
   const handleDrop = async (draggedItem, target) => {
     const { task } = draggedItem;
 
@@ -104,7 +163,9 @@ const BacklogPage = () => {
           description="Plan and organize your project tasks"
           actions={
             canManageSprints && projectType !== "Kanban" ? (
-              <Button onClick={() => sprintService.createSprint(selectedProjectKey)}>Create Sprint</Button>
+              <Button onClick={handleCreateSprint} disabled={creatingSprint}>
+                {creatingSprint ? "Creating..." : "Create Sprint"}
+              </Button>
             ) : null
           }
         />
@@ -115,10 +176,10 @@ const BacklogPage = () => {
               <SprintList
                 sprintList={sprintList}
                 onDrop={handleDrop}
-                onEdit={setSprintToEdit}
-                onStart={() => {}}
-                onComplete={() => {}}
-                onDelete={setSprintToDelete}
+                onEdit={handleEditSprint}
+                onStart={handleStartSprint}
+                onComplete={handleCompleteSprint}
+                onDelete={handleRequestDeleteSprint}
                 onSprintNameClick={() => {}}
                 onTaskClick={(t) => navigate(`/app/task/${t.key}`)}
                 projectType={projectType}
@@ -161,7 +222,7 @@ const BacklogPage = () => {
           isOpen={showDeleteModal}
           title="Confirm Delete"
           message={`Are you sure you want to delete sprint "${sprintToDelete?.name}"?`}
-          onConfirm={() => {}}
+          onConfirm={handleConfirmDeleteSprint}
           onClose={() => setShowDeleteModal(false)}
         />
 
