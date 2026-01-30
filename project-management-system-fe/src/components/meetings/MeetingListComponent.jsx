@@ -48,7 +48,7 @@ const MeetingItem = ({ meeting, isSelected, onSelect }) => (
   </button>
 );
 
-const MeetingListComponent = ({ managedOnly = false }) => {
+const MeetingListComponent = () => {
   const { projectData, userProjectRole } = useContext(ProjectContext);
   const { user } = useAuth();
   const [meetings, setMeetings] = useState([]);
@@ -74,7 +74,7 @@ const MeetingListComponent = ({ managedOnly = false }) => {
     }
     try {
       setLoading(true);
-      const res = !managedOnly ? await getMeetings(projectData._id) : await getMeetings(projectData._id, { managedBy: userProjectRole.userId });
+      const res = await getMeetings(projectData._id);
       const data = res.data || [];
       setMeetings(data);
       setSelectedMeeting((prev) => {
@@ -91,7 +91,7 @@ const MeetingListComponent = ({ managedOnly = false }) => {
 
   useEffect(() => {
     fetchMeetings();
-  }, [projectData, userProjectRole, managedOnly]);
+  }, [projectData, userProjectRole]);
 
   useEffect(() => {
     if (!selectedMeeting) return;

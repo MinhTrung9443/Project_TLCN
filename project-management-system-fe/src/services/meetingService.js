@@ -18,6 +18,18 @@ export const getMeetings = (projectId, status, teamId, memberId) => {
 };
 
 /**
+ * Fetches meetings managed by the current user.
+ * - Admin: all meetings in the project
+ * - PM: all meetings in the project
+ * - Team Leader: meetings of teams they lead
+ * @param {string} projectId - The ID of the project.
+ * @returns {Promise}
+ */
+export const getManagedMeetings = (projectId) => {
+  return apiClient.get("/meetings/managed", { params: { projectId } });
+};
+
+/**
  * Fetches all meetings the current user is invited to across all projects.
  * @returns {Promise}
  */

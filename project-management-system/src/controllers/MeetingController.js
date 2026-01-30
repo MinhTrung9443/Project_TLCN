@@ -91,6 +91,50 @@ const MeetingController = {
       res.status(400).json({ message: "Fail to delete meeting", error: error.message });
     }
   },
+
+  /**
+   * Lấy danh sách cuộc họp mà người dùng quản lý
+   * - Admin: lấy toàn bộ cuộc họp của project
+   * - PM: lấy tất cả cuộc họp của project
+   * - Team Leader: lấy cuộc họp của các team mà mình lead
+   */
+  async getManagedMeetings(req, res) {
+    try {
+      const { projectId } = req.query;
+      const userId = req.user._id;
+      const userRole = req.user.role;
+
+
+      if (!projectId) {
+        return res.status(400).json({ message: 'Cần cung cấp projectId.' });
+      }
+
+      const project = await Project.findById(projectId)
+        .select('members teams')
+        .lean();
+      
+      if (!project) {
+        return res.status(404).json({ message: 'Không tìm thấy dự án.' });
+      }
+
+      let meetings;
+
+      if (userRole === 'admin') {
+        // Admin: lấy tất cả cuộc họp của project (trừ cuộc họp đã accepted)
+        meetings = await MeetingService.getMeetingsForAdmin(projectId);
+      } else if (project.members.some(m => m.userId.equals(userId))) {
+        // PM: lấy tất cả cuộc họp của project (trừ cuộc họp đã accepted)
+        meetings = await MeetingService.getMeetingsForPM(projectId, userId);
+      } else if (project.teams.some(t => t.leaderId.equals(userId))) {
+        // Team Leader: lấy cuộc họp của các team mà mình lead (trừ cuộc họp đã accepted)
+        meetings = await MeetingService.getMeetingsForLeader(projectId, userId);
+      }
+
+      return res.status(200).json(meetings);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  },
 };
 
 module.exports = MeetingController;

@@ -82,12 +82,12 @@ const MeetingService = {
   },
 
   /**
-   * Lấy danh sách cuộc họp cho Project Manager (có thể lọc)
+   * Lấy danh sách cuộc họp cho Admin (có thể lọc)
    * @param {string} projectId ID dự án
    * @param {object} filters Các bộ lọc { teamId, memberId }
    * @returns {Promise<Array>} Danh sách cuộc họp
    */
-  async getMeetingsForPM(projectId, filters = {}) {
+  async getMeetingsForAdmin(projectId, filters = {}) {
     const query = { projectId };
 
     if (filters.memberId) {
@@ -101,6 +101,39 @@ const MeetingService = {
     return Meeting.find(query)
       .populate("createdBy", "fullname avatar")
       .populate("participants.userId", "fullname avatar")
+      .populate("relatedTeamId", "name description")
+      .populate("relatedTaskId", "key name priority")
+      .sort({ startTime: -1 })
+      .lean();
+  },
+
+  /**
+   * Lấy danh sách cuộc họp cho Project Manager (có thể lọc)
+   * @param {string} projectId ID dự án
+   * @param {string} userId ID của PM (để loại trừ cuộc họp đã accepted)
+   * @param {object} filters Các bộ lọc { teamId, memberId }
+   * @returns {Promise<Array>} Danh sách cuộc họp
+   */
+  async getMeetingsForPM(projectId, userId, filters = {}) {
+    const query = {
+      projectId,
+      // Loại trừ các cuộc họp mà user đã accepted
+      participants: { $not: { $elemMatch: { userId: userId, status: "accepted" } } },
+    };
+
+    if (filters.memberId) {
+      query["participants.userId"] = filters.memberId;
+    }
+
+    if (filters.teamId) {
+      query.relatedTeamId = filters.teamId;
+    }
+
+    return Meeting.find(query)
+      .populate("createdBy", "fullname avatar")
+      .populate("participants.userId", "fullname avatar")
+      .populate("relatedTeamId", "name description")
+      .populate("relatedTaskId", "key name priority")
       .sort({ startTime: -1 })
       .lean();
   },
@@ -115,23 +148,30 @@ const MeetingService = {
     const project = await Project.findById(projectId).select("teams").lean();
     if (!project) throw new Error("Project not found.");
 
-    // Tìm tất cả các team mà người này làm leader
-    const ledTeams = project.teams.filter((team) => team.leaderId.equals(leaderId));
-    const ledTeamIds = ledTeams.map((team) => team.teamId);
+    // Tìm team mà người này làm leader (1 leader chỉ lead 1 team)
+    const ledTeam = project.teams.find((team) => team.leaderId.equals(leaderId));
+
+    if (!ledTeam) {
+      return []; // Không lead team nào thì return empty
+    }
 
     const query = {
       projectId,
+      // Loại trừ các cuộc họp mà leader đã accepted
+      participants: { $not: { $elemMatch: { userId: leaderId, status: "accepted" } } },
       $or: [
-        // Các cuộc họp của các team mình lead
-        { relatedTo: "team", relatedId: { $in: ledTeamIds } },
-        // Các cuộc họp mình được mời tham gia trực tiếp
-        { "participants.userId": leaderId },
+        // Các cuộc họp liên quan đến team mình lead
+        { relatedTeamId: ledTeam._id },
+        // Các cuộc họp của các thành viên trong team
+        { "participants.userId": { $in: ledTeam.members } },
       ],
     };
 
     return Meeting.find(query)
       .populate("createdBy", "fullname avatar")
       .populate("participants.userId", "fullname avatar")
+      .populate("relatedTeamId", "name description")
+      .populate("relatedTaskId", "key name priority")
       .sort({ startTime: -1 })
       .lean();
   },
