@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@livekit/components-react": "^2.9.19",
+    "@livekit/components-styles": "^1.2.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
@@ -20,6 +22,8 @@
     "bootstrap-icons": "^1.13.1",
     "dagre": "^0.8.5",
     "emoji-picker-react": "^4.15.0",
+    "file-saver": "^2.0.5",
+    "livekit-client": "^2.17.0",
     "moment": "^2.30.1",
     "react": "^19.1.1",
     "react-bootstrap": "^2.10.10",

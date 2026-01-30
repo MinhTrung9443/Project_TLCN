@@ -53,3 +53,25 @@ export const rsvpToMeeting = (meetingId, status, reason) => {
 export const createMeeting = (meetingData) => apiClient.post("/meetings", meetingData);
 export const updateMeeting = (meetingId, updateData) => apiClient.put(`/meetings/${meetingId}`, updateData);
 export const deleteMeeting = (meetingId) => apiClient.delete(`/meetings/${meetingId}`);
+
+/**
+ * Join a meeting and get LiveKit token
+ * @param {string} meetingId - The ID of the meeting
+ * @returns {Promise} Response with token, roomName, serverUrl, isHost
+ */
+export const joinMeeting = (meetingId) => apiClient.post(`/meetings/${meetingId}/join`);
+
+/**
+ * End a meeting (host only)
+ * @param {string} meetingId - The ID of the meeting
+ * @returns {Promise}
+ */
+export const endMeeting = (meetingId) => apiClient.post(`/meetings/${meetingId}/end`);
+
+/**
+ * Kick a participant from meeting (host only)
+ * @param {string} meetingId - The ID of the meeting
+ * @param {string} participantId - The ID of the participant to kick
+ * @returns {Promise}
+ */
+export const kickParticipant = (meetingId, participantId) => apiClient.post(`/meetings/${meetingId}/kick/${participantId}`);

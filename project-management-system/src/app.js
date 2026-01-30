@@ -28,11 +28,13 @@ const performanceRoutes = require("./routes/performanceRoutes");
 const meetingRoutes = require("./routes/meetingRoutes.js");
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
+
+console.log("[CORS] Configured for origin:", corsOptions.origin);
 
 // --- Sử dụng Middlewares ---
 
@@ -41,7 +43,7 @@ app.use(cors(corsOptions));
 
 // Bật xử lý pre-flight và set headers CORS thủ công
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header("Access-Control-Allow-Origin", corsOptions.origin);
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Credentials", "true");

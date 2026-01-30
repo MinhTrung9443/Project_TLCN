@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const MeetingController = require("../controllers/MeetingController");
+const LiveKitController = require("../controllers/LiveKitController");
 const { protect } = require("../middleware/authMiddleware");
 
 // Tất cả các route dưới đây đều yêu cầu xác thực
@@ -14,5 +15,10 @@ router.get("/my-schedule", MeetingController.getMySchedule);
 router.put("/:meetingId", MeetingController.updateMeeting);
 router.post("/:meetingId/rsvp", MeetingController.handleRsvp);
 router.delete("/:meetingId", MeetingController.deleteMeeting);
+
+// LiveKit routes
+router.post("/:meetingId/join", LiveKitController.joinMeeting);
+router.post("/:meetingId/end", LiveKitController.endMeeting);
+router.post("/:meetingId/kick/:participantId", LiveKitController.kickParticipant);
 
 module.exports = router;

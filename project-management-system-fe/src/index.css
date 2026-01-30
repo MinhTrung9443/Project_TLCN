@@ -59,3 +59,60 @@ label.required::after {
 .required {
   @apply text-red-600 font-bold;
 }
+
+/* Custom scrollbar for meeting room sidebars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* LiveKit video tiles styling */
+.lk-video-conference {
+  width: 100%;
+  height: 100%;
+}
+
+.lk-participant {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.lk-participant-tile {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.lk-participant-tile video {
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+/* Single participant - smaller frame */
+.lk-participant-row:nth-child(1):last-child .lk-participant {
+  max-width: 90%;
+  max-height: 90%;
+  margin: auto;
+}
+
+/* Multiple participants - grid layout */
+.lk-participant-row {
+  margin: 0.5rem;
+}
+
+.lk-participant {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

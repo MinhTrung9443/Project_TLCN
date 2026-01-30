@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { getMeetings, updateMeeting, deleteMeeting } from "../../services/meetingService";
+import { getMeetings, updateMeeting, deleteMeeting, joinMeeting } from "../../services/meetingService";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import EmptyState from "../ui/EmptyState";
@@ -51,6 +52,7 @@ const MeetingItem = ({ meeting, isSelected, onSelect }) => (
 const MeetingListComponent = () => {
   const { projectData, userProjectRole } = useContext(ProjectContext);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
@@ -141,6 +143,11 @@ const MeetingListComponent = () => {
     }
   };
 
+  const handleJoinMeeting = () => {
+    if (!selectedMeeting?._id) return;
+    navigate(`/meeting-room/${selectedMeeting._id}`);
+  };
+
   if (loading)
     return (
       <div className="p-6">
@@ -190,7 +197,12 @@ const MeetingListComponent = () => {
                   <span className="px-3 py-1 text-xs rounded-full border border-neutral-200 text-neutral-600">
                     {selectedMeeting.status || "scheduled"}
                   </span>
-                  <button className="px-3 py-1.5 text-xs font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600">Join</button>
+                  <button
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600"
+                    onClick={handleJoinMeeting}
+                  >
+                    Join
+                  </button>
                   {user?._id && selectedMeeting.createdBy?._id?.toString() === user._id.toString() ? (
                     <>
                       <button

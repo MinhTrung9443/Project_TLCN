@@ -25,6 +25,7 @@ import TaskDetailPage from "./pages/ManageTask/TaskDetailPage";
 import BacklogPage from "./pages/ManageSprint/BacklogPage";
 import ActiveSprintPage from "./pages/ManageSprint/ActiveSprintPage";
 import MeetingPage from "./pages/Meeting/MeetingPage";
+import MeetingRoomPage from "./pages/Meeting/MeetingRoomPage";
 import GanttPage from "./pages/Gantt/GantPage.jsx";
 import AdminAuditLogPage from "./pages/AuditLog/AdminAuditLogPage.jsx";
 import ProjectSettingsGeneral from "./pages/ManageProject/ProjectSettingsGeneral";
@@ -43,7 +44,8 @@ function App() {
             <Route path="/" element={<MarketingLandingPage />} /> {/* <-- THAY ĐỔI QUAN TRỌNG */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-
+            {/* Meeting Room - Separate route outside Layout */}
+            <Route path="/meeting-room/:meetingId" element={<MeetingRoomPage />} />
             {/* === CÁC ROUTE CẦN ĐĂNG NHẬP === */}
             <Route path="/app" element={<PrivateRoute />}>
               <Route element={<Layout />}>
