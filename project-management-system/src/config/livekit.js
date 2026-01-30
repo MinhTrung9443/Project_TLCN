@@ -1,9 +1,9 @@
 const { AccessToken, RoomServiceClient } = require("livekit-server-sdk");
 
-const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || "devkey";
-const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || "devsecret1234567890abcdefghijklmnopqrstuvwxyz";
-const LIVEKIT_URL = process.env.LIVEKIT_URL || "ws://localhost:7880";
-const LIVEKIT_HOST = process.env.LIVEKIT_HOST || "http://localhost:7880";
+const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
+const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
+const LIVEKIT_URL = process.env.LIVEKIT_URL;
+const LIVEKIT_HOST = process.env.LIVEKIT_HOST;
 
 /**
  * Create LiveKit access token for a participant
