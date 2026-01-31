@@ -163,6 +163,22 @@ const MeetingController = {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
     }
   },
+
+  /**
+   * Upload chat history file to meeting
+   */
+  async uploadChatHistory(req, res) {
+    try {
+      const { meetingId } = req.params;
+      const userId = req.user._id;
+
+      const updatedMeeting = await MeetingService.uploadChatHistory(meetingId, req.file, userId);
+      res.status(200).json(updatedMeeting);
+    } catch (error) {
+      console.error("Error uploading chat history:", error);
+      res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+  },
 };
 
 module.exports = MeetingController;

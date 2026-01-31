@@ -101,3 +101,15 @@ export const addMeetingAttachment = (meetingId, file) => {
 export const deleteMeetingAttachment = (meetingId, attachmentId) => {
   return apiClient.delete(`/meetings/${meetingId}/attachments/${attachmentId}`);
 };
+
+/**
+ * Upload chat history to a meeting
+ * @param {string} meetingId - The ID of the meeting
+ * @param {File} file - The chat history file
+ * @returns {Promise}
+ */
+export const uploadChatHistory = (meetingId, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiClient.post(`/meetings/${meetingId}/chat-history`, formData);
+};

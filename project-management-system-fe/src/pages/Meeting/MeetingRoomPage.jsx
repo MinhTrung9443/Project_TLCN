@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { LiveKitRoom, VideoConference, RoomAudioRenderer, useRoomContext, useParticipants } from "@livekit/components-react";
 import { RoomEvent } from "livekit-client";
 import "@livekit/components-styles";
-import { joinMeeting, endMeeting as endMeetingAPI, kickParticipant as kickParticipantAPI } from "../../services/meetingService";
+import { joinMeeting, endMeeting as endMeetingAPI, kickParticipant as kickParticipantAPI, uploadChatHistory } from "../../services/meetingService";
 import { toast } from "react-toastify";
 import { saveAs } from "file-saver";
 
@@ -14,17 +14,6 @@ const MeetingHeader = ({ meetingInfo, chatMessages }) => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  const exportChat = () => {
-    if (chatMessages.length === 0) {
-      toast.info("No messages to export");
-      return;
-    }
-    const chatText = chatMessages.map((msg) => `[${new Date(msg.timestamp).toLocaleString()}] ${msg.from}: ${msg.message}`).join("\n");
-    const blob = new Blob([chatText], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, `meeting-chat-${new Date().toISOString().slice(0, 10)}.txt`);
-    toast.success("Chat exported");
-  };
 
   const timeStr = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -55,7 +44,7 @@ const MeetingHeader = ({ meetingInfo, chatMessages }) => {
   );
 };
 
-const ChatPanel = ({ chatMessages, onClose, onExport, room, onSendMessage }) => {
+const ChatPanel = ({ chatMessages, onClose, room, onSendMessage }) => {
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useCallback((node) => {
     if (node) {
@@ -67,7 +56,6 @@ const ChatPanel = ({ chatMessages, onClose, onExport, room, onSendMessage }) => 
     if (!messageInput.trim() || !room) return;
 
     const text = messageInput.trim();
-    const senderName = room.localParticipant.name || room.localParticipant.identity || "You";
 
     try {
       // Send message via LiveKit DataChannel - encode as string, not JSON
@@ -94,11 +82,6 @@ const ChatPanel = ({ chatMessages, onClose, onExport, room, onSendMessage }) => 
           <span className="text-xs text-gray-500">({chatMessages.length})</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={onExport} className="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Export chat">
-            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </button>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Close">
             <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -192,6 +175,24 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
   const handleEndMeeting = async () => {
     if (!window.confirm("End meeting for everyone?")) return;
     try {
+      // Auto-export chat history if there are messages
+      if (chatMessages.length > 0) {
+        const chatText = chatMessages.map((msg) => `[${new Date(msg.timestamp).toLocaleString()}] ${msg.from}: ${msg.message}`).join("\n");
+        const blob = new Blob([chatText], { type: "text/plain;charset=utf-8" });
+        const file = new File([blob], `meeting-chat-${new Date().toISOString().slice(0, 10)}.txt`, {
+          type: "text/plain",
+        });
+
+        // Upload chat history
+        try {
+          await uploadChatHistory(meetingId, file);
+          toast.success("Chat history saved");
+        } catch (error) {
+          console.error("Failed to upload chat history:", error);
+          toast.warn("Meeting ended but chat history could not be saved");
+        }
+      }
+
       await endMeetingAPI(meetingId);
       toast.success("Meeting ended");
       room.disconnect();
@@ -220,17 +221,6 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
       room.localParticipant.setCameraEnabled(!isCameraOn);
       setIsCameraOn(!isCameraOn);
     }
-  };
-
-  const exportChat = () => {
-    if (chatMessages.length === 0) {
-      toast.info("No messages to export");
-      return;
-    }
-    const chatText = chatMessages.map((msg) => `[${new Date(msg.timestamp).toLocaleString()}] ${msg.from}: ${msg.message}`).join("\n");
-    const blob = new Blob([chatText], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, `meeting-chat-${new Date().toISOString().slice(0, 10)}.txt`);
-    toast.success("Chat exported");
   };
 
   return (
@@ -464,7 +454,6 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
         <ChatPanel
           chatMessages={chatMessages}
           onClose={() => setShowChat(false)}
-          onExport={exportChat}
           room={room}
           onSendMessage={(text) => {
             setChatMessages((prev) => [

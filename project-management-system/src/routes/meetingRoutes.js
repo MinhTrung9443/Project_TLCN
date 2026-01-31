@@ -21,6 +21,16 @@ router.delete("/:meetingId", MeetingController.deleteMeeting);
 router.post("/:meetingId/attachments", uploadMiddleware.single("file"), MeetingController.addAttachment);
 router.delete("/:meetingId/attachments/:attachmentId", MeetingController.deleteAttachment);
 
+// Chat history route - using chatHistoryUpload with memory storage
+router.post(
+  "/:meetingId/chat-history",
+  uploadMiddleware.chatHistoryUpload.single("file"),
+  (req, res, next) => {
+    next();
+  },
+  MeetingController.uploadChatHistory,
+);
+
 // LiveKit routes
 router.post("/:meetingId/join", LiveKitController.joinMeeting);
 router.post("/:meetingId/end", LiveKitController.endMeeting);

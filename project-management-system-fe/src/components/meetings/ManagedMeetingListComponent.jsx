@@ -153,6 +153,23 @@ const ManagedMeetingListComponent = () => {
               </div>
             )}
 
+            {/* Chat History */}
+            {selectedMeeting.chatHistoryLink && (
+              <div>
+                <h4 className="text-sm font-semibold text-neutral-800 mb-2">Chat History</h4>
+                <a
+                  href={selectedMeeting.chatHistoryLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-2 bg-blue-50 text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-lg transition-colors group border border-blue-200"
+                >
+                  <span className="material-symbols-outlined text-base">message</span>
+                  <span className="text-sm truncate flex-1">Download Chat History</span>
+                  <span className="material-symbols-outlined text-base opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                </a>
+              </div>
+            )}
+
             {selectedMeeting.relatedTeamId ? (
               <div className="border-t border-neutral-200 pt-4">
                 <h4 className="text-sm font-semibold text-neutral-800 mb-2">Related Team</h4>

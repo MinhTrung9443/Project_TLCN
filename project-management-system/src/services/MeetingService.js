@@ -12,7 +12,6 @@ const MeetingService = {
    */
   async createMeeting(meetingData, creatorId) {
     const { projectId, participants = [] } = meetingData;
-    console.log("Creating meeting with data:", meetingData, "by user:", creatorId);
     const project = await Project.findById(projectId).select("members teams").lean();
     if (!project) {
       throw new Error("Project not found.");
@@ -326,6 +325,13 @@ const MeetingService = {
       throw error;
     }
 
+    if (meeting.status === "completed") {
+      await cloudinary.uploader.destroy(file.filename);
+      const error = new Error("Cannot add attachments to a completed meeting");
+      error.statusCode = 400;
+      throw error;
+    }
+
     const newAttachment = {
       filename: file.originalname,
       url: file.path,
@@ -369,6 +375,12 @@ const MeetingService = {
       throw error;
     }
 
+    if (meeting.status === "completed") {
+      const error = new Error("Cannot delete attachments from a completed meeting");
+      error.statusCode = 400;
+      throw error;
+    }
+
     try {
       await cloudinary.uploader.destroy(attachment.public_id);
     } catch (cloudinaryError) {
@@ -379,6 +391,87 @@ const MeetingService = {
     const updatedMeeting = await meeting.save();
 
     return updatedMeeting.populate("createdBy", "fullname avatar");
+  },
+
+  /**
+   * Upload chat history file to meeting
+   */
+  async uploadChatHistory(meetingId, file, userId) {
+    if (!mongoose.Types.ObjectId.isValid(meetingId)) {
+      const error = new Error("Invalid meeting ID");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!file) {
+      const error = new Error("No file provided");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!file.buffer) {
+      console.error("File object received but no buffer:", {
+        filename: file.filename,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        hasBuffer: !!file.buffer,
+        bufferLength: file.buffer ? file.buffer.length : 0,
+      });
+      const error = new Error("File buffer is empty");
+      error.statusCode = 400;
+      throw error;
+    }
+
+
+
+    const meeting = await Meeting.findById(meetingId);
+    if (!meeting) {
+      const error = new Error("Meeting not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Kiểm tra quyền - chỉ host có thể upload chat history
+    if (!meeting.createdBy.equals(userId)) {
+      const error = new Error("You do not have permission to upload chat history");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    try {
+      // Upload file using a promise wrapper
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "meeting_chat_history",
+            resource_type: "auto",
+            filename_override: file.originalname || "chat-history.txt",
+          },
+          (error, result) => {
+            if (error) {
+              console.error("Cloudinary stream error:", error);
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          },
+        );
+
+        stream.end(file.buffer);
+      });
+
+      // Update meeting with chat history link
+      meeting.chatHistoryLink = result.secure_url;
+      const updatedMeeting = await meeting.save();
+
+      return updatedMeeting.populate("createdBy", "fullname avatar");
+    } catch (cloudinaryError) {
+      console.error("Error uploading chat history to Cloudinary:", cloudinaryError);
+      const error = new Error("Failed to upload chat history: " + (cloudinaryError.message || "Unknown error"));
+      error.statusCode = 500;
+      throw error;
+    }
   },
 };
 
