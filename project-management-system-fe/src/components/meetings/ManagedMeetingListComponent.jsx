@@ -131,6 +131,28 @@ const ManagedMeetingListComponent = () => {
               </div>
             ) : null}
 
+            {/* Attachments */}
+            {selectedMeeting.attachments && selectedMeeting.attachments.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-neutral-800 mb-2">Attachments</h4>
+                <div className="space-y-1 p-2 bg-neutral-50 rounded-lg border border-neutral-200">
+                  {selectedMeeting.attachments.map((attachment) => (
+                    <a
+                      key={attachment._id}
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 text-primary-600 hover:text-primary-700 hover:bg-neutral-100 rounded transition-colors group"
+                    >
+                      <span className="material-symbols-outlined text-base">attach_file</span>
+                      <span className="text-sm truncate flex-1">{attachment.filename}</span>
+                      <span className="material-symbols-outlined text-base opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {selectedMeeting.relatedTeamId ? (
               <div className="border-t border-neutral-200 pt-4">
                 <h4 className="text-sm font-semibold text-neutral-800 mb-2">Related Team</h4>

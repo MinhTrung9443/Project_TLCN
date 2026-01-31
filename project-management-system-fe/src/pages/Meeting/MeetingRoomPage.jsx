@@ -398,6 +398,28 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
                 <p className="text-sm text-gray-900">{new Date(meetingInfo.startTime).toLocaleString()}</p>
               </div>
             )}
+            {meetingInfo?.attachments && meetingInfo.attachments.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Attachments ({meetingInfo.attachments.length})</p>
+                <div className="space-y-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                  {meetingInfo.attachments.map((attachment) => (
+                    <a
+                      key={attachment._id}
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors group"
+                    >
+                      <span className="material-symbols-outlined text-base flex-shrink-0">attach_file</span>
+                      <span className="text-sm truncate flex-1">{attachment.filename}</span>
+                      <span className="material-symbols-outlined text-sm opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        open_in_new
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

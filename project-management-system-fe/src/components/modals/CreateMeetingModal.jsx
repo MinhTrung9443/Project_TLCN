@@ -3,7 +3,7 @@ import { ProjectContext } from "../../contexts/ProjectContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { getProjectDetails } from "../../services/projectService";
-import { createMeeting } from "../../services/meetingService";
+import { createMeeting, addMeetingAttachment } from "../../services/meetingService";
 import InputField from "../common/InputField";
 import Avatar from "../common/Avatar";
 
@@ -20,6 +20,8 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
   const [selectedTask, setSelectedTask] = useState("");
   const [members, setMembers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   useEffect(() => {
     if (isOpen && projectData?.key) {
@@ -122,7 +124,19 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
         members: members.map((m) => m._id),
         projectId: projectData._id,
       };
-      await createMeeting(meetingData);
+      const response = await createMeeting(meetingData);
+
+      // Upload attachments if any
+      if (attachments.length > 0) {
+        for (const file of attachments) {
+          try {
+            await addMeetingAttachment(response.data._id, file);
+          } catch (error) {
+            toast.warn(`Failed to upload ${file.name}, but meeting created successfully.`);
+          }
+        }
+      }
+
       toast.success("Meeting created successfully!");
       onMeetingCreated(); // Callback to refresh the list
       onClose(); // Close the modal
@@ -131,6 +145,15 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    setAttachments([...attachments, ...files]);
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
   };
 
   if (!isOpen) return null;
@@ -257,6 +280,52 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
                 ))}
                 {members.length === 0 && <p className="text-neutral-500 text-sm p-1">No members selected. Add members from the dropdown above.</p>}
               </div>
+            </div>
+
+            {/* Attachments */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">Attachments</label>
+              <div className="border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-input"
+                  accept=".doc,.docx,.pptx,.pdf,.xlsx,.txt,.jpg,.png,.gif"
+                />
+                <label htmlFor="file-input" className="cursor-pointer">
+                  <div className="text-neutral-600 hover:text-primary-600">
+                    <p className="text-sm">Drag files here or click to select</p>
+                    <p className="text-xs text-neutral-500 mt-1">Supported: Word, PPT, PDF, Excel, Images, etc.</p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Attachment List */}
+              {attachments.length > 0 && (
+                <div className="mt-3 space-y-2 p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+                  {attachments.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-white rounded border border-neutral-200 hover:border-primary-300"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="material-symbols-outlined text-base text-primary-500">attach_file</span>
+                        <span className="text-sm text-neutral-700 truncate">{file.name}</span>
+                        <span className="text-xs text-neutral-500 whitespace-nowrap">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="ml-2 text-neutral-500 hover:text-red-600 flex-shrink-0"
+                      >
+                        <span className="material-symbols-outlined text-base">delete</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-8 pt-4 border-t border-neutral-200 flex-shrink-0">

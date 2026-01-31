@@ -45,6 +45,8 @@ const LiveKitController = {
           description: meeting.description,
           startTime: meeting.startTime,
           endTime: meeting.endTime,
+          participants: meeting.participants,
+          attachments: meeting.attachments,
         },
       });
     } catch (error) {

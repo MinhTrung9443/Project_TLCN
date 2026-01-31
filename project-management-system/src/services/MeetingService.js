@@ -1,6 +1,7 @@
 const Meeting = require("../models/Meeting");
 const Project = require("../models/Project");
 const mongoose = require("mongoose");
+const cloudinary = require("../config/cloudinary");
 
 const MeetingService = {
   /**
@@ -283,8 +284,101 @@ const MeetingService = {
       throw new Error("Cannot delete a completed meeting.");
     }
 
+    // Xóa tất cả attachment từ Cloudinary
+    if (meeting.attachments && meeting.attachments.length > 0) {
+      for (const attachment of meeting.attachments) {
+        try {
+          await cloudinary.uploader.destroy(attachment.public_id);
+        } catch (error) {
+          console.error(`Error deleting attachment ${attachment.public_id}:`, error);
+        }
+      }
+    }
+
     await meeting.deleteOne();
     return { message: "The meeting has been successfully deleted." };
+  },
+
+  /**
+   * Thêm attachment vào cuộc họp
+   */
+  async addAttachment(meetingId, file, userId) {
+    if (!file) {
+      const error = new Error("No file provided");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const meeting = await Meeting.findById(meetingId);
+    if (!meeting) {
+      // Xóa file từ Cloudinary nếu meeting không tồn tại
+      await cloudinary.uploader.destroy(file.filename);
+      const error = new Error("Meeting not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Kiểm tra quyền (chỉ người tạo mới có thể thêm attachment)
+    if (!meeting.createdBy.equals(userId)) {
+      await cloudinary.uploader.destroy(file.filename);
+      const error = new Error("You do not have permission to add attachments to this meeting");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const newAttachment = {
+      filename: file.originalname,
+      url: file.path,
+      public_id: file.filename,
+    };
+
+    meeting.attachments.push(newAttachment);
+    const updatedMeeting = await meeting.save();
+
+    return updatedMeeting.populate("createdBy", "fullname avatar");
+  },
+
+  /**
+   * Xóa attachment từ cuộc họp
+   */
+  async deleteAttachment(meetingId, attachmentId, userId) {
+    if (!mongoose.Types.ObjectId.isValid(meetingId) || !mongoose.Types.ObjectId.isValid(attachmentId)) {
+      const error = new Error("Invalid ID");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const meeting = await Meeting.findById(meetingId);
+    if (!meeting) {
+      const error = new Error("Meeting not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Kiểm tra quyền
+    if (!meeting.createdBy.equals(userId)) {
+      const error = new Error("You do not have permission to delete attachments from this meeting");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const attachment = meeting.attachments.id(attachmentId);
+    if (!attachment) {
+      const error = new Error("Attachment not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    try {
+      await cloudinary.uploader.destroy(attachment.public_id);
+    } catch (cloudinaryError) {
+      console.error(`Error deleting file from Cloudinary (public_id: ${attachment.public_id}):`, cloudinaryError);
+    }
+
+    meeting.attachments.pull(attachmentId);
+    const updatedMeeting = await meeting.save();
+
+    return updatedMeeting.populate("createdBy", "fullname avatar");
   },
 };
 

@@ -9,6 +9,7 @@ import EmptyState from "../ui/EmptyState";
 import Avatar from "../common/Avatar";
 import InputField from "../common/InputField";
 import ConfirmationModal from "../common/ConfirmationModal";
+import EditMeetingModal from "../modals/EditMeetingModal";
 
 const statusStyles = {
   accepted: "bg-success-100 text-success-700 border-success-200",
@@ -56,18 +57,10 @@ const MeetingListComponent = () => {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ title: "", description: "", startTime: "", endTime: "" });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const participantCount = useMemo(() => selectedMeeting?.participants?.length || 0, [selectedMeeting]);
-
-  const toLocalInput = (dateStr) => {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().slice(0, 16);
-  };
 
   const fetchMeetings = async () => {
     if (!projectData?._id) {
@@ -94,41 +87,6 @@ const MeetingListComponent = () => {
   useEffect(() => {
     fetchMeetings();
   }, [projectData, userProjectRole]);
-
-  useEffect(() => {
-    if (!selectedMeeting) return;
-    setEditForm({
-      title: selectedMeeting.title || "",
-      description: selectedMeeting.description || "",
-      startTime: toLocalInput(selectedMeeting.startTime),
-      endTime: toLocalInput(selectedMeeting.endTime),
-    });
-  }, [selectedMeeting]);
-
-  const handleSaveEdit = async () => {
-    if (!selectedMeeting?._id) return;
-    if (!editForm.title || !editForm.startTime || !editForm.endTime) {
-      toast.error("Please fill in title, start time, and end time.");
-      return;
-    }
-    if (new Date(editForm.startTime) >= new Date(editForm.endTime)) {
-      toast.error("End time must be after start time.");
-      return;
-    }
-    try {
-      await updateMeeting(selectedMeeting._id, {
-        title: editForm.title,
-        description: editForm.description,
-        startTime: editForm.startTime,
-        endTime: editForm.endTime,
-      });
-      toast.success("Meeting updated.");
-      setIsEditing(false);
-      await fetchMeetings();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update meeting.");
-    }
-  };
 
   const handleDelete = async () => {
     if (!selectedMeeting?._id) return;
@@ -207,9 +165,9 @@ const MeetingListComponent = () => {
                     <>
                       <button
                         className="px-3 py-1.5 text-xs font-medium text-neutral-700 bg-neutral-100 rounded-md hover:bg-neutral-200"
-                        onClick={() => setIsEditing((prev) => !prev)}
+                        onClick={() => setIsEditModalOpen(true)}
                       >
-                        {isEditing ? "Cancel" : "Edit"}
+                        Edit
                       </button>
                       <button
                         className="px-3 py-1.5 text-xs font-medium text-white bg-accent-600 rounded-md hover:bg-accent-700"
@@ -222,60 +180,34 @@ const MeetingListComponent = () => {
                 </div>
               </div>
 
-              {isEditing ? (
-                <div className="space-y-4">
-                  <InputField
-                    label="Title"
-                    id="editTitle"
-                    type="text"
-                    value={editForm.title}
-                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  />
-                  <InputField
-                    label="Description"
-                    id="editDescription"
-                    type="textarea"
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    rows="3"
-                  />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InputField
-                      label="Start Time"
-                      id="editStartTime"
-                      type="datetime-local"
-                      value={editForm.startTime}
-                      onChange={(e) => setEditForm({ ...editForm, startTime: e.target.value })}
-                    />
-                    <InputField
-                      label="End Time"
-                      id="editEndTime"
-                      type="datetime-local"
-                      value={editForm.endTime}
-                      onChange={(e) => setEditForm({ ...editForm, endTime: e.target.value })}
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      className="px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-md hover:bg-neutral-200"
-                      onClick={() => setIsEditing(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600"
-                      onClick={handleSaveEdit}
-                    >
-                      Save Changes
-                    </button>
-                  </div>
-                </div>
-              ) : selectedMeeting.description ? (
+              {selectedMeeting.description ? (
                 <div>
                   <h4 className="text-sm font-semibold text-neutral-800 mb-1">Description</h4>
                   <p className="text-sm text-neutral-700 whitespace-pre-line">{selectedMeeting.description}</p>
                 </div>
               ) : null}
+
+              {/* Attachments */}
+              {selectedMeeting.attachments && selectedMeeting.attachments.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-neutral-800 mb-2">Attachments</h4>
+                  <div className="space-y-1 p-2 bg-neutral-50 rounded-lg border border-neutral-200">
+                    {selectedMeeting.attachments.map((attachment) => (
+                      <a
+                        key={attachment._id}
+                        href={attachment.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 text-primary-600 hover:text-primary-700 hover:bg-neutral-100 rounded transition-colors group"
+                      >
+                        <span className="material-symbols-outlined text-base">attach_file</span>
+                        <span className="text-sm truncate flex-1">{attachment.filename}</span>
+                        <span className="material-symbols-outlined text-base opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -306,6 +238,15 @@ const MeetingListComponent = () => {
           )}
         </div>
       </div>
+      <EditMeetingModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        meeting={selectedMeeting}
+        onMeetingUpdated={() => {
+          fetchMeetings();
+          setSelectedMeeting(null);
+        }}
+      />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

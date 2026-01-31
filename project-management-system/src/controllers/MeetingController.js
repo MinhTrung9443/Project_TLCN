@@ -1,6 +1,6 @@
 const MeetingService = require("../services/MeetingService");
 
-const Project = require('../models/Project'); // Cần import Project model
+const Project = require("../models/Project"); // Cần import Project model
 
 const MeetingController = {
   /**
@@ -11,7 +11,7 @@ const MeetingController = {
       const meeting = await MeetingService.createMeeting(req.body, req.user._id);
       res.status(201).json(meeting);
     } catch (error) {
-      res.status(400).json({ message: 'Tạo cuộc họp thất bại', error: error.message });
+      res.status(400).json({ message: "Tạo cuộc họp thất bại", error: error.message });
     }
   },
 
@@ -24,19 +24,18 @@ const MeetingController = {
       const userId = req.user._id;
 
       if (!projectId) {
-        return res.status(400).json({ message: 'Cần cung cấp projectId.' });
+        return res.status(400).json({ message: "Cần cung cấp projectId." });
       }
-      
-      const project = await Project.findById(projectId).select('members teams').lean();
+
+      const project = await Project.findById(projectId).select("members teams").lean();
       if (!project) {
-        return res.status(404).json({ message: 'Không tìm thấy dự án.' });
+        return res.status(404).json({ message: "Không tìm thấy dự án." });
       }
 
       let meetings = await MeetingService.getMeetingsByProject(userId, projectId, status);
       return res.status(200).json(meetings);
-
     } catch (error) {
-      res.status(500).json({ message: 'Server error', error: error.message });
+      res.status(500).json({ message: "Server error", error: error.message });
     }
   },
 
@@ -104,35 +103,64 @@ const MeetingController = {
       const userId = req.user._id;
       const userRole = req.user.role;
 
-
       if (!projectId) {
-        return res.status(400).json({ message: 'Cần cung cấp projectId.' });
+        return res.status(400).json({ message: "Cần cung cấp projectId." });
       }
 
-      const project = await Project.findById(projectId)
-        .select('members teams')
-        .lean();
-      
+      const project = await Project.findById(projectId).select("members teams").lean();
+
       if (!project) {
-        return res.status(404).json({ message: 'Không tìm thấy dự án.' });
+        return res.status(404).json({ message: "Không tìm thấy dự án." });
       }
 
       let meetings;
 
-      if (userRole === 'admin') {
+      if (userRole === "admin") {
         // Admin: lấy tất cả cuộc họp của project (trừ cuộc họp đã accepted)
         meetings = await MeetingService.getMeetingsForAdmin(projectId);
-      } else if (project.members.some(m => m.userId.equals(userId))) {
+      } else if (project.members.some((m) => m.userId.equals(userId))) {
         // PM: lấy tất cả cuộc họp của project (trừ cuộc họp đã accepted)
         meetings = await MeetingService.getMeetingsForPM(projectId, userId);
-      } else if (project.teams.some(t => t.leaderId.equals(userId))) {
+      } else if (project.teams.some((t) => t.leaderId.equals(userId))) {
         // Team Leader: lấy cuộc họp của các team mà mình lead (trừ cuộc họp đã accepted)
         meetings = await MeetingService.getMeetingsForLeader(projectId, userId);
       }
 
       return res.status(200).json(meetings);
     } catch (error) {
-      res.status(500).json({ message: 'Server error', error: error.message });
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  },
+
+  /**
+   * Thêm attachment vào cuộc họp
+   */
+  async addAttachment(req, res) {
+    try {
+      const { meetingId } = req.params;
+      const userId = req.user._id;
+
+      const updatedMeeting = await MeetingService.addAttachment(meetingId, req.file, userId);
+      res.status(200).json(updatedMeeting);
+    } catch (error) {
+      console.error("Error adding attachment:", error);
+      res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+  },
+
+  /**
+   * Xóa attachment từ cuộc họp
+   */
+  async deleteAttachment(req, res) {
+    try {
+      const { meetingId, attachmentId } = req.params;
+      const userId = req.user._id;
+
+      const updatedMeeting = await MeetingService.deleteAttachment(meetingId, attachmentId, userId);
+      res.status(200).json(updatedMeeting);
+    } catch (error) {
+      console.error("Error deleting attachment:", error);
+      res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
     }
   },
 };

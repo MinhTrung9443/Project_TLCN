@@ -43,7 +43,7 @@ const MeetingSchema = new Schema(
     },
     relatedTeamId: {
       type: Schema.Types.ObjectId,
-      ref: "Group"
+      ref: "Group",
     },
     relatedTaskId: {
       type: Schema.Types.ObjectId,
@@ -67,10 +67,26 @@ const MeetingSchema = new Schema(
       type: String,
       trim: true,
     },
-    documentLink: {
-      type: String,
-      trim: true,
-    },
+    attachments: [
+      {
+        filename: {
+          type: String,
+          required: true,
+        },
+        url: {
+          type: String,
+          required: true,
+        },
+        public_id: {
+          type: String,
+          required: true,
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     startTime: {
       type: Date,
       required: true,

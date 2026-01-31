@@ -75,3 +75,29 @@ export const endMeeting = (meetingId) => apiClient.post(`/meetings/${meetingId}/
  * @returns {Promise}
  */
 export const kickParticipant = (meetingId, participantId) => apiClient.post(`/meetings/${meetingId}/kick/${participantId}`);
+
+/**
+ * Add attachment to a meeting
+ * @param {string} meetingId - The ID of the meeting
+ * @param {File} file - The file to upload
+ * @returns {Promise}
+ */
+export const addMeetingAttachment = (meetingId, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiClient.post(`/meetings/${meetingId}/attachments`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+/**
+ * Delete attachment from a meeting
+ * @param {string} meetingId - The ID of the meeting
+ * @param {string} attachmentId - The ID of the attachment to delete
+ * @returns {Promise}
+ */
+export const deleteMeetingAttachment = (meetingId, attachmentId) => {
+  return apiClient.delete(`/meetings/${meetingId}/attachments/${attachmentId}`);
+};
