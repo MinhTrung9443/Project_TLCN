@@ -64,7 +64,11 @@ const MeetingService = {
    */
   async getMeetingsByProject(userId, projectId, status, teamId, memberId) {
     const query = { projectId, participants: { $elemMatch: { userId: userId, status: status || "accepted" } } };
-
+    
+    if (status === "pending") {
+      query.status = "scheduled";
+    }
+    
     if (teamId) {
       query.relatedTeamId = teamId;
     }
@@ -72,13 +76,23 @@ const MeetingService = {
       query["participants.userId"] = memberId;
     }
 
-    return Meeting.find(query)
+    const meetings = await Meeting.find(query)
       .populate("createdBy", "fullname avatar")
       .populate("participants.userId", "fullname avatar")
       .populate("relatedTeamId", "name")
       .populate("relatedTaskId", "key name")
-      .sort({ startTime: -1 })
       .lean();
+
+    // Custom sort: ongoing -> scheduled -> completed, then by startTime descending
+    meetings.sort((a, b) => {
+      const statusOrder = { ongoing: 0, scheduled: 1, completed: 2 };
+      if (statusOrder[a.status] !== statusOrder[b.status]) {
+        return statusOrder[a.status] - statusOrder[b.status];
+      }
+      return new Date(b.startTime) - new Date(a.startTime);
+    });
+
+    return meetings;
   },
 
   /**

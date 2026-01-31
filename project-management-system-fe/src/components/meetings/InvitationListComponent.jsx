@@ -32,16 +32,16 @@ const InvitationItem = ({ invitation, onRsvp, isSelected, onSelect }) => {
           </p>
           <p className="text-xs text-neutral-500 mt-1">Host: {createdBy?.fullname || "Unknown User"}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {invitation.relatedTeamId?.name ? (
+            {invitation.relatedTeamId?.name && (
               <span className="px-2 py-0.5 text-xs rounded-full bg-primary-50 text-primary-700 border border-primary-200">
                 Team: {invitation.relatedTeamId.name}
               </span>
-            ) : null}
-            {invitation.relatedTaskId?.key ? (
+            )}
+            {invitation.relatedTaskId?.key && (
               <span className="px-2 py-0.5 text-xs rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200">
                 Task: {invitation.relatedTaskId.key}
               </span>
-            ) : null}
+            )}
           </div>
         </div>
         <span className="px-2.5 py-1 text-xs rounded-full border border-neutral-200 text-neutral-600">pending</span>
@@ -53,7 +53,7 @@ const InvitationItem = ({ invitation, onRsvp, isSelected, onSelect }) => {
             e.stopPropagation();
             onRsvp(invitation._id, "accepted");
           }}
-          className="px-3 py-1.5 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 transition-colors"
+          className="px-3 py-1.5 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700"
         >
           Accept
         </button>
@@ -63,7 +63,7 @@ const InvitationItem = ({ invitation, onRsvp, isSelected, onSelect }) => {
             e.stopPropagation();
             onRsvp(invitation._id, "declined");
           }}
-          className="px-3 py-1.5 text-xs font-medium text-white bg-accent-600 rounded-md hover:bg-accent-700 transition-colors"
+          className="px-3 py-1.5 text-xs font-medium text-white bg-accent-600 rounded-md hover:bg-accent-700"
         >
           Decline
         </button>
@@ -87,13 +87,12 @@ const InvitationListComponent = () => {
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
       const res = await getMeetings(projectData._id, "pending");
       setInvitations(res.data || []);
       setSelectedInvitation((prev) => prev || res.data?.[0] || null);
-    } catch (err) {
+    } catch {
       setError("Failed to load invitations.");
       toast.error("Failed to load invitations.");
     } finally {
@@ -107,10 +106,9 @@ const InvitationListComponent = () => {
 
   const handleRsvp = async (meetingId, status, reason = "") => {
     if (status === "declined" && !modalState.isOpen) {
-      setModalState({ isOpen: true, meetingId: meetingId });
+      setModalState({ isOpen: true, meetingId });
       return;
     }
-
     try {
       await rsvpToMeeting(meetingId, status, reason);
       toast.success(`You have ${status} the invitation.`);
@@ -118,7 +116,7 @@ const InvitationListComponent = () => {
       if (modalState.isOpen) {
         setModalState({ isOpen: false, meetingId: null });
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to respond to invitation.");
     }
   };
@@ -129,102 +127,127 @@ const InvitationListComponent = () => {
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="p-6">
         <LoadingSpinner text="Loading invitations..." />
       </div>
     );
+  }
+
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-1 space-y-3">
-        {invitations.length === 0 ? (
-          <EmptyState
-            icon="mark_email_read"
-            title="No Pending Invitations"
-            description="You're all caught up with your meeting invitations in this project."
-          />
-        ) : (
-          invitations.map((invitation) => (
-            <InvitationItem
-              key={invitation._id}
-              invitation={invitation}
-              onRsvp={handleRsvp}
-              isSelected={selectedInvitation?._id === invitation._id}
-              onSelect={setSelectedInvitation}
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
+        <div className="lg:col-span-1 overflow-y-auto space-y-3 pr-1">
+          {invitations.length === 0 ? (
+            <EmptyState
+              icon="mark_email_read"
+              title="No Pending Invitations"
+              description="You're all caught up with your meeting invitations in this project."
             />
-          ))
-        )}
-      </div>
+          ) : (
+            invitations.map((invitation) => (
+              <InvitationItem
+                key={invitation._id}
+                invitation={invitation}
+                onRsvp={handleRsvp}
+                isSelected={selectedInvitation?._id === invitation._id}
+                onSelect={setSelectedInvitation}
+              />
+            ))
+          )}
+        </div>
 
-      <div className="lg:col-span-2">
-        {!selectedInvitation ? (
-          <div className="bg-white border border-neutral-200 rounded-xl p-6 text-center text-neutral-500">Select an invitation to view details</div>
-        ) : (
-          <div className="bg-white border border-neutral-200 rounded-xl p-6 space-y-6">
-            <div className="flex items-start justify-between gap-4">
+        <div className="lg:col-span-2 overflow-y-auto pr-1">
+          {!selectedInvitation ? (
+            <div className="bg-white border border-neutral-200 rounded-xl p-6 text-center text-neutral-500">Select an invitation to view details</div>
+          ) : (
+            <div className="bg-white border border-neutral-200 rounded-xl p-6 space-y-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-neutral-900">{selectedInvitation.title}</h3>
+                  <p className="text-sm text-neutral-600 mt-1">
+                    {new Date(selectedInvitation.startTime).toLocaleString()} • {new Date(selectedInvitation.endTime).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-neutral-500 mt-1">Host: {selectedInvitation.createdBy?.fullname || "Unknown User"}</p>
+                </div>
+                <span className="px-3 py-1 text-xs rounded-full border border-neutral-200 text-neutral-600">pending</span>
+              </div>
+
+              {selectedInvitation.description && <p className="text-sm text-neutral-700 whitespace-pre-line">{selectedInvitation.description}</p>}
+              {/* Attachments */}
+              {selectedInvitation.attachments && selectedInvitation.attachments.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-neutral-800 mb-2">Attachments</h4>
+                  <div className="space-y-1 p-2 bg-neutral-50 rounded-lg border border-neutral-200">
+                    {selectedInvitation.attachments.map((attachment) => (
+                      <a
+                        key={attachment._id}
+                        href={attachment.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 text-primary-600 hover:text-primary-700 hover:bg-neutral-100 rounded transition-colors group"
+                      >
+                        <span className="material-symbols-outlined text-base">attach_file</span>
+                        <span className="text-sm truncate flex-1">{attachment.filename}</span>
+                        <span className="material-symbols-outlined text-base opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Chat History */}
+              {selectedInvitation.chatHistoryLink && (
+                <div>
+                  <h4 className="text-sm font-semibold text-neutral-800 mb-2">Chat History</h4>
+                  <a
+                    href={selectedInvitation.chatHistoryLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 bg-blue-50 text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-lg transition-colors group border border-blue-200"
+                  >
+                    <span className="material-symbols-outlined text-base">message</span>
+                    <span className="text-sm truncate flex-1">Download Chat History</span>
+                    <span className="material-symbols-outlined text-base opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                  </a>
+                </div>
+              )}
               <div>
-                <h3 className="text-xl font-semibold text-neutral-900">{selectedInvitation.title}</h3>
-                <p className="text-sm text-neutral-600 mt-1">
-                  {new Date(selectedInvitation.startTime).toLocaleString()} • {new Date(selectedInvitation.endTime).toLocaleString()}
-                </p>
-                <p className="text-sm text-neutral-500 mt-1">Host: {selectedInvitation.createdBy?.fullname || "Unknown User"}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {selectedInvitation.relatedTeamId?.name ? (
-                    <span className="px-2.5 py-1 text-xs rounded-full bg-primary-50 text-primary-700 border border-primary-200">
-                      Team: {selectedInvitation.relatedTeamId.name}
-                    </span>
-                  ) : null}
-                  {selectedInvitation.relatedTaskId?.key ? (
-                    <span className="px-2.5 py-1 text-xs rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200">
-                      Task: {selectedInvitation.relatedTaskId.key} • {selectedInvitation.relatedTaskId.name}
-                    </span>
-                  ) : null}
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-neutral-800">Participants</h4>
+                  <span className="text-xs text-neutral-500">{participantCount} members</span>
+                </div>
+                <div className="space-y-2">
+                  {selectedInvitation.participants?.map((p) => (
+                    <div key={p.userId?._id || p._id} className="flex items-center justify-between p-3 rounded-lg border border-neutral-200">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar user={p.userId} sizeClassName="w-8 h-8" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{p.userId?.fullname || "Unknown"}</p>
+                          {p.status === "declined" && p.reason && <p className="text-xs text-neutral-500 truncate">Reason: {p.reason}</p>}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2.5 py-1 text-xs rounded-full border ${
+                          statusStyles[p.status] || "border-neutral-200 text-neutral-600 bg-neutral-50"
+                        }`}
+                      >
+                        {p.status || "pending"}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <span className="px-3 py-1 text-xs rounded-full border border-neutral-200 text-neutral-600">pending</span>
             </div>
-
-            {selectedInvitation.description && (
-              <div>
-                <h4 className="text-sm font-semibold text-neutral-800 mb-1">Description</h4>
-                <p className="text-sm text-neutral-700 whitespace-pre-line">{selectedInvitation.description}</p>
-              </div>
-            )}
-
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-neutral-800">Participants</h4>
-                <span className="text-xs text-neutral-500">{participantCount} members</span>
-              </div>
-              <div className="space-y-2">
-                {selectedInvitation.participants?.map((p) => (
-                  <div key={p.userId?._id || p._id} className="flex items-center justify-between p-3 rounded-lg border border-neutral-200">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Avatar user={p.userId} sizeClassName="w-8 h-8" textClassName="text-xs" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-neutral-900 truncate">{p.userId?.fullname || "Unknown"}</p>
-                        {p.status === "declined" && p.reason ? <p className="text-xs text-neutral-500 truncate">Reason: {p.reason}</p> : null}
-                      </div>
-                    </div>
-                    <span
-                      className={`px-2.5 py-1 text-xs rounded-full border ${statusStyles[p.status] || "border-neutral-200 text-neutral-600 bg-neutral-50"}`}
-                    >
-                      {p.status || "pending"}
-                    </span>
-                  </div>
-                ))}
-                {!selectedInvitation.participants?.length && <p className="text-sm text-neutral-500">No participants yet.</p>}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <DeclineReasonModal isOpen={modalState.isOpen} onClose={() => setModalState({ isOpen: false, meetingId: null })} onSubmit={handleModalSubmit} />
-    </div>
+    </>
   );
 };
 
