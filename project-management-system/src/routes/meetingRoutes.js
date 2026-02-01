@@ -31,6 +31,16 @@ router.post(
   MeetingController.uploadChatHistory,
 );
 
+// Recording upload route
+router.post(
+  "/:meetingId/recording",
+  uploadMiddleware.chatHistoryUpload.single("file"),
+  (req, res, next) => {
+    next();
+  },
+  MeetingController.uploadRecording,
+);
+
 // LiveKit routes
 router.post("/:meetingId/join", LiveKitController.joinMeeting);
 router.post("/:meetingId/end", LiveKitController.endMeeting);

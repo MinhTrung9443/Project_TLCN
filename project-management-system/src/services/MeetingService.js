@@ -487,6 +487,90 @@ const MeetingService = {
       throw error;
     }
   },
+
+  /**
+   * Upload recording file to meeting
+   */
+  async uploadRecording(meetingId, file, userId) {
+    console.log("[MeetingService.uploadRecording] meetingId:", meetingId);
+    console.log("[MeetingService.uploadRecording] file:", file ? `${file.originalname} (${file.size} bytes)` : "No file");
+    console.log("[MeetingService.uploadRecording] userId:", userId);
+
+    if (!mongoose.Types.ObjectId.isValid(meetingId)) {
+      const error = new Error("Invalid meeting ID");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!file) {
+      const error = new Error("No file provided");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!file.buffer) {
+      const error = new Error("File buffer is empty");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const meeting = await Meeting.findById(meetingId);
+    console.log("[MeetingService.uploadRecording] Meeting found:", meeting ? "Yes" : "No");
+    if (!meeting) {
+      const error = new Error("Meeting not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Kiểm tra quyền - chỉ host có thể upload recording
+    console.log("[MeetingService.uploadRecording] Checking permissions - createdBy:", meeting.createdBy, "userId:", userId);
+    if (!meeting.createdBy.equals(userId)) {
+      const error = new Error("You do not have permission to upload recording");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    try {
+      console.log("[MeetingService.uploadRecording] Starting Cloudinary upload...");
+      // Upload video file to Cloudinary
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "meeting_recordings",
+            resource_type: "video",
+            filename_override: file.originalname || "meeting-recording.webm",
+          },
+          (error, result) => {
+            if (error) {
+              console.error("Cloudinary stream error:", error);
+              reject(error);
+            } else {
+              console.log("[MeetingService.uploadRecording] Cloudinary upload success:", result.secure_url);
+              resolve(result);
+            }
+          },
+        );
+
+        stream.end(file.buffer);
+      });
+
+      // Update meeting with video link using findByIdAndUpdate to avoid version conflicts
+      const updatedMeeting = await Meeting.findByIdAndUpdate(
+        meetingId,
+        { $set: { videoLink: result.secure_url } },
+        { new: true, runValidators: true }
+      ).populate("createdBy", "fullname avatar");
+      
+      console.log("[MeetingService.uploadRecording] Meeting updated with videoLink:", updatedMeeting.videoLink);
+
+      return updatedMeeting;
+    } catch (cloudinaryError) {
+      console.error("Error uploading recording to Cloudinary:", cloudinaryError);
+      const error = new Error("Failed to upload recording: " + (cloudinaryError.message || "Unknown error"));
+      error.statusCode = 500;
+      throw error;
+    }
+  },
 };
 
 module.exports = MeetingService;

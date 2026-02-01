@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { LiveKitRoom, VideoConference, RoomAudioRenderer, useRoomContext, useParticipants } from "@livekit/components-react";
 import { RoomEvent } from "livekit-client";
 import "@livekit/components-styles";
-import { joinMeeting, endMeeting as endMeetingAPI, kickParticipant as kickParticipantAPI, uploadChatHistory } from "../../services/meetingService";
+import {
+  joinMeeting,
+  endMeeting as endMeetingAPI,
+  kickParticipant as kickParticipantAPI,
+  uploadChatHistory,
+  uploadRecording,
+} from "../../services/meetingService";
+import { recordingManager } from "../../utils/recordingUtils";
 import { toast } from "react-toastify";
-import { saveAs } from "file-saver";
 
 const MeetingHeader = ({ meetingInfo, chatMessages }) => {
   const [time, setTime] = useState(new Date());
@@ -174,8 +180,25 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
 
   const handleEndMeeting = async () => {
     if (!window.confirm("End meeting for everyone?")) return;
+
+    let recordingBlob = null;
+
     try {
-      // Auto-export chat history if there are messages
+      console.log("[handleEndMeeting] isHost:", isHost, "recordingActive:", recordingManager.isActive());
+      // Stop and save recording if host
+      if (isHost && recordingManager.isActive()) {
+        console.log("[handleEndMeeting] Stopping recording...");
+        toast.info("Saving recording...");
+        try {
+          recordingBlob = await recordingManager.stopRecording();
+          console.log("[handleEndMeeting] Recording blob size:", recordingBlob?.size);
+        } catch (error) {
+          console.error("Failed to stop recording:", error);
+          toast.warn("Failed to save recording");
+        }
+      }
+
+      // Auto-export chat history if there are messages (non-blocking)
       if (chatMessages.length > 0) {
         const chatText = chatMessages.map((msg) => `[${new Date(msg.timestamp).toLocaleString()}] ${msg.from}: ${msg.message}`).join("\n");
         const blob = new Blob([chatText], { type: "text/plain;charset=utf-8" });
@@ -183,20 +206,46 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
           type: "text/plain",
         });
 
-        // Upload chat history
-        try {
-          await uploadChatHistory(meetingId, file);
-          toast.success("Chat history saved");
-        } catch (error) {
-          console.error("Failed to upload chat history:", error);
-          toast.warn("Meeting ended but chat history could not be saved");
-        }
+        // Upload chat history in background
+        uploadChatHistory(meetingId, file)
+          .then(() => {
+            console.log("[handleEndMeeting] Chat history uploaded successfully");
+          })
+          .catch((error) => {
+            console.error("Failed to upload chat history:", error);
+          });
       }
 
+      // Upload recording in background if available (non-blocking)
+      if (recordingBlob) {
+        console.log("[handleEndMeeting] Scheduling background upload for recording blob...");
+        const recordingFile = new File([recordingBlob], `meeting-${meetingId}-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.webm`, {
+          type: "video/webm",
+        });
+        console.log("[handleEndMeeting] Recording file created:", recordingFile.name, recordingFile.size);
+
+        // Upload in background - don't block user from leaving
+        toast.info("Recording will be uploaded in background. You can leave now.");
+        uploadRecording(meetingId, recordingFile, (progress) => {
+          console.log(`Upload progress: ${progress.toFixed(0)}%`);
+        })
+          .then((response) => {
+            console.log("[handleEndMeeting] Upload response:", response);
+            toast.success("Recording uploaded successfully!");
+          })
+          .catch((error) => {
+            console.error("[handleEndMeeting] Failed to upload recording:", error);
+            toast.error("Recording upload failed");
+          });
+      } else {
+        console.log("[handleEndMeeting] No recording blob to upload");
+      }
+
+      // End meeting and disconnect immediately - don't wait for uploads
       await endMeetingAPI(meetingId);
       toast.success("Meeting ended");
       room.disconnect();
-      setTimeout(() => navigate(-1), 1000);
+      navigate(-1);
     } catch (error) {
       toast.error("Failed to end meeting");
     }
@@ -507,13 +556,40 @@ const ChatMessageListener = ({ setChatMessages }) => {
   return null;
 };
 
+// Component to auto-start recording when connected (needs to be inside LiveKitRoom)
+const RecordingStarter = ({ isHost }) => {
+  const room = useRoomContext();
+  const [hasStarted, setHasStarted] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isHost || !room || hasStarted) return;
+
+    console.log("[RecordingStarter] Room connected, starting recording in 2s...");
+    const timer = setTimeout(() => {
+      console.log("[RecordingStarter] Attempting to start recording with room context...");
+      const success = recordingManager.startRecording(room);
+      console.log("[RecordingStarter] Recording start result:", success);
+
+      if (success) {
+        toast.success("Recording started automatically");
+        setHasStarted(true);
+      } else {
+        toast.warn("Recording could not be started");
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [room, isHost, hasStarted]);
+
+  return null;
+};
+
 const MeetingRoomPageContent = ({
   meetingId,
   token,
   serverUrl,
   meetingInfo,
   isHost,
-  handleConnected,
   handleDisconnect,
   handleError,
   chatMessages,
@@ -528,7 +604,6 @@ const MeetingRoomPageContent = ({
         token={token}
         serverUrl={serverUrl}
         connect={true}
-        onConnected={handleConnected}
         onDisconnected={handleDisconnect}
         onError={handleError}
         options={{
@@ -538,6 +613,7 @@ const MeetingRoomPageContent = ({
         }}
       >
         <ChatMessageListener setChatMessages={setChatMessages} />
+        <RecordingStarter isHost={isHost} />
         <MeetingHeader meetingInfo={meetingInfo} chatMessages={chatMessages} />
         <MeetingControls
           meetingId={meetingId}
@@ -586,13 +662,6 @@ const MeetingRoomPage = () => {
     };
     initMeeting();
   }, [meetingId]);
-
-  const handleConnected = useCallback((room) => {
-    if (!room) return;
-    Promise.all([room.localParticipant.setCameraEnabled(true), room.localParticipant.setMicrophoneEnabled(true)]).catch(() => {
-      toast.error("Camera/microphone access denied");
-    });
-  }, []);
 
   const handleDisconnect = () => {
     toast.info("Disconnected");
@@ -651,7 +720,6 @@ const MeetingRoomPage = () => {
       serverUrl={serverUrl}
       meetingInfo={meetingInfo}
       isHost={isHost}
-      handleConnected={handleConnected}
       handleDisconnect={handleDisconnect}
       handleError={handleError}
       chatMessages={chatMessages}

@@ -113,3 +113,28 @@ export const uploadChatHistory = (meetingId, file) => {
   formData.append("file", file);
   return apiClient.post(`/meetings/${meetingId}/chat-history`, formData);
 };
+
+/**
+ * Upload recording to a meeting
+ * @param {string} meetingId - The ID of the meeting
+ * @param {File} file - The recording file
+ * @param {Function} onProgress - Progress callback
+ * @returns {Promise}
+ */
+export const uploadRecording = (meetingId, file, onProgress = null) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return apiClient.post(`/meetings/${meetingId}/recording`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    timeout: 300000, // 5 minutes for large video files
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percentComplete = (progressEvent.loaded / progressEvent.total) * 100;
+        onProgress(percentComplete);
+      }
+    },
+  });
+};

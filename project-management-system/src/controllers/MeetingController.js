@@ -179,6 +179,27 @@ const MeetingController = {
       res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
     }
   },
+
+  /**
+   * Upload recording file to meeting
+   */
+  async uploadRecording(req, res) {
+    try {
+      console.log("[uploadRecording] Received request for meetingId:", req.params.meetingId);
+      console.log("[uploadRecording] File:", req.file ? `${req.file.originalname} (${req.file.size} bytes)` : "No file");
+      console.log("[uploadRecording] User:", req.user._id);
+
+      const { meetingId } = req.params;
+      const userId = req.user._id;
+
+      const updatedMeeting = await MeetingService.uploadRecording(meetingId, req.file, userId);
+      console.log("[uploadRecording] Recording uploaded successfully. videoLink:", updatedMeeting.videoLink);
+      res.status(200).json(updatedMeeting);
+    } catch (error) {
+      console.error("[uploadRecording] Error:", error);
+      res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+  },
 };
 
 module.exports = MeetingController;
