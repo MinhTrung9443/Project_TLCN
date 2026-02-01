@@ -560,21 +560,56 @@ const ChatMessageListener = ({ setChatMessages }) => {
 const RecordingStarter = ({ isHost }) => {
   const room = useRoomContext();
   const [hasStarted, setHasStarted] = React.useState(false);
+  const screenStreamRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!isHost || !room || hasStarted) return;
 
-    console.log("[RecordingStarter] Room connected, starting recording in 2s...");
-    const timer = setTimeout(() => {
-      console.log("[RecordingStarter] Attempting to start recording with room context...");
-      const success = recordingManager.startRecording(room);
-      console.log("[RecordingStarter] Recording start result:", success);
+    console.log("[RecordingStarter] Room connected, starting recording process in 2s...");
+    const timer = setTimeout(async () => {
+      try {
+        // Request screen share locally (not published to LiveKit)
+        toast.info("Please share your screen to start recording (only for recording, not visible to others)");
+        console.log("[RecordingStarter] Requesting local screen share...");
 
-      if (success) {
-        toast.success("Recording started automatically");
-        setHasStarted(true);
-      } else {
-        toast.warn("Recording could not be started");
+        try {
+          // Get screen share stream directly without publishing to LiveKit
+          const screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              cursor: "always",
+              displaySurface: "monitor",
+            },
+            audio: false, // Don't capture system audio, we'll use microphone
+          });
+
+          console.log("[RecordingStarter] Screen share obtained successfully");
+          screenStreamRef.current = screenStream;
+
+          // Listen for when user stops sharing via browser UI
+          screenStream.getVideoTracks()[0].addEventListener("ended", () => {
+            console.log("[RecordingStarter] Screen share ended by user");
+            toast.warn("Screen sharing stopped - recording may only show camera");
+          });
+        } catch (error) {
+          console.error("[RecordingStarter] Screen share failed:", error);
+          toast.error("Screen share is required for recording. Recording will use camera instead.");
+          // Continue without screen share - will fallback to camera
+        }
+
+        // Now start recording with screen stream
+        console.log("[RecordingStarter] Attempting to start recording...");
+        const success = recordingManager.startRecording(room, screenStreamRef.current);
+        console.log("[RecordingStarter] Recording start result:", success);
+
+        if (success) {
+          toast.success(screenStreamRef.current ? "Recording started with screen share (private)" : "Recording started with camera");
+          setHasStarted(true);
+        } else {
+          toast.warn("Recording could not be started");
+        }
+      } catch (error) {
+        console.error("[RecordingStarter] Error during recording setup:", error);
+        toast.error("Failed to start recording");
       }
     }, 2000);
 

@@ -14,15 +14,28 @@ class RecordingManager {
   /**
    * Start recording (auto-captures all active streams)
    * @param {Object} room - LiveKit Room object (optional, for better track capture)
+   * @param {MediaStream} screenStream - Local screen share stream (optional, not published to LiveKit)
    * @returns {boolean} - Success status
    */
-  startRecording(room = null) {
+  startRecording(room = null, screenStream = null) {
     try {
       // Combine all active audio/video streams from the page
       const combinedStream = new MediaStream();
 
       let hasAudio = false;
       let hasVideo = false;
+
+      // Priority 1: Use local screen stream if provided (private, not shared with others)
+      if (screenStream) {
+        console.log("[Recording] Using local screen stream (not published to LiveKit)");
+        screenStream.getTracks().forEach((track) => {
+          combinedStream.addTrack(track.clone());
+          if (track.kind === "video") {
+            hasVideo = true;
+            console.log("[Recording] ✅ Added local screen track (private):", track.label);
+          }
+        });
+      }
 
       // Try to get tracks from LiveKit room first
       if (room) {
@@ -33,7 +46,42 @@ class RecordingManager {
         if (localParticipant) {
           console.log("[Recording] Local participant:", localParticipant.identity);
 
-          // Get audio tracks (microphone) - using audioTrackPublications
+          // Only get video from room if no local screen stream was provided
+          if (!screenStream) {
+            // Check screen share first
+            const hasLocalScreenShare = localParticipant.screenShareTrackPublications?.size > 0;
+            console.log("[Recording] Has local screen share:", hasLocalScreenShare);
+
+            // Priority 1: Get screen share tracks first (if available)
+            if (hasLocalScreenShare) {
+              console.log("[Recording] Local screen share track publications count:", localParticipant.screenShareTrackPublications.size);
+              localParticipant.screenShareTrackPublications.forEach((publication, key) => {
+                console.log("[Recording] Screen share publication:", key, publication);
+                if (publication.track && publication.track.mediaStreamTrack) {
+                  combinedStream.addTrack(publication.track.mediaStreamTrack.clone());
+                  hasVideo = true;
+                  console.log("[Recording] ✅ Added local screen share track:", publication.track.mediaStreamTrack.label);
+                }
+              });
+            } else {
+              // Priority 2: Get video tracks (camera) only if no screen share
+              if (localParticipant.videoTrackPublications) {
+                console.log("[Recording] Local video track publications count:", localParticipant.videoTrackPublications.size);
+                localParticipant.videoTrackPublications.forEach((publication, key) => {
+                  console.log("[Recording] Video publication:", key, publication);
+                  if (publication.track && publication.track.mediaStreamTrack) {
+                    combinedStream.addTrack(publication.track.mediaStreamTrack.clone());
+                    hasVideo = true;
+                    console.log("[Recording] Added local video track:", publication.track.mediaStreamTrack.label);
+                  }
+                });
+              }
+            }
+          } else {
+            console.log("[Recording] Skipping video from room - using local screen stream");
+          }
+
+          // Always capture audio from microphone
           if (localParticipant.audioTrackPublications) {
             console.log("[Recording] Local audio track publications count:", localParticipant.audioTrackPublications.size);
             localParticipant.audioTrackPublications.forEach((publication, key) => {
@@ -47,21 +95,6 @@ class RecordingManager {
           } else {
             console.warn("[Recording] audioTrackPublications not available on local participant");
           }
-
-          // Get video tracks (camera) - using videoTrackPublications
-          if (localParticipant.videoTrackPublications) {
-            console.log("[Recording] Local video track publications count:", localParticipant.videoTrackPublications.size);
-            localParticipant.videoTrackPublications.forEach((publication, key) => {
-              console.log("[Recording] Video publication:", key, publication);
-              if (publication.track && publication.track.mediaStreamTrack) {
-                combinedStream.addTrack(publication.track.mediaStreamTrack.clone());
-                hasVideo = true;
-                console.log("[Recording] Added local video track:", publication.track.mediaStreamTrack.label);
-              }
-            });
-          } else {
-            console.warn("[Recording] videoTrackPublications not available on local participant");
-          }
         }
 
         // Get remote participants tracks
@@ -70,7 +103,7 @@ class RecordingManager {
           room.participants.forEach((participant) => {
             console.log("[Recording] Remote participant:", participant.identity);
 
-            // Get audio tracks - using audioTrackPublications
+            // Get audio tracks
             if (participant.audioTrackPublications) {
               participant.audioTrackPublications.forEach((publication) => {
                 if (publication.track && publication.track.mediaStreamTrack) {
@@ -81,15 +114,30 @@ class RecordingManager {
               });
             }
 
-            // Get video tracks - using videoTrackPublications
-            if (participant.videoTrackPublications) {
-              participant.videoTrackPublications.forEach((publication) => {
+            // Check screen share first
+            const hasRemoteScreenShare = participant.screenShareTrackPublications?.size > 0;
+            console.log(`[Recording] Remote participant ${participant.identity} has screen share:`, hasRemoteScreenShare);
+
+            // Priority: Get screen share tracks (if available)
+            if (hasRemoteScreenShare) {
+              participant.screenShareTrackPublications.forEach((publication) => {
                 if (publication.track && publication.track.mediaStreamTrack) {
                   combinedStream.addTrack(publication.track.mediaStreamTrack.clone());
                   hasVideo = true;
-                  console.log("[Recording] Added remote video track:", publication.track.mediaStreamTrack.label);
+                  console.log("[Recording] ✅ Added remote screen share track:", publication.track.mediaStreamTrack.label);
                 }
               });
+            } else {
+              // Get video tracks only if no screen share
+              if (participant.videoTrackPublications) {
+                participant.videoTrackPublications.forEach((publication) => {
+                  if (publication.track && publication.track.mediaStreamTrack) {
+                    combinedStream.addTrack(publication.track.mediaStreamTrack.clone());
+                    hasVideo = true;
+                    console.log("[Recording] Added remote video track:", publication.track.mediaStreamTrack.label);
+                  }
+                });
+              }
             }
           });
         }
