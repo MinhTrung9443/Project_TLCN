@@ -6,6 +6,10 @@ const path = require("path");
 const app = express();
 
 // --- Import các routes ---
+
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger"); 
+
 const appRoute = require("./routes/appRoute");
 const userRoute = require("./routes/userRoutes");
 const groupRoute = require("./routes/groupRoute");
@@ -26,7 +30,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const timeLogRoutes = require("./routes/timeLogRoutes");
 const performanceRoutes = require("./routes/performanceRoutes");
 const meetingRoutes = require("./routes/meetingRoutes.js");
-
+const chatRoute = require("./routes/chatRoute");
 const corsOptions = {
   origin: "http://localhost:3000",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -75,5 +79,8 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/timelogs", timeLogRoutes);
 app.use("/api/performance", performanceRoutes);
 app.use("/api/meetings", meetingRoutes);
+app.use("/api/chats", chatRoute);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+console.log("📄 Swagger Docs available at http://localhost:8080/api-docs");
 
 module.exports = app;

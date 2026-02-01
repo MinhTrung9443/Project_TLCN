@@ -112,6 +112,30 @@ class SocketManager {
       socket.leave(`task:${taskId}`);
       console.log(`📋 User ${userId} stopped watching task: ${taskId}`);
     });
+    // ---------------- CHAT Functionality ----------------
+    // Handle user join a specific conversation room
+    socket.on("join chat", (room) => {
+      socket.join(room);
+      console.log(`User ${userId} joined chat room: ${room}`);
+    });
+
+    // Handle sending new message
+    socket.on("new message", (newMessageReceived) => {
+      var chat = newMessageReceived.conversationId;
+
+      if (!chat) return console.log("Chat.conversationId not defined");
+
+      socket.in(chat._id).emit("message received", newMessageReceived);
+      
+    
+    });
+
+    socket.on("typing", (room) => {
+        socket.in(room).emit("typing", room); 
+    });
+    socket.on("stop typing", (room) => {
+        socket.in(room).emit("stop typing", room);
+    });
   }
 
   async sendUnreadCount(userId) {
@@ -123,30 +147,27 @@ class SocketManager {
     }
   }
 
-  // Send notification to specific user
   sendToUser(userId, event, data) {
     this.io.to(`user:${userId}`).emit(event, data);
   }
 
-  // Send to project room
   sendToProject(projectId, event, data) {
     this.io.to(`project:${projectId}`).emit(event, data);
   }
 
-  // Send to task room
   sendToTask(taskId, event, data) {
     this.io.to(`task:${taskId}`).emit(event, data);
   }
 
-  // Check if user is online
   isUserOnline(userId) {
     return this.connectedUsers.has(userId);
   }
 
-  // Get IO instance
   getIO() {
     return this.io;
   }
+
+  
 }
 
 module.exports = new SocketManager();
