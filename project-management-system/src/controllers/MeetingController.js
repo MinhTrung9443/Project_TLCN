@@ -185,10 +185,6 @@ const MeetingController = {
    */
   async uploadRecording(req, res) {
     try {
-      console.log("[uploadRecording] Received request for meetingId:", req.params.meetingId);
-      console.log("[uploadRecording] File:", req.file ? `${req.file.originalname} (${req.file.size} bytes)` : "No file");
-      console.log("[uploadRecording] User:", req.user._id);
-
       const { meetingId } = req.params;
       const userId = req.user._id;
 

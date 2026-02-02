@@ -10,10 +10,11 @@ import {
   uploadChatHistory,
   uploadRecording,
 } from "../../services/meetingService";
-import { recordingManager } from "../../utils/recordingUtils";
+import { recordingManager } from "../../utils/recordingUtils.js";
 import { toast } from "react-toastify";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 
-const MeetingHeader = ({ meetingInfo, chatMessages }) => {
+const MeetingHeader = ({ meetingInfo }) => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -52,11 +53,13 @@ const MeetingHeader = ({ meetingInfo, chatMessages }) => {
 
 const ChatPanel = ({ chatMessages, onClose, room, onSendMessage }) => {
   const [messageInput, setMessageInput] = useState("");
-  const messagesEndRef = useCallback((node) => {
-    if (node) {
-      node.scrollIntoView({ behavior: "smooth" });
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, []);
+  }, [chatMessages]);
 
   const handleSend = async () => {
     if (!messageInput.trim() || !room) return;
@@ -64,8 +67,6 @@ const ChatPanel = ({ chatMessages, onClose, room, onSendMessage }) => {
     const text = messageInput.trim();
 
     try {
-      // Send message via LiveKit DataChannel - encode as string, not JSON
-      // This allows it to be received by others
       await room.localParticipant.publishData(new TextEncoder().encode(text), { reliable: true });
 
       // Add message to local chat immediately
@@ -81,76 +82,61 @@ const ChatPanel = ({ chatMessages, onClose, room, onSendMessage }) => {
   };
 
   return (
-    <div className="absolute top-0 right-0 h-full w-80 bg-white shadow-2xl flex flex-col z-50">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-gray-900">In-call messages</h3>
-          <span className="text-xs text-gray-500">({chatMessages.length})</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Close">
-            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {chatMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-            </div>
+            <svg className="w-12 h-12 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
             <p className="text-sm text-gray-500">No messages yet</p>
-            <p className="text-xs text-gray-400 mt-1">Send a message to everyone in the meeting</p>
           </div>
         ) : (
-          <>
-            {chatMessages.map((msg, index) => (
-              <div key={index} className="flex gap-2">
-                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                  {msg.from.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-medium text-gray-900">{msg.from}</span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700 mt-0.5 break-words">{msg.message}</p>
-                </div>
+          chatMessages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.from === "You" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-xs px-3 py-2 rounded-lg ${msg.from === "You" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-900"}`}>
+                {msg.from !== "You" && (
+                  <p className={`text-xs font-semibold mb-1 ${msg.from === "You" ? "text-blue-100" : "text-gray-700"}`}>{msg.from}</p>
+                )}
+                <p className="text-sm break-words">{msg.message}</p>
+                <p className={`text-xs mt-1 ${msg.from === "You" ? "text-blue-100" : "text-gray-500"}`}>
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
               </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </>
+            </div>
+          ))
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-gray-200 p-3">
-        <div className="flex gap-2">
+      <div className="px-4 py-3 border-t border-gray-200 flex-shrink-0">
+        <div className="flex items-center gap-2">
           <input
             type="text"
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Send a message to everyone"
-            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onKeyPress={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="Type a message..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             onClick={handleSend}
             disabled={!messageInput.trim()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            Send
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,1.16390237 C3.34915502,0.9 2.40734225,0.9 1.77946707,1.4 C0.994623095,2.0 0.837654326,3.1 1.15159189,3.89 L3.03521743,10.3701237 C3.03521743,10.5272211 3.34915502,10.6843185 3.50612381,10.6843185 L16.6915026,11.4698054 C16.6915026,11.4698054 17.1624089,11.4698054 17.1624089,12.0698054 C17.1624089,12.6698054 16.6915026,12.4744748 16.6915026,12.4744748 Z" />
+            </svg>
           </button>
         </div>
       </div>
@@ -158,104 +144,147 @@ const ChatPanel = ({ chatMessages, onClose, room, onSendMessage }) => {
   );
 };
 
-const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChatMessages }) => {
+const MeetingControls = ({
+  meetingId,
+  isHost,
+  meetingInfo,
+  chatMessages,
+  setChatMessages,
+  showParticipants,
+  setShowParticipants,
+  showChat,
+  setShowChat,
+  showInfo,
+  setShowInfo,
+}) => {
   const room = useRoomContext();
   const participants = useParticipants();
   const navigate = useNavigate();
-  const [showInfo, setShowInfo] = useState(false);
-  const [showParticipants, setShowParticipants] = useState(false);
-  const [showChat, setShowChat] = useState(false);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: null,
+    title: "",
+    message: "",
+    onConfirm: null,
+    confirmText: "Yes",
+  });
 
   const handleKick = async (participantId) => {
-    if (!window.confirm("Remove this participant?")) return;
-    try {
-      await kickParticipantAPI(meetingId, participantId);
-      toast.success("Participant removed");
-    } catch (error) {
-      toast.error("Failed to remove participant");
-    }
+    setConfirmModal({
+      isOpen: true,
+      type: "kick",
+      title: "Remove Participant",
+      message: "Are you sure you want to remove this participant from the meeting?",
+      confirmText: "Remove",
+      onConfirm: async () => {
+        setConfirmModal({ isOpen: false });
+        try {
+          await kickParticipantAPI(meetingId, participantId);
+          toast.success("Participant removed");
+        } catch (error) {
+          toast.error("Failed to remove participant");
+        }
+      },
+    });
   };
 
   const handleEndMeeting = async () => {
-    if (!window.confirm("End meeting for everyone?")) return;
+    setConfirmModal({
+      isOpen: true,
+      type: "end",
+      title: "End Meeting",
+      message: "Are you sure you want to end this meeting for everyone? This action cannot be undone.",
+      confirmText: "End Meeting",
+      onConfirm: async () => {
+        setConfirmModal({ isOpen: false });
+        let recordingBlob = null;
 
-    let recordingBlob = null;
-
-    try {
-      console.log("[handleEndMeeting] isHost:", isHost, "recordingActive:", recordingManager.isActive());
-      // Stop and save recording if host
-      if (isHost && recordingManager.isActive()) {
-        console.log("[handleEndMeeting] Stopping recording...");
-        toast.info("Saving recording...");
         try {
-          recordingBlob = await recordingManager.stopRecording();
-          console.log("[handleEndMeeting] Recording blob size:", recordingBlob?.size);
+          console.log("[handleEndMeeting] isHost:", isHost, "recordingActive:", recordingManager.isActive());
+          // Stop and save recording if host
+          if (isHost && recordingManager.isActive()) {
+            console.log("[handleEndMeeting] Stopping recording...");
+            toast.info("Saving recording...");
+            try {
+              recordingBlob = await recordingManager.stopRecording();
+              console.log("[handleEndMeeting] Recording blob size:", recordingBlob?.size);
+            } catch (error) {
+              console.error("Failed to stop recording:", error);
+              toast.warn("Failed to save recording");
+            }
+          }
+
+          // Auto-export chat history if there are messages (non-blocking)
+          if (chatMessages.length > 0) {
+            const chatText = chatMessages.map((msg) => `[${new Date(msg.timestamp).toLocaleString()}] ${msg.from}: ${msg.message}`).join("\n");
+            const blob = new Blob([chatText], { type: "text/plain;charset=utf-8" });
+            const file = new File([blob], `meeting-chat-${new Date().toISOString().slice(0, 10)}.txt`, {
+              type: "text/plain",
+            });
+
+            // Upload chat history in background
+            uploadChatHistory(meetingId, file)
+              .then(() => {
+                console.log("[handleEndMeeting] Chat history uploaded successfully");
+              })
+              .catch((error) => {
+                console.error("Failed to upload chat history:", error);
+              });
+          }
+
+          // Upload recording in background if available (non-blocking)
+          if (recordingBlob) {
+            console.log("[handleEndMeeting] Scheduling background upload for recording blob...");
+            const recordingFile = new File([recordingBlob], `meeting-${meetingId}-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.webm`, {
+              type: "video/webm",
+            });
+            console.log("[handleEndMeeting] Recording file created:", recordingFile.name, recordingFile.size);
+
+            // Upload in background - don't block user from leaving
+            toast.info("Recording will be uploaded in background. You can leave now.");
+            uploadRecording(meetingId, recordingFile, (progress) => {
+              console.log(`Upload progress: ${progress.toFixed(0)}%`);
+            })
+              .then((response) => {
+                console.log("[handleEndMeeting] Upload response:", response);
+                toast.success("Recording uploaded successfully!");
+              })
+              .catch((error) => {
+                console.error("[handleEndMeeting] Failed to upload recording:", error);
+                toast.error("Recording upload failed");
+              });
+          } else {
+            console.log("[handleEndMeeting] No recording blob to upload");
+          }
+
+          // End meeting and disconnect immediately - don't wait for uploads
+          await endMeetingAPI(meetingId);
+          toast.success("Meeting ended");
+          room.disconnect();
+          navigate(-1);
         } catch (error) {
-          console.error("Failed to stop recording:", error);
-          toast.warn("Failed to save recording");
+          toast.error("Failed to end meeting");
         }
-      }
-
-      // Auto-export chat history if there are messages (non-blocking)
-      if (chatMessages.length > 0) {
-        const chatText = chatMessages.map((msg) => `[${new Date(msg.timestamp).toLocaleString()}] ${msg.from}: ${msg.message}`).join("\n");
-        const blob = new Blob([chatText], { type: "text/plain;charset=utf-8" });
-        const file = new File([blob], `meeting-chat-${new Date().toISOString().slice(0, 10)}.txt`, {
-          type: "text/plain",
-        });
-
-        // Upload chat history in background
-        uploadChatHistory(meetingId, file)
-          .then(() => {
-            console.log("[handleEndMeeting] Chat history uploaded successfully");
-          })
-          .catch((error) => {
-            console.error("Failed to upload chat history:", error);
-          });
-      }
-
-      // Upload recording in background if available (non-blocking)
-      if (recordingBlob) {
-        console.log("[handleEndMeeting] Scheduling background upload for recording blob...");
-        const recordingFile = new File([recordingBlob], `meeting-${meetingId}-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.webm`, {
-          type: "video/webm",
-        });
-        console.log("[handleEndMeeting] Recording file created:", recordingFile.name, recordingFile.size);
-
-        // Upload in background - don't block user from leaving
-        toast.info("Recording will be uploaded in background. You can leave now.");
-        uploadRecording(meetingId, recordingFile, (progress) => {
-          console.log(`Upload progress: ${progress.toFixed(0)}%`);
-        })
-          .then((response) => {
-            console.log("[handleEndMeeting] Upload response:", response);
-            toast.success("Recording uploaded successfully!");
-          })
-          .catch((error) => {
-            console.error("[handleEndMeeting] Failed to upload recording:", error);
-            toast.error("Recording upload failed");
-          });
-      } else {
-        console.log("[handleEndMeeting] No recording blob to upload");
-      }
-
-      // End meeting and disconnect immediately - don't wait for uploads
-      await endMeetingAPI(meetingId);
-      toast.success("Meeting ended");
-      room.disconnect();
-      navigate(-1);
-    } catch (error) {
-      toast.error("Failed to end meeting");
-    }
+      },
+    });
   };
 
   const handleLeave = () => {
-    if (window.confirm("Leave meeting?")) {
-      room.disconnect();
-      navigate(-1);
-    }
+    setConfirmModal({
+      isOpen: true,
+      type: "leave",
+      title: "Leave Meeting",
+      message: "Are you sure you want to leave this meeting?",
+      confirmText: "Leave",
+      onConfirm: () => {
+        setConfirmModal({ isOpen: false });
+        room.disconnect();
+        navigate(-1);
+      },
+    });
   };
 
   const toggleMic = () => {
@@ -269,6 +298,25 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
     if (room?.localParticipant) {
       room.localParticipant.setCameraEnabled(!isCameraOn);
       setIsCameraOn(!isCameraOn);
+    }
+  };
+
+  const toggleScreenShare = async () => {
+    if (!room?.localParticipant) return;
+
+    try {
+      if (isScreenSharing) {
+        await room.localParticipant.setScreenShareEnabled(false);
+        setIsScreenSharing(false);
+        toast.info("Screen sharing stopped");
+      } else {
+        await room.localParticipant.setScreenShareEnabled(true);
+        setIsScreenSharing(true);
+        toast.success("Screen sharing started");
+      }
+    } catch (error) {
+      console.error("Screen share error:", error);
+      toast.error("Failed to toggle screen share");
     }
   };
 
@@ -331,11 +379,28 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
               )}
             </button>
 
+            <button
+              onClick={toggleScreenShare}
+              className={`p-2.5 rounded-full transition-all ${isScreenSharing ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-700 hover:bg-gray-600"}`}
+              title={isScreenSharing ? "Stop screen share" : "Share screen"}
+            >
+              <svg className="w-5 h-5 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </button>
+
             <div className="w-px h-8 bg-gray-700 mx-1"></div>
 
             <button
               onClick={() => setShowParticipants(!showParticipants)}
-              className="p-2.5 bg-gray-700 hover:bg-gray-600 rounded-full transition-all relative"
+              className={`p-2.5 rounded-full transition-all relative ${
+                showParticipants ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-700 hover:bg-gray-600"
+              }`}
               title="Show participants"
             >
               <svg className="w-5 h-5 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -355,7 +420,7 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
 
             <button
               onClick={() => setShowChat(!showChat)}
-              className="p-2.5 bg-gray-700 hover:bg-gray-600 rounded-full transition-all relative"
+              className={`p-2.5 rounded-full transition-all relative ${showChat ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-700 hover:bg-gray-600"}`}
               title="Chat"
             >
               <svg className="w-5 h-5 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -410,6 +475,289 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
         </div>
       </div>
 
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal({ isOpen: false })}
+      />
+    </>
+  );
+};
+
+// Component inside LiveKitRoom to handle chat message receiving
+const ChatMessageListener = ({ setChatMessages }) => {
+  const room = useRoomContext();
+
+  useEffect(() => {
+    if (!room) return;
+
+    const handleDataReceived = (payload, participant) => {
+      try {
+        const decoder = new TextDecoder();
+        const messageText = decoder.decode(payload);
+
+        // Add received message to chat
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            from: participant?.name || participant?.identity || "Unknown",
+            message: messageText,
+            timestamp: Date.now(),
+          },
+        ]);
+      } catch (error) {
+        console.error("Failed to decode message:", error);
+      }
+    };
+
+    room.on(RoomEvent.DataReceived, handleDataReceived);
+
+    return () => {
+      room.off(RoomEvent.DataReceived, handleDataReceived);
+    };
+  }, [room, setChatMessages]);
+
+  return null;
+};
+
+// Component to auto-start recording when connected (needs to be inside LiveKitRoom)
+const RecordingStarter = ({ isHost }) => {
+  const room = useRoomContext();
+  const [hasStarted, setHasStarted] = React.useState(false);
+  const screenStreamRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!isHost || !room || hasStarted) return;
+
+    console.log("[RecordingStarter] Room connected, waiting for participants to join...");
+    // Increase delay to 5 seconds to ensure remote participants have connected and published their audio
+    const timer = setTimeout(async () => {
+      try {
+        console.log("[RecordingStarter] Starting recording setup...");
+        console.log("[RecordingStarter] Current participants:", room.remoteParticipants?.size || 0);
+
+        // Request screen share locally (not published to LiveKit)
+        toast.info("Please share your screen to start recording (only for recording, not visible to others)");
+        console.log("[RecordingStarter] Requesting local screen share...");
+
+        try {
+          // Get screen share stream directly without publishing to LiveKit
+          const screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              cursor: "always",
+              displaySurface: "monitor",
+            },
+            audio: true, // Enable system audio capture from tab/screen (user must check "Share audio" in browser dialog)
+          });
+
+          console.log("[RecordingStarter] Screen share obtained successfully");
+          console.log(
+            "[RecordingStarter] Screen share tracks:",
+            screenStream.getTracks().map((t) => `${t.kind}: ${t.label}`),
+          );
+          screenStreamRef.current = screenStream;
+
+          // Listen for when user stops sharing via browser UI
+          screenStream.getVideoTracks()[0].addEventListener("ended", () => {
+            console.log("[RecordingStarter] Screen share ended by user");
+            toast.warn("Screen sharing stopped - recording may only show camera");
+          });
+        } catch (error) {
+          console.error("[RecordingStarter] Screen share failed:", error);
+          toast.error("Screen share is required for recording. Recording will use camera instead.");
+          // Continue without screen share - will fallback to camera
+        }
+
+        // Now start recording with screen stream
+        console.log("[RecordingStarter] Attempting to start recording...");
+        const success = recordingManager.startRecording(room, screenStreamRef.current);
+        console.log("[RecordingStarter] Recording start result:", success);
+
+        if (success) {
+          toast.success(screenStreamRef.current ? "Recording started with screen share (private)" : "Recording started with camera");
+          setHasStarted(true);
+        } else {
+          toast.warn("Recording could not be started");
+        }
+      } catch (error) {
+        console.error("[RecordingStarter] Error during recording setup:", error);
+        toast.error("Failed to start recording");
+      }
+    }, 5000); // Increase to 5 seconds to wait for remote participants
+
+    return () => clearTimeout(timer);
+  }, [room, isHost, hasStarted]);
+
+  return null;
+};
+
+const MeetingRoomPageContent = ({
+  meetingId,
+  token,
+  serverUrl,
+  meetingInfo,
+  isHost,
+  handleDisconnect,
+  handleError,
+  chatMessages,
+  setChatMessages,
+}) => {
+  return (
+    <div className="h-screen bg-gray-900 flex flex-col overflow-hidden">
+      <LiveKitRoom
+        className="flex-1 flex flex-col overflow-hidden"
+        video={true}
+        audio={true}
+        token={token}
+        serverUrl={serverUrl}
+        connect={true}
+        onDisconnected={handleDisconnect}
+        onError={handleError}
+        options={{
+          adaptiveStream: true,
+          dynacast: true,
+          publishDefaults: { audioPreset: { maxBitrate: 64000 }, screenShareEncoding: { maxBitrate: 2000000 } },
+        }}
+      >
+        <ChatMessageListener setChatMessages={setChatMessages} />
+        <RecordingStarter isHost={isHost} />
+        <MeetingRoomContent
+          meetingId={meetingId}
+          meetingInfo={meetingInfo}
+          isHost={isHost}
+          chatMessages={chatMessages}
+          setChatMessages={setChatMessages}
+        />
+        <RoomAudioRenderer />
+      </LiveKitRoom>
+    </div>
+  );
+};
+
+// Inner component that uses LiveKit hooks - rendered INSIDE LiveKitRoom
+const MeetingRoomContent = ({ meetingId, meetingInfo, isHost, chatMessages, setChatMessages }) => {
+  const room = useRoomContext();
+  const participants = useParticipants();
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+
+  const handleKick = async (participantId) => {
+    try {
+      await kickParticipantAPI(meetingId, participantId);
+      toast.success("Participant removed");
+    } catch (error) {
+      toast.error("Failed to remove participant");
+    }
+  };
+
+  return (
+    <>
+      <MeetingHeader meetingInfo={meetingInfo} chatMessages={chatMessages} />
+
+      {/* Main content area with responsive panels */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Video area - shrinks when panels open */}
+        <div className={`flex flex-col pt-14 pb-24 transition-all duration-300 ${showParticipants || showChat ? "flex-1" : "w-full"}`}>
+          <VideoConference className="w-full h-full" />
+        </div>
+
+        {/* Right panels container */}
+        {(showParticipants || showChat) && (
+          <div
+            className={`flex bg-gray-800 border-l border-gray-700 overflow-hidden transition-all duration-300 ${
+              showParticipants && showChat ? "w-[640px]" : "w-96"
+            }`}
+          >
+            {/* Participants panel */}
+            {showParticipants && (
+              <div className={`flex flex-col bg-white ${showChat ? "w-1/2 border-r border-gray-200" : "w-full"}`}>
+                <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+                  <h3 className="text-base font-medium text-gray-900">Participants ({participants.length})</h3>
+                  <button onClick={() => setShowParticipants(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                    <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {participants.map((p) => (
+                    <div key={p.identity} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 group transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                          {(p.name || p.identity).charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{p.name || p.identity}</p>
+                          {p.identity === room.localParticipant.identity && <span className="text-xs text-gray-500">(You)</span>}
+                        </div>
+                      </div>
+                      {isHost && p.identity !== room.localParticipant.identity && (
+                        <button
+                          onClick={() => handleKick(p.identity)}
+                          className="opacity-0 group-hover:opacity-100 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded-md transition-all flex-shrink-0"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Chat panel */}
+            {showChat && (
+              <div className={`flex flex-col bg-white ${showParticipants ? "w-1/2" : "w-full"}`}>
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-gray-900">In-call messages</h3>
+                    <span className="text-xs text-gray-500">({chatMessages.length})</span>
+                  </div>
+                  <button onClick={() => setShowChat(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <ChatPanel
+                  chatMessages={chatMessages}
+                  onClose={() => setShowChat(false)}
+                  room={room}
+                  onSendMessage={(text) => {
+                    setChatMessages((prev) => [
+                      ...prev,
+                      {
+                        from: room.localParticipant.name || room.localParticipant.identity || "You",
+                        message: text,
+                        timestamp: Date.now(),
+                      },
+                    ]);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <MeetingControls
+        meetingId={meetingId}
+        isHost={isHost}
+        meetingInfo={meetingInfo}
+        chatMessages={chatMessages}
+        setChatMessages={setChatMessages}
+        showParticipants={showParticipants}
+        setShowParticipants={setShowParticipants}
+        showChat={showChat}
+        setShowChat={setShowChat}
+        showInfo={showInfo}
+        setShowInfo={setShowInfo}
+      />
+
       {showInfo && (
         <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 w-96 bg-white rounded-lg shadow-2xl">
           <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -462,207 +810,7 @@ const MeetingControls = ({ meetingId, isHost, meetingInfo, chatMessages, setChat
           </div>
         </div>
       )}
-
-      {showParticipants && (
-        <div className="absolute top-0 right-0 h-full w-80 bg-white shadow-2xl flex flex-col z-50">
-          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 className="text-base font-medium text-gray-900">Participants ({participants.length})</h3>
-            <button onClick={() => setShowParticipants(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {participants.map((p) => (
-              <div key={p.identity} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 group transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    {(p.name || p.identity).charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{p.name || p.identity}</p>
-                    {p.identity === room.localParticipant.identity && <span className="text-xs text-gray-500">(You)</span>}
-                  </div>
-                </div>
-                {isHost && p.identity !== room.localParticipant.identity && (
-                  <button
-                    onClick={() => handleKick(p.identity)}
-                    className="opacity-0 group-hover:opacity-100 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded-md transition-all"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showChat && (
-        <ChatPanel
-          chatMessages={chatMessages}
-          onClose={() => setShowChat(false)}
-          room={room}
-          onSendMessage={(text) => {
-            setChatMessages((prev) => [
-              ...prev,
-              {
-                from: room.localParticipant.name || room.localParticipant.identity || "You",
-                message: text,
-                timestamp: Date.now(),
-              },
-            ]);
-          }}
-        />
-      )}
     </>
-  );
-};
-
-// Component inside LiveKitRoom to handle chat message receiving
-const ChatMessageListener = ({ setChatMessages }) => {
-  const room = useRoomContext();
-
-  useEffect(() => {
-    if (!room) return;
-
-    const handleDataReceived = (payload, participant) => {
-      try {
-        const decoder = new TextDecoder();
-        const messageText = decoder.decode(payload);
-
-        // Add received message to chat
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            from: participant?.name || participant?.identity || "Unknown",
-            message: messageText,
-            timestamp: Date.now(),
-          },
-        ]);
-      } catch (error) {
-        console.error("Failed to decode message:", error);
-      }
-    };
-
-    room.on(RoomEvent.DataReceived, handleDataReceived);
-
-    return () => {
-      room.off(RoomEvent.DataReceived, handleDataReceived);
-    };
-  }, [room, setChatMessages]);
-
-  return null;
-};
-
-// Component to auto-start recording when connected (needs to be inside LiveKitRoom)
-const RecordingStarter = ({ isHost }) => {
-  const room = useRoomContext();
-  const [hasStarted, setHasStarted] = React.useState(false);
-  const screenStreamRef = React.useRef(null);
-
-  React.useEffect(() => {
-    if (!isHost || !room || hasStarted) return;
-
-    console.log("[RecordingStarter] Room connected, starting recording process in 2s...");
-    const timer = setTimeout(async () => {
-      try {
-        // Request screen share locally (not published to LiveKit)
-        toast.info("Please share your screen to start recording (only for recording, not visible to others)");
-        console.log("[RecordingStarter] Requesting local screen share...");
-
-        try {
-          // Get screen share stream directly without publishing to LiveKit
-          const screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: {
-              cursor: "always",
-              displaySurface: "monitor",
-            },
-            audio: false, // Don't capture system audio, we'll use microphone
-          });
-
-          console.log("[RecordingStarter] Screen share obtained successfully");
-          screenStreamRef.current = screenStream;
-
-          // Listen for when user stops sharing via browser UI
-          screenStream.getVideoTracks()[0].addEventListener("ended", () => {
-            console.log("[RecordingStarter] Screen share ended by user");
-            toast.warn("Screen sharing stopped - recording may only show camera");
-          });
-        } catch (error) {
-          console.error("[RecordingStarter] Screen share failed:", error);
-          toast.error("Screen share is required for recording. Recording will use camera instead.");
-          // Continue without screen share - will fallback to camera
-        }
-
-        // Now start recording with screen stream
-        console.log("[RecordingStarter] Attempting to start recording...");
-        const success = recordingManager.startRecording(room, screenStreamRef.current);
-        console.log("[RecordingStarter] Recording start result:", success);
-
-        if (success) {
-          toast.success(screenStreamRef.current ? "Recording started with screen share (private)" : "Recording started with camera");
-          setHasStarted(true);
-        } else {
-          toast.warn("Recording could not be started");
-        }
-      } catch (error) {
-        console.error("[RecordingStarter] Error during recording setup:", error);
-        toast.error("Failed to start recording");
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [room, isHost, hasStarted]);
-
-  return null;
-};
-
-const MeetingRoomPageContent = ({
-  meetingId,
-  token,
-  serverUrl,
-  meetingInfo,
-  isHost,
-  handleDisconnect,
-  handleError,
-  chatMessages,
-  setChatMessages,
-}) => {
-  return (
-    <div className="h-screen bg-gray-900 relative overflow-hidden">
-      <LiveKitRoom
-        className="h-full w-full"
-        video={true}
-        audio={true}
-        token={token}
-        serverUrl={serverUrl}
-        connect={true}
-        onDisconnected={handleDisconnect}
-        onError={handleError}
-        options={{
-          adaptiveStream: true,
-          dynacast: true,
-          publishDefaults: { audioPreset: { maxBitrate: 64000 }, screenShareEncoding: { maxBitrate: 2000000 } },
-        }}
-      >
-        <ChatMessageListener setChatMessages={setChatMessages} />
-        <RecordingStarter isHost={isHost} />
-        <MeetingHeader meetingInfo={meetingInfo} chatMessages={chatMessages} />
-        <MeetingControls
-          meetingId={meetingId}
-          isHost={isHost}
-          meetingInfo={meetingInfo}
-          chatMessages={chatMessages}
-          setChatMessages={setChatMessages}
-        />
-        <div className="h-full w-full pt-14 pb-24">
-          <VideoConference className="w-full h-full" />
-        </div>
-        <RoomAudioRenderer />
-      </LiveKitRoom>
-    </div>
   );
 };
 

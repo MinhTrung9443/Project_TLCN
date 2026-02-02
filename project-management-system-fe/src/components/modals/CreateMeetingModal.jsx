@@ -21,7 +21,7 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
   const [members, setMembers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
-  const [uploadingFile, setUploadingFile] = useState(false);
+
 
   useEffect(() => {
     if (isOpen && projectData?.key) {

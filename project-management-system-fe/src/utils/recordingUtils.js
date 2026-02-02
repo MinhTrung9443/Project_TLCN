@@ -32,7 +32,10 @@ class RecordingManager {
           combinedStream.addTrack(track.clone());
           if (track.kind === "video") {
             hasVideo = true;
-            console.log("[Recording] ✅ Added local screen track (private):", track.label);
+            console.log("[Recording] ✅ Added local screen video track (private):", track.label);
+          } else if (track.kind === "audio") {
+            hasAudio = true;
+            console.log("[Recording] ✅ Added local screen audio track (system audio):", track.label);
           }
         });
       }
@@ -103,15 +106,26 @@ class RecordingManager {
           room.participants.forEach((participant) => {
             console.log("[Recording] Remote participant:", participant.identity);
 
-            // Get audio tracks
+            // Get audio tracks from remote participants
             if (participant.audioTrackPublications) {
+              console.log(
+                `[Recording] Remote participant ${participant.identity} audio track publications count:`,
+                participant.audioTrackPublications.size,
+              );
               participant.audioTrackPublications.forEach((publication) => {
+                console.log(`[Recording] Remote audio publication:`, publication.trackSid, publication.kind, publication.subscribed);
                 if (publication.track && publication.track.mediaStreamTrack) {
                   combinedStream.addTrack(publication.track.mediaStreamTrack.clone());
                   hasAudio = true;
-                  console.log("[Recording] Added remote audio track:", publication.track.mediaStreamTrack.label);
+                  console.log("[Recording] ✅ Added remote audio track:", publication.track.mediaStreamTrack.label, "from", participant.identity);
+                } else if (publication.subscribed && !publication.track) {
+                  console.warn(`[Recording] ⚠️ Remote audio publication subscribed but no track available for ${participant.identity}`);
+                } else if (!publication.subscribed) {
+                  console.warn(`[Recording] ⚠️ Remote audio publication not subscribed for ${participant.identity}`);
                 }
               });
+            } else {
+              console.warn(`[Recording] No audio track publications for remote participant ${participant.identity}`);
             }
 
             // Check screen share first

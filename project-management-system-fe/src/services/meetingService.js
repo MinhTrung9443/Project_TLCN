@@ -49,9 +49,26 @@ export const rsvpToMeeting = (meetingId, status, reason) => {
   return apiClient.post(`/meetings/${meetingId}/rsvp`, payload);
 };
 
-// You can add other service functions here as needed, e.g.:
+/**
+ * Creates a new meeting.
+ * @param {Object} meetingData - The data for the new meeting.
+ * @returns {Promise}
+ */
 export const createMeeting = (meetingData) => apiClient.post("/meetings", meetingData);
+/**
+ * Updates an existing meeting.
+ * @param {string} meetingId - The ID of the meeting to update.
+ * @param {Object} updateData - The updated meeting data.
+ * @returns {Promise}
+ */
 export const updateMeeting = (meetingId, updateData) => apiClient.put(`/meetings/${meetingId}`, updateData);
+
+/**
+  * Deletes a meeting.
+  * @param {string} meetingId - The ID of the meeting to delete.
+  * @returns {Promise}
+  */
+
 export const deleteMeeting = (meetingId) => apiClient.delete(`/meetings/${meetingId}`);
 
 /**
