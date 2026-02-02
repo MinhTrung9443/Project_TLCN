@@ -119,16 +119,39 @@ class SocketManager {
       console.log(`User ${userId} joined chat room: ${room}`);
     });
 
-    // Handle sending new message
-    socket.on("new message", (newMessageReceived) => {
-      var chat = newMessageReceived.conversationId;
+    // TRONG FILE: SocketManager.js (Server)
 
-      if (!chat) return console.log("Chat.conversationId not defined");
+socket.on("new message", (newMessageReceived) => {
+  try {
+    const chat = newMessageReceived.conversationId;
+    const senderId = newMessageReceived.sender._id || newMessageReceived.sender;
+    const conversationIdStr = chat._id ? chat._id.toString() : chat.toString();
 
-      socket.in(chat._id).emit("message received", newMessageReceived);
-      
-    
-    });
+    // ---------------------------------------------------------
+    // CÁCH 1: Gửi Realtime cho những người ĐANG MỞ đoạn chat này (Quan trọng cho Group/Project)
+    // ---------------------------------------------------------
+    // Bất kỳ ai đã chạy socket.emit('join chat', conversationId) sẽ nhận được
+    socket.to(conversationIdStr).emit("message received", newMessageReceived);
+
+    // ---------------------------------------------------------
+    // CÁCH 2: Gửi Notification cho Chat 1-1 (Direct) hoặc khi người dùng đang ở trang khác
+    // ---------------------------------------------------------
+    if (chat.participants && chat.participants.length > 0) {
+      chat.participants.forEach((participant) => {
+        const pId = participant._id ? participant._id.toString() : participant.toString();
+        const sId = senderId.toString();
+
+        if (pId === sId) return; // Không gửi cho chính mình
+
+        // Chỉ gửi vào room cá nhân nếu đây là chat 1-1 (để hiện noti)
+        // Hoặc bạn có thể giữ logic này cho cả Group nếu muốn hiện noti đỏ trên menu
+        this.io.to(`user:${pId}`).emit("message received", newMessageReceived);
+      });
+    }
+  } catch (error) {
+    console.error("❌ Error new message:", error);
+  }
+});
 
     socket.on("typing", (room) => {
         socket.in(room).emit("typing", room); 
