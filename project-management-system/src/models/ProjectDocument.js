@@ -19,7 +19,7 @@ const ProjectDocumentSchema = new Schema(
     },
     public_id: {
       type: String,
-      required: true,
+      required: false,
     },
     category: {
       type: String,
@@ -35,10 +35,31 @@ const ProjectDocumentSchema = new Schema(
       type: [String],
       default: [],
     },
+    sourceType: {
+      type: String,
+      enum: ["project", "task", "comment", "meeting"],
+      default: "project",
+      index: true,
+    },
+    parent: {
+      taskId: { type: Schema.Types.ObjectId, ref: "Task" },
+      taskKey: { type: String },
+      taskName: { type: String },
+      commentId: { type: Schema.Types.ObjectId, ref: "Comment" },
+      meetingId: { type: Schema.Types.ObjectId, ref: "Meeting" },
+      meetingTitle: { type: String },
+      _id: false,
+    },
     uploadedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    sharedWith: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+      index: true,
     },
     uploadedAt: {
       type: Date,
@@ -56,5 +77,6 @@ const ProjectDocumentSchema = new Schema(
 
 ProjectDocumentSchema.index({ projectId: 1, category: 1, uploadedAt: -1 });
 ProjectDocumentSchema.index({ projectId: 1, filename: "text" });
+ProjectDocumentSchema.index({ projectId: 1, sourceType: 1, uploadedAt: -1 });
 
 module.exports = mongoose.model("ProjectDocument", ProjectDocumentSchema);

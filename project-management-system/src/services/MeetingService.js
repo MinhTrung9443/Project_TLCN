@@ -3,6 +3,7 @@ const Project = require("../models/Project");
 const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinary");
 const summarizeQueue = require("../config/queue");
+const ProjectDocument = require("../models/ProjectDocument");
 
 const enqueueSummaryIfReady = async (meetingId) => {
   try {
@@ -402,6 +403,34 @@ const MeetingService = {
     meeting.attachments.push(newAttachment);
     const updatedMeeting = await meeting.save();
 
+    // Create ProjectDocument entry for meeting attachment (share with meeting members + PM)
+    try {
+      const project = await Project.findById(meeting.projectId).lean();
+      const pmIds = project?.members?.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId) || [];
+      const participantIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
+      const sharedWith = [...new Set([...pmIds, ...participantIds].map((id) => id.toString()))].map((id) => mongoose.Types.ObjectId(id));
+
+      await ProjectDocument.create({
+        projectId: meeting.projectId,
+        filename: newAttachment.filename,
+        url: newAttachment.url,
+        public_id: newAttachment.public_id,
+        category: "other",
+        version: "v1",
+        tags: [],
+        sourceType: "meeting",
+        parent: {
+          meetingId: meeting._id,
+          meetingTitle: meeting.title,
+        },
+        uploadedBy: userId,
+        sharedWith,
+        uploadedAt: newAttachment.uploadedAt || new Date(),
+      });
+    } catch (docError) {
+      console.error("[MeetingService] Failed to create ProjectDocument:", docError.message);
+    }
+
     return updatedMeeting.populate("createdBy", "fullname avatar");
   },
 
@@ -526,6 +555,36 @@ const MeetingService = {
       meeting.chatHistoryLink = result.secure_url;
       const updatedMeeting = await meeting.save();
 
+      // Create ProjectDocument entry for chat history
+      try {
+        const project = await Project.findById(meeting.projectId);
+        if (project) {
+          const pmIds = project.members.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
+          const memberIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
+          const sharedWith = [...new Set([...memberIds, ...pmIds].map(id => id.toString()))].map(id => mongoose.Types.ObjectId(id));
+
+          await ProjectDocument.create({
+            projectId: meeting.projectId,
+            filename: `Chat History - ${meeting.title || 'Meeting'}`,
+            url: result.secure_url,
+            public_id: result.public_id,
+            category: "other",
+            version: "v1",
+            tags: ["chat", "history"],
+            sourceType: "meeting",
+            parent: {
+              meetingId: meeting._id,
+              meetingTitle: meeting.title,
+            },
+            uploadedBy: userId,
+            sharedWith,
+            uploadedAt: new Date(),
+          });
+        }
+      } catch (docError) {
+        console.error("Failed to create ProjectDocument for chat history:", docError);
+      }
+
       await enqueueSummaryIfReady(updatedMeeting._id);
 
       return updatedMeeting.populate("createdBy", "fullname avatar");
@@ -611,6 +670,36 @@ const MeetingService = {
       ).populate("createdBy", "fullname avatar");
       
       console.log("[MeetingService.uploadRecording] Meeting updated with videoLink:", updatedMeeting.videoLink);
+
+      // Create ProjectDocument entry for video recording
+      try {
+        const project = await Project.findById(meeting.projectId);
+        if (project) {
+          const pmIds = project.members.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
+          const memberIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
+          const sharedWith = [...new Set([...memberIds, ...pmIds].map(id => id.toString()))].map(id => mongoose.Types.ObjectId(id));
+
+          await ProjectDocument.create({
+            projectId: meeting.projectId,
+            filename: `Video - ${meeting.title || 'Meeting'}`,
+            url: result.secure_url,
+            public_id: result.public_id,
+            category: "other",
+            version: "v1",
+            tags: ["video", "recording"],
+            sourceType: "meeting",
+            parent: {
+              meetingId: meeting._id,
+              meetingTitle: meeting.title,
+            },
+            uploadedBy: userId,
+            sharedWith,
+            uploadedAt: new Date(),
+          });
+        }
+      } catch (docError) {
+        console.error("Failed to create ProjectDocument for video recording:", docError);
+      }
 
       await enqueueSummaryIfReady(updatedMeeting._id);
 

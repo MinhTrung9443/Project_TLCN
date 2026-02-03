@@ -11,6 +11,7 @@ const Workflow = require("../models/Workflow");
 const cloudinary = require("../config/cloudinary");
 const path = require("path");
 const fs = require("fs");
+const ProjectDocument = require("../models/ProjectDocument");
 // Hàm lấy task theo projectId
 const getTasksByProjectKey = async (projectKey) => {
   // 1. Tìm project để lấy projectId
@@ -560,7 +561,7 @@ const updateTask = async (taskId, updateData, userId) => {
     const workflow = await Workflow.findOne({ projectId: projectIdObj._id });
     if (workflow && workflow.statuses) {
       const statusObject = workflow.statuses.find(
-        (s) => s._id.toString() === populatedTask.statusId._id?.toString() || s._id.toString() === populatedTask.statusId.toString()
+        (s) => s._id.toString() === populatedTask.statusId._id?.toString() || s._id.toString() === populatedTask.statusId.toString(),
       );
       if (statusObject) {
         populatedTask.statusId = statusObject;
@@ -767,7 +768,7 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
   console.log("Workflow transitions:", workflow.transitions);
 
   const isValidTransition = workflow.transitions.some(
-    (t) => t.from.toString() === currentStatusId.toString() && t.to.toString() === statusId.toString()
+    (t) => t.from.toString() === currentStatusId.toString() && t.to.toString() === statusId.toString(),
   );
 
   console.log("Is valid transition:", isValidTransition);
@@ -880,6 +881,35 @@ const addAttachment = async (taskId, file, userId) => {
   task.attachments.push(newAttachment);
 
   const updatedTask = await task.save();
+
+  // Create ProjectDocument entry for task attachment (share with PM + Leader)
+  try {
+    const project = await Project.findById(task.projectId).lean();
+    if (project) {
+      const sharedWith = project.members.filter((m) => m.role === "PROJECT_MANAGER" || m.role === "LEADER").map((m) => m.userId);
+
+      await ProjectDocument.create({
+        projectId: task.projectId,
+        filename: newAttachment.filename,
+        url: newAttachment.url,
+        public_id: newAttachment.public_id,
+        category: "other",
+        version: "v1",
+        tags: [],
+        sourceType: "task",
+        parent: {
+          taskId: task._id,
+          taskKey: task.key,
+          taskName: task.name,
+        },
+        uploadedBy: userId,
+        sharedWith,
+        uploadedAt: new Date(),
+      });
+    }
+  } catch (docError) {
+    console.error("[TaskService] Failed to create ProjectDocument:", docError.message);
+  }
 
   await logHistory(taskId, userId, "Attachment", null, `Đã thêm tệp đính kèm: ${file.originalname}`, "UPDATE");
 
@@ -1124,7 +1154,7 @@ const removeAssigneeFromIncompleteTasks = async (userId) => {
       },
       {
         $set: { assigneeId: null }, // Đưa về Unassigned
-      }
+      },
     );
 
     console.log(`Đã gỡ User ${userId} khỏi ${result.modifiedCount} task chưa hoàn thành.`);

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinary");
-const { Project, Task, Comment, Meeting, ProjectDocument } = require("../models");
+const { Project, ProjectDocument } = require("../models");
 
 const normalizeTags = (tags) => {
   if (!tags) return [];
@@ -31,72 +31,9 @@ const mapProjectDoc = (doc) => ({
   uploadedAt: doc.uploadedAt,
   mimeType: doc.mimeType,
   size: doc.size,
-  sourceType: "project",
+  sourceType: doc.sourceType || "project",
+  parent: doc.parent,
 });
-
-const mapTaskAttachments = (tasks) => {
-  const items = [];
-  tasks.forEach((task) => {
-    (task.attachments || []).forEach((att) => {
-      items.push({
-        id: `${task._id}-${att.public_id}`,
-        filename: att.filename,
-        url: att.url,
-        uploadedAt: att.uploadedAt,
-        sourceType: "task",
-        parent: {
-          taskId: task._id,
-          taskKey: task.key,
-          taskName: task.name,
-        },
-      });
-    });
-  });
-  return items;
-};
-
-const mapCommentAttachments = (comments, taskMap) => {
-  const items = [];
-  comments.forEach((comment) => {
-    const taskInfo = taskMap.get(String(comment.taskId));
-    (comment.attachments || []).forEach((att) => {
-      items.push({
-        id: `${comment._id}-${att.public_id}`,
-        filename: att.filename,
-        url: att.url,
-        uploadedAt: att.uploadedAt,
-        sourceType: "comment",
-        parent: {
-          commentId: comment._id,
-          taskId: comment.taskId,
-          taskKey: taskInfo?.key,
-          taskName: taskInfo?.name,
-        },
-      });
-    });
-  });
-  return items;
-};
-
-const mapMeetingAttachments = (meetings) => {
-  const items = [];
-  meetings.forEach((meeting) => {
-    (meeting.attachments || []).forEach((att) => {
-      items.push({
-        id: `${meeting._id}-${att.public_id}`,
-        filename: att.filename,
-        url: att.url,
-        uploadedAt: att.uploadedAt,
-        sourceType: "meeting",
-        parent: {
-          meetingId: meeting._id,
-          meetingTitle: meeting.title,
-        },
-      });
-    });
-  });
-  return items;
-};
 
 const ProjectDocumentController = {
   async listDocuments(req, res) {
@@ -110,42 +47,33 @@ const ProjectDocumentController = {
       }
 
       const projectId = project._id;
-      const result = {};
+      const userId = req.user?._id;
 
-      if (source === "all" || source === "project") {
-        const docs = await ProjectDocument.find({ projectId }).sort({ uploadedAt: -1 }).populate("uploadedBy", "fullname avatar").lean();
-        result.projectDocs = docs.map(mapProjectDoc);
+      const query = {
+        projectId,
+        $or: [{ sharedWith: userId }, { uploadedBy: userId }],
+      };
+
+      if (source !== "all") {
+        query.sourceType = source;
       }
 
-      if (source === "all" || source === "task" || source === "comment") {
-        const tasks = await Task.find({ projectId, "attachments.0": { $exists: true } })
-          .select("_id key name attachments")
-          .lean();
-        const taskMap = new Map(tasks.map((t) => [String(t._id), { key: t.key, name: t.name }]));
+      const docs = await ProjectDocument.find(query).sort({ uploadedAt: -1 }).populate("uploadedBy", "fullname avatar").lean();
 
-        if (source === "all" || source === "task") {
-          result.taskAttachments = mapTaskAttachments(tasks);
-        }
+      const result = {
+        projectDocs: [],
+        taskAttachments: [],
+        commentAttachments: [],
+        meetingAttachments: [],
+      };
 
-        if (source === "all" || source === "comment") {
-          const taskIds = tasks.map((t) => t._id);
-          if (taskIds.length > 0) {
-            const comments = await Comment.find({ taskId: { $in: taskIds }, "attachments.0": { $exists: true } })
-              .select("taskId attachments")
-              .lean();
-            result.commentAttachments = mapCommentAttachments(comments, taskMap);
-          } else {
-            result.commentAttachments = [];
-          }
-        }
-      }
-
-      if (source === "all" || source === "meeting") {
-        const meetings = await Meeting.find({ projectId, "attachments.0": { $exists: true } })
-          .select("_id title attachments")
-          .lean();
-        result.meetingAttachments = mapMeetingAttachments(meetings);
-      }
+      docs.forEach((doc) => {
+        const mapped = mapProjectDoc(doc);
+        if (doc.sourceType === "task") result.taskAttachments.push(mapped);
+        else if (doc.sourceType === "comment") result.commentAttachments.push(mapped);
+        else if (doc.sourceType === "meeting") result.meetingAttachments.push(mapped);
+        else result.projectDocs.push(mapped);
+      });
 
       return res.status(200).json(result);
     } catch (error) {
@@ -168,6 +96,11 @@ const ProjectDocumentController = {
         return res.status(400).json({ message: "No file provided" });
       }
 
+      const sharedWith = project.members.map((m) => m.userId);
+      if (!sharedWith.some((id) => id.equals(req.user._id))) {
+        sharedWith.push(req.user._id);
+      }
+
       const newDoc = await ProjectDocument.create({
         projectId: project._id,
         filename: req.file.originalname,
@@ -176,7 +109,10 @@ const ProjectDocumentController = {
         category: category || "other",
         version: version || "v1",
         tags: normalizeTags(tags),
+        sourceType: "project",
+        parent: {},
         uploadedBy: req.user._id,
+        sharedWith,
         mimeType: req.file.mimetype,
         size: req.file.size,
       });
@@ -208,8 +144,14 @@ const ProjectDocumentController = {
         return res.status(404).json({ message: "Document not found" });
       }
 
+      if (document.sourceType !== "project") {
+        return res.status(400).json({ message: "Only project documents can be deleted" });
+      }
+
       try {
-        await cloudinary.uploader.destroy(document.public_id);
+        if (document.public_id) {
+          await cloudinary.uploader.destroy(document.public_id);
+        }
       } catch (cloudError) {
         console.warn("[ProjectDocumentController] Cloudinary delete failed:", cloudError.message);
       }

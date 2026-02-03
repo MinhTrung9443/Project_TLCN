@@ -1,4 +1,7 @@
 const commentService = require("../services/CommentService");
+const Task = require("../models/Task");
+const Project = require("../models/Project");
+const ProjectDocument = require("../models/ProjectDocument");
 
 const handleGetComments = async (req, res) => {
   try {
@@ -34,8 +37,44 @@ const handleCreateComment = async (req, res) => {
         taskId: taskId,
         attachments: attachments,
       },
-      userId
+      userId,
     );
+
+    // Create ProjectDocument entries for comment attachments (share with PM + Leader)
+    if (attachments.length > 0) {
+      try {
+        const task = await Task.findById(taskId).lean();
+        const project = task ? await Project.findById(task.projectId).lean() : null;
+
+        if (task && project) {
+          const sharedWith = project.members.filter((m) => m.role === "PROJECT_MANAGER" || m.role === "LEADER").map((m) => m.userId);
+
+          await ProjectDocument.insertMany(
+            attachments.map((att) => ({
+              projectId: task.projectId,
+              filename: att.filename,
+              url: att.url,
+              public_id: att.public_id,
+              category: "other",
+              version: "v1",
+              tags: [],
+              sourceType: "comment",
+              parent: {
+                commentId: comment._id,
+                taskId: task._id,
+                taskKey: task.key,
+                taskName: task.name,
+              },
+              uploadedBy: userId,
+              sharedWith,
+              uploadedAt: new Date(),
+            })),
+          );
+        }
+      } catch (docError) {
+        console.error("[CommentController] Failed to create ProjectDocument:", docError.message);
+      }
+    }
 
     res.status(201).json(comment);
   } catch (error) {
