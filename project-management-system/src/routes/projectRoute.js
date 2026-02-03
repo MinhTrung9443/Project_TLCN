@@ -26,8 +26,10 @@ const {
   handleAddMemberToTeam,
   handleRemoveMemberFromTeam,
 } = require("../controllers/ProjectController");
+const ProjectDocumentController = require("../controllers/ProjectDocumentController");
 
 const { protect, admin, isProjectManager, isProjectMember } = require("../middleware/authMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
 // ===============================================
 // === 1. CÁC HÀNH ĐỘNG CỦA ADMIN HỆ THỐNG ===
@@ -55,6 +57,11 @@ router.get("/", protect, handleGetAllProjects);
 router.get("/key/:projectKey/details", protect, isProjectMember, handleGetProjectDetails);
 router.get("/key/:projectKey", protect, isProjectMember, handleGetProjectByKey);
 router.get("/:id", protect, handleGetProjectById);
+
+// Project Documents (upload-only)
+router.get("/key/:projectKey/documents", protect, isProjectMember, ProjectDocumentController.listDocuments);
+router.post("/key/:projectKey/documents", protect, isProjectMember, upload.single("file"), ProjectDocumentController.uploadDocument);
+router.delete("/key/:projectKey/documents/:documentId", protect, isProjectMember, ProjectDocumentController.deleteDocument);
 
 router.put("/key/:projectKey/members/:userId/role", protect, isProjectManager, handleChangeMemberRole);
 

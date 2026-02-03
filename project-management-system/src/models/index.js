@@ -15,6 +15,7 @@ const Transcript = require("./Transcript");
 const Summary = require("./Summary");
 const ActionItem = require("./ActionItem");
 const ProcessingLog = require("./ProcessingLog");
+const ProjectDocument = require("./ProjectDocument");
 
 module.exports = {
   User,
@@ -34,4 +35,5 @@ module.exports = {
   Summary,
   ActionItem,
   ProcessingLog,
+  ProjectDocument,
 };
