@@ -32,8 +32,11 @@ export const ChatProvider = ({ children }) => {
     const shouldIncrement = !isMyMessage && !isActiveChat;
 
     setDirectChats((prevChats) => {
+      // 1. Check if chat already exists
       const chatIndex = prevChats.findIndex((c) => c._id === conversationId);
+      
       if (chatIndex > -1) {
+        // Update existing chat
         const oldChat = prevChats[chatIndex];
         const updatedChat = {
           ...oldChat,
@@ -42,8 +45,31 @@ export const ChatProvider = ({ children }) => {
         };
         const otherChats = prevChats.filter((c) => c._id !== conversationId);
         return [updatedChat, ...otherChats];
+      } else {
+         // 2. New chat found - we need to add it!
+         const convData = typeof newMessage.conversationId === 'object' ? newMessage.conversationId : { _id: conversationId };
+
+         // CRITICAL FIX: Only add to direct chats if type is DIRECT
+         if (convData.type && convData.type !== 'DIRECT') {
+             return prevChats;
+         }
+         
+         // If we have full conversation data in message, use it
+         if (convData.participants) {
+             const newChat = {
+                 ...convData,
+                 lastMessage: newMessage,
+                 unreadCount: shouldIncrement ? 1 : 0
+             };
+             return [newChat, ...prevChats];
+         }
+         
+         // If type is not available but we're here, assume it MIGHT be direct if we don't know otherwise? 
+         // Unsafe. Only add if we are sure.
+         // But usually backend sends populated.
+         
+         return prevChats;
       }
-      return prevChats;
     });
 
     setProjectChannels((prevChannels) => {
@@ -121,14 +147,16 @@ export const ChatProvider = ({ children }) => {
       }
     }
   };
-  const sendMessage = async (content, conversationId, attachments) => {
+  const sendMessage = async (content, conversationId, attachments, replyTo = null) => {
     try {
       // 1. Gọi API lưu xuống DB
       const data = await chatService.sendMessage({
         content,
         conversationId,
         attachments,
+        replyTo
       });
+      // ... (Rest is same)
 
       // 2. Emit sự kiện Socket lên Server
       if (socketService.socket) {
@@ -221,14 +249,123 @@ export const ChatProvider = ({ children }) => {
       }
     };
 
-    socketService.socket.on("message received", handleMessageReceived);
-    socketService.socket.on("message read", handleMessageRead); // <--- Đăng ký
+    const handleMessageRecalled = ({ messageId }) => {
+         setMessages(prev => prev.map(m => 
+              m._id === messageId ? { ...m, isRecalled: true } : m
+         ));
+    };
+
+    const handleReactionUpdate = ({ messageId, reaction, userId }) => {
+         setMessages(prev => prev.map(m => {
+              if (m._id !== messageId) return m;
+
+              const existingIdx = m.reactions?.findIndex(r => r.userId === userId || r.userId?._id === userId);
+              let newReactions = m.reactions ? [...m.reactions] : [];
+              
+              // This basic logic mimics backend toggle. 
+              // For perfect sync, backend should return 'action' (added/removed/updated) or the full list
+              // But here we rely on the same logic:
+              // If we receive the same reaction -> User wants to remove? 
+              // Actually, since socket comes from another user's action, we assume they did the right toggle.
+              // Wait, receiving "type" usually means "set to type". 
+              // If the user removed it, we might need a null or separate event.
+              // For simplicity: If received same type -> remove. If different -> update.
+              // (Ideally backend socket event should be explicit about `added` or `removed`)
+             
+              if (existingIdx > -1) {
+                  const old = newReactions[existingIdx];
+                  if (old.type === reaction) {
+                      newReactions.splice(existingIdx, 1);
+                  } else {
+                      newReactions[existingIdx] = { ...old, type: reaction };
+                  }
+              } else {
+                  // We need to know who reacted. We have userId but not username/avatar for display if needed immediately.
+                  // But usually reactions just show small icons/counts or tooltip names.
+                  // We'll mock the minimal user object
+                  newReactions.push({ userId: userId, type: reaction });
+              }
+              return { ...m, reactions: newReactions };
+         }));
+    };
+
+     socketService.socket.on("message received", handleMessageReceived);
+    socketService.socket.on("message read", handleMessageRead); 
+    socketService.socket.on("message recalled", handleMessageRecalled);
+    socketService.socket.on("message reaction update", handleReactionUpdate);
 
     return () => {
-      socketService.socket.off("message received", handleMessageReceived);
-      socketService.socket.off("message read", handleMessageRead); // <--- Hủy
+        socketService.socket.off("message received", handleMessageReceived);
+        socketService.socket.off("message read", handleMessageRead); 
+        socketService.socket.off("message recalled", handleMessageRecalled);
+        socketService.socket.off("message reaction update", handleReactionUpdate);
     };
   }, [user, selectedConversation, updateChatLists]); // Dependencies
+
+  const recallMessage = async (messageId) => {
+      try {
+           const msg = await chatService.recallMessage(messageId);
+        
+           // 2. Emit socket
+           if (socketService.socket && selectedConversation) {
+               socketService.socket.emit("recall message", {
+                   conversationId: selectedConversation._id,
+                   messageId
+               });
+           }
+
+            // 3. Update Local
+           setMessages(prev => prev.map(m => 
+               m._id === messageId ? { ...m, isRecalled: true } : m
+           ));
+           
+      } catch (error) {
+           console.error("Recall error:", error);
+           throw error;
+      }
+  };
+
+  const sendReaction = async (messageId, type) => {
+      try {
+          // Optimistic update
+          setMessages(prev => prev.map(m => {
+              if (m._id !== messageId) return m;
+
+              const userId = user._id;
+              const existingIdx = m.reactions?.findIndex(r => r.userId === userId || r.userId?._id === userId);
+              let newReactions = m.reactions ? [...m.reactions] : [];
+
+              if (existingIdx > -1) {
+                  const oldReaction = newReactions[existingIdx];
+                  if (oldReaction.type === type) {
+                       newReactions.splice(existingIdx, 1);
+                  } else {
+                       newReactions[existingIdx] = { ...oldReaction, type };
+                  }
+              } else {
+                  newReactions.push({ userId: { _id: userId, username: user.username }, type });
+              }
+              
+              return { ...m, reactions: newReactions };
+          }));
+          
+          await chatService.toggleReaction(messageId, type);
+
+          if (socketService.socket && selectedConversation) {
+               socketService.socket.emit("send reaction", {
+                   conversationId: selectedConversation._id,
+                   messageId,
+                   reaction: type,
+                   userId: user._id
+               });
+           }
+
+      } catch (error) {
+          console.error("Reaction failed:", error);
+          // Revert if error? (Simplest is just let it be or reload)
+          loadMessages(selectedConversation._id);
+      }
+  };
 
   const loadMessages = async (conversationId) => {
     try {
@@ -269,6 +406,8 @@ export const ChatProvider = ({ children }) => {
     projectChannels,
     setProjectChannels,
     markAsRead,
+    recallMessage,
+    sendReaction,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

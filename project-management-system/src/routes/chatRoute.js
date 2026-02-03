@@ -150,5 +150,11 @@ router.post("/message", ChatController.sendMessage);
  *                 $ref: '#/components/schemas/Message'
  */
 router.get("/:conversationId/messages", ChatController.allMessages);
+router.get("/:conversationId/details", ChatController.getDetails);
+router.get("/:conversationId/search", ChatController.search);
+router.get("/:conversationId/attachments", ChatController.getAttachments);
+
+router.post("/recall", ChatController.recallMessage);
+router.post("/reaction", ChatController.toggleReaction);
 
 module.exports = router;

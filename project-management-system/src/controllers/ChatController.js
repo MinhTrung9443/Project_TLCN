@@ -3,17 +3,38 @@ const chatService = require("../services/ChatService");
 const ChatController = {
   sendMessage: async (req, res) => {
     try {
-      const { content, conversationId, attachments } = req.body;
+      const { content, conversationId, attachments, replyTo } = req.body;
       const message = await chatService.sendMessage(
         req.user.id,
         content,
         conversationId,
-        attachments
+        attachments,
+        replyTo 
       );
       res.status(200).json(message);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
+  },
+
+  recallMessage: async(req, res) => {
+      try {
+          const { messageId } = req.body;
+          const msg = await chatService.recallMessage(messageId, req.user.id);
+          res.status(200).json(msg);
+      } catch (error) {
+          res.status(400).json({ message: error.message });
+      }
+  },
+
+  toggleReaction: async(req, res) => {
+      try {
+          const { messageId, type } = req.body;
+           const msg = await chatService.toggleReaction(messageId, req.user.id, type);
+          res.status(200).json(msg);
+      } catch (error) {
+           res.status(400).json({ message: error.message });
+      }
   },
 
   allMessages: async (req, res) => {
@@ -53,6 +74,38 @@ const ChatController = {
       res.status(500).json({ message: error.message });
     }
   },
+
+  getDetails: async (req, res) => {
+      try {
+          const { conversationId } = req.params;
+          const details = await chatService.getConversationDetails(conversationId);
+          res.status(200).json(details);
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+  },
+
+  search: async (req, res) => {
+      try {
+          const { conversationId } = req.params;
+          const { q } = req.query;
+          const msgs = await chatService.searchMessages(conversationId, q);
+          res.status(200).json(msgs);
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+  },
+
+  getAttachments: async (req, res) => {
+      try {
+          const { conversationId } = req.params;
+          const { type } = req.query; // 'image', 'raw', or 'all'
+          const files = await chatService.getAttachments(conversationId, type);
+          res.status(200).json(files);
+      } catch (error) {
+           res.status(500).json({ message: error.message });
+      }
+  }
 };
 
 module.exports = ChatController;

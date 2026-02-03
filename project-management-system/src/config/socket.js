@@ -189,6 +189,22 @@ socket.on("new message", (newMessageReceived) => {
     socket.on("stop typing", (room) => {
         socket.in(room).emit("stop typing", room);
     });
+
+    // Handle recall message
+    socket.on("recall message", ({ conversationId, messageId }) => {
+        const roomName = conversationId._id ? conversationId._id.toString() : conversationId.toString();
+        socket.to(roomName).emit("message recalled", { messageId: messageId.toString() });
+    });
+
+    // Handle reaction
+    socket.on("send reaction", ({ conversationId, messageId, reaction, userId }) => {
+        const roomName = conversationId.toString();
+        socket.to(roomName).emit("message reaction update", { 
+           messageId, 
+           reaction, 
+           userId 
+        });
+    });
   }
 
   async sendUnreadCount(userId) {

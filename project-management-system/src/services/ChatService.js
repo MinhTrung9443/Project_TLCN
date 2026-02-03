@@ -5,6 +5,122 @@ const Project = require("../models/Project");
 const Group = require("../models/Group");
 
 class ChatService {
+  async getConversationDetails(conversationId) {
+      const conv = await Conversation.findById(conversationId)
+          .populate("participants", "username email avatar fullname")
+          .populate("projectId", "name members")
+          .populate("teamId", "name members leaderId");
+      
+      if (!conv) throw new Error("Conversation not found");
+
+      let members = [];
+      if (conv.type === "DIRECT") {
+          members = conv.participants;
+      } else if (conv.type === "PROJECT") {
+          // Fetch from Project - Aggregate all members from Project.members and Project.teams
+          const project = await Project.findById(conv.projectId)
+              .populate("members.userId", "username email avatar fullname")
+              .populate("teams.members", "username email avatar fullname")
+              .populate("teams.leaderId", "username email avatar fullname");
+
+          if (project) {
+              const fullMembers = new Map();
+
+              // 1. Add direct project members
+              if (project.members) {
+                  project.members.forEach(m => {
+                      if (m.userId) {
+                          fullMembers.set(m.userId._id.toString(), {
+                              ...m.userId.toObject(),
+                              role: m.role
+                          });
+                      }
+                  });
+              }
+
+              // 2. Add members from teams
+              if (project.teams) {
+                  project.teams.forEach(team => {
+                        // Leader
+                        if (team.leaderId) {
+                            const leaderId = team.leaderId._id.toString();
+                            if (!fullMembers.has(leaderId)) {
+                                fullMembers.set(leaderId, { ...team.leaderId.toObject(), role: "TEAM_LEADER" });
+                            }
+                        }
+                        // Members
+                        if (team.members) {
+                            team.members.forEach(tm => {
+                                const tmId = tm._id.toString();
+                                if (!fullMembers.has(tmId)) {
+                                    fullMembers.set(tmId, { ...tm.toObject(), role: "TEAM_MEMBER" });
+                                }
+                            });
+                        }
+                  });
+              }
+              
+              members = Array.from(fullMembers.values());
+          }
+      } else if (conv.type === "TEAM") {
+           // Fetch from Team (Group) which is embedded in Project usually, OR referenced by teamId if Group model is used separately
+           // In getProjectChannels logic: teams are inside Project.teams
+           // But here we have teamId ref to Group? 
+           // Let's check getProjectChannels... it uses project.teams which has teamId (Group)
+           // So yes, fetch Group
+           const group = await Group.findById(conv.teamId).populate("members", "username email avatar fullname");
+           if (group) {
+              members = group.members || [];
+              // Add leader if not in members? Usually leader is separate or included.
+              if (group.leaderId) {
+                  const leader = await User.findById(group.leaderId).select("username email avatar fullname");
+                  if (leader && !members.find(m => m._id.toString() === leader._id.toString())) {
+                      members.push({ ...leader.toObject(), role: "LEADER" });
+                  }
+              }
+           }
+      }
+      return { ...conv.toObject(), members };
+  }
+
+  async searchMessages(conversationId, keyword) {
+      const regex = new RegExp(keyword, 'i');
+      return await Message.find({
+          conversationId,
+          content: { $regex: regex }
+      })
+      .populate("sender", "username email avatar")
+      .sort({ createdAt: -1 });
+  }
+
+  async getAttachments(conversationId, type = 'all') {
+      const query = { conversationId, attachments: { $not: { $size: 0 } } };
+      if (type !== 'all') {
+          query['attachments.type'] = type; 
+      }
+      
+      const messages = await Message.find(query)
+          .select("attachments sender createdAt")
+          .populate("sender", "username avatar")
+          .sort({ createdAt: -1 });
+
+      // Flatten attachments
+      const files = [];
+      messages.forEach(msg => {
+          msg.attachments.forEach(att => {
+              if (type === 'all' || att.type === type) {
+                  files.push({
+                      ...att.toObject(),
+                      sender: msg.sender,
+                      createdAt: msg.createdAt,
+                      messageId: msg._id
+                  });
+              }
+          });
+      });
+      return files;
+  }
+
   async _getUnreadCount(conversationId, userId) {
     return await Message.countDocuments({
       conversationId: conversationId,
@@ -13,7 +129,7 @@ class ChatService {
   }
 
   // 1. Gửi tin nhắn
-  async sendMessage(senderId, content, conversationId, attachments) {
+  async sendMessage(senderId, content, conversationId, attachments, replyTo = null) {
     if (!content && (!attachments || attachments.length === 0)) {
       throw new Error("Message must contain content or attachments");
     }
@@ -23,6 +139,7 @@ class ChatService {
       content: content,
       conversationId: conversationId,
       attachments: attachments || [],
+      replyTo: replyTo,
     };
 
     let message = await Message.create(newMessage);
@@ -30,6 +147,15 @@ class ChatService {
     // Populate sender info
     message = await message.populate("sender", "username email avatar");
     message = await message.populate("conversationId");
+    message = await message.populate({
+        path: "replyTo",
+        populate: { path: "sender", select: "username" }
+    });
+    
+    // Auto add sender to readBy (optional, already handled by update logic usually)
+    message.readBy.push(senderId);
+    await message.save();
+
     message = await User.populate(message, {
       path: "conversationId.participants",
       select: "username email avatar",
@@ -43,10 +169,57 @@ class ChatService {
     return message;
   }
 
+  async recallMessage(messageId, userId) {
+      const message = await Message.findById(messageId);
+      if (!message) throw new Error("Message not found");
+      
+      if (message.sender.toString() !== userId.toString()) {
+          throw new Error("You can only recall your own messages");
+      }
+
+      // Check time limit (e.g. 5 minutes)
+      const diff = new Date() - new Date(message.createdAt);
+      if (diff > 5 * 60 * 1000) {
+           throw new Error("Message is too old to recall (limit 5m)");
+      }
+
+      message.isRecalled = true;
+      await message.save();
+      return message;
+  }
+  
+  async toggleReaction(messageId, userId, type) {
+      const message = await Message.findById(messageId);
+      if (!message) throw new Error("Message not found");
+
+      const existingIndex = message.reactions.findIndex(r => r.userId.toString() === userId.toString());
+      
+      if (existingIndex > -1) {
+          // If clicking same reaction -> remove it
+          if (message.reactions[existingIndex].type === type) {
+              message.reactions.splice(existingIndex, 1);
+          } else {
+              // Change reaction
+              message.reactions[existingIndex].type = type;
+          }
+      } else {
+          // Add new
+          message.reactions.push({ userId, type });
+      }
+      
+      await message.save();
+      return message; // Return full message for easy updates
+  }
+
   // 2. Lấy tin nhắn của hội thoại
   async getAllMessages(conversationId) {
     const messages = await Message.find({ conversationId: conversationId })
       .populate("sender", "username email avatar")
+      .populate({
+          path: "replyTo",
+          select: "content sender attachments",
+          populate: { path: "sender", select: "username" }
+      })
       .sort({ createdAt: 1 });
     return messages;
   }
@@ -58,7 +231,6 @@ class ChatService {
     }
 
     let isChat = await Conversation.find({
-      isGroupChat: false,
       type: "DIRECT",
       $and: [
         { participants: { $elemMatch: { $eq: currentUserId } } },
@@ -78,7 +250,6 @@ class ChatService {
     } else {
       const chatData = {
         name: "sender",
-        isGroupChat: false,
         participants: [currentUserId, targetUserId],
         type: "DIRECT",
       };

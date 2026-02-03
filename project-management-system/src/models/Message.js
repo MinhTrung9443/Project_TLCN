@@ -32,6 +32,21 @@ const messageSchema = new Schema(
         ref: "User",
       },
     ],
+    isRecalled: {
+      type: Boolean,
+      default: false,
+    },
+    replyTo: {
+        type: Schema.Types.ObjectId,
+        ref: "Message",
+        default: null
+    },
+    reactions: [
+        {
+            userId: { type: Schema.Types.ObjectId, ref: "User" },
+            type: { type: String }, // e.g., 'like', 'love', 'haha', 'wow', 'sad', 'angry'
+        }
+    ]
   },
   {
     timestamps: true,
