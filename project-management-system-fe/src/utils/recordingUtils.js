@@ -17,7 +17,7 @@ class RecordingManager {
    * @param {MediaStream} screenStream - Local screen share stream (optional, not published to LiveKit)
    * @returns {boolean} - Success status
    */
-  startRecording(room = null, screenStream = null) {
+  async startRecording(room = null, screenStream = null) {
     try {
       // Combine all active audio/video streams from the page
       const combinedStream = new MediaStream();
@@ -25,7 +25,28 @@ class RecordingManager {
       let hasAudio = false;
       let hasVideo = false;
 
-      // Priority 1: Use local screen stream if provided (private, not shared with others)
+      // Priority 1: Explicitly capture host's microphone using getUserMedia
+      try {
+        console.log("[Recording] Attempting to capture host's microphone...");
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false, // Disable echo cancellation to preserve raw audio
+            noiseSuppression: false, // Disable noise suppression
+            autoGainControl: false, // Disable auto gain control
+          },
+        });
+
+        micStream.getAudioTracks().forEach((track) => {
+          combinedStream.addTrack(track.clone());
+          hasAudio = true;
+          console.log("[Recording] ✅ Added host microphone audio track:", track.label);
+        });
+      } catch (micError) {
+        console.warn("[Recording] ⚠️ Could not capture microphone:", micError.message);
+        // Continue anyway - may still have audio from LiveKit or screen share
+      }
+
+      // Priority 2: Use local screen stream if provided (private, not shared with others)
       if (screenStream) {
         console.log("[Recording] Using local screen stream (not published to LiveKit)");
         screenStream.getTracks().forEach((track) => {
@@ -276,10 +297,12 @@ class RecordingManager {
    * @returns {string} - Valid MIME type
    */
   getValidMimeType() {
-    const types = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm;codecs=h264,opus", "video/webm", "video/mp4"];
+    // Prioritize MP4 and H264 for better audio/video compatibility with Deepgram
+    const types = ["video/mp4", "video/webm;codecs=h264,opus", "video/webm;codecs=vp8,opus", "video/webm;codecs=vp9,opus", "video/webm"];
 
     for (const type of types) {
       if (MediaRecorder.isTypeSupported(type)) {
+        console.log(`[Recording] Selected mime type: ${type}`);
         return type;
       }
     }

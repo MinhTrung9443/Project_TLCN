@@ -95,6 +95,22 @@ const MeetingSchema = new Schema(
       type: Date,
       required: true,
     },
+    transcriptId: {
+      type: Schema.Types.ObjectId,
+      ref: "Transcript",
+    },
+    summaryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Summary",
+    },
+    processingStatus: {
+      type: String,
+      enum: ["pending", "processing", "completed", "failed"],
+      default: "pending",
+    },
+    lastJobId: {
+      type: String,
+    },
   },
   { timestamps: true },
 );

@@ -573,7 +573,7 @@ const RecordingStarter = ({ isHost }) => {
 
         // Now start recording with screen stream
         console.log("[RecordingStarter] Attempting to start recording...");
-        const success = recordingManager.startRecording(room, screenStreamRef.current);
+        const success = await recordingManager.startRecording(room, screenStreamRef.current);
         console.log("[RecordingStarter] Recording start result:", success);
 
         if (success) {

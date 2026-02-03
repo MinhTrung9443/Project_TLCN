@@ -2,6 +2,53 @@ const Meeting = require("../models/Meeting");
 const Project = require("../models/Project");
 const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinary");
+const summarizeQueue = require("../config/queue");
+
+const enqueueSummaryIfReady = async (meetingId) => {
+  try {
+    const queueReady = summarizeQueue.isQueueReady
+      ? summarizeQueue.isQueueReady()
+      : summarizeQueue.client?.status === "ready";
+    if (!queueReady) return;
+
+    const meeting = await Meeting.findById(meetingId);
+    if (!meeting) return;
+
+    if (!meeting.chatHistoryLink || !meeting.videoLink || !meeting.transcriptId) {
+      return;
+    }
+
+    if (meeting.processingStatus === "processing") return;
+
+    const activeJobs = await summarizeQueue.getJobs(["active", "waiting"]);
+    const isProcessing = activeJobs.some((job) => job.data.meetingId === meetingId.toString());
+    if (isProcessing) return;
+
+    const job = await summarizeQueue.add(
+      {
+        meetingId: meetingId.toString(),
+        regenerate: false,
+        options: { source: "auto" },
+      },
+      {
+        attempts: parseInt(process.env.MAX_SUMMARY_RETRIES) || 3,
+        backoff: {
+          type: "exponential",
+          delay: 2000,
+        },
+        removeOnComplete: false,
+        timeout: parseInt(process.env.SUMMARY_TIMEOUT) || 300000,
+      },
+    );
+
+    await Meeting.findByIdAndUpdate(meetingId, {
+      processingStatus: "processing",
+      lastJobId: job.id,
+    });
+  } catch (error) {
+    console.error("[MeetingService] Auto summary enqueue failed:", error);
+  }
+};
 
 const MeetingService = {
   /**
@@ -479,6 +526,8 @@ const MeetingService = {
       meeting.chatHistoryLink = result.secure_url;
       const updatedMeeting = await meeting.save();
 
+      await enqueueSummaryIfReady(updatedMeeting._id);
+
       return updatedMeeting.populate("createdBy", "fullname avatar");
     } catch (cloudinaryError) {
       console.error("Error uploading chat history to Cloudinary:", cloudinaryError);
@@ -562,6 +611,8 @@ const MeetingService = {
       ).populate("createdBy", "fullname avatar");
       
       console.log("[MeetingService.uploadRecording] Meeting updated with videoLink:", updatedMeeting.videoLink);
+
+      await enqueueSummaryIfReady(updatedMeeting._id);
 
       return updatedMeeting;
     } catch (cloudinaryError) {
