@@ -4,6 +4,7 @@ import Layout from "./components/layout/Layout";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProjectProvider } from "./contexts/ProjectContext";
+import { ChatProvider } from "./contexts/ChatContext";
 import "./App.css";
 import MarketingLandingPage from "./pages/MarketingLandingPage"; // Trang giới thiệu
 import PrivateRoute from "./routes/PrivateRoute"; // Đảm bảo đường dẫn này đúng
@@ -38,6 +39,7 @@ function App() {
   return (
     <AuthProvider>
       <ProjectProvider>
+        <ChatProvider>
         <BrowserRouter>
           <Routes>
             {/* === CÁC ROUTE CÔNG KHAI === */}
@@ -121,6 +123,7 @@ function App() {
             theme="light"
           />
         </BrowserRouter>
+        </ChatProvider>
       </ProjectProvider>
     </AuthProvider>
   );

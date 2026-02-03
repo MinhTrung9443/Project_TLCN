@@ -4,6 +4,7 @@ import Header from "./Header.jsx";
 import Footer from "./Footer.jsx";
 import Sidebar from "./Sidebar.jsx";
 import { useAuth } from "../../contexts/AuthContext";
+import ChatWidget from "../chat/ChatWidget";
 
 const Layout = () => {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ const Layout = () => {
           </div>
           {!user && <Footer />}
         </main>
+        <ChatWidget /> 
       </div>
     </div>
   );

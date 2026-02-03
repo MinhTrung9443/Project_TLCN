@@ -3,10 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import NotificationBell from "../common/NotificationBell";
 import { FaUser, FaSignOutAlt } from "react-icons/fa";
+import { useChat } from "../../contexts/ChatContext"; 
+import { BsChatDots } from "react-icons/bs";
 import zentaskLogo from "../../assets/zentask.jpg";
 
 const Header = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const { openChat, isChatOpen } = useChat(); // Lấy hàm mở chat
+
   const navigate = useNavigate();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -66,6 +70,16 @@ const Header = () => {
         <nav className="flex items-center gap-6">
           {isAuthenticated ? (
             <div className="flex items-center gap-6" ref={dropdownRef}>
+                 {/* CHAT ICON BUTTON */}
+            <button 
+                onClick={openChat}
+                className={`relative p-2 rounded-full transition-all ${isChatOpen ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                title="Messages"
+            >
+                <BsChatDots className="text-xl" />
+                {/* Badge (Hardcode demo) */}
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+            </button>
               {/* Notification Bell */}
               <div className="flex items-center">
                 <NotificationBell />
