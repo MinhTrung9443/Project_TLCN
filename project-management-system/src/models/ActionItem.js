@@ -84,7 +84,6 @@ const ActionItemSchema = new Schema(
 // Index for queries
 ActionItemSchema.index({ summaryId: 1 });
 ActionItemSchema.index({ meetingId: 1 });
-ActionItemSchema.index({ owner: 1 });
 ActionItemSchema.index({ status: 1 });
 ActionItemSchema.index({ dueDate: 1 });
 

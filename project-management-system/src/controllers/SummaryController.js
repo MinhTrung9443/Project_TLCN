@@ -280,7 +280,6 @@ exports.getActionItems = async (req, res) => {
     if (priority) query.priority = priority;
 
     const actionItems = await ActionItem.find(query)
-      .populate("owner", "name email")
       .populate("linkedTaskId", "title status")
       .sort({ priority: -1, dueDate: 1 });
 

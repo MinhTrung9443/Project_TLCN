@@ -64,10 +64,10 @@ export const createMeeting = (meetingData) => apiClient.post("/meetings", meetin
 export const updateMeeting = (meetingId, updateData) => apiClient.put(`/meetings/${meetingId}`, updateData);
 
 /**
-  * Deletes a meeting.
-  * @param {string} meetingId - The ID of the meeting to delete.
-  * @returns {Promise}
-  */
+ * Deletes a meeting.
+ * @param {string} meetingId - The ID of the meeting to delete.
+ * @returns {Promise}
+ */
 
 export const deleteMeeting = (meetingId) => apiClient.delete(`/meetings/${meetingId}`);
 
@@ -154,4 +154,41 @@ export const uploadRecording = (meetingId, file, onProgress = null) => {
       }
     },
   });
+};
+
+/**
+ * Get meeting summary
+ * @param {string} meetingId - The ID of the meeting
+ * @returns {Promise}
+ */
+export const getMeetingSummary = (meetingId) => {
+  return apiClient.get(`/summaries/${meetingId}/summary`);
+};
+
+/**
+ * Get meeting summary status
+ * @param {string} meetingId - The ID of the meeting
+ * @returns {Promise}
+ */
+export const getSummaryStatus = (meetingId) => {
+  return apiClient.get(`/summaries/${meetingId}/summary/status`);
+};
+
+/**
+ * Trigger summary generation
+ * @param {string} meetingId - The ID of the meeting
+ * @param {boolean} regenerate - Whether to regenerate existing summary
+ * @returns {Promise}
+ */
+export const generateSummary = (meetingId, regenerate = false) => {
+  return apiClient.post(`/summaries/${meetingId}/generate-summary`, { regenerate });
+};
+
+/**
+ * Get action items from meeting summary
+ * @param {string} meetingId - The ID of the meeting
+ * @returns {Promise}
+ */
+export const getActionItems = (meetingId) => {
+  return apiClient.get(`/summaries/${meetingId}/action-items`);
 };

@@ -104,7 +104,7 @@ Output MUST be valid JSON with these exact keys (English only):
 {
   "overview": "string - main topic and conclusion",
   "sections": [{"title": "string", "content": "string"}],
-  "actionItems": [{"title": "string", "owner": "string", "dueDate": "YYYY-MM-DD or null", "priority": "high|medium|low"}],
+  "actionItems": [{"title": "string", "dueDate": "YYYY-MM-DD or null", "priority": "high|medium|low"}],
   "decisions": ["string of decision"],
   "risks": ["string of risk"]
 }
@@ -790,7 +790,6 @@ function normalizeSummaryFields(data) {
           .filter((a) => a && typeof a === "object")
           .map((a) => ({
             title: String(a.title || "").trim(),
-            owner: String(a.owner || "").trim(),
             dueDate: a.dueDate ? new Date(a.dueDate) : null,
             priority: ["high", "medium", "low"].includes(String(a.priority).toLowerCase()) ? String(a.priority).toLowerCase() : "medium",
           }))
