@@ -5,6 +5,13 @@ const Project = require("../models/Project");
 const Group = require("../models/Group");
 
 class ChatService {
+  async _getUnreadCount(conversationId, userId) {
+    return await Message.countDocuments({
+      conversationId: conversationId,
+      readBy: { $ne: userId }
+    });
+  }
+
   // 1. Gửi tin nhắn
   async sendMessage(senderId, content, conversationId, attachments) {
     if (!content && (!attachments || attachments.length === 0)) {
@@ -100,7 +107,13 @@ class ChatService {
       select: "username email avatar",
     });
 
-    return finalResult;
+    // Attach unread count
+    const chatsWithCount = await Promise.all(finalResult.map(async (chat) => {
+        const unread = await this._getUnreadCount(chat._id, currentUserId);
+        return { ...chat.toObject(), unreadCount: unread };
+    }));
+
+    return chatsWithCount;
   }
 
   // 5. Lấy cấu trúc Chat Project (Project + Teams)
@@ -151,18 +164,19 @@ class ChatService {
     } else {
         targetTeams = project.teams.filter((t) => {
             const isLeader = t.leaderId && t.leaderId.toString() === currentUserId.toString();
-            const isTeamMem = t.members && t.members.some((m) => m.toString() === currentUserId.toString());
-            return isLeader || isTeamMember; 
-        });
-         targetTeams = project.teams.filter((t) => {
-            const isLeader = t.leaderId && t.leaderId.toString() === currentUserId.toString();
             const isMem = t.members && t.members.some((m) => m.toString() === currentUserId.toString());
             return isLeader || isMem;
         });
     }
 
+    // Attach unread for General
+    const generalUnread = await this._getUnreadCount(generalChat._id, currentUserId);
+    const generalChatObj = { ...generalChat.toObject(), unreadCount: generalUnread };
+
     const teamChats = [];
     for (const teamConfig of targetTeams) {
+      if (!teamConfig.teamId) continue;
+      
       let tChat = await Conversation.findOne({
         projectId: projectId,
         teamId: teamConfig.teamId._id,
@@ -170,19 +184,26 @@ class ChatService {
       }).populate("lastMessage");
 
       if (!tChat) {
-        const teamName = teamConfig.teamId ? teamConfig.teamId.name : "Unknown Team";
         tChat = await Conversation.create({
-          name: teamName, 
+          name: teamConfig.teamId.name || "Team Chat", 
           type: "TEAM",
           projectId: projectId,
           teamId: teamConfig.teamId._id,
         });
       }
-      teamChats.push(tChat);
+      
+      const unread = await this._getUnreadCount(tChat._id, currentUserId);
+      teamChats.push({ ...tChat.toObject(), unreadCount: unread });
     }
+    
+    teamChats.sort((a, b) => {
+        const dateA = a.lastMessage ? new Date(a.lastMessage.createdAt) : new Date(a.createdAt);
+        const dateB = b.lastMessage ? new Date(b.lastMessage.createdAt) : new Date(b.createdAt);
+        return dateB - dateA;
+    });
 
     return {
-      general: generalChat,
+      general: generalChatObj,
       teams: teamChats,
     };
   }

@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const notificationService = require("../services/NotificationService");
+const Message = require("../models/Message");
 
 class SocketManager {
   constructor() {
@@ -152,6 +153,35 @@ socket.on("new message", (newMessageReceived) => {
     console.error("❌ Error new message:", error);
   }
 });
+    socket.on("mark as read", async ({ conversationId, userId }) => {
+      // LOG ĐỂ DEBUG: Xem server có nhận được lệnh không
+      console.log(`👁️ SERVER: User ${userId} mark read conversation ${conversationId}`);
+
+      try {
+        // 1. Update Database
+        await Message.updateMany(
+          { 
+            conversationId: conversationId, 
+            readBy: { $ne: userId } 
+          },
+          { $addToSet: { readBy: userId } }
+        );
+
+        // 2. CHUYỂN ID SANG STRING ĐỂ GỬI ROOM
+        const roomName = conversationId.toString(); 
+
+        console.log(`📡 SERVER: Bắn tin 'message read' vào room: ${roomName}`);
+
+        // Gửi cho tất cả người đang mở đoạn chat này (trừ người vừa đọc)
+        socket.to(roomName).emit("message read", { 
+            conversationId: roomName, 
+            readerId: userId 
+        });
+        
+      } catch (error) {
+        console.error("❌ SERVER Error:", error);
+      }
+    });
 
     socket.on("typing", (room) => {
         socket.in(room).emit("typing", room); 

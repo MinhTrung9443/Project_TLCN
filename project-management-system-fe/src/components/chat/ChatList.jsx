@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useChat } from "../../contexts/ChatContext";
-import { useAuth } from "../../contexts/AuthContext"; // Import useAuth để lấy current user
+import { useAuth } from "../../contexts/AuthContext"; 
 import { FaHashtag, FaUsers, FaSearch, FaUserPlus } from "react-icons/fa";
 import chatService from "../../services/chatService";
 import userService from "../../services/userService"; 
@@ -10,27 +10,21 @@ const ChatList = () => {
     const { user: currentUser } = useAuth();
     
     const [searchTerm, setSearchTerm] = useState("");
-    const [searchResults, setSearchResults] = useState([]); // Lưu kết quả tìm kiếm user mới
+    const [searchResults, setSearchResults] = useState([]); 
     const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
-             // Chỉ search khi có từ khóa và đang ở tab INDIVIDUALS
              if (activeTab === "INDIVIDUALS" && searchTerm.trim().length > 0) {
                  setIsSearching(true);
                  try {
-                     // Gọi service user có sẵn để lấy danh sách
-                     // Lưu ý: Nếu user quá nhiều (>100), cách này sẽ không tối ưu
-                     // Cần Backend hỗ trợ filter server-side
+
                      const response = await userService.getAllUsers(1, 100); 
-                     
-                     // Response của bạn trả về { data: [...users], total: ... } hay mảng trực tiếp?
-                     // Kiểm tra lại cấu trúc response của getAllUsers
+
                      const allUsers = Array.isArray(response) ? response : (response.users || response.data || []);
-                     // Client-side filtering
                      const keyword = searchTerm.toLowerCase();
                      const filtered = allUsers.filter(u => 
-                        u._id !== currentUser._id && // Không tìm chính mình
+                        u._id !== currentUser._id && 
                         (
                             (u.fullname && u.fullname.toLowerCase().includes(keyword)) ||
                             (u.email && u.email.toLowerCase().includes(keyword)) ||
@@ -52,18 +46,14 @@ const ChatList = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm, activeTab, currentUser._id]);
 
-    // Handle click vào User tìm thấy -> Tạo chat
     const handleAccessChat = async (userId) => {
         try {
-            // Gọi API accessChat (Find or Create)
             const chat = await chatService.accessChat(userId);
             
-            // Cập nhật lại list direct chats nếu chưa có
             if (!directChats.find(c => c._id === chat._id)) {
                 setDirectChats([chat, ...directChats]);
             }
             
-            // Clear search và mở chat
             setSearchTerm("");
             setSearchResults([]);
             setSelectedConversation(chat);
@@ -72,7 +62,6 @@ const ChatList = () => {
         }
     };
 
-    // Helper: Lấy tên đối phương trong Direct Chat
     const getDirectChatName = (chat) => {
         const other = chat.participants.find(p => p._id !== currentUser._id);
         return other ? other.fullname : "Unknown User";
@@ -111,12 +100,30 @@ const ChatList = () => {
                 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-gray-800 truncate">{name}</h4>
-                    <p className={`text-xs truncate ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
-                        {item.lastMessage 
-                            ? (item.lastMessage.sender._id === currentUser._id ? "You: " : "") + item.lastMessage.content 
-                            : "No messages yet"}
-                    </p>
+                    <div className="flex justify-between items-center mb-0.5">
+                        <h4 className={`text-sm truncate ${item.unreadCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-800'}`}>
+                            {name}
+                        </h4>
+                        {item.lastMessage && (
+                           <span className="text-[10px] text-gray-400 ml-2 shrink-0">
+                               {new Date(item.lastMessage.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                           </span>
+                        )}
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                        <p className={`text-xs truncate flex-1 ${isActive ? 'text-blue-600' : (item.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500')}`}>
+                            {item.lastMessage 
+                                ? (item.lastMessage.sender._id === currentUser._id || item.lastMessage.sender === currentUser._id ? "You: " : "") + 
+                                  (item.lastMessage.content || "Sent an attachment")
+                                : "No messages yet"}
+                        </p>
+                        {item.unreadCount > 0 && (
+                            <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0">
+                                {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
         );
