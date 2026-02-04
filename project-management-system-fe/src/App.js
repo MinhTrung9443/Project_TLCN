@@ -5,7 +5,6 @@ import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import { ChatProvider } from "./contexts/ChatContext";
-import { ChatProvider } from "./contexts/ChatContext";
 import "./App.css";
 import MarketingLandingPage from "./pages/MarketingLandingPage"; // Trang giới thiệu
 import PrivateRoute from "./routes/PrivateRoute"; // Đảm bảo đường dẫn này đúng

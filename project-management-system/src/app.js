@@ -7,9 +7,6 @@ const app = express();
 
 // --- Import các routes ---
 
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./config/swagger"); 
-
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger"); 
