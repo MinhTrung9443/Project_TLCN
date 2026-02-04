@@ -408,7 +408,7 @@ const MeetingService = {
       const project = await Project.findById(meeting.projectId).lean();
       const pmIds = project?.members?.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId) || [];
       const participantIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
-      const sharedWith = [...new Set([...pmIds, ...participantIds].map((id) => id.toString()))].map((id) => mongoose.Types.ObjectId(id));
+      const sharedWith = [...new Set([...pmIds, ...participantIds].map((id) => id.toString()))].map((id) => new mongoose.Types.ObjectId(id));
 
       await ProjectDocument.create({
         projectId: meeting.projectId,
@@ -561,7 +561,7 @@ const MeetingService = {
         if (project) {
           const pmIds = project.members.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
           const memberIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
-          const sharedWith = [...new Set([...memberIds, ...pmIds].map(id => id.toString()))].map(id => mongoose.Types.ObjectId(id));
+          const sharedWith = [...new Set([...memberIds, ...pmIds].map(id => id.toString()))].map(id => new mongoose.Types.ObjectId(id));
 
           await ProjectDocument.create({
             projectId: meeting.projectId,
@@ -672,12 +672,13 @@ const MeetingService = {
       console.log("[MeetingService.uploadRecording] Meeting updated with videoLink:", updatedMeeting.videoLink);
 
       // Create ProjectDocument entry for video recording
+      // Create ProjectDocument entry for video recording
       try {
         const project = await Project.findById(meeting.projectId);
         if (project) {
           const pmIds = project.members.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
           const memberIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
-          const sharedWith = [...new Set([...memberIds, ...pmIds].map(id => id.toString()))].map(id => mongoose.Types.ObjectId(id));
+          const sharedWith = [...new Set([...memberIds, ...pmIds].map(id => id.toString()))].map(id => new mongoose.Types.ObjectId(id));
 
           await ProjectDocument.create({
             projectId: meeting.projectId,

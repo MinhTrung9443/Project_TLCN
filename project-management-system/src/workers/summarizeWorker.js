@@ -199,6 +199,7 @@ Language: Vietnamese for content, English for keys.`;
     });
     const nextVersion = (latestVersion?.version || 0) + 1;
 
+    // Create Summary FIRST (with empty actionItems)
     const summaryDoc = new Summary({
       meetingId,
       transcriptId: transcript._id,
@@ -207,7 +208,7 @@ Language: Vietnamese for content, English for keys.`;
       reason: regenerate ? "regenerated_by_pm" : "initial",
       overview: summaryData.overview,
       sections: summaryData.sections,
-      actionItems: summaryData.actionItems,
+      actionItems: [], // ← Empty for now
       decisions: summaryData.decisions,
       risks: summaryData.risks,
       quality: summaryData.quality,
@@ -226,12 +227,11 @@ Language: Vietnamese for content, English for keys.`;
       await Summary.updateMany({ meetingId, _id: { $ne: summaryDoc._id } }, { isLatest: false });
     }
 
-    // Extract action items from LLM summary (not from AI, but from actual meeting data)
-    // ActionItem should come from meeting participants, transcript mentions, or chat assignments
-    const actionItems = summaryData.actionItems
+    // NOW create ActionItems with summaryId reference
+    const actionItemsData = summaryData.actionItems
       .filter((item) => item && item.title) // Only valid items
       .map((item) => ({
-        summaryId: summaryDoc._id,
+        summaryId: summaryDoc._id, // ← Now we have summaryId
         meetingId,
         projectId: meeting.projectId,
         name: item.title,
@@ -241,16 +241,16 @@ Language: Vietnamese for content, English for keys.`;
         sourceType: "ai_extracted", // Extracted from meeting context, not AI-generated
       }));
 
-    if (actionItems.length > 0) {
-      const savedActionItems = await ActionItem.insertMany(actionItems);
-      const actionItemIds = savedActionItems.map((item) => item._id);
+    let actionItemIds = [];
+    if (actionItemsData.length > 0) {
+      const savedActionItems = await ActionItem.insertMany(actionItemsData);
+      actionItemIds = savedActionItems.map((item) => item._id);
+      console.log("[SummarizeWorker] Created", actionItemIds.length, "action items from meeting data");
 
-      // Update summary to reference ActionItems
+      // Update Summary with ActionItem IDs
       await Summary.findByIdAndUpdate(summaryDoc._id, {
         actionItems: actionItemIds,
       });
-
-      console.log("[SummarizeWorker] Created", actionItems.length, "action items from meeting data");
     }
 
     // Update meeting
@@ -271,7 +271,7 @@ Language: Vietnamese for content, English for keys.`;
       outputTokens: response.usage.completion_tokens,
       metadata: {
         summaryVersion: nextVersion,
-        actionItemsCreated: actionItems.length,
+        actionItemsCreated: actionItemIds.length,
       },
     });
 
@@ -281,7 +281,7 @@ Language: Vietnamese for content, English for keys.`;
       success: true,
       summaryId: summaryDoc._id,
       version: nextVersion,
-      actionItemsCreated: actionItems.length,
+      actionItemsCreated: actionItemIds.length,
     };
   } catch (error) {
     console.error("[SummarizeWorker] Error:", error);
@@ -706,7 +706,19 @@ function validateAndEnrichSummary(data) {
 
   if (!data.overview) data.overview = "";
   if (!Array.isArray(data.sections)) data.sections = [];
-  if (!Array.isArray(data.actionItems)) data.actionItems = [];
+
+  // Parse actionItems if it's a string (sometimes LLM returns stringified array)
+  let actionItems = data.actionItems;
+  if (typeof actionItems === "string") {
+    try {
+      actionItems = JSON.parse(actionItems);
+    } catch (e) {
+      console.warn("[SummarizeWorker] Failed to parse actionItems string:", e);
+      actionItems = [];
+    }
+  }
+  if (!Array.isArray(actionItems)) actionItems = [];
+  data.actionItems = actionItems;
 
   // Ensure arrays
   if (!Array.isArray(data.decisions)) data.decisions = [];
@@ -774,6 +786,17 @@ async function parseSummaryJson(rawSummary, client, context) {
 function normalizeSummaryFields(data) {
   if (!data || typeof data !== "object") return data;
 
+  // Parse actionItems if it's a string (LLM sometimes returns stringified array)
+  let actionItems = data.actionItems;
+  if (typeof actionItems === "string") {
+    try {
+      actionItems = JSON.parse(actionItems);
+    } catch (e) {
+      console.warn("[SummarizeWorker] Failed to parse actionItems string:", e);
+      actionItems = [];
+    }
+  }
+
   // Ensure all required fields exist with correct types
   const normalized = {
     overview: String(data.overview || "").trim(),
@@ -785,8 +808,8 @@ function normalizeSummaryFields(data) {
             content: String(s.content || "").trim(),
           }))
       : [],
-    actionItems: Array.isArray(data.actionItems)
-      ? data.actionItems
+    actionItems: Array.isArray(actionItems)
+      ? actionItems
           .filter((a) => a && typeof a === "object")
           .map((a) => ({
             title: String(a.title || "").trim(),
