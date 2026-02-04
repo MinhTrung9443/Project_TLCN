@@ -10,6 +10,10 @@ const app = express();
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger"); 
 
+
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger"); 
+
 const appRoute = require("./routes/appRoute");
 const userRoute = require("./routes/userRoutes");
 const groupRoute = require("./routes/groupRoute");
