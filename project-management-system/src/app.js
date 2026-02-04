@@ -7,7 +7,6 @@ const app = express();
 
 // --- Import các routes ---
 
-
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 
@@ -63,7 +62,9 @@ app.use((req, res, next) => {
 
 // Skip JSON parsing for multipart/form-data requests (file uploads)
 app.use((req, res, next) => {
-  if (req.is("multipart/form-data")) {
+  const contentType = req.headers["content-type"] || "";
+  if (contentType.includes("multipart/form-data")) {
+    console.log("[MIDDLEWARE] Skipping JSON parse for multipart request");
     return next();
   }
   express.json()(req, res, next);

@@ -33,6 +33,7 @@ const mapProjectDoc = (doc) => ({
   size: doc.size,
   sourceType: doc.sourceType || "project",
   parent: doc.parent,
+  sharedWith: doc.sharedWith || [],
 });
 
 const ProjectDocumentController = {
@@ -230,14 +231,14 @@ const ProjectDocumentController = {
   async shareDocument(req, res) {
     try {
       const { projectKey, documentId } = req.params;
-      const { userIds } = req.body; // Array of user IDs to share with
+      const { emails } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(documentId)) {
         return res.status(400).json({ message: "Invalid document ID" });
       }
 
-      if (!Array.isArray(userIds) || userIds.length === 0) {
-        return res.status(400).json({ message: "userIds must be a non-empty array" });
+      if (!Array.isArray(emails) || emails.length === 0) {
+        return res.status(400).json({ message: "Please select at least one member" });
       }
 
       const project = await getProjectByKey(projectKey);
@@ -255,6 +256,17 @@ const ProjectDocumentController = {
         return res.status(403).json({ message: "Only the uploader can share this document" });
       }
 
+      // Resolve emails to userIds
+      const User = require("../models/User");
+      const users = await User.find({ email: { $in: emails } }).select("_id");
+      const targetUserIds = users.map((u) => u._id.toString());
+
+      if (targetUserIds.length === 0) {
+        return res.status(400).json({ message: "No valid users found with these emails" });
+      }
+
+      console.log("🔄 [shareDocument] Sharing with:", { emails, resolvedCount: targetUserIds.length });
+
       // Validate that all userIds are project members
       const allProjectUserIds = new Set();
       project.members.forEach((m) => allProjectUserIds.add(m.userId.toString()));
@@ -265,20 +277,19 @@ const ProjectDocumentController = {
         });
       }
 
-      const validUserIds = userIds.filter((id) => {
-        if (!mongoose.Types.ObjectId.isValid(id)) return false;
-        return allProjectUserIds.has(id.toString());
-      });
+      const validUserIds = targetUserIds.filter((id) => allProjectUserIds.has(id));
 
       if (validUserIds.length === 0) {
-        return res.status(400).json({ message: "No valid project members in userIds" });
+        return res.status(400).json({ message: "Selected users are not project members" });
       }
+
+      console.log("✅ [shareDocument] Valid users to share with:", validUserIds.length);
 
       // Add new users to sharedWith (avoid duplicates)
       const currentShared = new Set(document.sharedWith.map((id) => id.toString()));
-      validUserIds.forEach((id) => currentShared.add(id.toString()));
+      validUserIds.forEach((id) => currentShared.add(id));
 
-      document.sharedWith = Array.from(currentShared).map((id) => mongoose.Types.ObjectId(id));
+      document.sharedWith = Array.from(currentShared).map((id) => new mongoose.Types.ObjectId(id));
       await document.save();
 
       const populated = await document.populate("uploadedBy", "fullname avatar");

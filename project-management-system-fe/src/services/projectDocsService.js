@@ -18,6 +18,14 @@ export const uploadProjectDocument = (projectKey, file, metadata = {}) => {
   });
 };
 
+export const getProjectMembers = (projectKey) => {
+  return apiClient.get(`/projects/key/${projectKey}/members`);
+};
+
+export const shareProjectDocument = (projectKey, documentId, emails) => {
+  return apiClient.put(`/projects/key/${projectKey}/documents/${documentId}/share`, { emails });
+};
+
 export const deleteProjectDocument = (projectKey, documentId) => {
   return apiClient.delete(`/projects/key/${projectKey}/documents/${documentId}`);
 };
