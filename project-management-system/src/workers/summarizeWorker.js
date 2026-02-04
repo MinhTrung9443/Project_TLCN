@@ -10,24 +10,15 @@ const { Meeting, Transcript, Summary, ActionItem, ProcessingLog } = require("../
 const openAiBaseUrl = process.env.OPENAI_BASE_URL || undefined;
 const transcriptionProvider = process.env.TRANSCRIPTION_PROVIDER || "openai";
 
-// LLM client (OpenRouter if configured)
+// LLM client (OpenRouter for summary generation)
 const llmClient = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: openAiBaseUrl,
-  defaultHeaders: process.env.OPENROUTER_API_KEY
-    ? {
-        "HTTP-Referer": process.env.OPENROUTER_SITE_URL || "http://localhost:8080",
-        "X-Title": process.env.OPENROUTER_APP_NAME || "project-management-system",
-      }
-    : undefined,
+  defaultHeaders: {
+    "HTTP-Referer": process.env.OPENROUTER_SITE_URL || "http://localhost:8080",
+    "X-Title": process.env.OPENROUTER_APP_NAME || "project-management-system",
+  },
 });
-
-// Audio transcription client (only if using OpenAI transcription)
-const audioClient = process.env.OPENAI_API_KEY
-  ? new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-  : null;
 
 /**
  * Main worker function to process summary jobs
@@ -112,7 +103,7 @@ Output ONLY the JSON object, no additional text.
 Language: Vietnamese for content, English for keys.`;
 
     console.log("[SummarizeWorker] === LLM REQUEST TO OPENROUTER ===");
-    console.log("[SummarizeWorker] Model:", process.env.OPENAI_MODEL || "gpt-4-turbo-preview");
+    console.log("[SummarizeWorker] Model:", process.env.OPENAI_MODEL);
     console.log("[SummarizeWorker] System Prompt:", systemPrompt);
     console.log("[SummarizeWorker] User Content Length:", mergedContext.length, "chars");
     console.log("[SummarizeWorker] User Content Preview (first 500 chars):", mergedContext.substring(0, 500));
@@ -124,7 +115,7 @@ Language: Vietnamese for content, English for keys.`;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         response = await llmClient.chat.completions.create({
-          model: process.env.OPENAI_MODEL || "gpt-4-turbo-preview",
+          model: process.env.OPENAI_MODEL,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: mergedContext },
@@ -161,7 +152,7 @@ Language: Vietnamese for content, English for keys.`;
       stage: "summarize",
       status: "completed",
       metadata: {
-        model: process.env.OPENAI_MODEL || "gpt-4-turbo-preview",
+        model: process.env.OPENAI_MODEL,
         inputTokens: response.usage.prompt_tokens,
         outputTokens: response.usage.completion_tokens,
         finishReason: response.choices[0].finish_reason,
@@ -215,7 +206,7 @@ Language: Vietnamese for content, English for keys.`;
       generationDetails: {
         provider: "openai-gpt4",
         promptVersion: "v1",
-        model: process.env.OPENAI_MODEL || "gpt-4-turbo-preview",
+        model: process.env.OPENAI_MODEL,
         temperature: 0.3,
       },
     });
@@ -448,6 +439,7 @@ function isRetryableConnectionError(error) {
 
 async function createTranscriptFromVideo(meeting) {
   if (transcriptionProvider === "none") {
+    console.log("[SummarizeWorker] Skipping transcription (TRANSCRIPTION_PROVIDER=none)");
     const transcriptDoc = new Transcript({
       meetingId: meeting._id,
       audioUrl: meeting.videoLink,
@@ -469,83 +461,9 @@ async function createTranscriptFromVideo(meeting) {
     return await createTranscriptWithDeepgram(meeting);
   }
 
-  const tempFile = await downloadToTempFile(meeting.videoLink);
-
-  try {
-    // Retry logic for OpenAI API calls (max 3 attempts)
-    let response;
-    let lastError;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        if (!audioClient) {
-          throw new Error("OPENAI_API_KEY is required for transcription (set TRANSCRIPTION_PROVIDER=none or deepgram to skip OpenAI).");
-        }
-        response = await audioClient.audio.transcriptions.create({
-          file: fs.createReadStream(tempFile.filePath),
-          model: process.env.OPENAI_WHISPER_MODEL || "whisper-1",
-          response_format: "verbose_json",
-          language: process.env.TRANSCRIBE_LANGUAGE || "vi",
-        });
-        break; // Success, exit retry loop
-      } catch (error) {
-        lastError = error;
-        // Only retry on connection errors, not on validation errors
-        if (attempt < 3 && isRetryableConnectionError(error)) {
-          const waitMs = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Exponential backoff: 1s, 2s, 4s
-          console.warn(`[SummarizeWorker] Transcription attempt ${attempt} failed, retrying in ${waitMs}ms:`, error.message);
-          await new Promise((resolve) => setTimeout(resolve, waitMs));
-        } else {
-          throw error;
-        }
-      }
-    }
-    if (!response) throw lastError;
-
-    const rawText = response.text || "";
-    const segments = Array.isArray(response.segments)
-      ? response.segments.map((s) => ({
-          startTime: s.start,
-          endTime: s.end,
-          speaker: s.speaker || undefined,
-          text: s.text,
-          confidence: s.avg_logprob ? Math.exp(s.avg_logprob) : undefined,
-        }))
-      : [];
-
-    const transcriptDoc = new Transcript({
-      meetingId: meeting._id,
-      audioUrl: meeting.videoLink,
-      duration: response.duration || undefined,
-      rawTranscript: rawText,
-      cleanedTranscript: rawText,
-      segments,
-      provider: "openai-whisper",
-      language: response.language || "vi",
-      status: "completed",
-      processedAt: new Date(),
-    });
-
-    await transcriptDoc.save();
-    await Meeting.findByIdAndUpdate(meeting._id, { transcriptId: transcriptDoc._id });
-
-    return transcriptDoc;
-  } catch (error) {
-    console.error("[SummarizeWorker] Transcription failed:", error.message);
-
-    await Transcript.create({
-      meetingId: meeting._id,
-      audioUrl: meeting.videoLink,
-      provider: "openai-whisper",
-      language: process.env.TRANSCRIBE_LANGUAGE || "vi",
-      status: "failed",
-      error: error.message,
-      processedAt: new Date(),
-    });
-
-    throw error;
-  } finally {
-    tempFile.cleanup();
-  }
+  // Default to Deepgram if not specified
+  console.log("[SummarizeWorker] No transcription provider specified, using Deepgram");
+  return await createTranscriptWithDeepgram(meeting);
 }
 
 async function createTranscriptWithDeepgram(meeting) {

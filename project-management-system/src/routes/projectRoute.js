@@ -58,11 +58,6 @@ router.get("/key/:projectKey/details", protect, isProjectMember, handleGetProjec
 router.get("/key/:projectKey", protect, isProjectMember, handleGetProjectByKey);
 router.get("/:id", protect, handleGetProjectById);
 
-// Project Documents (upload-only)
-router.get("/key/:projectKey/documents", protect, isProjectMember, ProjectDocumentController.listDocuments);
-router.post("/key/:projectKey/documents", protect, isProjectMember, upload.single("file"), ProjectDocumentController.uploadDocument);
-router.delete("/key/:projectKey/documents/:documentId", protect, isProjectMember, ProjectDocumentController.deleteDocument);
-
 router.put("/key/:projectKey/members/:userId/role", protect, isProjectManager, handleChangeMemberRole);
 
 router.put("/key/:projectKey/teams/:teamId/leader", protect, isProjectManager, handleChangeTeamLeader);

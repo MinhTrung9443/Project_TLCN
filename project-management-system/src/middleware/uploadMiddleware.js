@@ -16,7 +16,22 @@ class AppError extends Error {
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: (req, file) => {
+    console.log("📤 [CloudinaryStorage] params called");
+    console.log(
+      "📤 [CloudinaryStorage] file:",
+      file
+        ? {
+            fieldname: file.fieldname,
+            originalname: file.originalname,
+            encoding: file.encoding,
+            mimetype: file.mimetype,
+            size: file.size,
+          }
+        : "NO FILE",
+    );
+
     if (!file || !file.mimetype) {
+      console.error("❌ [CloudinaryStorage] No file or mimetype!");
       throw new AppError("No file provided!", 400);
     }
 
@@ -35,6 +50,8 @@ const storage = new CloudinaryStorage({
 
     const originalName = path.parse(file.originalname).name;
     const public_id = `${Date.now()}-${originalName}`;
+
+    console.log("📤 [CloudinaryStorage] Upload config:", { folder, resource_type, public_id });
 
     return {
       folder: folder,
@@ -58,7 +75,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   limits: {
-    fileSize: 1024 * 1024 * 200, // Tăng giới hạn lên 500MB cho video
+    fileSize: 1024 * 1024 * 10, // 10MB limit for Cloudinary free plan
   },
   fileFilter,
 });
@@ -70,7 +87,6 @@ const chatHistoryFileFilter = (req, file, cb) => {
   // Accept text files, txt files, or files with text/* mimetype
   const isTextFile = file.mimetype === "text/plain" || file.mimetype.startsWith("text/") || file.originalname.endsWith(".txt");
 
-  
   if (isTextFile) {
     cb(null, true);
   } else {

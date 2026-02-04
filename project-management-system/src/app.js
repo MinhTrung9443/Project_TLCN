@@ -8,7 +8,7 @@ const app = express();
 // --- Import các routes ---
 
 const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./config/swagger"); 
+const swaggerSpec = require("./config/swagger");
 
 const appRoute = require("./routes/appRoute");
 const userRoute = require("./routes/userRoutes");
@@ -17,6 +17,7 @@ const taskTypeRoute = require("./routes/taskTypeRoute.js");
 const priorityRoute = require("./routes/priorityRoute.js");
 const platformRoute = require("./routes/platformRoute.js");
 const projectRoute = require("./routes/projectRoute");
+const projectDocumentRoutes = require("./routes/projectDocumentRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
@@ -58,7 +59,15 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express.json()); // Để parse body của request dạng JSON
+
+// Skip JSON parsing for multipart/form-data requests (file uploads)
+app.use((req, res, next) => {
+  if (req.is("multipart/form-data")) {
+    return next();
+  }
+  express.json()(req, res, next);
+});
+
 const uploadsPath = path.join(__dirname, "public", "uploads");
 
 // --- Đăng ký các routes ---
@@ -69,6 +78,7 @@ app.use("/api/task-types", taskTypeRoute);
 app.use("/api/priorities", priorityRoute);
 app.use("/api/platforms", platformRoute);
 app.use("/api/projects", projectRoute);
+app.use("/api/projects", projectDocumentRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/uploads", uploadRoutes);
