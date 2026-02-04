@@ -63,7 +63,7 @@ exports.triggerSummaryGeneration = async (req, res) => {
 
     // Mark as processing
     await Meeting.findByIdAndUpdate(meetingId, {
-      "processingStatus.summary": "processing",
+      processingStatus: "processing",
     });
 
     res.status(202).json({
@@ -279,9 +279,7 @@ exports.getActionItems = async (req, res) => {
     if (status) query.status = status;
     if (priority) query.priority = priority;
 
-    const actionItems = await ActionItem.find(query)
-      .populate("linkedTaskId", "title status")
-      .sort({ priority: -1, dueDate: 1 });
+    const actionItems = await ActionItem.find(query).populate("linkedTaskId", "title status").sort({ priority: -1, dueDate: 1 });
 
     res.json({
       total: actionItems.length,

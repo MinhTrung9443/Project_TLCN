@@ -220,9 +220,11 @@ const MeetingControls = ({
           // Auto-export chat history if there are messages (non-blocking)
           if (chatMessages.length > 0) {
             const chatText = chatMessages.map((msg) => `[${new Date(msg.timestamp).toLocaleString()}] ${msg.from}: ${msg.message}`).join("\n");
-            const blob = new Blob([chatText], { type: "text/plain;charset=utf-8" });
+            // Add UTF-8 BOM to ensure proper encoding
+            const BOM = "\uFEFF";
+            const blob = new Blob([BOM + chatText], { type: "text/plain;charset=utf-8" });
             const file = new File([blob], `meeting-chat-${new Date().toISOString().slice(0, 10)}.txt`, {
-              type: "text/plain",
+              type: "text/plain;charset=utf-8",
             });
 
             // Upload chat history in background

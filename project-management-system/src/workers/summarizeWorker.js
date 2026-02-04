@@ -619,7 +619,25 @@ async function createTranscriptWithDeepgram(meeting) {
         }));
 
     if (!rawText.trim()) {
-      throw new Error("Deepgram returned empty transcript. Check audio URL or permissions.");
+      console.warn("[SummarizeWorker] Deepgram returned empty transcript - video may have no audio. Creating empty transcript.");
+      // Create empty transcript instead of throwing error (meeting might be chat-only)
+      const transcriptDoc = new Transcript({
+        meetingId: meeting._id,
+        audioUrl: meeting.videoLink,
+        duration: response.data?.metadata?.duration || undefined,
+        rawTranscript: "",
+        cleanedTranscript: "",
+        segments: [],
+        provider: "deepgram",
+        language: process.env.TRANSCRIBE_LANGUAGE || "vi",
+        status: "completed", // Mark as completed but empty
+        processedAt: new Date(),
+      });
+
+      await transcriptDoc.save();
+      await Meeting.findByIdAndUpdate(meeting._id, { transcriptId: transcriptDoc._id });
+      console.log("[SummarizeWorker] Empty transcript created for meeting:", meeting._id);
+      return transcriptDoc;
     }
 
     const transcriptDoc = new Transcript({

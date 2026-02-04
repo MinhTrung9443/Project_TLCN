@@ -90,7 +90,10 @@ const MeetingSummaryPanel = ({ meetingId }) => {
         setGenerating(false);
       }, 300000);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to generate summary");
+      console.error("Summary generation error:", error);
+      console.error("Error response:", error.response);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || "Failed to generate summary";
+      toast.error(errorMessage);
       setGenerating(false);
     }
   };
