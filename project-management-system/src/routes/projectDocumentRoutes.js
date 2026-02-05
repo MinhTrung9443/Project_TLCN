@@ -70,6 +70,13 @@ router.post(
 router.put("/key/:projectKey/documents/:documentId/share", protect, isProjectMember, ProjectDocumentController.shareDocument);
 
 /**
+ * @route   PUT /api/projects/key/:projectKey/documents/:documentId/unshare
+ * @desc    Unshare document from users (uploader only)
+ * @access  Private (Document Uploader)
+ */
+router.put("/key/:projectKey/documents/:documentId/unshare", protect, isProjectMember, ProjectDocumentController.unshareDocument);
+
+/**
  * @route   DELETE /api/projects/key/:projectKey/documents/:documentId
  * @desc    Delete project document (project docs only)
  * @access  Private (Project Members)

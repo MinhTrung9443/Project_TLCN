@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinary");
-const { Project, ProjectDocument } = require("../models");
+const { Project, ProjectDocument, User } = require("../models");
 
 const normalizeTags = (tags) => {
   if (!tags) return [];
@@ -300,6 +300,54 @@ const ProjectDocumentController = {
       });
     } catch (error) {
       console.error("[ProjectDocumentController] shareDocument error:", error);
+      return res.status(500).json({ message: "Server error", error: error.message });
+    }
+  },
+
+  async unshareDocument(req, res) {
+    try {
+      const { projectKey, documentId } = req.params;
+      const { emails } = req.body;
+
+      if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        return res.status(400).json({ message: "Please provide emails to unshare" });
+      }
+
+      const project = await getProjectByKey(projectKey);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const document = await ProjectDocument.findById(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      if (document.uploadedBy.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "Only uploader can unshare document" });
+      }
+
+      // Resolve emails to user IDs
+      const targetUsers = await User.find({ email: { $in: emails } }).select("_id");
+      const targetUserIds = targetUsers.map((u) => u._id.toString());
+
+      console.log("🔓 [unshareDocument] Removing users:", targetUserIds.length);
+
+      // Remove users from sharedWith
+      const currentShared = new Set(document.sharedWith.map((id) => id.toString()));
+      targetUserIds.forEach((id) => currentShared.delete(id));
+
+      document.sharedWith = Array.from(currentShared).map((id) => new mongoose.Types.ObjectId(id));
+      await document.save();
+
+      const populated = await document.populate("uploadedBy", "fullname avatar");
+
+      return res.status(200).json({
+        message: "Document unshared successfully",
+        document: mapProjectDoc(populated),
+      });
+    } catch (error) {
+      console.error("[ProjectDocumentController] unshareDocument error:", error);
       return res.status(500).json({ message: "Server error", error: error.message });
     }
   },

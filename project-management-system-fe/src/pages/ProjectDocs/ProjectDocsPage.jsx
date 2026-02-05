@@ -8,6 +8,7 @@ import {
   uploadProjectDocument,
   deleteProjectDocument,
   shareProjectDocument,
+  unshareProjectDocument,
   getProjectMembers,
 } from "../../services/projectDocsService";
 import { useAuth } from "../../contexts/AuthContext";
@@ -188,6 +189,33 @@ const ProjectDocsPage = () => {
     }
   };
 
+  const handleUnshare = async (userIdToRemove) => {
+    try {
+      const member = projectMembers.find((m) => m._id.toString() === userIdToRemove.toString());
+      if (!member) return;
+
+      await unshareProjectDocument(projectKey, shareModal.docId, [member.email]);
+      toast.success("Access removed successfully");
+      await fetchDocuments();
+      // Refresh modal by re-opening with updated data
+      const updatedDocs = await getProjectDocuments(projectKey, "all");
+      const activeList =
+        activeTab === "project"
+          ? updatedDocs.data.projectDocs
+          : activeTab === "task"
+            ? updatedDocs.data.taskAttachments
+            : activeTab === "comment"
+              ? updatedDocs.data.commentAttachments
+              : updatedDocs.data.meetingAttachments;
+      const updatedDoc = activeList.find((d) => d._id === shareModal.docId);
+      if (updatedDoc) {
+        handleShareClick(updatedDoc._id, updatedDoc.filename, updatedDoc.sharedWith || []);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to remove access");
+    }
+  };
+
   const toggleMember = (member) => {
     setSelectedMembers((prev) => (prev.find((m) => m._id === member._id) ? prev.filter((m) => m._id !== member._id) : [...prev, member]));
   };
@@ -336,8 +364,18 @@ const ProjectDocsPage = () => {
               <div className="space-y-2">
                 {filteredList.map((item) => (
                   <div key={item._id || item.id} className="flex items-center justify-between p-3 bg-white border border-neutral-200 rounded-lg">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-neutral-900 truncate">{item.filename}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-neutral-900 truncate">{item.filename}</p>
+                        {item.sharedWith && item.sharedWith.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                            <span className="w-4 h-4 flex items-center justify-center bg-green-500 text-white text-[10px] rounded-full">
+                              {item.sharedWith.length}
+                            </span>
+                            shared
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-neutral-500 mt-1">
                         {item.category && `Category: ${item.category}`} {item.version && `• Version: ${item.version}`}
                         {item.parent?.taskKey && ` • Task: ${item.parent.taskKey}`}
@@ -393,14 +431,25 @@ const ProjectDocsPage = () => {
                 <div className="text-green-700 font-medium mb-2 text-xs">
                   Already shared with {shareModal.sharedWith.length} member{shareModal.sharedWith.length > 1 ? "s" : ""}:
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   {shareModal.sharedWith.map((userId) => {
                     const member = projectMembers.find((m) => m._id.toString() === userId.toString());
                     if (!member) return null;
                     const avatarUrl =
                       member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.fullname)}&background=random&color=fff`;
                     return (
-                      <img key={userId} src={avatarUrl} alt={member.fullname} className="w-5 h-5 rounded-full object-cover" title={member.fullname} />
+                      <div key={userId} className="relative inline-block">
+                        <div className="flex items-center gap-1 bg-gray-100 rounded-full pl-1 pr-2 py-0.5">
+                          <img src={avatarUrl} alt={member.fullname} className="w-5 h-5 rounded-full object-cover" title={member.fullname} />
+                          <button
+                            onClick={() => handleUnshare(userId)}
+                            className="text-red-500 hover:text-red-700 font-bold text-lg leading-none hover:bg-red-50 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
+                            title="Remove access"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>

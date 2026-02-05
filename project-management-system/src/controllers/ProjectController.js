@@ -1,5 +1,6 @@
 const projectService = require("../services/ProjectService");
 const { isProjectCompletedByKey } = require("../utils/projectValidation");
+const { ProjectDocument } = require("../models");
 
 const handleCreateProject = async (req, res) => {
   try {
@@ -165,6 +166,7 @@ const handleRemoveMember = async (req, res) => {
     }
 
     const updatedProject = await projectService.removeMemberFromProject(projectKey, userId);
+    await ProjectDocument.updateMany({ projectId: updatedProject._id }, { $pull: { sharedWith: userId } });
     res.status(200).json(updatedProject);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });
@@ -233,12 +235,12 @@ const handleRemoveMemberFromTeam = async (req, res) => {
   try {
     const { projectKey, teamId, userId } = req.params;
     const updatedProject = await projectService.removeMemberFromTeamInProject(projectKey, teamId, userId);
+    await ProjectDocument.updateMany({ projectId: updatedProject._id }, { $pull: { sharedWith: userId } });
     res.status(200).json(updatedProject);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
-
 
 const handleGetProjectDetails = async (req, res) => {
   try {

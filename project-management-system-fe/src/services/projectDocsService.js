@@ -26,6 +26,10 @@ export const shareProjectDocument = (projectKey, documentId, emails) => {
   return apiClient.put(`/projects/key/${projectKey}/documents/${documentId}/share`, { emails });
 };
 
+export const unshareProjectDocument = (projectKey, documentId, emails) => {
+  return apiClient.put(`/projects/key/${projectKey}/documents/${documentId}/unshare`, { emails });
+};
+
 export const deleteProjectDocument = (projectKey, documentId) => {
   return apiClient.delete(`/projects/key/${projectKey}/documents/${documentId}`);
 };
