@@ -19,6 +19,7 @@ router.delete("/:meetingId", MeetingController.deleteMeeting);
 
 // Attachment routes
 router.post("/:meetingId/attachments", uploadMiddleware.single("file"), MeetingController.addAttachment);
+router.post("/:meetingId/attachments/from-doc", MeetingController.addAttachmentFromDocument);
 router.delete("/:meetingId/attachments/:attachmentId", MeetingController.deleteAttachment);
 
 // Chat history route - using chatHistoryUpload with memory storage

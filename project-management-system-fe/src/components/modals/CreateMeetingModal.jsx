@@ -3,7 +3,8 @@ import { ProjectContext } from "../../contexts/ProjectContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { getProjectDetails } from "../../services/projectService";
-import { createMeeting, addMeetingAttachment } from "../../services/meetingService";
+import { createMeeting, addMeetingAttachment, addMeetingAttachmentFromDocuments } from "../../services/meetingService";
+import { getProjectDocuments } from "../../services/projectDocsService";
 import InputField from "../common/InputField";
 import Avatar from "../common/Avatar";
 
@@ -21,7 +22,11 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
   const [members, setMembers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
-
+  const [docSearch, setDocSearch] = useState("");
+  const [selectedDocIds, setSelectedDocIds] = useState([]);
+  const [showDocPicker, setShowDocPicker] = useState(false);
+  const [projectDocs, setProjectDocs] = useState([]);
+  const [docsLoading, setDocsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && projectData?.key) {
@@ -137,6 +142,14 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
         }
       }
 
+      if (selectedDocIds.length > 0) {
+        try {
+          await addMeetingAttachmentFromDocuments(response.data._id, selectedDocIds);
+        } catch (error) {
+          toast.warn("Failed to attach project documents, but meeting created successfully.");
+        }
+      }
+
       toast.success("Meeting created successfully!");
       onMeetingCreated(); // Callback to refresh the list
       onClose(); // Close the modal
@@ -154,6 +167,33 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
 
   const removeAttachment = (index) => {
     setAttachments(attachments.filter((_, i) => i !== index));
+  };
+
+  const fetchProjectDocs = async () => {
+    if (!projectData?.key) return;
+    setDocsLoading(true);
+    try {
+      const res = await getProjectDocuments(projectData.key, "all");
+      const allDocs = [
+        ...(res.data.projectDocs || []),
+        ...(res.data.taskAttachments || []),
+        ...(res.data.commentAttachments || []),
+        ...(res.data.meetingAttachments || []),
+      ];
+      setProjectDocs(allDocs);
+    } catch (error) {
+      console.error("Failed to load project documents:", error);
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showDocPicker) fetchProjectDocs();
+  }, [showDocPicker]);
+
+  const toggleDocSelection = (docId) => {
+    setSelectedDocIds((prev) => (prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]));
   };
 
   if (!isOpen) return null;
@@ -285,6 +325,16 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
             {/* Attachments */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">Attachments</label>
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDocPicker(true)}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-neutral-700 bg-white border border-neutral-300 rounded hover:bg-neutral-50"
+                >
+                  <span className="material-symbols-outlined text-sm">folder</span>
+                  Attach from Documents
+                </button>
+              </div>
               <div className="border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors">
                 <input
                   type="file"
@@ -326,6 +376,30 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
                   ))}
                 </div>
               )}
+
+              {selectedDocIds.length > 0 && (
+                <div className="mt-3 space-y-2 p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+                  {selectedDocIds.map((docId) => {
+                    const doc = projectDocs.find((d) => d._id === docId);
+                    if (!doc) return null;
+                    return (
+                      <div key={docId} className="flex items-center justify-between p-2 bg-white rounded border border-neutral-200">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="material-symbols-outlined text-base text-primary-500">description</span>
+                          <span className="text-sm text-neutral-700 truncate">{doc.filename}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleDocSelection(docId)}
+                          className="ml-2 text-neutral-500 hover:text-red-600 flex-shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-8 pt-4 border-t border-neutral-200 flex-shrink-0">
@@ -345,6 +419,57 @@ const CreateMeetingModal = ({ isOpen, onClose, onMeetingCreated }) => {
             </button>
           </div>
         </form>
+        {showDocPicker && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-5 w-[520px] max-h-[70vh] flex flex-col">
+              <h4 className="text-lg font-semibold mb-3">Attach from Documents</h4>
+              <div className="mb-3">
+                <input
+                  type="text"
+                  value={docSearch}
+                  onChange={(e) => setDocSearch(e.target.value)}
+                  placeholder="Search documents..."
+                  className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div className="flex-1 overflow-y-auto border border-neutral-200 rounded-md">
+                {docsLoading ? (
+                  <div className="p-4 text-center text-neutral-500">Loading documents...</div>
+                ) : projectDocs.length === 0 ? (
+                  <div className="p-4 text-center text-neutral-500">No documents available</div>
+                ) : (
+                  <div className="divide-y">
+                    {projectDocs
+                      .filter((doc) => {
+                        const q = docSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (doc.filename || "").toLowerCase().includes(q);
+                      })
+                      .map((doc) => (
+                        <label key={doc._id} className="flex items-center p-3 gap-3 hover:bg-neutral-50">
+                          <input type="checkbox" checked={selectedDocIds.includes(doc._id)} onChange={() => toggleDocSelection(doc._id)} />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-neutral-900 truncate">{doc.filename}</div>
+                            <div className="text-xs text-neutral-500 truncate">
+                              {doc.sourceType || "project"} • {doc.category || "other"}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => setShowDocPicker(false)}
+                  className="px-4 py-2 text-sm font-medium text-neutral-600 bg-neutral-100 rounded-md hover:bg-neutral-200"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

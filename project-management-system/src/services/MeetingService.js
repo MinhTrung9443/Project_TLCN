@@ -434,6 +434,100 @@ const MeetingService = {
     return updatedMeeting.populate("createdBy", "fullname avatar");
   },
 
+  async addAttachmentsFromDocuments(meetingId, documentIds, userId) {
+    if (!Array.isArray(documentIds) || documentIds.length === 0) {
+      const error = new Error("No document selected");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const meeting = await Meeting.findById(meetingId);
+    if (!meeting) {
+      const error = new Error("Meeting not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (!meeting.createdBy.equals(userId)) {
+      const error = new Error("You do not have permission to add attachments to this meeting");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (meeting.status === "completed") {
+      const error = new Error("Cannot add attachments to a completed meeting");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const docs = await ProjectDocument.find({
+      _id: { $in: documentIds },
+      projectId: meeting.projectId,
+    }).lean();
+
+    const userIdStr = userId.toString();
+    const allowedDocs = docs.filter((doc) => {
+      const uploadedBy = doc.uploadedBy?.toString?.() || doc.uploadedBy?.toString?.();
+      const sharedIds = (doc.sharedWith || []).map((id) => id.toString());
+      return uploadedBy === userIdStr || sharedIds.includes(userIdStr);
+    });
+
+    if (allowedDocs.length === 0) {
+      const error = new Error("You do not have access to selected documents");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const existingKeys = new Set((meeting.attachments || []).map((att) => att.public_id || att.url));
+    const newAttachments = allowedDocs
+      .map((doc) => ({
+        filename: doc.filename,
+        url: doc.url,
+        public_id: doc.public_id || doc._id.toString(),
+      }))
+      .filter((att) => !existingKeys.has(att.public_id || att.url));
+
+    if (newAttachments.length === 0) {
+      const error = new Error("Selected documents are already attached");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    meeting.attachments.push(...newAttachments);
+    const updatedMeeting = await meeting.save();
+
+    try {
+      const project = await Project.findById(meeting.projectId).lean();
+      const pmIds = project?.members?.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId) || [];
+      const participantIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
+      const sharedWith = [...new Set([...pmIds, ...participantIds].map((id) => id.toString()))].map((id) => new mongoose.Types.ObjectId(id));
+
+      await ProjectDocument.insertMany(
+        newAttachments.map((att) => ({
+          projectId: meeting.projectId,
+          filename: att.filename,
+          url: att.url,
+          public_id: att.public_id,
+          category: "other",
+          version: "v1",
+          tags: [],
+          sourceType: "meeting",
+          parent: {
+            meetingId: meeting._id,
+            meetingTitle: meeting.title,
+          },
+          uploadedBy: userId,
+          sharedWith,
+          uploadedAt: new Date(),
+        }))
+      );
+    } catch (docError) {
+      console.error("[MeetingService] Failed to create ProjectDocument from doc attach:", docError.message);
+    }
+
+    return updatedMeeting.populate("createdBy", "fullname avatar");
+  },
+
   /**
    * Xóa attachment từ cuộc họp
    */

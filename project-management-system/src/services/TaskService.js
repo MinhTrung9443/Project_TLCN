@@ -917,6 +917,92 @@ const addAttachment = async (taskId, file, userId) => {
   return populateFullTask(Task.findById(updatedTask._id));
 };
 
+const addAttachmentsFromDocuments = async (taskId, documentIds, userId) => {
+  if (!Array.isArray(documentIds) || documentIds.length === 0) {
+    const error = new Error("No document selected");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const task = await Task.findById(taskId);
+  if (!task) {
+    const error = new Error("Không tìm thấy công việc");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const docs = await ProjectDocument.find({
+    _id: { $in: documentIds },
+    projectId: task.projectId,
+  }).lean();
+
+  const userIdStr = userId.toString();
+  const allowedDocs = docs.filter((doc) => {
+    const uploadedBy = doc.uploadedBy?.toString?.() || doc.uploadedBy?.toString?.();
+    const sharedIds = (doc.sharedWith || []).map((id) => id.toString());
+    return uploadedBy === userIdStr || sharedIds.includes(userIdStr);
+  });
+
+  if (allowedDocs.length === 0) {
+    const error = new Error("You do not have access to selected documents");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const existingKeys = new Set((task.attachments || []).map((att) => att.public_id || att.url));
+  const newAttachments = allowedDocs
+    .map((doc) => ({
+      filename: doc.filename,
+      url: doc.url,
+      public_id: doc.public_id || doc._id.toString(),
+      uploadedAt: doc.uploadedAt || new Date(),
+    }))
+    .filter((att) => !existingKeys.has(att.public_id || att.url));
+
+  if (newAttachments.length === 0) {
+    const error = new Error("Selected documents are already attached");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  task.attachments.push(...newAttachments);
+  const updatedTask = await task.save();
+
+  // Create ProjectDocument entries for task attachments
+  try {
+    const project = await Project.findById(task.projectId).lean();
+    if (project) {
+      const sharedWith = project.members.filter((m) => m.role === "PROJECT_MANAGER" || m.role === "LEADER").map((m) => m.userId);
+      await ProjectDocument.insertMany(
+        newAttachments.map((att) => ({
+          projectId: task.projectId,
+          filename: att.filename,
+          url: att.url,
+          public_id: att.public_id,
+          category: "other",
+          version: "v1",
+          tags: [],
+          sourceType: "task",
+          parent: {
+            taskId: task._id,
+            taskKey: task.key,
+            taskName: task.name,
+          },
+          uploadedBy: userId,
+          sharedWith,
+          uploadedAt: new Date(),
+        })),
+      );
+    }
+  } catch (docError) {
+    console.error("[TaskService] Failed to create ProjectDocument from doc attach:", docError.message);
+  }
+
+  await logHistory(taskId, userId, "Attachment", null, `Đã đính kèm tệp từ tài liệu dự án`, "UPDATE");
+
+  return populateFullTask(Task.findById(updatedTask._id));
+};
+
 const deleteAttachment = async (taskId, attachmentId, userId) => {
   if (!mongoose.Types.ObjectId.isValid(taskId) || !mongoose.Types.ObjectId.isValid(attachmentId)) {
     const error = new Error("ID không hợp lệ");
@@ -1173,6 +1259,7 @@ module.exports = {
   deleteTask,
   getTaskHistory,
   addAttachment,
+  addAttachmentsFromDocuments,
   deleteAttachment,
   linkTask,
   unlinkTask,

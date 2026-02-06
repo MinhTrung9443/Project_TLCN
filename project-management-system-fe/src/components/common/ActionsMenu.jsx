@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaEllipsisV, FaTrash, FaPaperclip } from "react-icons/fa";
 
-const ActionsMenu = ({ onDelete, onAddAttachment }) => {
+const ActionsMenu = ({ onDelete, onAddAttachment, onAddAttachmentFromDocs }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -32,7 +32,13 @@ const ActionsMenu = ({ onDelete, onAddAttachment }) => {
 
   return (
     <div className="relative" ref={menuRef}>
-      <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}>
+      <button
+        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+      >
         <FaEllipsisV />
       </button>
       {isOpen && (
@@ -41,14 +47,29 @@ const ActionsMenu = ({ onDelete, onAddAttachment }) => {
             className="px-3 py-2 hover:bg-gray-100 text-gray-700 cursor-pointer flex items-center gap-3 transition-colors"
             onClick={(e) => handleActionClick(onAddAttachment, e)}
           >
-            <span className="w-5 flex items-center justify-center text-base text-neutral-600"><FaPaperclip /></span>
+            <span className="w-5 flex items-center justify-center text-base text-neutral-600">
+              <FaPaperclip />
+            </span>
             <span className="truncate">Add Attachment</span>
           </li>
+          {onAddAttachmentFromDocs && (
+            <li
+              className="px-3 py-2 hover:bg-gray-100 text-gray-700 cursor-pointer flex items-center gap-3 transition-colors"
+              onClick={(e) => handleActionClick(onAddAttachmentFromDocs, e)}
+            >
+              <span className="w-5 flex items-center justify-center text-base text-neutral-600">
+                <FaPaperclip />
+              </span>
+              <span className="truncate">Attach from Project Docs</span>
+            </li>
+          )}
           <li
             className="px-3 py-2 hover:bg-red-50 text-red-600 cursor-pointer flex items-center gap-3 transition-colors"
             onClick={(e) => handleActionClick(onDelete, e)}
           >
-            <span className="w-5 flex items-center justify-center text-base text-red-600"><FaTrash /></span>
+            <span className="w-5 flex items-center justify-center text-base text-red-600">
+              <FaTrash />
+            </span>
             <span className="truncate">Delete Task</span>
           </li>
         </ul>

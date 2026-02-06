@@ -31,6 +31,39 @@ const handleCreateComment = async (req, res) => {
         }))
       : [];
 
+    // Xử lý attachments từ Project Documents (documentIds)
+    const rawDocumentIds = req.body.documentIds;
+    const documentIds = Array.isArray(rawDocumentIds) ? rawDocumentIds : rawDocumentIds ? [rawDocumentIds] : [];
+
+    if (documentIds.length > 0) {
+      const task = await Task.findById(taskId).lean();
+      const projectId = task?.projectId;
+
+      const docs = await ProjectDocument.find({
+        _id: { $in: documentIds },
+        projectId: projectId,
+      }).lean();
+
+      const userIdStr = userId.toString();
+      const allowedDocs = docs.filter((doc) => {
+        const uploadedBy = doc.uploadedBy?.toString?.() || doc.uploadedBy?.toString?.();
+        const sharedIds = (doc.sharedWith || []).map((id) => id.toString());
+        return uploadedBy === userIdStr || sharedIds.includes(userIdStr);
+      });
+
+      const existingKeys = new Set(attachments.map((att) => att.public_id || att.url));
+      allowedDocs.forEach((doc) => {
+        const publicId = doc.public_id || doc._id.toString();
+        if (existingKeys.has(publicId) || existingKeys.has(doc.url)) return;
+        attachments.push({
+          filename: doc.filename,
+          url: doc.url,
+          public_id: publicId,
+        });
+        existingKeys.add(publicId);
+      });
+    }
+
     const comment = await commentService.createComment(
       {
         ...req.body,

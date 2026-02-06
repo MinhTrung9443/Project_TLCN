@@ -110,6 +110,16 @@ export const addMeetingAttachment = (meetingId, file) => {
 };
 
 /**
+ * Add attachments to a meeting from existing project documents
+ * @param {string} meetingId
+ * @param {string[]} documentIds
+ * @returns {Promise}
+ */
+export const addMeetingAttachmentFromDocuments = (meetingId, documentIds) => {
+  return apiClient.post(`/meetings/${meetingId}/attachments/from-doc`, { documentIds });
+};
+
+/**
  * Delete attachment from a meeting
  * @param {string} meetingId - The ID of the meeting
  * @param {string} attachmentId - The ID of the attachment to delete

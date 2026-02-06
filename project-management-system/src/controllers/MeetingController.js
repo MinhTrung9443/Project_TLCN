@@ -149,6 +149,23 @@ const MeetingController = {
   },
 
   /**
+   * Thêm attachment từ Project Documents vào cuộc họp
+   */
+  async addAttachmentFromDocument(req, res) {
+    try {
+      const { meetingId } = req.params;
+      const { documentIds } = req.body;
+      const userId = req.user._id;
+
+      const updatedMeeting = await MeetingService.addAttachmentsFromDocuments(meetingId, documentIds, userId);
+      res.status(200).json(updatedMeeting);
+    } catch (error) {
+      console.error("Error adding attachment from documents:", error);
+      res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+    }
+  },
+
+  /**
    * Xóa attachment từ cuộc họp
    */
   async deleteAttachment(req, res) {

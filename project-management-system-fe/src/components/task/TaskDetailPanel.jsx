@@ -1,9 +1,19 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { toast } from "react-toastify";
-import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment, getAllowedStatuses } from "../../services/taskService";
+import {
+  updateTask,
+  linkTask,
+  unlinkTask,
+  searchTasks,
+  addAttachment,
+  addAttachmentFromDocument,
+  deleteAttachment,
+  getAllowedStatuses,
+} from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import { useAuth } from "../../contexts/AuthContext";
 import { ProjectContext } from "../../contexts/ProjectContext";
+import { getProjectDocuments } from "../../services/projectDocsService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import platformService from "../../services/platformService";
@@ -37,7 +47,7 @@ const statusCategoryStyles = {
 
 const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [], showCloseButton = true, isCompact = false }) => {
   const { user } = useAuth();
-  const { userProjectRole } = useContext(ProjectContext);
+  const { userProjectRole, selectedProjectKey } = useContext(ProjectContext);
   const [editableTask, setEditableTask] = useState(task);
   const [activeTab, setActiveTab] = useState("Details");
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
@@ -49,6 +59,12 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
   const [isDeleteAttachmentModalOpen, setIsDeleteAttachmentModalOpen] = useState(false);
   const [selectedLinkId, setSelectedLinkId] = useState(null);
   const [selectedAttachmentId, setSelectedAttachmentId] = useState(null);
+  const [showAttachmentSourceModal, setShowAttachmentSourceModal] = useState(false);
+  const [showDocPicker, setShowDocPicker] = useState(false);
+  const [projectDocs, setProjectDocs] = useState([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [selectedDocIds, setSelectedDocIds] = useState([]);
+  const [docSearch, setDocSearch] = useState("");
   useEffect(() => {
     if (nameTextAreaRef.current) {
       nameTextAreaRef.current.style.height = "auto";
@@ -264,8 +280,6 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
     }
   }, [task]);
 
-  if (!editableTask) return null;
-
   const handleUpdate = async (fieldName, value) => {
     const updateValue = value === "" ? null : value;
     const projectKey = editableTask?.projectId?.key;
@@ -359,8 +373,41 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
   };
 
   const handleAddAttachment = () => {
+    setShowAttachmentSourceModal(true);
+  };
+
+  const handlePickUpload = () => {
+    setShowAttachmentSourceModal(false);
     fileInputRef.current.click();
   };
+
+  const handlePickFromDocs = () => {
+    setShowAttachmentSourceModal(false);
+    setShowDocPicker(true);
+  };
+
+  const fetchProjectDocs = async () => {
+    if (!selectedProjectKey) return;
+    setDocsLoading(true);
+    try {
+      const res = await getProjectDocuments(selectedProjectKey, "all");
+      const allDocs = [
+        ...(res.data.projectDocs || []),
+        ...(res.data.taskAttachments || []),
+        ...(res.data.commentAttachments || []),
+        ...(res.data.meetingAttachments || []),
+      ];
+      setProjectDocs(allDocs);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to load project documents");
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showDocPicker) fetchProjectDocs();
+  }, [showDocPicker]);
 
   // 2. THÊM HÀM MỚI: Xử lý khi người dùng đã chọn file
   const handleFileSelect = async (event) => {
@@ -398,6 +445,27 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
       setSelectedAttachmentId(null);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete attachment.");
+    }
+  };
+
+  const toggleDocSelection = (docId) => {
+    setSelectedDocIds((prev) => (prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]));
+  };
+
+  const handleAttachDocsToTask = async () => {
+    if (selectedDocIds.length === 0) {
+      toast.warn("Please select at least one document");
+      return;
+    }
+    try {
+      const updatedTaskWithAttachment = await addAttachmentFromDocument(editableTask._id, selectedDocIds);
+      setEditableTask(updatedTaskWithAttachment);
+      onTaskUpdate(updatedTaskWithAttachment);
+      toast.success("Attachment added successfully!");
+      setShowDocPicker(false);
+      setSelectedDocIds([]);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to attach document.");
     }
   };
 
@@ -450,7 +518,11 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         </div>
         {!isCompact && (
           <div className="flex items-start gap-2 flex-shrink-0">
-            <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
+            <ActionsMenu
+              onDelete={() => setIsDeleteTaskModalOpen(true)}
+              onAddAttachment={handleAddAttachment}
+              onAddAttachmentFromDocs={handlePickFromDocs}
+            />
             {showCloseButton && (
               <button
                 onClick={onClose}
@@ -583,6 +655,104 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         title="Delete Attachment"
         message="Are you sure you want to delete this attachment? This action cannot be undone."
       />
+
+      {showAttachmentSourceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-5 w-[420px]">
+            <h4 className="text-lg font-semibold mb-3">Add Attachment</h4>
+            <div className="space-y-2">
+              <button
+                onClick={handlePickUpload}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600"
+              >
+                Upload File
+              </button>
+              <button
+                onClick={handlePickFromDocs}
+                className="w-full px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-md hover:bg-neutral-200"
+              >
+                Choose from Documents
+              </button>
+              <button
+                onClick={() => setShowAttachmentSourceModal(false)}
+                className="w-full px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50 rounded-md"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDocPicker && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-5 w-[520px] max-h-[70vh] flex flex-col">
+            <h4 className="text-lg font-semibold mb-3">Attach from Documents</h4>
+            <div className="mb-3">
+              <input
+                type="text"
+                value={docSearch}
+                onChange={(e) => setDocSearch(e.target.value)}
+                placeholder="Search documents..."
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto border border-neutral-200 rounded-md">
+              {docsLoading ? (
+                <div className="p-4 text-center text-neutral-500">Loading documents...</div>
+              ) : projectDocs.length === 0 ? (
+                <div className="p-4 text-center text-neutral-500">No documents available</div>
+              ) : (
+                <div className="divide-y">
+                  {projectDocs
+                    .filter((doc) => {
+                      const q = docSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return (doc.filename || "").toLowerCase().includes(q);
+                    })
+                    .map((doc) => {
+                      const attachedKeys = new Set((editableTask.attachments || []).map((att) => att.public_id || att.url));
+                      const isAlreadyAttached = attachedKeys.has(doc.public_id || doc.url);
+                      return (
+                        <label key={doc._id} className={`flex items-center p-3 gap-3 ${isAlreadyAttached ? "opacity-50" : "hover:bg-neutral-50"}`}>
+                          <input
+                            type="checkbox"
+                            disabled={isAlreadyAttached}
+                            checked={selectedDocIds.includes(doc._id)}
+                            onChange={() => toggleDocSelection(doc._id)}
+                          />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-neutral-900 truncate">{doc.filename}</div>
+                            <div className="text-xs text-neutral-500 truncate">
+                              {doc.sourceType || "project"} • {doc.category || "other"}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => {
+                  setShowDocPicker(false);
+                  setSelectedDocIds([]);
+                }}
+                className="px-4 py-2 text-sm font-medium text-neutral-600 bg-neutral-100 rounded-md hover:bg-neutral-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAttachDocsToTask}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600"
+              >
+                Attach Selected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
