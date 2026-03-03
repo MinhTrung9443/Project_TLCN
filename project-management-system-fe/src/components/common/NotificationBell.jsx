@@ -20,6 +20,40 @@ const NotificationBell = () => {
   const navigate = useNavigate();
   const { setProject } = useContext(ProjectContext);
 
+  const canUseBrowserNotification = () => typeof window !== "undefined" && "Notification" in window;
+
+  const ensureNotificationPermission = async () => {
+    if (!canUseBrowserNotification()) return "denied";
+    if (Notification.permission === "granted") return "granted";
+    if (Notification.permission === "denied") return "denied";
+    try {
+      return await Notification.requestPermission();
+    } catch (error) {
+      console.error("Failed to request browser notification permission:", error);
+      return "denied";
+    }
+  };
+
+  const showBrowserNotification = (notification) => {
+    if (!canUseBrowserNotification() || Notification.permission !== "granted") return;
+
+    const shouldPush = document.hidden || !document.hasFocus();
+    if (!shouldPush) return;
+
+    const browserNotification = new Notification(notification.title || "Notification", {
+      body: notification.message || "You have a new notification",
+      tag: notification.groupKey || notification._id || `notification-${Date.now()}`,
+      icon: "/favicon.ico",
+      renotify: true,
+    });
+
+    browserNotification.onclick = async () => {
+      window.focus();
+      await handleNotificationClick(notification);
+      browserNotification.close();
+    };
+  };
+
   // Fetch initial notifications
   useEffect(() => {
     fetchNotifications();
@@ -30,8 +64,17 @@ const NotificationBell = () => {
   useEffect(() => {
     const handleNewNotification = (notification) => {
       console.log("📩 New notification received:", notification);
-      setNotifications((prev) => [notification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+      setNotifications((prev) => {
+        const existingIndex = prev.findIndex((item) => item._id === notification._id);
+        if (existingIndex === -1) {
+          return [notification, ...prev];
+        }
+
+        const next = [...prev];
+        next.splice(existingIndex, 1);
+        return [notification, ...next];
+      });
+      showBrowserNotification(notification);
 
       // Show toast with full information
       const toastOptions = {
@@ -41,6 +84,7 @@ const NotificationBell = () => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
+        toastId: notification.groupKey || notification._id,
       };
 
       // Format message with full details
@@ -288,7 +332,10 @@ const NotificationBell = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={async () => {
+          await ensureNotificationPermission();
+          setIsOpen(!isOpen);
+        }}
       >
         <span className="material-symbols-outlined text-gray-700">notifications</span>
         {unreadCount > 0 && (
@@ -329,7 +376,14 @@ const NotificationBell = () => {
                       <span className="material-symbols-outlined text-xl">{getNotificationIcon(notification.type)}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900 text-sm">{notification.title}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold text-gray-900 text-sm">{notification.title}</div>
+                        {(notification.groupCount || 1) > 1 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                            +{notification.groupCount - 1}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-sm text-gray-600 mt-1 line-clamp-2">{notification.message}</div>
                       <div className="text-xs text-gray-500 mt-1">{getTimeAgo(notification.createdAt)}</div>
                     </div>

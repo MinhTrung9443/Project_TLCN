@@ -92,7 +92,7 @@ const TaskRow = ({ task, onTaskClick }) => {
               <IconComponent name={task.taskTypeId.icon} />
             </span>
           )}
-          <a href={`/task/${task.key}`} target="_blank" rel="noopener noreferrer" className="hover:underline" onClick={(e) => e.stopPropagation()}>
+          <a href={`/app/task/${task.key}`} target="_blank" rel="noopener noreferrer" className="hover:underline" onClick={(e) => e.stopPropagation()}>
             {task.key}
           </a>
         </div>

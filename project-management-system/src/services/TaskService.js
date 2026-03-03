@@ -609,8 +609,12 @@ const updateTask = async (taskId, updateData, userId) => {
           title: "Task Updated",
           message: `${changerName} updated ${changesText} of "${updatedTask.name}"`,
           type: "task_updated",
-          relatedId: updatedTask._id,
+          relatedId: updatedTask.taskKey || updatedTask._id,
           relatedType: "Task",
+          actorId: userId,
+          actorName: changerName,
+          metadata: { taskName: updatedTask.name, changedFields },
+          enableGrouping: true,
         });
       }
     }

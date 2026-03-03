@@ -1,4 +1,5 @@
 const Notification = require("../models/Notification");
+const Task = require("../models/Task");
 
 class NotificationService {
   constructor() {
@@ -64,31 +65,184 @@ class NotificationService {
   // CREATE & SEND NOTIFICATION
   // ============================================
 
-  async createAndSend({ userId, title, message, type, relatedId = null, relatedType = null, priority = null, sendRealtime = true }) {
+  buildGroupMessage(type, metadata, latestActorName, actorCount, fallbackMessage) {
+    if (type === NotificationService.TYPES.TASK_COMMENTED && metadata?.taskName) {
+      if (actorCount <= 1) {
+        return fallbackMessage;
+      }
+      return `${latestActorName} and ${actorCount - 1} other${actorCount - 1 > 1 ? "s" : ""} commented on "${metadata.taskName}"`;
+    }
+
+    if (type === NotificationService.TYPES.TASK_UPDATED && metadata?.taskName) {
+      if (actorCount <= 1) {
+        return fallbackMessage;
+      }
+      return `${latestActorName} and ${actorCount - 1} other${actorCount - 1 > 1 ? "s" : ""} updated "${metadata.taskName}"`;
+    }
+
+    if (type === NotificationService.TYPES.TASK_STATUS_CHANGED && metadata?.taskName) {
+      if (actorCount <= 1) {
+        return fallbackMessage;
+      }
+      return `${latestActorName} and ${actorCount - 1} other${actorCount - 1 > 1 ? "s" : ""} changed status of "${metadata.taskName}"`;
+    }
+
+    if (type === NotificationService.TYPES.TASK_PRIORITY_CHANGED && metadata?.taskName) {
+      if (actorCount <= 1) {
+        return fallbackMessage;
+      }
+      return `${latestActorName} and ${actorCount - 1} other${actorCount - 1 > 1 ? "s" : ""} changed priority of "${metadata.taskName}"`;
+    }
+
+    return fallbackMessage;
+  }
+
+  buildGroupTitle(type, actorCount, fallbackTitle) {
+    if (type === NotificationService.TYPES.TASK_COMMENTED && actorCount > 1) {
+      return "New Comments on Task";
+    }
+    if (type === NotificationService.TYPES.TASK_UPDATED && actorCount > 1) {
+      return "Task Updated by Multiple People";
+    }
+    if (type === NotificationService.TYPES.TASK_STATUS_CHANGED && actorCount > 1) {
+      return "Task Status Updated";
+    }
+    if (type === NotificationService.TYPES.TASK_PRIORITY_CHANGED && actorCount > 1) {
+      return "Task Priority Updated";
+    }
+    return fallbackTitle;
+  }
+
+  async createAndSend({
+    userId,
+    title,
+    message,
+    type,
+    relatedId = null,
+    relatedType = null,
+    priority = null,
+    sendRealtime = true,
+    actorId = null,
+    actorName = null,
+    metadata = {},
+    enableGrouping = false,
+    groupingWindowMinutes = 30,
+  }) {
     try {
       // Auto-calculate priority if not provided
       const notificationPriority = priority || this.getPriority(type);
+      const normalizedRelatedId = relatedId == null ? null : String(relatedId);
 
-      // Save to database
-      const notification = await Notification.create({
-        userId,
-        title,
-        message,
-        type,
-        relatedId,
-        relatedType,
-        isRead: false,
-      });
+      const resolvedGroupKey = normalizedRelatedId && relatedType ? `${type}:${relatedType}:${normalizedRelatedId}` : null;
+      const groupingEnabled = enableGrouping && resolvedGroupKey;
+
+      let notification;
+
+      if (groupingEnabled) {
+        const windowStart = new Date(Date.now() - groupingWindowMinutes * 60 * 1000);
+        notification = await Notification.findOne({
+          userId,
+          type,
+          relatedId: normalizedRelatedId,
+          relatedType,
+          groupKey: resolvedGroupKey,
+          isRead: false,
+          createdAt: { $gte: windowStart },
+        }).sort({ createdAt: -1 });
+      }
+
+      if (notification) {
+        notification.groupCount = (notification.groupCount || 1) + 1;
+
+        if (actorId) {
+          const actorIdStr = actorId.toString();
+          const actorIds = (notification.actorIds || []).map((id) => id.toString());
+          if (!actorIds.includes(actorIdStr)) {
+            notification.actorIds = [...(notification.actorIds || []), actorId];
+          }
+        }
+
+        if (actorName) {
+          const actorNames = notification.actorNames || [];
+          if (!actorNames.includes(actorName)) {
+            notification.actorNames = [...actorNames, actorName];
+          }
+          notification.latestActorName = actorName;
+        }
+
+        notification.actorCount = Math.max(
+          (notification.actorIds || []).length,
+          (notification.actorNames || []).length,
+          notification.actorCount || 0,
+          actorName ? 1 : 0,
+        );
+
+        notification.metadata = {
+          ...(notification.metadata || {}),
+          ...(metadata || {}),
+        };
+
+        notification.message = this.buildGroupMessage(
+          type,
+          notification.metadata,
+          notification.latestActorName || actorName || "Someone",
+          notification.actorCount,
+          message,
+        );
+
+        notification.title = this.buildGroupTitle(type, notification.actorCount, title);
+        notification.createdAt = new Date();
+        await notification.save();
+      } else {
+        // Save to database
+        notification = await Notification.create({
+          userId,
+          title,
+          message,
+          type,
+          relatedId: normalizedRelatedId,
+          relatedType,
+          groupKey: resolvedGroupKey,
+          actorIds: actorId ? [actorId] : [],
+          actorNames: actorName ? [actorName] : [],
+          actorCount: actorName ? 1 : 0,
+          groupCount: 1,
+          latestActorName: actorName || null,
+          metadata: metadata || {},
+          isRead: false,
+        });
+      }
 
       // Send via WebSocket if enabled
       if (sendRealtime && this.io) {
+        let realtimeRelatedId = notification.relatedId;
+        const relatedIdAsString = notification.relatedId ? String(notification.relatedId) : null;
+        if (
+          notification.relatedType === "Task" &&
+          relatedIdAsString &&
+          /^[a-f\d]{24}$/i.test(relatedIdAsString)
+        ) {
+          try {
+            const task = await Task.findById(relatedIdAsString).select("key").lean();
+            if (task?.key) {
+              realtimeRelatedId = task.key;
+            }
+          } catch (taskLookupError) {
+            console.error("[NotificationService] Failed to resolve task key for realtime payload:", taskLookupError.message);
+          }
+        }
+
         this.io.to(`user:${userId}`).emit("notification", {
           _id: notification._id,
           title: notification.title,
           message: notification.message,
           type: notification.type,
-          relatedId: notification.relatedId,
+          relatedId: realtimeRelatedId,
           relatedType: notification.relatedType,
+          groupKey: notification.groupKey || null,
+          actorCount: notification.actorCount || 0,
+          groupCount: notification.groupCount || 1,
+          latestActorName: notification.latestActorName || null,
           isRead: notification.isRead,
           createdAt: notification.createdAt,
           priority: notificationPriority,
@@ -125,7 +279,7 @@ class NotificationService {
     });
   }
 
-  async notifyTaskCommented({ taskId, taskKey, taskName, commenterName, commentPreview, recipientIds }) {
+  async notifyTaskCommented({ taskId, taskKey, taskName, commenterId, commenterName, commentPreview, recipientIds }) {
     const notifications = recipientIds.map((userId) =>
       this.createAndSend({
         userId,
@@ -134,13 +288,17 @@ class NotificationService {
         type: NotificationService.TYPES.TASK_COMMENTED,
         relatedId: taskKey || taskId,
         relatedType: "Task",
+        actorId: commenterId,
+        actorName: commenterName,
+        metadata: { taskName },
+        enableGrouping: true,
       })
     );
 
     return Promise.all(notifications);
   }
 
-  async notifyTaskUpdated({ taskId, taskKey, taskName, changedBy, recipientIds, changeSummary = null }) {
+  async notifyTaskUpdated({ taskId, taskKey, taskName, changedById = null, changedBy, recipientIds, changeSummary = null }) {
     const message = changeSummary ? `${changedBy} updated "${taskName}": ${changeSummary}` : `${changedBy} updated "${taskName}"`;
 
     const notifications = recipientIds.map((userId) =>
@@ -151,13 +309,17 @@ class NotificationService {
         type: NotificationService.TYPES.TASK_UPDATED,
         relatedId: taskKey || taskId,
         relatedType: "Task",
+        actorId: changedById,
+        actorName: changedBy,
+        metadata: { taskName },
+        enableGrouping: true,
       })
     );
 
     return Promise.all(notifications);
   }
 
-  async notifyTaskStatusChanged({ taskId, taskKey, taskName, oldStatus, newStatus, changedBy, recipientIds }) {
+  async notifyTaskStatusChanged({ taskId, taskKey, taskName, oldStatus, newStatus, changedById = null, changedBy, recipientIds }) {
     const notifications = recipientIds.map((userId) =>
       this.createAndSend({
         userId,
@@ -166,13 +328,17 @@ class NotificationService {
         type: NotificationService.TYPES.TASK_STATUS_CHANGED,
         relatedId: taskKey || taskId,
         relatedType: "Task",
+        actorId: changedById,
+        actorName: changedBy,
+        metadata: { taskName, oldStatus, newStatus },
+        enableGrouping: true,
       })
     );
 
     return Promise.all(notifications);
   }
 
-  async notifyTaskPriorityChanged({ taskId, taskKey, taskName, oldPriority, newPriority, changedBy, recipientIds }) {
+  async notifyTaskPriorityChanged({ taskId, taskKey, taskName, oldPriority, newPriority, changedById = null, changedBy, recipientIds }) {
     // Only notify if priority increased to High or Critical
     if (!["High", "Critical"].includes(newPriority)) {
       return;
@@ -184,8 +350,12 @@ class NotificationService {
         title: "Task Priority Changed",
         message: `${changedBy} changed priority of "${taskName}" from ${oldPriority} to ${newPriority}`,
         type: NotificationService.TYPES.TASK_PRIORITY_CHANGED,
-        relatedId: taskId,
+        relatedId: taskKey || taskId,
         relatedType: "Task",
+        actorId: changedById,
+        actorName: changedBy,
+        metadata: { taskName, oldPriority, newPriority },
+        enableGrouping: true,
       })
     );
 
@@ -335,15 +505,6 @@ class NotificationService {
   // ============================================
   // HELPER METHODS
   // ============================================
-
-  getPriority(type) {
-    for (const [priority, types] of Object.entries(NotificationService.PRIORITIES)) {
-      if (types.includes(type)) {
-        return priority;
-      }
-    }
-    return "LOW";
-  }
 
   // Get unread count for user
   async getUnreadCount(userId) {
