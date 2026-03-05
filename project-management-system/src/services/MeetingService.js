@@ -7,9 +7,7 @@ const ProjectDocument = require("../models/ProjectDocument");
 
 const enqueueSummaryIfReady = async (meetingId) => {
   try {
-    const queueReady = summarizeQueue.isQueueReady
-      ? summarizeQueue.isQueueReady()
-      : summarizeQueue.client?.status === "ready";
+    const queueReady = summarizeQueue.isQueueReady ? summarizeQueue.isQueueReady() : summarizeQueue.client?.status === "ready";
     if (!queueReady) return;
 
     const meeting = await Meeting.findById(meetingId);
@@ -112,11 +110,11 @@ const MeetingService = {
    */
   async getMeetingsByProject(userId, projectId, status, teamId, memberId) {
     const query = { projectId, participants: { $elemMatch: { userId: userId, status: status || "accepted" } } };
-    
+
     if (status === "pending") {
       query.status = "scheduled";
     }
-    
+
     if (teamId) {
       query.relatedTeamId = teamId;
     }
@@ -244,16 +242,22 @@ const MeetingService = {
    * @returns {Promise<Array>} Danh sách cuộc họp
    */
   async getMySchedule(userId, startTime, endTime) {
-    return Meeting.find({
+    const query = {
       "participants.userId": userId,
       "participants.status": "accepted",
-      startTime: { $gte: startTime },
-      endTime: { $lte: endTime },
-    })
-      .populate("projectId", "name key")
-      .populate("createdBy", "fullname avatar")
-      .sort({ startTime: -1 })
-      .lean();
+    };
+
+    if (startTime || endTime) {
+      query.startTime = {};
+      if (startTime) {
+        query.startTime.$gte = new Date(startTime);
+      }
+      if (endTime) {
+        query.startTime.$lte = new Date(endTime);
+      }
+    }
+
+    return Meeting.find(query).populate("projectId", "name key").populate("createdBy", "fullname avatar").sort({ startTime: -1 }).lean();
   },
 
   /**
@@ -519,7 +523,7 @@ const MeetingService = {
           uploadedBy: userId,
           sharedWith,
           uploadedAt: new Date(),
-        }))
+        })),
       );
     } catch (docError) {
       console.error("[MeetingService] Failed to create ProjectDocument from doc attach:", docError.message);
@@ -607,8 +611,6 @@ const MeetingService = {
       throw error;
     }
 
-
-
     const meeting = await Meeting.findById(meetingId);
     if (!meeting) {
       const error = new Error("Meeting not found");
@@ -655,11 +657,11 @@ const MeetingService = {
         if (project) {
           const pmIds = project.members.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
           const memberIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
-          const sharedWith = [...new Set([...memberIds, ...pmIds].map(id => id.toString()))].map(id => new mongoose.Types.ObjectId(id));
+          const sharedWith = [...new Set([...memberIds, ...pmIds].map((id) => id.toString()))].map((id) => new mongoose.Types.ObjectId(id));
 
           await ProjectDocument.create({
             projectId: meeting.projectId,
-            filename: `Chat History - ${meeting.title || 'Meeting'}`,
+            filename: `Chat History - ${meeting.title || "Meeting"}`,
             url: result.secure_url,
             public_id: result.public_id,
             category: "other",
@@ -760,9 +762,9 @@ const MeetingService = {
       const updatedMeeting = await Meeting.findByIdAndUpdate(
         meetingId,
         { $set: { videoLink: result.secure_url } },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       ).populate("createdBy", "fullname avatar");
-      
+
       console.log("[MeetingService.uploadRecording] Meeting updated with videoLink:", updatedMeeting.videoLink);
 
       // Create ProjectDocument entry for video recording
@@ -772,11 +774,11 @@ const MeetingService = {
         if (project) {
           const pmIds = project.members.filter((m) => m.role === "PROJECT_MANAGER").map((m) => m.userId);
           const memberIds = (meeting.participants || []).map((p) => p.userId).filter(Boolean);
-          const sharedWith = [...new Set([...memberIds, ...pmIds].map(id => id.toString()))].map(id => new mongoose.Types.ObjectId(id));
+          const sharedWith = [...new Set([...memberIds, ...pmIds].map((id) => id.toString()))].map((id) => new mongoose.Types.ObjectId(id));
 
           await ProjectDocument.create({
             projectId: meeting.projectId,
-            filename: `Video - ${meeting.title || 'Meeting'}`,
+            filename: `Video - ${meeting.title || "Meeting"}`,
             url: result.secure_url,
             public_id: result.public_id,
             category: "other",

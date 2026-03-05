@@ -33,8 +33,8 @@ export const getManagedMeetings = (projectId) => {
  * Fetches all meetings the current user is invited to across all projects.
  * @returns {Promise}
  */
-export const getMySchedule = () => {
-  return apiClient.get("/meetings/my-schedule");
+export const getMySchedule = (params = {}) => {
+  return apiClient.get("/meetings/my-schedule", { params });
 };
 
 /**

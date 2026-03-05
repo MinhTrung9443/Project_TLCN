@@ -44,7 +44,8 @@ const MeetingController = {
    */
   async getMySchedule(req, res) {
     try {
-      const meetings = await MeetingService.getMySchedule(req.user._id, req.body.startTime, req.body.endTime);
+      const { startTime, endTime } = req.query;
+      const meetings = await MeetingService.getMySchedule(req.user._id, startTime, endTime);
       res.status(200).json(meetings);
     } catch (error) {
       res.status(500).json({ message: "Server error", error: error.message });
