@@ -150,6 +150,20 @@ const createProject = async (projectData, userId) => {
     newData: savedProject,
   });
 
+  try {
+    if (projectManagerId && projectManagerId.toString() !== userId.toString()) {
+      const creator = await User.findById(userId).select("fullname").lean();
+      await notificationService.notifyProjectManagerAssigned({
+        projectId: savedProject._id,
+        projectName: savedProject.name,
+        projectManagerId,
+        assignedByName: creator?.fullname || "Admin",
+      });
+    }
+  } catch (notificationError) {
+    console.error("Failed to send project manager assignment notification:", notificationError);
+  }
+
   return savedProject;
 };
 const getAllProjects = async (actor, search) => {
@@ -649,7 +663,7 @@ const addMembersFromGroupToProject = async (projectKey, data, actor) => {
   if (!finalLeaderId) {
     // Tìm member nào trong memberIds đang là LEADER trong project.members
     const existingLeaderInMembers = project.members.find(
-      (m) => m.role === "LEADER" && memberIds.some((mid) => mid.toString() === m.userId.toString())
+      (m) => m.role === "LEADER" && memberIds.some((mid) => mid.toString() === m.userId.toString()),
     );
 
     // Hoặc tìm member nào đang là leaderId trong một team khác
@@ -724,6 +738,17 @@ const removeMemberFromProject = async (projectKey, userIdToRemove) => {
   });
 
   await project.save();
+
+  try {
+    await notificationService.notifyProjectMemberRemoved({
+      projectId: project._id,
+      projectName: project.name,
+      removedMemberId: userIdToRemove,
+    });
+  } catch (notificationError) {
+    console.error("Failed to send project member removed notification:", notificationError);
+  }
+
   return project; // Trả về project đã cập nhật
 };
 
@@ -857,6 +882,30 @@ const changeTeamLeader = async (projectKey, teamId, newLeaderId) => {
   }
 
   await project.save();
+
+  try {
+    if (oldLeaderId.toString() !== newLeaderId.toString()) {
+      await Promise.all([
+        notificationService.notifyProjectRoleChanged({
+          projectId: project._id,
+          projectName: project.name,
+          memberId: oldLeaderId,
+          oldRole: "LEADER",
+          newRole: "MEMBER",
+        }),
+        notificationService.notifyProjectRoleChanged({
+          projectId: project._id,
+          projectName: project.name,
+          memberId: newLeaderId,
+          oldRole: "MEMBER",
+          newRole: "LEADER",
+        }),
+      ]);
+    }
+  } catch (notificationError) {
+    console.error("Failed to send team leader change notifications:", notificationError);
+  }
+
   return project;
 };
 const addMemberToTeamInProject = async (projectKey, teamId, userIdToAdd) => {
@@ -893,7 +942,6 @@ const removeMemberFromTeamInProject = async (projectKey, teamId, userIdToRemove)
   await project.save();
   return project;
 };
-
 
 const getProjectDetails = async (projectKey) => {
   const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })

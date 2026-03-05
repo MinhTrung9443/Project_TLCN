@@ -579,10 +579,24 @@ const updateTask = async (taskId, updateData, userId) => {
   });
 
   try {
-    if (originalTask.assigneeId && originalTask.assigneeId.toString() !== userId.toString()) {
-      const changer = await User.findById(userId);
-      const changerName = changer?.fullname || "Someone";
+    const changer = await User.findById(userId);
+    const changerName = changer?.fullname || "Someone";
 
+    const oldAssigneeId = originalTask.assigneeId?.toString?.() || null;
+    const newAssigneeId = updateData.assigneeId?.toString?.() || null;
+
+    if (newAssigneeId && newAssigneeId !== oldAssigneeId && newAssigneeId !== userId.toString()) {
+      await notificationService.notifyTaskAssigned({
+        taskId: updatedTask._id,
+        taskKey: updatedTask.key,
+        taskName: updatedTask.name,
+        assigneeId: newAssigneeId,
+        assignerName: changerName,
+        projectKey: populatedTask?.projectId?.key || "",
+      });
+    }
+
+    if (originalTask.assigneeId && originalTask.assigneeId.toString() !== userId.toString()) {
       const changedFields = [];
       const fieldNames = {
         name: "name",
@@ -609,7 +623,7 @@ const updateTask = async (taskId, updateData, userId) => {
           title: "Task Updated",
           message: `${changerName} updated ${changesText} of "${updatedTask.name}"`,
           type: "task_updated",
-          relatedId: updatedTask.taskKey || updatedTask._id,
+          relatedId: updatedTask.key || updatedTask._id,
           relatedType: "Task",
           actorId: userId,
           actorName: changerName,

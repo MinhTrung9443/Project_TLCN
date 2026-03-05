@@ -40,6 +40,9 @@ class NotificationService {
     GROUP_MEMBER_ADDED: "group_member_added",
     GROUP_MEMBER_REMOVED: "group_member_removed",
 
+    // Meeting notifications
+    MEETING_INVITED: "meeting_invited",
+
     // System notifications
     WORKFLOW_CHANGED: "workflow_changed",
   };
@@ -47,7 +50,7 @@ class NotificationService {
   static PRIORITIES = {
     CRITICAL: ["task_overdue", "task_deadline_soon", "task_deleted"],
     HIGH: ["task_assigned", "task_priority_changed"],
-    MEDIUM: ["task_status_changed", "task_commented", "sprint_ending_soon", "task_deadline_changed", "task_updated"],
+    MEDIUM: ["task_status_changed", "task_commented", "sprint_ending_soon", "task_deadline_changed", "task_updated", "meeting_invited"],
     LOW: ["project_member_added", "group_member_added", "sprint_started", "sprint_completed"],
   };
 
@@ -181,6 +184,7 @@ class NotificationService {
           ...(notification.metadata || {}),
           ...(metadata || {}),
         };
+        notification.priority = notificationPriority;
 
         notification.message = this.buildGroupMessage(
           type,
@@ -200,6 +204,7 @@ class NotificationService {
           title,
           message,
           type,
+          priority: notificationPriority,
           relatedId: normalizedRelatedId,
           relatedType,
           groupKey: resolvedGroupKey,
@@ -217,11 +222,7 @@ class NotificationService {
       if (sendRealtime && this.io) {
         let realtimeRelatedId = notification.relatedId;
         const relatedIdAsString = notification.relatedId ? String(notification.relatedId) : null;
-        if (
-          notification.relatedType === "Task" &&
-          relatedIdAsString &&
-          /^[a-f\d]{24}$/i.test(relatedIdAsString)
-        ) {
+        if (notification.relatedType === "Task" && relatedIdAsString && /^[a-f\d]{24}$/i.test(relatedIdAsString)) {
           try {
             const task = await Task.findById(relatedIdAsString).select("key").lean();
             if (task?.key) {
@@ -292,7 +293,7 @@ class NotificationService {
         actorName: commenterName,
         metadata: { taskName },
         enableGrouping: true,
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -313,7 +314,7 @@ class NotificationService {
         actorName: changedBy,
         metadata: { taskName },
         enableGrouping: true,
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -332,7 +333,7 @@ class NotificationService {
         actorName: changedBy,
         metadata: { taskName, oldStatus, newStatus },
         enableGrouping: true,
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -356,7 +357,7 @@ class NotificationService {
         actorName: changedBy,
         metadata: { taskName, oldPriority, newPriority },
         enableGrouping: true,
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -384,7 +385,7 @@ class NotificationService {
           type: NotificationService.TYPES.TASK_OVERDUE,
           relatedId: taskId,
           relatedType: "Task",
-        })
+        }),
       );
 
     return Promise.all(notifications);
@@ -399,6 +400,17 @@ class NotificationService {
       userId: newMemberId,
       title: "Added to Project",
       message: `${addedByName} added you to project "${projectName}" as ${role}`,
+      type: NotificationService.TYPES.PROJECT_MEMBER_ADDED,
+      relatedId: projectId,
+      relatedType: "Project",
+    });
+  }
+
+  async notifyProjectManagerAssigned({ projectId, projectName, projectManagerId, assignedByName }) {
+    return this.createAndSend({
+      userId: projectManagerId,
+      title: "You are Project Manager",
+      message: `${assignedByName} assigned you as Project Manager for project "${projectName}"`,
       type: NotificationService.TYPES.PROJECT_MEMBER_ADDED,
       relatedId: projectId,
       relatedType: "Project",
@@ -440,7 +452,7 @@ class NotificationService {
         type: NotificationService.TYPES.SPRINT_STARTED,
         relatedId: sprintId,
         relatedType: "Sprint",
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -455,7 +467,7 @@ class NotificationService {
         type: NotificationService.TYPES.SPRINT_ENDING_SOON,
         relatedId: sprintId,
         relatedType: "Sprint",
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -470,7 +482,7 @@ class NotificationService {
         type: NotificationService.TYPES.SPRINT_COMPLETED,
         relatedId: sprintId,
         relatedType: "Sprint",
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -503,6 +515,21 @@ class NotificationService {
   }
 
   // ============================================
+  // MEETING NOTIFICATIONS
+  // ============================================
+
+  async notifyMeetingInvited({ meetingId, meetingTitle, invitedUserId, inviterName }) {
+    return this.createAndSend({
+      userId: invitedUserId,
+      title: "Meeting Invitation",
+      message: `${inviterName} invited you to meeting "${meetingTitle}"`,
+      type: NotificationService.TYPES.MEETING_INVITED,
+      relatedId: meetingId,
+      relatedType: "Meeting",
+    });
+  }
+
+  // ============================================
   // HELPER METHODS
   // ============================================
 
@@ -517,9 +544,10 @@ class NotificationService {
   }
 
   // Mark notification as read
-  async markAsRead(notificationId) {
+  async markAsRead(notificationId, userId = null) {
     try {
-      return await Notification.findByIdAndUpdate(notificationId, { isRead: true }, { new: true });
+      const query = userId ? { _id: notificationId, userId } : { _id: notificationId };
+      return await Notification.findOneAndUpdate(query, { isRead: true }, { new: true });
     } catch (error) {
       console.error("Error marking notification as read:", error);
       throw error;

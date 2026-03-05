@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinary");
 const summarizeQueue = require("../config/queue");
 const ProjectDocument = require("../models/ProjectDocument");
+const notificationService = require("./NotificationService");
 
 const enqueueSummaryIfReady = async (meetingId) => {
   try {
@@ -72,30 +73,70 @@ const MeetingService = {
       throw new Error("You are not a member of the project.");
     }
 
+    const selectedMembers = Array.isArray(meetingData.members) ? meetingData.members : [];
+
     // Đảm bảo người tạo cũng là một người tham gia và đã chấp nhận
-    const creatorParticipant = participants.find((p) => p.userId.equals(creatorId));
+    const creatorParticipant = participants.find((p) => p?.userId?.toString() === creatorId.toString());
     if (!creatorParticipant) {
       participants.push({ userId: creatorId, status: "accepted" });
     } else {
       creatorParticipant.status = "accepted";
     }
 
-    meetingData.members.forEach((t) => {
+    selectedMembers.forEach((t) => {
       participants.push({ userId: t, status: "pending" });
     });
+
+    const uniqueParticipantMap = new Map();
+    participants.forEach((participant) => {
+      const pid = participant?.userId?.toString?.();
+      if (!pid) return;
+
+      const existing = uniqueParticipantMap.get(pid);
+      if (!existing) {
+        uniqueParticipantMap.set(pid, { userId: participant.userId, status: participant.status || "pending" });
+        return;
+      }
+
+      if (participant.status === "accepted") {
+        existing.status = "accepted";
+      }
+    });
+
+    const normalizedParticipants = Array.from(uniqueParticipantMap.values());
 
     const meeting = new Meeting({
       ...meetingData,
       createdBy: creatorId,
-      participants,
+      participants: normalizedParticipants,
     });
 
     await meeting.save();
     await meeting.populate("createdBy", "fullname avatar");
     await meeting.populate("participants.userId", "fullname avatar");
 
-    // Gửi thông báo đến tất cả người tham gia ngoại trừ người tạo
-    // code hoàn thiện sau
+    try {
+      const inviterName = meeting?.createdBy?.fullname || "Someone";
+      const recipientIds = normalizedParticipants
+        .map((participant) => participant?.userId?.toString?.())
+        .filter((participantId) => participantId && participantId !== creatorId.toString());
+
+      if (recipientIds.length > 0) {
+        await Promise.all(
+          recipientIds.map((recipientId) =>
+            notificationService.notifyMeetingInvited({
+              meetingId: meeting._id,
+              meetingTitle: meeting.title || "Meeting",
+              invitedUserId: recipientId,
+              inviterName,
+            }),
+          ),
+        );
+      }
+    } catch (notificationError) {
+      console.error("Failed to send meeting invitation notifications:", notificationError);
+    }
+
     return meeting;
   },
 

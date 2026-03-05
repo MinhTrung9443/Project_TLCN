@@ -284,6 +284,8 @@ const NotificationBell = () => {
     } else if (notification.relatedType === "Group" && notification.relatedId) {
       // Group notifications: relatedId is the group ID
       navigate(`/app/organization/group/${notification.relatedId}`);
+    } else if (notification.relatedType === "Meeting" && notification.relatedId) {
+      navigate(`/meeting-room/${notification.relatedId}`);
     }
 
     setIsOpen(false);
@@ -304,6 +306,7 @@ const NotificationBell = () => {
       sprint_completed: "check_circle",
       group_member_added: "group_add",
       group_member_removed: "group_remove",
+      meeting_invited: "event",
     };
     return icons[type] || "notifications";
   };

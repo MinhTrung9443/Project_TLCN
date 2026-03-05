@@ -6,6 +6,7 @@ const NotificationSchema = new Schema({
   title: { type: String, required: true },
   message: { type: String, required: true },
   type: { type: String, required: true },
+  priority: { type: String, default: "LOW" },
   relatedId: { type: String },
   relatedType: { type: String },
   groupKey: { type: String, default: null, index: true },
