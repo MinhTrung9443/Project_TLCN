@@ -1,5 +1,9 @@
 const Task = require("../models/Task");
 const Project = require("../models/Project");
+const Priority = require("../models/Priority");
+const TaskType = require("../models/TaskType");
+const Platform = require("../models/Platform");
+const Sprint = require("../models/Sprint");
 const mongoose = require("mongoose");
 const { logAction } = require("./AuditLogHelper");
 const { logHistory } = require("./HistoryService");
@@ -868,9 +872,150 @@ const deleteTask = async (taskId, userId) => {
   return { message: "Task deleted successfully" };
 };
 const getTaskHistory = async (taskId) => {
-  return TaskHistory.find({ taskId: taskId, userId: { $exists: true, $ne: null } })
+  const historyRecords = await TaskHistory.find({ taskId: taskId, userId: { $exists: true, $ne: null } })
     .populate("userId", "fullname avatar")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!historyRecords.length) {
+    return historyRecords;
+  }
+
+  const fieldConfig = {
+    assigneeId: "user",
+    reporterId: "user",
+    createdById: "user",
+    priorityId: "priority",
+    taskTypeId: "taskType",
+    platformId: "platform",
+    sprintId: "sprint",
+    statusId: "status",
+  };
+
+  const isObjectIdLike = (value) => {
+    if (!value) return false;
+    if (typeof value === "object" && value._id) {
+      return /^[a-f\d]{24}$/i.test(String(value._id));
+    }
+    return typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
+  };
+
+  const toObjectIdString = (value) => {
+    if (!value) return null;
+    if (typeof value === "object" && value._id) return String(value._id);
+    return String(value);
+  };
+
+  const idsByType = {
+    user: new Set(),
+    priority: new Set(),
+    taskType: new Set(),
+    platform: new Set(),
+    sprint: new Set(),
+    status: new Set(),
+  };
+
+  historyRecords.forEach((item) => {
+    const mappedType = fieldConfig[item.fieldName];
+    if (!mappedType) return;
+
+    [item.oldValue, item.newValue].forEach((value) => {
+      if (!isObjectIdLike(value)) return;
+      idsByType[mappedType].add(toObjectIdString(value));
+    });
+  });
+
+  const [users, priorities, taskTypes, platforms, sprints, taskWithProject] = await Promise.all([
+    idsByType.user.size
+      ? User.find({ _id: { $in: Array.from(idsByType.user) } })
+          .select("fullname")
+          .lean()
+      : [],
+    idsByType.priority.size
+      ? Priority.find({ _id: { $in: Array.from(idsByType.priority) } })
+          .select("name")
+          .lean()
+      : [],
+    idsByType.taskType.size
+      ? TaskType.find({ _id: { $in: Array.from(idsByType.taskType) } })
+          .select("name")
+          .lean()
+      : [],
+    idsByType.platform.size
+      ? Platform.find({ _id: { $in: Array.from(idsByType.platform) } })
+          .select("name")
+          .lean()
+      : [],
+    idsByType.sprint.size
+      ? Sprint.find({ _id: { $in: Array.from(idsByType.sprint) } })
+          .select("name")
+          .lean()
+      : [],
+    Task.findById(taskId).select("projectId").lean(),
+  ]);
+
+  const userNameMap = new Map(users.map((item) => [item._id.toString(), item.fullname]));
+  const priorityNameMap = new Map(priorities.map((item) => [item._id.toString(), item.name]));
+  const taskTypeNameMap = new Map(taskTypes.map((item) => [item._id.toString(), item.name]));
+  const platformNameMap = new Map(platforms.map((item) => [item._id.toString(), item.name]));
+  const sprintNameMap = new Map(sprints.map((item) => [item._id.toString(), item.name]));
+
+  const statusNameMap = new Map();
+  if (taskWithProject?.projectId) {
+    const workflow = await Workflow.findOne({ projectId: taskWithProject.projectId }).select("statuses").lean();
+    if (workflow?.statuses?.length) {
+      workflow.statuses.forEach((status) => {
+        statusNameMap.set(status._id.toString(), status.name);
+      });
+    }
+  }
+
+  const mapValue = (fieldName, value) => {
+    if (value === null || value === undefined || value === "") return null;
+
+    if (typeof value === "object") {
+      if (value.fullname) return value.fullname;
+      if (value.name) return value.name;
+      if (value._id) {
+        const objectIdValue = String(value._id);
+        if (fieldName === "assigneeId" || fieldName === "reporterId" || fieldName === "createdById")
+          return userNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "priorityId") return priorityNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "taskTypeId") return taskTypeNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "platformId") return platformNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "sprintId") return sprintNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "statusId") return statusNameMap.get(objectIdValue) || objectIdValue;
+      }
+      return String(value);
+    }
+
+    if (fieldName === "assigneeId" || fieldName === "reporterId" || fieldName === "createdById") {
+      return userNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "priorityId") {
+      return priorityNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "taskTypeId") {
+      return taskTypeNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "platformId") {
+      return platformNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "sprintId") {
+      return sprintNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "statusId") {
+      return statusNameMap.get(String(value)) || String(value);
+    }
+
+    return String(value);
+  };
+
+  return historyRecords.map((item) => ({
+    ...item,
+    oldValue: mapValue(item.fieldName, item.oldValue),
+    newValue: mapValue(item.fieldName, item.newValue),
+  }));
 };
 
 const addAttachment = async (taskId, file, userId) => {
