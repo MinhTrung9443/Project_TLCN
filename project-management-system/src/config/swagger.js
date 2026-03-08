@@ -1,5 +1,6 @@
 /* src/config/swagger.js */
 const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerServerUrl = process.env.PUBLIC_API_URL || `http://localhost:${process.env.PORT || 8080}`;
 
 const options = {
   definition: {
@@ -14,7 +15,7 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:8080",
+        url: swaggerServerUrl,
         description: "Local Development Server",
       },
     ],

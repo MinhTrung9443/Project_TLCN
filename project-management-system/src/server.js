@@ -51,6 +51,6 @@ socketManager.initialize(server);
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📱 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔌 WebSocket ready on ws://localhost:${PORT}`);
+  console.log("🔌 WebSocket ready");
   console.log(`⚙️ Summarize queue ready to process jobs`);
 });

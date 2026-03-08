@@ -325,7 +325,7 @@ const MeetingListComponent = () => {
                     </div>
                   </div>
                 ) : (
-                  <MeetingSummaryPanel meetingId={selectedMeeting._id} />
+                  <MeetingSummaryPanel meetingId={selectedMeeting._id} meetingCreatorId={selectedMeeting?.createdBy?._id} />
                 )}
               </div>
             </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import socketService from "../../services/socketService";
 import notificationService from "../../services/notificationService";
-import { getProjectById } from "../../services/projectService";
+import { getProjectById, getProjectByKey } from "../../services/projectService";
 import sprintService from "../../services/sprintService";
 import { toast } from "react-toastify";
 import { ProjectContext } from "../../contexts/ProjectContext";
@@ -284,8 +284,19 @@ const NotificationBell = () => {
     } else if (notification.relatedType === "Group" && notification.relatedId) {
       // Group notifications: relatedId is the group ID
       navigate(`/app/organization/group/${notification.relatedId}`);
-    } else if (notification.relatedType === "Meeting" && notification.relatedId) {
-      navigate(`/meeting-room/${notification.relatedId}`);
+    } else if (notification.relatedType === "Meeting") {
+      const projectKey = notification?.metadata?.projectKey;
+      if (projectKey) {
+        try {
+          const response = await getProjectByKey(projectKey);
+          setProject(response.data);
+        } catch (error) {
+          console.error("Error fetching project by key:", error);
+        }
+        navigate(`/app/task-mgmt/projects/${projectKey}/meetings`);
+      } else {
+        toast.error("Could not navigate to project meetings");
+      }
     }
 
     setIsOpen(false);

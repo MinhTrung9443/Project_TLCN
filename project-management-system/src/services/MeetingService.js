@@ -59,7 +59,7 @@ const MeetingService = {
    */
   async createMeeting(meetingData, creatorId) {
     const { projectId, participants = [] } = meetingData;
-    const project = await Project.findById(projectId).select("members teams").lean();
+    const project = await Project.findById(projectId).select("key members teams").lean();
     if (!project) {
       throw new Error("Project not found.");
     }
@@ -129,6 +129,7 @@ const MeetingService = {
               meetingTitle: meeting.title || "Meeting",
               invitedUserId: recipientId,
               inviterName,
+              projectKey: project?.key || null,
             }),
           ),
         );

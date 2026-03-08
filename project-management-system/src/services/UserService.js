@@ -176,7 +176,7 @@ class UserService {
         firstName: newUser.fullname,
         username: newUser.email,
         password: userData.password,
-        loginUrl: process.env.CLIENT_URL || "http://localhost:3000/login",
+        loginUrl: `${process.env.FRONTEND_URL}/login`,
       });
     } catch (emailErr) {
       console.error("Failed to send account created email:", emailErr);

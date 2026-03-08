@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { getMeetingSummary, getSummaryStatus, generateSummary, getActionItems } from "../../services/meetingService";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { useAuth } from "../../contexts/AuthContext";
 
-const MeetingSummaryPanel = ({ meetingId }) => {
+const MeetingSummaryPanel = ({ meetingId, meetingCreatorId }) => {
+  const { user } = useAuth();
   const [summary, setSummary] = useState(null);
   const [actionItems, setActionItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +114,8 @@ const MeetingSummaryPanel = ({ meetingId }) => {
     low: "bg-success-100 text-success-700 border-success-200",
   };
 
+  const isMeetingCreator = Boolean(user?._id && meetingCreatorId && String(user._id) === String(meetingCreatorId));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -139,7 +143,7 @@ const MeetingSummaryPanel = ({ meetingId }) => {
             )}
           </button>
         )}
-        {summary && (
+        {summary && isMeetingCreator && (
           <button
             onClick={() => handleGenerateSummary(true)}
             disabled={generating}
@@ -175,6 +179,27 @@ const MeetingSummaryPanel = ({ meetingId }) => {
       {/* Summary Content */}
       {summary && (
         <div className="space-y-6">
+          {summary.summaryFile?.url && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">description</span>
+                  Administrative Summary File
+                </p>
+                <p className="text-xs text-neutral-600 mt-1 truncate">{summary.summaryFile.filename || "Meeting summary document"}</p>
+              </div>
+              <a
+                href={summary.summaryFile.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-md hover:bg-primary-100 whitespace-nowrap"
+              >
+                <span className="material-symbols-outlined text-sm">download</span>
+                Download
+              </a>
+            </div>
+          )}
+
           {/* Overview */}
           {summary.overview && (
             <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">

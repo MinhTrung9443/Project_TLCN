@@ -97,6 +97,7 @@ app.use("/api/meetings", meetingRoutes);
 app.use("/api/summaries", summaryRoutes);
 app.use("/api/chats", chatRoute);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-console.log("📄 Swagger Docs available at http://localhost:8080/api-docs");
+const docsUrl = process.env.PUBLIC_API_URL ? `${process.env.PUBLIC_API_URL}/api-docs` : "/api-docs";
+console.log(`📄 Swagger Docs available at ${docsUrl}`);
 
 module.exports = app;

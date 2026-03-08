@@ -91,6 +91,14 @@ const SummarySchema = new Schema(
       _id: false,
     },
 
+    summaryFile: {
+      filename: String,
+      url: String,
+      public_id: String,
+      generatedAt: Date,
+      _id: false,
+    },
+
     // Metadata
     createdAt: {
       type: Date,

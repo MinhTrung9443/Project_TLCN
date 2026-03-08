@@ -6,18 +6,20 @@ const os = require("os");
 const pdfParse = require("pdf-parse");
 const mammoth = require("mammoth");
 const { Meeting, Transcript, Summary, ActionItem, ProcessingLog } = require("../models");
+const cloudinary = require("../config/cloudinary");
 
 const openAiBaseUrl = process.env.OPENAI_BASE_URL || undefined;
 const transcriptionProvider = process.env.TRANSCRIPTION_PROVIDER || "openai";
+const openRouterHeaders = {
+  ...(process.env.OPENROUTER_SITE_URL ? { "HTTP-Referer": process.env.OPENROUTER_SITE_URL } : {}),
+  ...(process.env.OPENROUTER_APP_NAME ? { "X-Title": process.env.OPENROUTER_APP_NAME } : {}),
+};
 
 // LLM client (OpenRouter for summary generation)
 const llmClient = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: openAiBaseUrl,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.OPENROUTER_SITE_URL || "http://localhost:8080",
-    "X-Title": process.env.OPENROUTER_APP_NAME || "project-management-system",
-  },
+  ...(Object.keys(openRouterHeaders).length ? { defaultHeaders: openRouterHeaders } : {}),
 });
 
 /**
@@ -30,7 +32,10 @@ async function processSummarizeJob(job) {
   try {
     // 1. RETRIEVE DATA
     job.progress({ stage: "retrieve", percentage: 10, message: "Fetching data..." });
-    const meeting = await Meeting.findById(meetingId);
+    const meeting = await Meeting.findById(meetingId)
+      .populate("participants.userId", "fullname email")
+      .populate("createdBy", "fullname")
+      .populate("projectId", "name key");
     if (!meeting) throw new Error("Meeting not found");
 
     // Mark as processing
@@ -209,6 +214,7 @@ Language: Vietnamese for content, English for keys.`;
         model: process.env.OPENAI_MODEL,
         temperature: 0.3,
       },
+      summaryFile: null,
     });
 
     await summaryDoc.save();
@@ -224,7 +230,7 @@ Language: Vietnamese for content, English for keys.`;
       .map((item) => ({
         summaryId: summaryDoc._id, // ← Now we have summaryId
         meetingId,
-        projectId: meeting.projectId,
+        projectId: meeting.projectId?._id || meeting.projectId,
         name: item.title,
         description: item.title,
         dueDate: item.dueDate,
@@ -242,6 +248,27 @@ Language: Vietnamese for content, English for keys.`;
       await Summary.findByIdAndUpdate(summaryDoc._id, {
         actionItems: actionItemIds,
       });
+    }
+
+    try {
+      const formalDocumentContent = buildAdministrativeSummaryDocument({
+        meeting,
+        summaryData,
+        actionItems: actionItemsData,
+        version: nextVersion,
+      });
+
+      const uploadedSummaryFile = await uploadAdministrativeSummaryFile({
+        meetingId,
+        version: nextVersion,
+        content: formalDocumentContent,
+      });
+
+      await Summary.findByIdAndUpdate(summaryDoc._id, {
+        summaryFile: uploadedSummaryFile,
+      });
+    } catch (fileError) {
+      console.error("[SummarizeWorker] Failed to generate administrative summary file:", fileError.message);
     }
 
     // Update meeting
@@ -343,6 +370,122 @@ function buildMeetingContext({ meeting, transcript, chatHistory, documents, atta
   lines.push("5. Risks (các rủi ro được xác định)");
 
   return lines.join("\n");
+}
+
+function buildAdministrativeSummaryDocument({ meeting, summaryData, actionItems, version }) {
+  const now = new Date();
+  const meetingStart = meeting?.startTime ? new Date(meeting.startTime) : null;
+  const meetingEnd = meeting?.endTime ? new Date(meeting.endTime) : null;
+  const projectName = meeting?.projectId?.name || "Không xác định";
+  const projectKey = meeting?.projectId?.key || "N/A";
+  const creatorName = meeting?.createdBy?.fullname || "Không xác định";
+  const attendeeNames = (meeting?.participants || []).map((participant) => participant?.userId?.fullname).filter(Boolean);
+
+  const decisionLines = (summaryData?.decisions || []).map((decision, index) => {
+    const title = typeof decision === "string" ? decision : decision?.title || decision?.context || "";
+    return `${index + 1}. ${title}`;
+  });
+
+  const sectionLines = (summaryData?.sections || []).flatMap((section, index) => {
+    const block = [`${index + 1}. ${section.title || "Nội dung"}`, `   ${section.content || ""}`];
+    if (Array.isArray(section.keyPoints) && section.keyPoints.length > 0) {
+      section.keyPoints.forEach((point) => block.push(`   - ${point}`));
+    }
+    return block;
+  });
+
+  const actionLines = (actionItems || []).map((item, index) => {
+    const dueDate = item?.dueDate ? new Date(item.dueDate).toLocaleDateString("vi-VN") : "Chưa xác định";
+    const priority = item?.priority || "medium";
+    return `${index + 1}. ${item?.title || item?.name || "Nhiệm vụ"} | Hạn: ${dueDate} | Mức độ: ${priority}`;
+  });
+
+  const riskLines = (summaryData?.risks || []).map((risk, index) => {
+    const riskTitle = typeof risk === "string" ? risk : risk?.title || "Rủi ro";
+    const riskDesc = typeof risk === "string" ? "" : risk?.description || "";
+    return `${index + 1}. ${riskTitle}${riskDesc ? ` - ${riskDesc}` : ""}`;
+  });
+
+  return [
+    "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM",
+    "Độc lập - Tự do - Hạnh phúc",
+    "--------------------------------",
+    "",
+    "BIÊN BẢN TÓM TẮT CUỘC HỌP",
+    "",
+    `Số hiệu phiên bản: V${version}`,
+    `Ngày lập biên bản: ${now.toLocaleDateString("vi-VN")}`,
+    "",
+    "I. THÔNG TIN CHUNG",
+    `- Tên cuộc họp: ${meeting?.title || "Không xác định"}`,
+    `- Dự án: ${projectName} (${projectKey})`,
+    `- Thời gian bắt đầu: ${meetingStart ? meetingStart.toLocaleString("vi-VN") : "Không xác định"}`,
+    `- Thời gian kết thúc: ${meetingEnd ? meetingEnd.toLocaleString("vi-VN") : "Không xác định"}`,
+    `- Chủ trì/Tạo cuộc họp: ${creatorName}`,
+    `- Thành phần tham dự (${attendeeNames.length}): ${attendeeNames.join(", ") || "Không xác định"}`,
+    "",
+    "II. NỘI DUNG TÓM TẮT",
+    summaryData?.overview || "Không có nội dung tóm tắt.",
+    "",
+    "III. NỘI DUNG THẢO LUẬN CHÍNH",
+    ...(sectionLines.length ? sectionLines : ["Không có nội dung."]),
+    "",
+    "IV. CÁC QUYẾT ĐỊNH ĐƯỢC THỐNG NHẤT",
+    ...(decisionLines.length ? decisionLines : ["Không có quyết định được ghi nhận."]),
+    "",
+    "V. CÔNG VIỆC CẦN TRIỂN KHAI",
+    ...(actionLines.length ? actionLines : ["Không có công việc hành động."]),
+    "",
+    "VI. RỦI RO/CẢNH BÁO",
+    ...(riskLines.length ? riskLines : ["Không có rủi ro được ghi nhận."]),
+    "",
+    "VII. KẾT LUẬN",
+    "Biên bản này được tự động tạo bởi hệ thống AI phục vụ tham chiếu nội bộ.",
+    "Các bên liên quan cần kiểm tra và xác nhận lại thông tin trước khi triển khai chính thức.",
+    "",
+    "Nơi nhận:",
+    "- Quản lý dự án",
+    "- Thành viên tham dự",
+    "- Lưu hồ sơ dự án",
+    "",
+    `Tài liệu tạo lúc: ${now.toLocaleString("vi-VN")}`,
+  ].join("\n");
+}
+
+async function uploadAdministrativeSummaryFile({ meetingId, version, content }) {
+  const fileTimestamp = Date.now();
+  const filename = `Bien-ban-tom-tat-hop-V${version}.txt`;
+
+  const uploadResult = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        folder: `meeting_summaries/${meetingId}`,
+        public_id: `meeting-summary-v${version}-${fileTimestamp}`,
+        filename_override: filename,
+        use_filename: true,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      },
+    );
+
+    // Prefix UTF-8 BOM so browsers render Vietnamese text correctly for raw .txt files.
+    const utf8Bom = Buffer.from([0xef, 0xbb, 0xbf]);
+    const contentBuffer = Buffer.from(content, "utf8");
+    stream.end(Buffer.concat([utf8Bom, contentBuffer]));
+  });
+
+  return {
+    filename,
+    url: uploadResult.secure_url,
+    public_id: uploadResult.public_id,
+    generatedAt: new Date(),
+  };
 }
 
 const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024; // 2MB per file

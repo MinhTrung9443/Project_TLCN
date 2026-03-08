@@ -102,5 +102,27 @@ const chatHistoryUpload = multer({
   fileFilter: chatHistoryFileFilter,
 });
 
+const recordingFileFilter = (req, file, cb) => {
+  const allowedVideoTypes = /mp4|mov|avi|wmv|mkv|webm/;
+  const extname = allowedVideoTypes.test(path.extname(file.originalname || "").toLowerCase());
+  const mimeAllowed = (file.mimetype || "").startsWith("video/");
+
+  if (extname || mimeAllowed) {
+    return cb(null, true);
+  }
+
+  cb(new AppError("Recording file must be a valid video format.", 400));
+};
+
+const recordingUpload = multer({
+  storage: memoryStorage,
+  limits: {
+    // Default 100MB, can override with MEETING_RECORDING_MAX_MB
+    fileSize: 1024 * 1024 * (parseInt(process.env.MEETING_RECORDING_MAX_MB, 10) || 100),
+  },
+  fileFilter: recordingFileFilter,
+});
+
 module.exports = upload;
 module.exports.chatHistoryUpload = chatHistoryUpload;
+module.exports.recordingUpload = recordingUpload;

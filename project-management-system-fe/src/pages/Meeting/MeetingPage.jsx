@@ -1,17 +1,46 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useContext } from "react";
 import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import PageHeader from "../../components/ui/PageHeader";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
 import MeetingListComponent from "../../components/meetings/MeetingListComponent";
 import InvitationListComponent from "../../components/meetings/InvitationListComponent";
 import ManagedMeetingListComponent from "../../components/meetings/ManagedMeetingListComponent";
 import CreateMeetingModal from "../../components/modals/CreateMeetingModal";
 import { useAuth } from "../../contexts/AuthContext";
+import { ProjectContext } from "../../contexts/ProjectContext";
+import { getProjectByKey } from "../../services/projectService";
+
 const MeetingPage = () => {
   const { projectKey } = useParams();
   const { user } = useAuth();
+  const { projectData, selectedProjectKey, setProject } = useContext(ProjectContext);
   const [activeTab, setActiveTab] = useState(user.role === "admin" ? "managed" : "list");
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Add refresh key
+  const [loadingProject, setLoadingProject] = useState(false);
+
+  useEffect(() => {
+    if (!projectKey) return;
+
+    if (projectKey?.toUpperCase() === selectedProjectKey?.toUpperCase()) {
+      return;
+    }
+
+    setLoadingProject(true);
+    getProjectByKey(projectKey)
+      .then((response) => {
+        setProject(response.data);
+      })
+      .catch(() => {
+        setProject(null);
+        toast.error("Failed to load project details.");
+      })
+      .finally(() => {
+        setLoadingProject(false);
+      });
+  }, [projectKey, selectedProjectKey, setProject]);
 
   const tabClass = (tabName) =>
     `px-4 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors ${
@@ -27,6 +56,24 @@ const MeetingPage = () => {
       setActiveTab("list"); // Switch to the list to show the new meeting
     }
   }, [activeTab]);
+
+  if (loadingProject) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <LoadingSpinner size="lg" text="Loading project meetings..." />
+      </div>
+    );
+  }
+
+  if (!projectData) {
+    return (
+      <EmptyState
+        icon="folder_off"
+        title="Project not found"
+        description="We could not locate this project. Please check the URL or select another project."
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-neutral-50">

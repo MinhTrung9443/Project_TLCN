@@ -11,7 +11,7 @@ class SocketService {
       return;
     }
 
-    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || "http://localhost:8080";
+    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || window.location.origin;
 
     this.socket = io(SOCKET_URL, {
       auth: { token },

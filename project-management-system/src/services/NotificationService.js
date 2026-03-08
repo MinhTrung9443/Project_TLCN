@@ -240,6 +240,7 @@ class NotificationService {
           type: notification.type,
           relatedId: realtimeRelatedId,
           relatedType: notification.relatedType,
+          metadata: notification.metadata || {},
           groupKey: notification.groupKey || null,
           actorCount: notification.actorCount || 0,
           groupCount: notification.groupCount || 1,
@@ -518,7 +519,7 @@ class NotificationService {
   // MEETING NOTIFICATIONS
   // ============================================
 
-  async notifyMeetingInvited({ meetingId, meetingTitle, invitedUserId, inviterName }) {
+  async notifyMeetingInvited({ meetingId, meetingTitle, invitedUserId, inviterName, projectKey = null }) {
     return this.createAndSend({
       userId: invitedUserId,
       title: "Meeting Invitation",
@@ -526,6 +527,9 @@ class NotificationService {
       type: NotificationService.TYPES.MEETING_INVITED,
       relatedId: meetingId,
       relatedType: "Meeting",
+      metadata: {
+        projectKey,
+      },
     });
   }
 
