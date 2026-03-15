@@ -33,6 +33,7 @@ const performanceRoutes = require("./routes/performanceRoutes");
 const meetingRoutes = require("./routes/meetingRoutes.js");
 const summaryRoutes = require("./routes/summaryRoutes.js");
 const chatRoute = require("./routes/chatRoute");
+const aiAssistantRoutes = require("./routes/aiAssistantRoutes");
 const corsOptions = {
   origin: process.env.FRONTEND_URL || "http://localhost:3000",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -85,6 +86,8 @@ app.use("/api/performance", performanceRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/summaries", summaryRoutes);
 app.use("/api/chats", chatRoute);
+app.use("/api/ai-assistant", aiAssistantRoutes);
+
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 console.log("📄 Swagger Docs available at http://localhost:8080/api-docs");
 
