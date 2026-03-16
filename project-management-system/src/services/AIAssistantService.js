@@ -80,9 +80,12 @@ ${JSON.stringify(projectData, null, 2)}
                             sprintName: { type: "string", description: "Tên sprint (vd: 'Sprint 1', 'S2')" },
                             platformName: { type: "string", description: "Nền tảng (vd: 'BE', 'FE', 'iOS')" },
                             priorityLevel: { type: "string", description: "Mức độ ưu tiên (vd: 'High', 'Low', 'Medium')" },
-                            taskTypeName: { type: "string", description: "Loại công việc (vd: 'Task', 'Bug', 'Story', 'Epic')" }
+                            taskTypeName: { type: "string", description: "Loại công việc (vd: 'Task', 'Bug', 'Story', 'Epic')" },
+                            statusName: { type: "string", description: "Trạng thái của task (vd: 'To Do', 'In Progress', 'Done', 'Review')" },
+                            startDate: { type: "string", description: "Ngày bắt đầu (Y-M-D) (vd: '2026-03-16')" },
+                            dueDate: { type: "string", description: "Ngày kết thúc, hạn chót (Y-M-D) (vd: '2026-03-20')" }
                         },
-                        required: ["taskName", "projectName"]
+                        required: ["taskName"]
                     }
                 }
             }
@@ -91,9 +94,9 @@ ${JSON.stringify(projectData, null, 2)}
         try {
             const response = await openai.chat.completions.create({
                 model: this.model,
-                messages: [{ role: "user", content: `Phân tích câu lệnh sau và trả về function tương ứng: "${naturalLanguageCommand}"` }],
+                messages: [{ role: "user", content: `Trích xuất thông tin tạo task từ câu lệnh sau (nếu có ngày tháng như 'hôm nay', hãy dùng gốc là ${new Date().toISOString().split('T')[0]}): "${naturalLanguageCommand}"` }],
                 tools: tools,
-                tool_choice: "auto"
+                tool_choice: { type: "function", function: { name: "create_task" } }
             });
 
             const responseMessage = response.choices[0].message;
