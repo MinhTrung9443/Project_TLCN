@@ -319,7 +319,6 @@ const ChatWindow = () => {
                             <FaArrowLeft />
                         </button>
                         <div>
-                            {/* DÙNG HÀM getChatName ĐỂ HIỂN THỊ TÊN ĐÚNG */}
                             <h3 className="font-bold text-gray-800">{getChatName(selectedConversation)}</h3>
                             <p className="text-xs text-green-500 flex items-center gap-1">
                                 <span className="w-2 h-2 bg-green-500 rounded-full"></span> Online
