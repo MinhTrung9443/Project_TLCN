@@ -76,6 +76,7 @@
             `/ai-assistant/analyze-risk`, 
             {
             question: userMessage,
+              history: messages.map(m => ({ role: m.role, content: m.content })).slice(-6),
             targetProjectName: ""
             }
         );

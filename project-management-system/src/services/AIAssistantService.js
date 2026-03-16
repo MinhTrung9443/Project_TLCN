@@ -74,7 +74,7 @@ ${JSON.stringify(projectData, null, 2)}
                     parameters: {
                         type: "object",
                         properties: {
-                            taskName: { type: "string", description: "Tên của task (vd: 'Code tính năng Login', 'Sửa lỗi button')" },
+                            taskName: { type: "string", description: "Tên của task (vd: 'Code tính năng Login', 'Sửa lỗi button'). CHÚ Ý: Tuyệt đối KHÔNG lấy những câu chung chung như 'tạo task', 'thêm công việc' hay nguyên cả câu lệnh làm tên task. Nếu người dùng chưa nêu rõ tên task cụ thể (có hành động/đối tượng), hãy bỏ trống trường này (null)." },
                             projectName: { type: "string", description: "Tên dự án mà task này thuộc về (vd: 'ABC', 'Dự án Mobile')" },
                             assigneeName: { type: "string", description: "Tên người được giao task (vd: 'An', 'Bình')" },
                             sprintName: { type: "string", description: "Tên sprint (vd: 'Sprint 1', 'S2')" },
@@ -85,7 +85,8 @@ ${JSON.stringify(projectData, null, 2)}
                             startDate: { type: "string", description: "Ngày bắt đầu (Y-M-D) (vd: '2026-03-16')" },
                             dueDate: { type: "string", description: "Ngày kết thúc, hạn chót (Y-M-D) (vd: '2026-03-20')" }
                         },
-                        required: ["taskName"]
+                        // Bỏ required "taskName" để tránh LLM bịa ra tên task khi user nói chung chung
+                        required: []
                     }
                 }
             }
@@ -94,7 +95,7 @@ ${JSON.stringify(projectData, null, 2)}
         try {
             const response = await openai.chat.completions.create({
                 model: this.model,
-                messages: [{ role: "user", content: `Trích xuất thông tin tạo task từ câu lệnh sau (nếu có ngày tháng như 'hôm nay', hãy dùng gốc là ${new Date().toISOString().split('T')[0]}): "${naturalLanguageCommand}"` }],
+                messages: [{ role: "system", content: "Bạn là hệ thống trích xuất thông tin task. QUAN TRỌNG: Không gán hành động tạo task làm tên task. Ví dụ: 'tạo task code app' -> taskName='code app'. Còn 'tạo task cho dự án X' -> taskName=null, projectName='X'." }, { role: "user", content: `Trích xuất thông tin tạo task từ ĐOẠN HỘI THOẠI sau (nếu có ngày tháng như 'hôm nay', hãy dùng gốc là ${new Date().toISOString().split('T')[0]}): "${naturalLanguageCommand}"` }],
                 tools: tools,
                 tool_choice: { type: "function", function: { name: "create_task" } }
             });

@@ -10,15 +10,24 @@ const taskService = require("../services/TaskService");
 
 const handleAnalyzeRisk = async (req, res) => {
     try {
-        const { targetProjectName, question } = req.body;
+        const { targetProjectName, question, history } = req.body;
         const userId = req.user.id;
+
+        // Xây dựng chuỗi ngữ cảnh từ history
+        const inTaskCreationContext = history && history.length > 0 && 
+            history.some(m => m.role === 'user' && /tạo|thêm|add|create|make/i.test(m.content) && /task|công việc|việc/i.test(m.content)) &&
+            history[history.length - 1].role === 'assistant' && 
+            !(/thành công|success/i.test(history[history.length - 1].content));
+
+        const conversationContext = history ? history.map(m => m.role + ': ' + m.content).join(' | ') : '';
+        const fullMessageWithContext = conversationContext ? `${conversationContext} | ${question}` : question;
 
         // 0. QUICK INTENT CHECK (Có phải người dùng muốn TẠO TASK không?)
         // Keywords siêu cơ bản để tránh phải tốn API check intent mọi lần chat
-        const isTaskCreation = /tạo|thêm|add|create|make/i.test(question) && /task|công việc|việc/i.test(question);
+        const isTaskCreation = (/tạo|thêm|add|create|make/i.test(question) && /task|công việc|việc/i.test(question)) || inTaskCreationContext;
 
         if (isTaskCreation) {
-            req.body.command = question;
+            req.body.command = fullMessageWithContext;
             return handleChatCommand(req, res);
         }
 
@@ -138,6 +147,10 @@ const handleChatCommand = async (req, res) => {
 
         // 2. Lấy Text Name từ AI
         const { taskName, assigneeName, sprintName, platformName, priorityLevel, projectName, taskTypeName, statusName, startDate, dueDate } = parsedCommand.params;
+
+        if (!taskName) {
+            return res.status(200).json({ recommendation: "Bạn muốn tạo công việc mới nhưng chưa cung cấp tên công việc (ví dụ: 'tạo task sửa lỗi đăng nhập'). Hãy cung cấp tên task nhé!" });
+        }
 
         // 3. Mapping Object IDs dùng Schema Task.js
         const taskData = {
