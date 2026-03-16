@@ -111,6 +111,12 @@ const MeetingSchema = new Schema(
     lastJobId: {
       type: String,
     },
+    reminder15SentAt: {
+      type: Date,
+    },
+    reminder5SentAt: {
+      type: Date,
+    },
   },
   { timestamps: true },
 );

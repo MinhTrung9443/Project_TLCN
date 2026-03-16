@@ -21,7 +21,7 @@ const GanttTaskBar = ({ task, barStyle }) => {
   const getStatusColor = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const statusCategory = (task.status?.category || task.statusId?.category || "").toString().toLowerCase();
+    const statusCategory = (task.status?.category || "").toString().toLowerCase();
     const dueDate = new Date(endDate);
     const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
@@ -31,6 +31,7 @@ const GanttTaskBar = ({ task, barStyle }) => {
         const lastLog = new Date(task.lastLogTime);
         lastLog.setHours(0, 0, 0, 0);
         if (lastLog <= dueDate) return "bg-emerald-500"; // completed on time
+        if (lastLog > dueDate) return "bg-violet-500"; // completed late
       }
       // If done but no lastLog or lastLog after dueDate, fall through to check overdue
     }

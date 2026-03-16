@@ -42,15 +42,26 @@ class NotificationService {
 
     // Meeting notifications
     MEETING_INVITED: "meeting_invited",
+    MEETING_REMINDER: "meeting_reminder",
 
     // System notifications
     WORKFLOW_CHANGED: "workflow_changed",
+    SPRINT_END_DATE_REACHED: "sprint_end_date_reached",
   };
 
   static PRIORITIES = {
     CRITICAL: ["task_overdue", "task_deadline_soon", "task_deleted"],
     HIGH: ["task_assigned", "task_priority_changed"],
-    MEDIUM: ["task_status_changed", "task_commented", "sprint_ending_soon", "task_deadline_changed", "task_updated", "meeting_invited"],
+    MEDIUM: [
+      "task_status_changed",
+      "task_commented",
+      "sprint_ending_soon",
+      "task_deadline_changed",
+      "task_updated",
+      "meeting_invited",
+      "meeting_reminder",
+      "sprint_end_date_reached",
+    ],
     LOW: ["project_member_added", "group_member_added", "sprint_started", "sprint_completed"],
   };
 
@@ -375,8 +386,9 @@ class NotificationService {
     });
   }
 
-  async notifyTaskOverdue({ taskId, taskName, assigneeId, projectLeadId }) {
-    const notifications = [assigneeId, projectLeadId]
+  async notifyTaskOverdue({ taskId, taskName, assigneeId, projectLeadId, projectLeadIds = [] }) {
+    const resolvedLeadIds = Array.isArray(projectLeadIds) && projectLeadIds.length > 0 ? projectLeadIds : [projectLeadId];
+    const notifications = [...new Set([assigneeId, ...resolvedLeadIds].filter((id) => id).map((id) => id.toString()))]
       .filter((id) => id)
       .map((userId) =>
         this.createAndSend({
@@ -444,12 +456,13 @@ class NotificationService {
   // SPRINT NOTIFICATIONS
   // ============================================
 
-  async notifySprintStarted({ sprintId, sprintName, memberIds, taskCount }) {
-    const notifications = memberIds.map((userId) =>
+  async notifySprintStarted({ sprintId, sprintName, memberIds = [], recipientIds = [], taskCount = {}, customTitle = null, customMessage = null }) {
+    const resolvedRecipientIds = recipientIds.length > 0 ? recipientIds : memberIds;
+    const notifications = resolvedRecipientIds.map((userId) =>
       this.createAndSend({
         userId,
-        title: "Sprint Started",
-        message: `Sprint "${sprintName}" has started. You have ${taskCount[userId] || 0} tasks`,
+        title: customTitle || "Sprint Started",
+        message: customMessage || `Sprint "${sprintName}" has started. You have ${taskCount[userId] || 0} tasks`,
         type: NotificationService.TYPES.SPRINT_STARTED,
         relatedId: sprintId,
         relatedType: "Sprint",
@@ -459,12 +472,21 @@ class NotificationService {
     return Promise.all(notifications);
   }
 
-  async notifySprintEndingSoon({ sprintId, sprintName, memberIds, incompleteTasks }) {
-    const notifications = memberIds.map((userId) =>
+  async notifySprintEndingSoon({
+    sprintId,
+    sprintName,
+    memberIds = [],
+    recipientIds = [],
+    incompleteTasks = {},
+    customTitle = null,
+    customMessage = null,
+  }) {
+    const resolvedRecipientIds = recipientIds.length > 0 ? recipientIds : memberIds;
+    const notifications = resolvedRecipientIds.map((userId) =>
       this.createAndSend({
         userId,
-        title: "Sprint Ending Soon",
-        message: `Sprint "${sprintName}" ends in 1 day. You have ${incompleteTasks[userId] || 0} incomplete tasks`,
+        title: customTitle || "Sprint Ending Soon",
+        message: customMessage || `Sprint "${sprintName}" ends in 1 day. You have ${incompleteTasks[userId] || 0} incomplete tasks`,
         type: NotificationService.TYPES.SPRINT_ENDING_SOON,
         relatedId: sprintId,
         relatedType: "Sprint",
@@ -531,6 +553,41 @@ class NotificationService {
         projectKey,
       },
     });
+  }
+
+  async notifyMeetingReminder({ meetingId, meetingTitle, recipientId, minutesBefore, startTime, projectKey = null }) {
+    return this.createAndSend({
+      userId: recipientId,
+      title: "Meeting Reminder",
+      message: `Meeting "${meetingTitle}" starts in ${minutesBefore} minutes`,
+      type: NotificationService.TYPES.MEETING_REMINDER,
+      relatedId: meetingId,
+      relatedType: "Meeting",
+      metadata: {
+        minutesBefore,
+        startTime,
+        projectKey,
+      },
+    });
+  }
+
+  async notifySprintEndDateReached({ sprintId, sprintName, projectKey = null, recipientIds, incompleteCount }) {
+    const notifications = recipientIds.map((userId) =>
+      this.createAndSend({
+        userId,
+        title: "Sprint End Date Reached",
+        message: `Sprint "${sprintName}" has reached its end date. Remaining incomplete tasks: ${incompleteCount}`,
+        type: NotificationService.TYPES.SPRINT_END_DATE_REACHED,
+        relatedId: sprintId,
+        relatedType: "Sprint",
+        metadata: {
+          projectKey,
+          incompleteCount,
+        },
+      }),
+    );
+
+    return Promise.all(notifications);
   }
 
   // ============================================

@@ -4,6 +4,7 @@ const TimeLog = require("../models/TimeLog");
 const Sprint = require("../models/Sprint");
 const Group = require("../models/Group");
 const User = require("../models/User");
+const Workflow = require("../models/Workflow");
 const mongoose = require("mongoose");
 
 class GanttService {
@@ -87,8 +88,53 @@ class GanttService {
     }
   }
 
+  async getWorkflowMapByProjectIds(projectIds = []) {
+    const validProjectIds = [...new Set((projectIds || []).filter(Boolean).map((id) => id.toString()))];
+    if (validProjectIds.length === 0) {
+      return new Map();
+    }
+
+    const projects = await Project.find({ _id: { $in: validProjectIds } })
+      .select("_id workflowId")
+      .lean();
+    const workflowIds = [...new Set(projects.map((p) => p.workflowId?.toString()).filter(Boolean))];
+
+    const [workflowsByProjectId, workflowsByWorkflowId] = await Promise.all([
+      Workflow.find({ projectId: { $in: validProjectIds } })
+        .select("_id projectId statuses")
+        .lean(),
+      workflowIds.length > 0
+        ? Workflow.find({ _id: { $in: workflowIds } })
+            .select("_id projectId statuses")
+            .lean()
+        : Promise.resolve([]),
+    ]);
+
+    const workflowMapById = new Map(workflowsByWorkflowId.map((wf) => [wf._id.toString(), wf]));
+    const workflowMapByProjectId = new Map();
+
+    for (const workflow of workflowsByProjectId) {
+      if (workflow.projectId) {
+        workflowMapByProjectId.set(workflow.projectId.toString(), workflow);
+      }
+    }
+
+    for (const project of projects) {
+      if (workflowMapByProjectId.has(project._id.toString())) {
+        continue;
+      }
+
+      const workflow = project.workflowId ? workflowMapById.get(project.workflowId.toString()) : null;
+      if (workflow) {
+        workflowMapByProjectId.set(project._id.toString(), workflow);
+      }
+    }
+
+    return workflowMapByProjectId;
+  }
+
   // 1. GROUP BY: Project only
-  async getProjectsOnly(projectIds, assigneeIds, statusFilter = "active") {
+  async getProjectsOnly(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
     let query = { isDeleted: false };
     if (projectIds.length > 0) {
       query._id = { $in: projectIds };
@@ -124,7 +170,7 @@ class GanttService {
   }
 
   // 2. GROUP BY: Project + Sprint
-  async getProjectsWithSprints(projectIds, assigneeIds, statusFilter = "active") {
+  async getProjectsWithSprints(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
     let projectQuery = { isDeleted: false };
     if (projectIds.length > 0) {
       projectQuery._id = { $in: projectIds };
@@ -173,10 +219,8 @@ class GanttService {
   }
 
   // 3. GROUP BY: Project + Sprint + Task
-  async getProjectsWithSprintsAndTasks(projectIds, assigneeIds, statusFilter = "active") {
+  async getProjectsWithSprintsAndTasks(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
     let projectQuery = { isDeleted: false };
-    // Lấy filter ngày từ arguments nếu có
-    const filter = arguments[3] || {};
     if (projectIds.length > 0) {
       projectQuery._id = { $in: projectIds };
     }
@@ -197,6 +241,7 @@ class GanttService {
       projectQuery.endDate.$lte = new Date(filter.endDate);
     }
     const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
+    const workflowMapByProjectId = await this.getWorkflowMapByProjectIds(projects.map((project) => project._id));
     const result = [];
     for (const project of projects) {
       // Get sprints of this project
@@ -219,13 +264,14 @@ class GanttService {
       for (const sprint of sprints) {
         let sprintTaskQuery = { ...taskQuery, sprintId: sprint._id };
         const sprintTasks = await Task.find(sprintTaskQuery).sort({ createdAt: -1 });
+        const workflow = workflowMapByProjectId.get(project._id.toString());
         projectData.sprints.push({
           id: sprint._id,
           name: sprint.name,
           startDate: sprint.startDate,
           endDate: sprint.endDate,
           status: sprint.status,
-          tasks: await Promise.all(sprintTasks.map((t) => this.formatTask(t))),
+          tasks: await Promise.all(sprintTasks.map((t) => this.formatTask(t, workflow))),
         });
       }
       // Get backlog tasks (tasks without sprint) and add as a pseudo-sprint
@@ -233,6 +279,7 @@ class GanttService {
       const backlogTasks = await Task.find(backlogTaskQuery).sort({ createdAt: -1 });
       // Add backlog as a special sprint at the same level as other sprints
       if (backlogTasks.length > 0) {
+        const workflow = workflowMapByProjectId.get(project._id.toString());
         projectData.sprints.push({
           id: `backlog-${project._id}`,
           name: "Backlog",
@@ -240,7 +287,7 @@ class GanttService {
           endDate: project.endDate,
           status: "backlog",
           isBacklog: true,
-          tasks: await Promise.all(backlogTasks.map((t) => this.formatTask(t))),
+          tasks: await Promise.all(backlogTasks.map((t) => this.formatTask(t, workflow))),
         });
       }
       result.push(projectData);
@@ -251,7 +298,7 @@ class GanttService {
     };
   }
   // 4. GROUP BY: Project + Task (no sprint)
-  async getProjectsWithTasks(projectIds, assigneeIds, statusFilter = "active") {
+  async getProjectsWithTasks(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
     let projectQuery = { isDeleted: false };
     if (projectIds.length > 0) {
       projectQuery._id = { $in: projectIds };
@@ -267,6 +314,7 @@ class GanttService {
     }
 
     const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
+    const workflowMapByProjectId = await this.getWorkflowMapByProjectIds(projects.map((project) => project._id));
     const result = [];
     for (const project of projects) {
       // Build task query
@@ -294,7 +342,8 @@ class GanttService {
 
       // Get all tasks of the project
       const tasks = await Task.find(taskQuery).sort({ createdAt: -1 });
-      projectData.tasks = await Promise.all(tasks.map((t) => this.formatTask(t)));
+      const workflow = workflowMapByProjectId.get(project._id.toString());
+      projectData.tasks = await Promise.all(tasks.map((t) => this.formatTask(t, workflow)));
       result.push(projectData);
     }
     return {
@@ -304,7 +353,7 @@ class GanttService {
   }
 
   // 5. GROUP BY: Sprint only (no project)
-  async getSprintsOnly(projectIds, assigneeIds, statusFilter = "active") {
+  async getSprintsOnly(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
     let sprintQuery = {};
 
     if (projectIds.length > 0) {
@@ -327,7 +376,7 @@ class GanttService {
   }
 
   // 6. GROUP BY: Sprint + Task (no project)
-  async getSprintsWithTasks(projectIds, assigneeIds, statusFilter = "active") {
+  async getSprintsWithTasks(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
     let sprintQuery = {};
 
     if (projectIds.length > 0) {
@@ -335,6 +384,7 @@ class GanttService {
     }
 
     const sprints = await Sprint.find(sprintQuery).sort({ startDate: 1 });
+    const workflowMapByProjectId = await this.getWorkflowMapByProjectIds(sprints.map((sprint) => sprint.projectId));
     const result = [];
 
     // Get unique project IDs from sprints
@@ -355,6 +405,7 @@ class GanttService {
       }
 
       const tasks = await Task.find(taskQuery).sort({ createdAt: -1 });
+      const workflow = sprint.projectId ? workflowMapByProjectId.get(sprint.projectId.toString()) : null;
 
       result.push({
         id: sprint._id,
@@ -363,7 +414,7 @@ class GanttService {
         endDate: sprint.endDate,
         status: sprint.status,
         projectId: sprint.projectId,
-        tasks: await Promise.all(tasks.map((t) => this.formatTask(t))),
+        tasks: await Promise.all(tasks.map((t) => this.formatTask(t, workflow))),
       });
     }
 
@@ -385,7 +436,8 @@ class GanttService {
         backlogTaskQuery.dueDate.$lte = new Date(filter.endDate);
       }
       const tasks = await Task.find(backlogTaskQuery).sort({ createdAt: -1 });
-      backlogTasks.push(...(await Promise.all(tasks.map((t) => this.formatTask(t)))));
+      const workflow = workflowMapByProjectId.get(projectId.toString());
+      backlogTasks.push(...(await Promise.all(tasks.map((t) => this.formatTask(t, workflow)))));
     }
 
     return {
@@ -396,7 +448,7 @@ class GanttService {
   }
 
   // 7. GROUP BY: Task only (no project, no sprint)
-  async getTasksOnly(projectIds, assigneeIds, statusFilter = "active") {
+  async getTasksOnly(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
     let taskQuery = {};
     if (projectIds.length > 0) {
       taskQuery.projectId = { $in: projectIds };
@@ -412,23 +464,40 @@ class GanttService {
       taskQuery.dueDate.$lte = new Date(filter.endDate);
     }
     const tasks = await Task.find(taskQuery).sort({ createdAt: -1 });
+    const workflowMapByProjectId = await this.getWorkflowMapByProjectIds(tasks.map((task) => task.projectId));
 
     return {
       type: "task",
-      data: await Promise.all(tasks.map((t) => this.formatTask(t))),
+      data: await Promise.all(
+        tasks.map((t) => {
+          const workflow = t.projectId ? workflowMapByProjectId.get(t.projectId.toString()) : null;
+          return this.formatTask(t, workflow);
+        }),
+      ),
     };
   }
 
   // Helper: Format task object
-  async formatTask(task) {
+  async formatTask(task, workflow = null) {
     let lastLog = await TimeLog.findOne({ taskId: task._id }).sort({ createdAt: -1 }).select("createdAt").lean();
     const lastLogTime = lastLog ? lastLog.createdAt : null;
+    const statusIdValue = task?.statusId?.toString?.() || task?.statusId?._id?.toString?.();
+    const resolvedStatus = workflow?.statuses?.find((status) => status._id.toString() === statusIdValue);
+
+    const normalizedStatus = resolvedStatus
+      ? {
+          _id: resolvedStatus._id,
+          name: resolvedStatus.name,
+          category: resolvedStatus.category,
+        }
+      : task.statusId;
+
     return {
       id: task._id,
       key: task.key,
       name: task.name,
       description: task.description,
-      status: task.statusId,
+      status: normalizedStatus,
       priority: task.priorityId,
       taskType: task.taskTypeId,
       assignee: task.assigneeId,

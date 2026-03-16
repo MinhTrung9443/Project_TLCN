@@ -86,6 +86,12 @@ const taskSchema = new Schema(
     dueDate: {
       type: Date,
     },
+    deadlineSoonReminderFor: {
+      type: Date,
+    },
+    overdueReminderFor: {
+      type: Date,
+    },
     attachments: [
       {
         filename: {
@@ -96,9 +102,9 @@ const taskSchema = new Schema(
           type: String,
           required: true,
         },
-        public_id: { 
-          type: String, 
-          required: true 
+        public_id: {
+          type: String,
+          required: true,
         },
         uploadedAt: {
           type: Date,
@@ -126,7 +132,7 @@ const taskSchema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Task", taskSchema);

@@ -187,8 +187,8 @@ const GanttPage = () => {
             stats.total++;
 
             // Check status
-            const statusName = task.statusId?.name?.toLowerCase() || "";
-            const statusCategory = task.statusId?.category?.toLowerCase() || "";
+            const statusName = task.status?.name?.toLowerCase() || "";
+            const statusCategory = task.status?.category?.toLowerCase() || "";
             const dueDate = task.dueDate ? new Date(task.dueDate) : null;
 
             // Done: status category is 'done'
