@@ -188,7 +188,7 @@ const TaskDetailsTab = ({
             options={projectSprints}
             onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
             isClearable
-            placeholder={!editableTask ? "" : projectSprints.length === 0 && editableTask.projectId ? "Loading..." : "Backlog"}
+            placeholder={!editableTask ? "" : "Backlog"}
           />
         </div>
         <div className="space-y-2">

@@ -46,15 +46,12 @@ export const ChatProvider = ({ children }) => {
         const otherChats = prevChats.filter((c) => c._id !== conversationId);
         return [updatedChat, ...otherChats];
       } else {
-         // 2. New chat found - we need to add it!
          const convData = typeof newMessage.conversationId === 'object' ? newMessage.conversationId : { _id: conversationId };
 
-         // CRITICAL FIX: Only add to direct chats if type is DIRECT
          if (convData.type && convData.type !== 'DIRECT') {
              return prevChats;
          }
          
-         // If we have full conversation data in message, use it
          if (convData.participants) {
              const newChat = {
                  ...convData,
@@ -63,11 +60,7 @@ export const ChatProvider = ({ children }) => {
              };
              return [newChat, ...prevChats];
          }
-         
-         // If type is not available but we're here, assume it MIGHT be direct if we don't know otherwise? 
-         // Unsafe. Only add if we are sure.
-         // But usually backend sends populated.
-         
+
          return prevChats;
       }
     });
@@ -126,7 +119,6 @@ export const ChatProvider = ({ children }) => {
         userId: user._id
       });
 
-      // Update local UI state immediately so 'Is Read by Me' is true
       if (selectedConversation &&
         (selectedConversation._id === conversationId ||
           selectedConversation._id === conversationId._id)) {

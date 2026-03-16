@@ -5,6 +5,7 @@ import Footer from "./Footer.jsx";
 import Sidebar from "./Sidebar.jsx";
 import { useAuth } from "../../contexts/AuthContext";
 import ChatWidget from "../chat/ChatWidget";
+import AIAssistantWidget from "../AIAssistant/AIAssistantWidget";
 
 const Layout = () => {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ const Layout = () => {
           {!user && <Footer />}
         </main>
         <ChatWidget /> 
+        <AIAssistantWidget />
       </div>
     </div>
   );
