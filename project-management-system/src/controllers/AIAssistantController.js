@@ -281,7 +281,7 @@ const handleChatCommand = async (req, res) => {
         const taskUrl = `/app/task/${newTask.key}`;
 
         res.status(200).json({
-            recommendation: `🎉 Thành công! Phép thuật đã được thực thi.
+            recommendation: `🎉 Thành công! Công việc của bạn đã được tạo.
 - **Task mới:** [${newTask.key}] - ${newTask.name}
 - **Thành viên:** ${taskData.assigneeId ? assigneeName : 'Chưa gán'}${assigneeWarning}
 

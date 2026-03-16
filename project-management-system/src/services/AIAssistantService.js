@@ -74,7 +74,7 @@ ${JSON.stringify(projectData, null, 2)}
                     parameters: {
                         type: "object",
                         properties: {
-                            taskName: { type: "string", description: "Tên của task (vd: 'Code tính năng Login', 'Sửa lỗi button'). CHÚ Ý: Tuyệt đối KHÔNG lấy những câu chung chung như 'tạo task', 'thêm công việc' hay nguyên cả câu lệnh làm tên task. Nếu người dùng chưa nêu rõ tên task cụ thể (có hành động/đối tượng), hãy bỏ trống trường này (null)." },
+                            taskName: { type: "string", description: "Tên công việc cần làm (VD: 'Làm giao diện đăng nhập'). KIỂM TRA NGHIÊM NGẶT: Nếu câu của người dùng chỉ là lệnh chung chung như 'tạo task cho dự án', 'tạo thêm task', 'add task' mà không có MÔ TẢ HÀNH ĐỘNG CỤ THỂ nào sẽ làm trong dự án đó, thì BẮT BUỘC TRẢ VỀ null. Tuyệt đối không lấy chính câu ra lệnh (ví dụ 'tạo task cho dự án X') làm giá trị cho trường này." },
                             projectName: { type: "string", description: "Tên dự án mà task này thuộc về (vd: 'ABC', 'Dự án Mobile')" },
                             assigneeName: { type: "string", description: "Tên người được giao task (vd: 'An', 'Bình')" },
                             sprintName: { type: "string", description: "Tên sprint (vd: 'Sprint 1', 'S2')" },
@@ -95,7 +95,7 @@ ${JSON.stringify(projectData, null, 2)}
         try {
             const response = await openai.chat.completions.create({
                 model: this.model,
-                messages: [{ role: "system", content: "Bạn là hệ thống trích xuất thông tin task. QUAN TRỌNG: Không gán hành động tạo task làm tên task. Ví dụ: 'tạo task code app' -> taskName='code app'. Còn 'tạo task cho dự án X' -> taskName=null, projectName='X'." }, { role: "user", content: `Trích xuất thông tin tạo task từ ĐOẠN HỘI THOẠI sau (nếu có ngày tháng như 'hôm nay', hãy dùng gốc là ${new Date().toISOString().split('T')[0]}): "${naturalLanguageCommand}"` }],
+                messages: [{ role: "system", content: "Bạn là hệ thống trích xuất thông tin tạo Task từ văn bản. LUẬT NGUYÊN TẮC QUAN TRỌNG: Bạn chỉ trích xuất 'taskName' nếu người dùng nêu rõ RÕ CÔNG VIỆC CỤ THỂ cần làm (như 'sửa lỗi', 'viết api', 'thiết kế ui'). NẾU câu lệnh chỉ là yêu cầu RẤT CHUNG CHUNG ví dụ như 'tạo task cho dự án X' hoặc 'thêm 1 task' MÀ KHÔNG CÓ CHI TIẾT CÔNG VIỆC CỤ THỂ BÊN TRONG, bạn BẮT BUỘC bỏ trống (null) 'taskName'." }, { role: "user", content: `Trích xuất thông tin tạo task từ ĐOẠN HỘI THOẠI sau (nếu có ngày tháng như 'hôm nay', hãy dùng gốc là ${new Date().toISOString().split('T')[0]}): "${naturalLanguageCommand}"` }],
                 tools: tools,
                 tool_choice: { type: "function", function: { name: "create_task" } }
             });
