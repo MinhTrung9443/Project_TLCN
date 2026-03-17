@@ -1,42 +1,25 @@
-import React from "react";
+import React, { useRef } from "react";
 import GanttTimeline from "./GanttTimeline";
 import GanttProjectBar from "./GanttProjectBar";
 import GanttSprintBar from "./GanttSprintBar";
 import GanttTaskBar from "./GanttTaskBar";
 
-const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, calculateBarPosition, rightSectionRef }) => {
-  // Safety check
-  if (!Array.isArray(projects)) {
-    return (
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header - fixed, doesn't scroll */}
-        <GanttTimeline timelineColumns={timelineColumns} />
+const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, calculateBarPosition, rightSectionRef, timeView = "weeks" }) => {
+  const timelineHeaderContentRef = useRef(null);
 
-        {/* Body - scrollable both directions */}
-        <div className="flex-1 overflow-x-auto overflow-y-auto flex items-center justify-center" ref={rightSectionRef}>
-          <div className="flex flex-col items-center gap-2 p-6">
-            <span className="material-symbols-outlined text-slate-400 text-3xl">schedule</span>
-            <p className="text-sm text-slate-500">Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const syncHeaderScroll = (event) => {
+    if (!timelineHeaderContentRef.current) return;
+    timelineHeaderContentRef.current.style.transform = `translateX(-${event.currentTarget.scrollLeft}px)`;
+  };
 
-  // Calculate wrapper width based on number of columns and column width
-  // Each column has different width based on timeView
   const getColumnWidth = () => {
-    // This should match the CSS values
-    const timeViewElement = document.querySelector(".gantt-page");
-    const timeView = timeViewElement?.getAttribute("data-timeview") || "weeks";
-
     switch (timeView) {
       case "months":
         return 100;
       case "years":
         return 120;
       default:
-        return 120; // weeks - increased from 80px to 120px
+        return 120;
     }
   };
 
@@ -47,6 +30,28 @@ const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, 
     width: `${totalWidth}px`,
   };
 
+  // Safety check
+  if (!Array.isArray(projects)) {
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header - synced with body horizontal scroll */}
+        <div className="overflow-hidden border-b border-slate-200 bg-slate-50">
+          <div ref={timelineHeaderContentRef} className="will-change-transform" style={wrapperStyle}>
+            <GanttTimeline timelineColumns={timelineColumns} columnWidth={columnWidth} />
+          </div>
+        </div>
+
+        {/* Body - scrollable both directions */}
+        <div className="flex-1 overflow-x-auto overflow-y-auto flex items-center justify-center" ref={rightSectionRef} onScroll={syncHeaderScroll}>
+          <div className="flex flex-col items-center gap-2 p-6">
+            <span className="material-symbols-outlined text-slate-400 text-3xl">schedule</span>
+            <p className="text-sm text-slate-500">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Determine what type of data we're displaying
   const hasProject = groupBy.includes("project");
   const hasSprint = groupBy.includes("sprint");
@@ -54,11 +59,15 @@ const GanttRightSection = ({ projects, groupBy, expandedItems, timelineColumns, 
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header - fixed, doesn't scroll */}
-      <GanttTimeline timelineColumns={timelineColumns} />
+      {/* Header - synced with body horizontal scroll */}
+      <div className="overflow-hidden border-b border-slate-200 bg-slate-50">
+        <div ref={timelineHeaderContentRef} className="will-change-transform" style={wrapperStyle}>
+          <GanttTimeline timelineColumns={timelineColumns} columnWidth={columnWidth} />
+        </div>
+      </div>
 
       {/* Body - scrollable both directions */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto" ref={rightSectionRef}>
+      <div className="flex-1 overflow-x-auto overflow-y-auto" ref={rightSectionRef} onScroll={syncHeaderScroll}>
         <div className="inline-block min-w-full" style={wrapperStyle}>
           {/* Body */}
           <div className="bg-white">

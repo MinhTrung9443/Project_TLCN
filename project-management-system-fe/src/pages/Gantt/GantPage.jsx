@@ -233,7 +233,7 @@ const GanttPage = () => {
   const statistics = calculateStatistics();
 
   return (
-    <div className="min-h-screen bg-slate-50" data-timeview={timeView}>
+    <div className="gantt-page min-h-screen bg-slate-50" data-timeview={timeView}>
       <div className="h-screen flex flex-col">
         <GanttHeader
           filter={filter}
@@ -269,6 +269,7 @@ const GanttPage = () => {
             timelineColumns={timelineColumns}
             calculateBarPosition={calculatePosition}
             rightSectionRef={rightSectionRef}
+            timeView={timeView}
           />
         </div>
       </div>
