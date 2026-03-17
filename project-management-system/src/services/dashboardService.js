@@ -146,11 +146,28 @@ const dashboardService = {
   },
 
   async getMyTasks(userId, filters) {
-    const { projectId, priorityId, statusId } = filters || {};
+    const { projectId, priorityId, statusId, startDate, endDate } = filters || {};
     const query = { assigneeId: userId };
     if (projectId) query.projectId = projectId;
     if (priorityId) query.priorityId = priorityId;
     if (statusId) query.statusId = statusId;
+
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+    const hasValidStart = start instanceof Date && !Number.isNaN(start.valueOf());
+    const hasValidEnd = end instanceof Date && !Number.isNaN(end.valueOf());
+
+    if (hasValidStart && hasValidEnd) {
+      query.$or = [
+        { startDate: { $lte: end }, dueDate: { $gte: start } },
+        { startDate: { $exists: false }, dueDate: { $gte: start, $lte: end } },
+        { dueDate: { $exists: false }, startDate: { $gte: start, $lte: end } },
+      ];
+    } else if (hasValidStart) {
+      query.$or = [{ dueDate: { $gte: start } }, { startDate: { $gte: start } }];
+    } else if (hasValidEnd) {
+      query.$or = [{ dueDate: { $lte: end } }, { startDate: { $lte: end } }];
+    }
 
     const tasks = await Task.find(query).populate("projectId", "name key workflowId").sort({ dueDate: 1 }).lean();
 

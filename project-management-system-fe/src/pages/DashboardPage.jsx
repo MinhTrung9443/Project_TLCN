@@ -118,18 +118,40 @@ const DashboardPage = () => {
 
       try {
         const { start, end } = getMonthRange(selectedMonth);
+        const requestConfig = { timeout: 20000 };
 
-        const [overviewRes, myTasksRes, myScheduleRes] = await Promise.all([
-          getDashboardOverview(),
-          getDashboardMyTasks(),
+        const [overviewRes, myTasksRes, myScheduleRes] = await Promise.allSettled([
+          getDashboardOverview(requestConfig),
+          getDashboardMyTasks(
+            {
+              startDate: start.toISOString(),
+              endDate: end.toISOString(),
+            },
+            requestConfig,
+          ),
           getMySchedule({
             startTime: start.toISOString(),
             endTime: end.toISOString(),
-          }),
+          }, requestConfig),
         ]);
 
-        const tasks = Array.isArray(myTasksRes?.data) ? myTasksRes.data : [];
-        const meetings = Array.isArray(myScheduleRes?.data) ? myScheduleRes.data : [];
+        const failedEndpoints = [];
+
+        if (overviewRes.status === "rejected") {
+          failedEndpoints.push("overview");
+          console.error("Error loading dashboard overview:", overviewRes.reason);
+        }
+        if (myTasksRes.status === "rejected") {
+          failedEndpoints.push("my-tasks");
+          console.error("Error loading dashboard tasks:", myTasksRes.reason);
+        }
+        if (myScheduleRes.status === "rejected") {
+          failedEndpoints.push("my-schedule");
+          console.error("Error loading dashboard schedule:", myScheduleRes.reason);
+        }
+
+        const tasks = myTasksRes.status === "fulfilled" && Array.isArray(myTasksRes.value?.data) ? myTasksRes.value.data : [];
+        const meetings = myScheduleRes.status === "fulfilled" && Array.isArray(myScheduleRes.value?.data) ? myScheduleRes.value.data : [];
 
         const monthTasks = tasks.filter((task) => {
           const startDate = task?.startDate ? new Date(task.startDate) : task?.dueDate ? new Date(task.dueDate) : null;
@@ -197,7 +219,12 @@ const DashboardPage = () => {
         const monthEvents = [...taskEvents, ...meetingEvents];
         const expandedEvents = expandEventsByRange(monthEvents, startOfDay(start), endOfDay(end));
 
-        setOverview(overviewRes.data);
+        if (overviewRes.status === "fulfilled") {
+          setOverview(overviewRes.value?.data || { projectProgress: [], recentActivity: [] });
+        } else if (!overview) {
+          setOverview({ projectProgress: [], recentActivity: [] });
+        }
+
         setCalendarEvents(expandedEvents);
         setMonthStats({
           total: monthTasks.length,
@@ -206,6 +233,12 @@ const DashboardPage = () => {
           overdue: overdueCount,
           meetings: meetingEvents.length,
         });
+
+        if (failedEndpoints.length === 3) {
+          toast.error("Could not load dashboard data");
+        } else if (failedEndpoints.length > 0 && isInitialLoad) {
+          toast.warn(`Some dashboard data could not be loaded (${failedEndpoints.join(", ")})`);
+        }
       } catch (err) {
         console.error("Error loading dashboard:", err);
         toast.error("Could not load dashboard calendar");

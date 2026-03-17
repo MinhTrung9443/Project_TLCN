@@ -4,6 +4,8 @@
     import ReactMarkdown from 'react-markdown';
     import { Link } from 'react-router-dom';
 
+    const AI_REQUEST_TIMEOUT_MS = 60000;
+
     const AIAssistantWidget = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
@@ -64,7 +66,7 @@
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!input.trim()) return;
+        if (!input.trim() || isLoading) return;
 
         const userMessage = input.trim();
         setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
@@ -76,9 +78,12 @@
             `/ai-assistant/analyze-risk`, 
             {
             question: userMessage,
-              history: messages.map(m => ({ role: m.role, content: m.content })).slice(-6),
+                            history: messages.map(m => ({ role: m.role, content: m.content })).slice(-4),
             targetProjectName: ""
-            }
+                        },
+                        {
+                            timeout: AI_REQUEST_TIMEOUT_MS,
+                        }
         );
 
         const data = response.data?.data;
@@ -87,7 +92,10 @@
         setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
         } catch (error) {
         console.error("AI Error:", error);
-        const errorMsg = error.response?.data?.message || 'Đã có lỗi xảy ra khi kết nối tới AI. Vui lòng thử lại.';
+                const isTimeout = error?.code === 'ECONNABORTED';
+                const errorMsg = isTimeout
+                    ? 'AI đang xử lý lâu hơn bình thường. Vui lòng thử lại sau ít giây hoặc đặt câu hỏi ngắn hơn.'
+                    : error.response?.data?.message || 'Đã có lỗi xảy ra khi kết nối tới AI. Vui lòng thử lại.';
         setMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
         } finally {
         setIsLoading(false);

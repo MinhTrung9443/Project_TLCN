@@ -91,13 +91,17 @@ const handleAnalyzeRisk = async (req, res) => {
         }
 
         // 4. Lấy toàn bộ Task từ DB liên quan tới những dự án User CÓ QUYỀN
+        const maxTasksForAI = Number(process.env.AI_ANALYSIS_TASK_LIMIT || 300);
         const dbTasks = await require("../models/Task").find(query)
+            .select("name assigneeId projectId statusId priorityId taskTypeId platformId dueDate progress")
             .populate("assigneeId", "fullName email")
             .populate("projectId", "name")
             .populate("statusId", "name category") // Thường workflow status lưu string hoặc object
             .populate("priorityId", "name level")
             .populate("taskTypeId", "name")
             .populate("platformId", "name")
+            .sort({ updatedAt: -1 })
+            .limit(Number.isFinite(maxTasksForAI) && maxTasksForAI > 0 ? maxTasksForAI : 300)
             .lean();
 
         if (!dbTasks || dbTasks.length === 0) {
