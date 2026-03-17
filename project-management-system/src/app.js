@@ -1,12 +1,11 @@
 // File: app.js (Backend)
 
 const express = require("express");
-const cors = require("cors"); // Chỉ cần require một lần
+const cors = require("cors");
 const path = require("path");
 const app = express();
 
 // --- Import các routes ---
-
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 
@@ -34,62 +33,49 @@ const meetingRoutes = require("./routes/meetingRoutes.js");
 const summaryRoutes = require("./routes/summaryRoutes.js");
 const chatRoute = require("./routes/chatRoute");
 const aiAssistantRoutes = require("./routes/aiAssistantRoutes");
-const corsOptions = {
+
+// --- CẤU HÌNH CORS CHUẨN MỰC ---
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+  "http://localhost:3003",
+  "http://127.0.0.1:3000", // Thêm IP local để ngừa lỗi Socket.IO
+  process.env.FRONTEND_URL
+];
+
+app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:3002",
-      "http://localhost:3003"
-    ];
-    if (!origin || allowedOrigins.includes(origin) || process.env.FRONTEND_URL === origin) {
+    // Cho phép request không có origin (ví dụ server nội bộ, Socket polling) hoặc thuộc danh sách trắng
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // THAY ĐỔI QUAN TRỌNG: Không throw Error gây sập/spam log nữa, chỉ từ chối nhẹ nhàng
+      console.warn(`[CORS] Từ chối truy cập từ Origin lạ: ${origin}`);
+      callback(null, false); 
     }
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  credentials: true, // Cho phép cookie/token
+}));
 
-console.log("[CORS] Configured for origin:", corsOptions.origin);
+console.log("[CORS] Cấu hình hoàn tất, đã bảo vệ bằng Whitelist.");
 
 // --- Sử dụng Middlewares ---
 
-// Sử dụng cấu hình CORS cho tất cả các request
-app.use(cors(corsOptions));
-
-// Bật xử lý pre-flight và set headers CORS thủ công
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003"];
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  } else {
-    res.header("Access-Control-Allow-Origin", "*");
-  }
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-  next();
-});
-
-// Skip JSON parsing for multipart/form-data requests (file uploads)
+// Xử lý request dạng form-data (File Uploads)
 app.use((req, res, next) => {
   const contentType = req.headers["content-type"] || "";
   if (contentType.includes("multipart/form-data")) {
-    console.log("[MIDDLEWARE] Skipping JSON parse for multipart request");
     return next();
   }
   express.json()(req, res, next);
 });
 
 const uploadsPath = path.join(__dirname, "public", "uploads");
+// Nếu có phục vụ file tĩnh, bỏ comment dòng dưới
+// app.use("/uploads", express.static(uploadsPath));
 
 // --- Đăng ký các routes ---
 app.use("/api", appRoute);
@@ -117,6 +103,7 @@ app.use("/api/summaries", summaryRoutes);
 app.use("/api/chats", chatRoute);
 app.use("/api/ai-assistant", aiAssistantRoutes);
 
+// --- Swagger ---
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 const docsUrl = process.env.PUBLIC_API_URL ? `${process.env.PUBLIC_API_URL}/api-docs` : "/api-docs";
 console.log(`📄 Swagger Docs available at ${docsUrl}`);
