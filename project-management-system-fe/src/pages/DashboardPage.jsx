@@ -129,10 +129,13 @@ const DashboardPage = () => {
             },
             requestConfig,
           ),
-          getMySchedule({
-            startTime: start.toISOString(),
-            endTime: end.toISOString(),
-          }, requestConfig),
+          getMySchedule(
+            {
+              startTime: start.toISOString(),
+              endTime: end.toISOString(),
+            },
+            requestConfig,
+          ),
         ]);
 
         const failedEndpoints = [];
