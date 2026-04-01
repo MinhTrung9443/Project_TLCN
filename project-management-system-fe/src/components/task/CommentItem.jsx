@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react"; // <-- Thêm useMemo vào import
+import ReactMarkdown from "react-markdown";
 import moment from "moment";
 import EmojiPicker from "emoji-picker-react"; // <-- Thêm import cho EmojiPicker
 import apiClient from "../../services/apiClient";
@@ -143,7 +144,9 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
             <div className="inline-block max-w-lg">
               <div className="relative bg-neutral-100 rounded-2xl px-3 py-2">
                 <div className="font-semibold text-sm text-neutral-900 mb-0.5">{comment.userId.fullname || "Unknown User"}</div>
-                <p className="text-sm text-neutral-900 whitespace-pre-wrap break-words">{comment.content}</p>
+                <div className="text-sm text-neutral-900 break-words [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-800 [&_code]:bg-neutral-200 [&_code]:px-1 [&_code]:rounded [&_p]:mb-1 last:[&_p]:mb-0">
+                  <ReactMarkdown>{comment.content}</ReactMarkdown>
+                </div>
 
                 {/* Display attachments */}
                 {comment.attachments && comment.attachments.length > 0 && (

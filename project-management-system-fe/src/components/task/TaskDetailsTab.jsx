@@ -15,6 +15,7 @@ const TaskDetailsTab = ({
   editableTask,
   setEditableTask,
   handleUpdate,
+  handleCreateGithubBranch,
   statuses,
   projectMembers,
   projectTaskTypes,
@@ -200,6 +201,34 @@ const TaskDetailsTab = ({
             placeholder={projectPlatforms.length === 0 ? "Loading..." : "Select..."}
           />
         </div>
+        
+        {/* Development (GitHub Branch) */}
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Development</strong>
+          <div className="h-[42px] flex items-center">
+            {!editableTask.githubBranch ? (
+                <button
+                  title="Create new branch on GitHub"
+                  onClick={handleCreateGithubBranch}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-neutral-800 hover:bg-neutral-900 border border-transparent rounded-lg w-full justify-center shadow-sm transition-colors duration-200"
+                >
+                  <i className="bi bi-github"></i>
+                  Create Branch
+                </button>
+              ) : (
+                <a
+                  href={editableTask.projectId?.githubRepoName ? `https://github.com/${editableTask.projectId.githubRepoName}/tree/${editableTask.githubBranch}` : `https://github.com/hnhung31/HTML/tree/${editableTask.githubBranch}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg w-full justify-center max-w-full"
+                >
+                  <i className="bi bi-github shrink-0"></i>
+                  <span className="truncate">{editableTask.githubBranch}</span>
+                </a>
+              )}
+            </div>
+          </div>
+
         <div className="space-y-2">
           <strong className="text-sm font-medium text-neutral-700">Start Date</strong>
           <input

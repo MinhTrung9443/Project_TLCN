@@ -15,4 +15,7 @@ router.get('/repos', authMiddleware.protect, GithubController.getRepositories);
 // Liên kết project với repo
 router.post('/link-repo', authMiddleware.protect, GithubController.linkRepository);
 
+// Tạo nhánh mới cho task
+router.post('/branches', authMiddleware.protect, GithubController.createBranch);
+
 module.exports = router;

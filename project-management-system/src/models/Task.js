@@ -129,6 +129,11 @@ const taskSchema = new Schema(
       ],
       default: [],
     },
+    githubBranch: {
+      type: String,
+      trim: true,
+      default: null
+    },
   },
   {
     timestamps: true,

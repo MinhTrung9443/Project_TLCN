@@ -171,6 +171,124 @@ class GithubController {
             res.status(500).json({ message: 'Internal Server Error' });
         }
     }
+
+    static async createBranch(req, res) {
+        try {
+            const Project = require('../models/Project');
+            const Task = require('../models/Task');
+            
+            const { projectId, taskId } = req.body;
+
+            const token = req.user.githubAccessToken;
+            if (!token) {
+                return res.status(401).json({ message: 'Bạn chưa kết nối với tài khoản GitHub' });
+            }
+
+            const project = await Project.findById(projectId);
+            if (!project || !project.githubRepoName) {
+                return res.status(400).json({ message: 'Dự án chưa được liên kết với GitHub Repository' });
+            }
+
+            const task = await Task.findById(taskId);
+            if (!task) {
+                return res.status(404).json({ message: 'Không tìm thấy Task' });
+            }
+
+            if (task.githubBranch) {
+                return res.status(400).json({ message: 'Task này đã có nhánh GitHub', branch: task.githubBranch });
+            }
+
+            const repoFullName = project.githubRepoName; // VD: owner/repo
+            console.log(`[GithubController] Creating branch for repo: ${repoFullName}`);
+
+            // Lấy thông tin default branch (thường là main)
+            const repoRes = await axios.get(
+                `https://api.github.com/repos/${repoFullName}`,
+                { headers: { Authorization: `token ${token}` } }
+            );
+            const defaultBranch = repoRes.data.default_branch || 'main';
+
+            // Lấy SHA của nhánh mặc định
+            const refRes = await axios.get(
+                `https://api.github.com/repos/${repoFullName}/git/refs/heads/${defaultBranch}`,
+                { headers: { Authorization: `token ${token}` } }
+            );
+            const sha = refRes.data.object.sha;
+
+            // Xử lý loại bỏ dấu tiếng Việt để tên nhánh đẹp hơn
+            const removeVietnameseTones = (str) => {
+                return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+            };
+            const formatTitle = removeVietnameseTones(task.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            const newBranchName = `tasks/${task.key}-${formatTitle}`;
+
+            // Gửi request tạo nhánh
+            try {
+                await axios.post(
+                    `https://api.github.com/repos/${repoFullName}/git/refs`,
+                    {
+                        ref: `refs/heads/${newBranchName}`,
+                        sha: sha
+                    },
+                    { headers: { Authorization: `token ${token}` } }
+                );
+            } catch (gitError) {
+                // Nếu lỗi do nhánh đã tồn tại
+                if (gitError.response?.data?.message === 'Reference already exists') {
+                    // Cập nhật DB luôn và giả lập thành công
+                    task.githubBranch = newBranchName;
+                    await task.save();
+
+                    const TaskHistory = require('../models/TaskHistory');
+                    await TaskHistory.create({
+                        taskId: task._id,
+                        userId: req.user._id,
+                        fieldName: 'githubBranch',
+                        oldValue: null,
+                        newValue: newBranchName,
+                        actionType: 'LINK_GITHUB_BRANCH'
+                    });
+
+                    return res.status(200).json({ 
+                        message: 'Nhánh này đã có sẵn trên GitHub, đã đồng bộ thành công!',
+                        branch: newBranchName,
+                        url: `https://github.com/${repoFullName}/tree/${newBranchName}`
+                    });
+                }
+                throw gitError; // Các lỗi khác thì ném ra ngoài catch to
+            }
+
+            // Lưu tên nhánh vào DB để frontend hiển thị lại
+            task.githubBranch = newBranchName;
+            await task.save();
+
+            // GHI LỊCH SỬ VÀO TASK HISTORY
+            const TaskHistory = require('../models/TaskHistory');
+            await TaskHistory.create({
+                taskId: task._id,
+                userId: req.user._id,
+                fieldName: 'githubBranch',
+                oldValue: null,
+                newValue: newBranchName,
+                actionType: 'CREATE_GITHUB_BRANCH'
+            });
+
+            res.status(200).json({ 
+                message: 'Tạo nhánh GitHub thành công',
+                branch: newBranchName,
+                url: `https://github.com/${repoFullName}/tree/${newBranchName}`
+            });
+
+        } catch (error) {
+            console.error('Lỗi tạo nhánh GitHub:', error.response?.data || error.message);
+            // Gửi thẳng error.message từ Github về Frontend (nếu có)
+            const githubErrorMsg = error.response?.data?.message;
+            res.status(500).json({ 
+                message: githubErrorMsg ? `Lỗi Github: ${githubErrorMsg}` : 'Lỗi khi kết nối đến GitHub API để tạo nhánh', 
+                error: githubErrorMsg || error.message 
+            });
+        }
+    }
 }
 
 module.exports = GithubController;
