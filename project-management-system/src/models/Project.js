@@ -24,6 +24,15 @@ const projectSchema = new Schema(
       enum: ["Scrum", "Kanban"],
       required: true,
     },
+    githubRepoId: {
+      type: String,
+    },
+    githubRepoUrl: {
+      type: String,
+    },
+    githubRepoName: {
+      type: String,
+    },
     startDate: {
       type: Date,
     },

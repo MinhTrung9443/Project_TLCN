@@ -33,6 +33,8 @@ const meetingRoutes = require("./routes/meetingRoutes.js");
 const summaryRoutes = require("./routes/summaryRoutes.js");
 const chatRoute = require("./routes/chatRoute");
 const aiAssistantRoutes = require("./routes/aiAssistantRoutes");
+const webhookRouter = require('./routes/webhook');
+const githubRoutes = require('./routes/githubRoutes');
 
 // --- CẤU HÌNH CORS CHUẨN MỰC ---
 const allowedOrigins = [
@@ -102,6 +104,14 @@ app.use("/api/meetings", meetingRoutes);
 app.use("/api/summaries", summaryRoutes);
 app.use("/api/chats", chatRoute);
 app.use("/api/ai-assistant", aiAssistantRoutes);
+app.use('/api/webhook', webhookRouter);
+app.use('/api/github', githubRoutes);
+
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+  console.log(`[404] ${req.method} ${req.path}`);
+  next();
+});
 
 // --- Swagger ---
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

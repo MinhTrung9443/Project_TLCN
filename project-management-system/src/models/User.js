@@ -50,6 +50,12 @@ const userSchema = new Schema(
       default: "user",
       required: true,
     },
+    githubId: {
+      type: String,
+    },
+    githubAccessToken: {
+      type: String,
+    },
     lastLogin: {
       type: Date,
     },
