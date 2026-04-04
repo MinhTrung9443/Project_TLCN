@@ -29,6 +29,7 @@ import MeetingPage from "./pages/Meeting/MeetingPage";
 import MeetingRoomPage from "./pages/Meeting/MeetingRoomPage";
 import GanttPage from "./pages/Gantt/GantPage.jsx";
 import AdminAuditLogPage from "./pages/AuditLog/AdminAuditLogPage.jsx";
+import ProjectReportPage from "./pages/ProjectReport/ProjectReportPage.jsx";
 import ProjectSettingsGeneral from "./pages/ManageProject/ProjectSettingsGeneral";
 import ProjectSettingMembers from "./pages/ManageProject/ProjectSettingMembers";
 import ProjectSettingsWorkflow from "./pages/ManageProject/ProjectSettingsWorkflow";
@@ -77,6 +78,7 @@ function App() {
                   <Route path="task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
                   <Route path="task-mgmt/projects/:projectKey/meetings" element={<MeetingPage />} />
                   <Route path="task-mgmt/projects/:projectKey/docs" element={<ProjectDocsPage />} />
+                  <Route path="task-mgmt/projects/:projectKey/report" element={<ProjectReportPage />} />
 
                   {/* --- Organization Routes - All users can view, only admin can manage --- */}
                   <Route path="organization">

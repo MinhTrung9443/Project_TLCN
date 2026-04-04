@@ -29,6 +29,7 @@ const auditLogRoutes = require("./routes/auditLogRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const timeLogRoutes = require("./routes/timeLogRoutes");
 const performanceRoutes = require("./routes/performanceRoutes");
+const projectReportRoutes = require("./routes/projectReportRoutes");
 const meetingRoutes = require("./routes/meetingRoutes.js");
 const summaryRoutes = require("./routes/summaryRoutes.js");
 const chatRoute = require("./routes/chatRoute");
@@ -41,24 +42,26 @@ const allowedOrigins = [
   "http://localhost:3002",
   "http://localhost:3003",
   "http://127.0.0.1:3000", // Thêm IP local để ngừa lỗi Socket.IO
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL,
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Cho phép request không có origin (ví dụ server nội bộ, Socket polling) hoặc thuộc danh sách trắng
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      // THAY ĐỔI QUAN TRỌNG: Không throw Error gây sập/spam log nữa, chỉ từ chối nhẹ nhàng
-      console.warn(`[CORS] Từ chối truy cập từ Origin lạ: ${origin}`);
-      callback(null, false); 
-    }
-  },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  credentials: true, // Cho phép cookie/token
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Cho phép request không có origin (ví dụ server nội bộ, Socket polling) hoặc thuộc danh sách trắng
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        // THAY ĐỔI QUAN TRỌNG: Không throw Error gây sập/spam log nữa, chỉ từ chối nhẹ nhàng
+        console.warn(`[CORS] Từ chối truy cập từ Origin lạ: ${origin}`);
+        callback(null, false);
+      }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+    credentials: true, // Cho phép cookie/token
+  }),
+);
 
 console.log("[CORS] Cấu hình hoàn tất, đã bảo vệ bằng Whitelist.");
 
@@ -98,6 +101,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/timelogs", timeLogRoutes);
 app.use("/api/performance", performanceRoutes);
+app.use("/api/reports", projectReportRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/summaries", summaryRoutes);
 app.use("/api/chats", chatRoute);

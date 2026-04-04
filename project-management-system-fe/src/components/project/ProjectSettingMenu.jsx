@@ -15,12 +15,25 @@ const ProjectSettingMenu = () => {
     { path: "workflow", label: "Workflow", icon: "account_tree", description: "Status flow" },
   ];
 
+  if (projectData?.status === "completed") {
+    menuItems.push({
+      path: "__project_report__",
+      label: "Project Report",
+      icon: "analytics",
+      description: "Final delivery insights",
+    });
+  }
+
   return (
     <nav className="p-3 space-y-1">
       {menuItems.map((item) => (
         <NavLink
           key={item.path}
-          to={`/app/task-mgmt/projects/${projectKey}/settings/${item.path}`}
+          to={
+            item.path === "__project_report__"
+              ? `/app/task-mgmt/projects/${projectKey}/report`
+              : `/app/task-mgmt/projects/${projectKey}/settings/${item.path}`
+          }
           className={({ isActive }) =>
             `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
               isActive ? "bg-primary-50 text-primary-700 shadow-sm" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"

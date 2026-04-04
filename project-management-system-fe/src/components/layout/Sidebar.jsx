@@ -14,6 +14,8 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const { user } = useAuth();
   const { selectedProjectKey } = useContext(ProjectContext);
   const [canViewAuditLog, setCanViewAuditLog] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [canViewProjectReport, setCanViewProjectReport] = useState(false);
 
   const getProjectPath = (path) => (selectedProjectKey ? `/app/task-mgmt/projects/${selectedProjectKey}/${path}` : "#");
 
@@ -23,16 +25,31 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
     getProjects()
       .then((res) => {
-        const projects = res.data || [];
-        const ok = projects.some(
+        const projectList = res.data || [];
+        setProjects(projectList);
+
+        const ok = projectList.some(
           (p) =>
             p.members?.some((m) => (m.userId._id === user._id || m.userId === user._id) && m.role === "PROJECT_MANAGER") ||
             p.teams?.some((t) => t.leaderId._id === user._id || t.leaderId === user._id),
         );
         setCanViewAuditLog(ok);
       })
-      .catch(() => setCanViewAuditLog(false));
+      .catch(() => {
+        setProjects([]);
+        setCanViewAuditLog(false);
+      });
   }, [user]);
+
+  useEffect(() => {
+    if (!selectedProjectKey) {
+      setCanViewProjectReport(false);
+      return;
+    }
+
+    const selectedProject = projects.find((project) => project?.key?.toUpperCase() === selectedProjectKey.toUpperCase());
+    setCanViewProjectReport(selectedProject?.status === "completed");
+  }, [projects, selectedProjectKey]);
 
   return (
     <aside
@@ -114,6 +131,16 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                         <span className="text-xs text-neutral-400">({selectedProjectKey})</span>
                       </span>
                     </NavLink>
+
+                    {canViewProjectReport && (
+                      <NavLink to={getProjectPath("report")} className={navItemClass}>
+                        <span className="material-symbols-outlined">analytics</span>
+                        <span className="flex items-center gap-1">
+                          <span>Project Report</span>
+                          <span className="text-xs text-neutral-400">({selectedProjectKey})</span>
+                        </span>
+                      </NavLink>
+                    )}
                   </>
                 )}
               </div>
