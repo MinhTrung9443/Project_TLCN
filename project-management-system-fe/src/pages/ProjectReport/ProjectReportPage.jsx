@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import html2canvas from "html2canvas-pro";
+import { jsPDF } from "jspdf";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { FaChartLine, FaCopy, FaRegImage, FaSpinner, FaWandMagicSparkles } from "react-icons/fa6";
+import { FaChartLine, FaCopy, FaFilePdf, FaRegImage, FaSpinner, FaWandMagicSparkles } from "react-icons/fa6";
 import { getProjectByKey } from "../../services/projectService";
 import projectReportService from "../../services/projectReportService";
 
@@ -13,6 +15,86 @@ const formatDateTime = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "N/A";
   return date.toLocaleString();
+};
+
+const buildExportMarkdown = (markdown = "") => {
+  if (!markdown) return "";
+
+  // Remove appended JSON payload block.
+  const withoutJsonCodeBlock = markdown.replace(/\n```json[\s\S]*$/m, "").trim();
+  // Keep report only up to section 13.
+  const section14Index = withoutJsonCodeBlock.search(/^##\s*14\./m);
+  if (section14Index >= 0) {
+    return withoutJsonCodeBlock.slice(0, section14Index).trim();
+  }
+
+  return withoutJsonCodeBlock;
+};
+
+const splitMarkdownByTopSections = (markdown = "") => {
+  if (!markdown) return [];
+
+  const normalized = markdown.trim();
+  const lines = normalized.split("\n");
+  const sections = [];
+  let current = [];
+
+  lines.forEach((line) => {
+    if (/^##\s+\d+\./.test(line) && current.length > 0) {
+      sections.push(current.join("\n").trim());
+      current = [line];
+      return;
+    }
+    current.push(line);
+  });
+
+  if (current.length > 0) sections.push(current.join("\n").trim());
+  return sections.filter(Boolean);
+};
+
+const appendCanvasToPdf = ({ pdf, canvas, margin, pageWidth, pageHeight, cursorY }) => {
+  const contentWidth = pageWidth - margin * 2;
+  const mmPerPx = contentWidth / canvas.width;
+
+  let sourceY = 0;
+  let nextCursorY = cursorY;
+
+  while (sourceY < canvas.height) {
+    const availableMm = pageHeight - margin - nextCursorY;
+
+    if (availableMm <= 2) {
+      pdf.addPage();
+      nextCursorY = margin;
+      continue;
+    }
+
+    const sliceHeightPx = Math.max(1, Math.floor(availableMm / mmPerPx));
+    const actualSliceHeightPx = Math.min(sliceHeightPx, canvas.height - sourceY);
+
+    const sliceCanvas = document.createElement("canvas");
+    sliceCanvas.width = canvas.width;
+    sliceCanvas.height = actualSliceHeightPx;
+
+    const sliceContext = sliceCanvas.getContext("2d");
+    if (!sliceContext) break;
+
+    sliceContext.drawImage(canvas, 0, sourceY, canvas.width, actualSliceHeightPx, 0, 0, canvas.width, actualSliceHeightPx);
+
+    const imageData = sliceCanvas.toDataURL("image/png");
+    const sliceHeightMm = actualSliceHeightPx * mmPerPx;
+
+    pdf.addImage(imageData, "PNG", margin, nextCursorY, contentWidth, sliceHeightMm, undefined, "FAST");
+
+    sourceY += actualSliceHeightPx;
+    nextCursorY += sliceHeightMm + 2;
+
+    if (sourceY < canvas.height) {
+      pdf.addPage();
+      nextCursorY = margin;
+    }
+  }
+
+  return nextCursorY;
 };
 
 const ReportMetricCard = ({ label, value, hint, valueColor = "text-slate-900" }) => (
@@ -110,8 +192,10 @@ const ProjectReportPage = () => {
   const [chartData, setChartData] = useState(null);
   const [loadingLatestReport, setLoadingLatestReport] = useState(false);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [error, setError] = useState("");
   const isCompletedProject = project?.status === "completed";
+  const exportContentRef = useRef(null);
 
   useEffect(() => {
     if (!projectKey) return;
@@ -196,10 +280,72 @@ const ProjectReportPage = () => {
     toast.success("Chart JSON copied to clipboard.");
   };
 
+  const handleExportPdf = async () => {
+    if (!projectKey || !report) {
+      toast.error("No report content available to export.");
+      return;
+    }
+
+    if (!exportContentRef.current) {
+      toast.error("Printable report area is not ready.");
+      return;
+    }
+
+    try {
+      setExportingPdf(true);
+      const snapshotVersion = report?.snapshot?.version || 1;
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+
+      const blocks = Array.from(exportContentRef.current.querySelectorAll('[data-export-block="true"]'));
+      let cursorY = margin;
+
+      for (let index = 0; index < blocks.length; index += 1) {
+        const block = blocks[index];
+        const canvas = await html2canvas(block, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#f8fbff",
+          windowWidth: block.scrollWidth,
+          windowHeight: block.scrollHeight,
+        });
+
+        const renderedHeightMm = (canvas.height * (pageWidth - margin * 2)) / canvas.width;
+        if (cursorY + renderedHeightMm > pageHeight - margin && renderedHeightMm < pageHeight - margin * 2) {
+          pdf.addPage();
+          cursorY = margin;
+        }
+
+        cursorY = appendCanvasToPdf({
+          pdf,
+          canvas,
+          margin,
+          pageWidth,
+          pageHeight,
+          cursorY,
+        });
+      }
+
+      pdf.save(`${projectKey}-report-view-v${snapshotVersion}.pdf`);
+      toast.success("PDF exported from current report view (including charts).");
+    } catch (exportError) {
+      console.error(exportError);
+      const message = exportError?.message || "Failed to export PDF.";
+      toast.error(message);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const summary = report?.summary || {};
   const health = report?.healthScoreBreakdown || {};
   const snapshotVersion = report?.snapshot?.version;
   const snapshotGeneratedAt = report?.snapshot?.generatedAt;
+  const exportMarkdown = useMemo(() => buildExportMarkdown(report?.markdown || ""), [report?.markdown]);
+  const exportMarkdownSections = useMemo(() => splitMarkdownByTopSections(exportMarkdown), [exportMarkdown]);
   const taskStatusSeries = objectEntriesDesc(chartData?.taskStatus || {});
   const tasksPerMemberSeries = objectEntriesDesc(chartData?.tasksPerMember || {});
   const timeSpentPerMemberSeries = objectEntriesDesc(chartData?.timeSpentPerMember || {});
@@ -266,6 +412,15 @@ const ProjectReportPage = () => {
                 >
                   <FaRegImage />
                   Copy chart JSON
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  disabled={!report || loadingReport || loadingLatestReport || exportingPdf}
+                  className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {exportingPdf ? <FaSpinner className="animate-spin" /> : <FaFilePdf />}
+                  {exportingPdf ? "Exporting PDF..." : "Export PDF"}
                 </button>
               </div>
 
@@ -431,6 +586,90 @@ const ProjectReportPage = () => {
           </section>
         ) : null}
       </div>
+
+      {report ? (
+        <div ref={exportContentRef} className="fixed -left-[12000px] top-0 w-[1080px] bg-[#f8fbff] p-6">
+          <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+            <h2 className="text-xl font-bold text-slate-900">Generated report</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Snapshot v{snapshotVersion || "?"} - {formatDateTime(snapshotGeneratedAt)}
+            </p>
+          </div>
+
+          {exportMarkdownSections.map((section, index) => (
+            <div key={`export-section-${index}`} data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+              <article className="prose prose-slate max-w-none prose-headings:tracking-tight prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-table:table-auto prose-table:w-full prose-th:border prose-th:border-slate-300 prose-th:bg-slate-100 prose-th:px-3 prose-th:py-2 prose-td:border prose-td:border-slate-200 prose-td:px-3 prose-td:py-2">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    table: ({ ...props }) => <table className="w-full table-auto border-collapse" {...props} />,
+                    thead: ({ ...props }) => <thead className="bg-slate-100" {...props} />,
+                    th: ({ ...props }) => <th className="border border-slate-300 px-3 py-2 text-left text-sm font-semibold" {...props} />,
+                    td: ({ ...props }) => <td className="border border-slate-200 px-3 py-2 text-sm" {...props} />,
+                  }}
+                >
+                  {section}
+                </ReactMarkdown>
+              </article>
+            </div>
+          ))}
+
+          {chartData ? (
+            <>
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 className="text-base font-bold text-slate-900">Visual charts</h3>
+                <p className="mt-1 text-sm text-slate-500">Charts are exported from the current FE view.</p>
+              </div>
+
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <HorizontalBars
+                  title="Task status distribution"
+                  description="Snapshot of To Do, In Progress, and Done tasks."
+                  data={taskStatusSeries}
+                />
+              </div>
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <HorizontalBars title="Tasks per member" description="Top contributors by assigned task count." data={tasksPerMemberSeries} />
+              </div>
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <HorizontalBars
+                  title="Time spent per member"
+                  description="Top contributors by logged effort (hours)."
+                  data={timeSpentPerMemberSeries}
+                />
+              </div>
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <SprintBars
+                  title="Bugs per sprint"
+                  description="Bug counts by sprint from the generated dataset."
+                  items={chartData?.bugsPerSprint || []}
+                  valueKey="bugs"
+                  labelKey="sprint"
+                />
+              </div>
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <SprintBars
+                  title="Sprint completion trend"
+                  description="Completed tasks by sprint."
+                  items={chartData?.sprintProgress || []}
+                  valueKey="completedTasks"
+                  labelKey="sprint"
+                />
+              </div>
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 className="text-lg font-bold text-slate-900">Health breakdown</h3>
+                <p className="mt-2 text-sm text-slate-500">The backend combines these factor scores into the final project health score.</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <ReportMetricCard label="Completion" value={health.completionScore ?? "--"} valueColor="text-sky-700" />
+                  <ReportMetricCard label="Overdue" value={health.overdueScore ?? "--"} valueColor="text-amber-700" />
+                  <ReportMetricCard label="Estimation" value={health.estimationScore ?? "--"} valueColor="text-emerald-700" />
+                  <ReportMetricCard label="Bug density" value={health.bugScore ?? "--"} valueColor="text-rose-700" />
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 };
