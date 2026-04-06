@@ -1,6 +1,48 @@
 const projectReportService = require("../services/ProjectReportService");
 
 const ProjectReportController = {
+  getLatestProjectReportByProjectKey: async (req, res) => {
+    try {
+      const { projectKey } = req.params;
+      const report = await projectReportService.getLatestProjectReportByProject({
+        projectKey,
+        user: req.user,
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: report,
+      });
+    } catch (error) {
+      console.error("Error fetching latest project report by key:", error);
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message || "Failed to fetch latest project report",
+      });
+    }
+  },
+
+  getLatestProjectReportByProjectId: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const report = await projectReportService.getLatestProjectReportByProject({
+        projectId,
+        user: req.user,
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: report,
+      });
+    } catch (error) {
+      console.error("Error fetching latest project report by id:", error);
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message || "Failed to fetch latest project report",
+      });
+    }
+  },
+
   generateProjectReportByProjectKey: async (req, res) => {
     try {
       const { projectKey } = req.params;

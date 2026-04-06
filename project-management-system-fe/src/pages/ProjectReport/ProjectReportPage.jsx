@@ -8,6 +8,12 @@ import { getProjectByKey } from "../../services/projectService";
 import projectReportService from "../../services/projectReportService";
 
 const formatPercentage = (value) => (Number.isFinite(value) ? `${value.toFixed(1)}%` : "N/A");
+const formatDateTime = (value) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return date.toLocaleString();
+};
 
 const ReportMetricCard = ({ label, value, hint, valueColor = "text-slate-900" }) => (
   <div className="rounded-2xl border border-white/10 bg-white/80 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -102,8 +108,10 @@ const ProjectReportPage = () => {
 
   const [report, setReport] = useState(null);
   const [chartData, setChartData] = useState(null);
+  const [loadingLatestReport, setLoadingLatestReport] = useState(false);
   const [loadingReport, setLoadingReport] = useState(false);
   const [error, setError] = useState("");
+  const isCompletedProject = project?.status === "completed";
 
   useEffect(() => {
     if (!projectKey) return;
@@ -124,6 +132,31 @@ const ProjectReportPage = () => {
         setProjectLoading(false);
       });
   }, [projectKey]);
+
+  useEffect(() => {
+    if (!projectKey || projectLoading || !isCompletedProject) return;
+
+    const loadLatestReport = async () => {
+      setLoadingLatestReport(true);
+      try {
+        const response = await projectReportService.getLatestProjectReportByProjectKey(projectKey);
+        const latestReport = response?.data || null;
+        if (latestReport) {
+          setReport(latestReport);
+          setChartData(latestReport?.chartData || null);
+        } else {
+          setReport(null);
+          setChartData(null);
+        }
+      } catch (latestError) {
+        console.error(latestError);
+      } finally {
+        setLoadingLatestReport(false);
+      }
+    };
+
+    loadLatestReport();
+  }, [projectKey, projectLoading, isCompletedProject]);
 
   const handleGenerate = async () => {
     if (!projectKey) return;
@@ -163,9 +196,10 @@ const ProjectReportPage = () => {
     toast.success("Chart JSON copied to clipboard.");
   };
 
-  const isCompletedProject = project?.status === "completed";
   const summary = report?.summary || {};
   const health = report?.healthScoreBreakdown || {};
+  const snapshotVersion = report?.snapshot?.version;
+  const snapshotGeneratedAt = report?.snapshot?.generatedAt;
   const taskStatusSeries = objectEntriesDesc(chartData?.taskStatus || {});
   const tasksPerMemberSeries = objectEntriesDesc(chartData?.tasksPerMember || {});
   const timeSpentPerMemberSeries = objectEntriesDesc(chartData?.timeSpentPerMember || {});
@@ -234,6 +268,20 @@ const ProjectReportPage = () => {
                   Copy chart JSON
                 </button>
               </div>
+
+              {isCompletedProject && !loadingLatestReport ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  {report?.snapshot
+                    ? `Loaded latest saved report (v${snapshotVersion || "?"}) generated at ${formatDateTime(snapshotGeneratedAt)}.`
+                    : "No saved report snapshot yet. Click Generate to create version 1."}
+                </div>
+              ) : null}
+
+              {loadingLatestReport ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  Loading latest saved report snapshot...
+                </div>
+              ) : null}
 
               {!projectLoading && !isCompletedProject ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

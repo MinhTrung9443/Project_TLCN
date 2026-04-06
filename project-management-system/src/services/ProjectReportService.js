@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 const OpenAI = require("openai");
 const Project = require("../models/Project");
 const Task = require("../models/Task");
@@ -8,6 +9,7 @@ const TaskType = require("../models/TaskType");
 const Priority = require("../models/Priority");
 const Workflow = require("../models/Workflow");
 const TimeLog = require("../models/TimeLog");
+const ProjectReportSnapshot = require("../models/ProjectReportSnapshot");
 
 const reportAiApiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
 const reportAiBaseUrl = process.env.OPENAI_BASE_URL || undefined;
@@ -460,7 +462,7 @@ ${JSON.stringify(bugTaskFacts, null, 2)}`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.2,
+      temperature: 0.5,
       response_format: { type: "json_object" },
     });
 
@@ -507,6 +509,23 @@ ${JSON.stringify(bugTaskFacts, null, 2)}`;
 };
 
 const normalizeProjectKey = (projectKey) => (projectKey || "").toString().trim().toUpperCase();
+
+const buildDatasetFingerprint = (dataset) => {
+  const payload = {
+    projectId: toId(dataset.project?._id || dataset.project?.id),
+    projectUpdatedAt: dataset.project?.updatedAt || null,
+    taskCount: toArray(dataset.tasks).length,
+    sprintCount: toArray(dataset.sprints).length,
+    workflowCount: toArray(dataset.workflows).length,
+    userCount: toArray(dataset.users).length,
+    timeLogCount: toArray(dataset.timeLogs).length,
+    taskUpdateMarkers: toArray(dataset.tasks)
+      .map((task) => `${toId(task._id)}:${task.updatedAt || task.createdAt || ""}`)
+      .sort(),
+  };
+
+  return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+};
 
 const hasProjectAccess = (project, user) => {
   if (!user?._id) return false;
@@ -606,10 +625,84 @@ const buildProjectDatasetFromDb = async ({ projectKey, projectId, user }) => {
   };
 };
 
+const saveProjectReportSnapshot = async ({ dataset, report, user, generationMode = "manual", generationDurationMs = null }) => {
+  const projectId = dataset.project?._id;
+  const projectKey = normalizeProjectKey(dataset.project?.key || "");
+  const projectName = dataset.project?.name || "Unnamed Project";
+
+  const lastSnapshot = await ProjectReportSnapshot.findOne({ projectId }).sort({ version: -1 }).lean();
+  const nextVersion = (lastSnapshot?.version || 0) + 1;
+
+  await ProjectReportSnapshot.updateMany({ projectId, isLatest: true }, { isLatest: false });
+
+  const snapshot = await ProjectReportSnapshot.create({
+    projectId,
+    projectKey,
+    projectName,
+    version: nextVersion,
+    isLatest: true,
+    generatedBy: user?._id || null,
+    generationMode,
+    dataFingerprint: buildDatasetFingerprint(dataset),
+    overallScore: report?.overallScore ?? null,
+    evaluation: report?.evaluation ?? null,
+    confidence: report?.confidence ?? null,
+    reportPayload: report,
+    generatedAt: new Date(),
+    generationDetails: {
+      provider: reportAiApiKey ? "openai-compatible" : "none",
+      model: process.env.OPENAI_MODEL || null,
+      promptVersion: "project-report-v1",
+      durationMs: generationDurationMs,
+    },
+  });
+
+  return snapshot;
+};
+
+const getLatestProjectReportSnapshot = async ({ projectId }) => {
+  return await ProjectReportSnapshot.findOne({ projectId, isLatest: true }).lean();
+};
+
 const projectReportService = {
   generateProjectReportFromProject: async ({ projectKey, projectId, user }) => {
+    const startedAt = Date.now();
     const dataset = await buildProjectDatasetFromDb({ projectKey, projectId, user });
-    return await projectReportService.generateProjectReport(dataset);
+    const report = await projectReportService.generateProjectReport(dataset);
+    const snapshot = await saveProjectReportSnapshot({
+      dataset,
+      report,
+      user,
+      generationMode: "manual",
+      generationDurationMs: Date.now() - startedAt,
+    });
+
+    return {
+      ...report,
+      snapshot: {
+        id: toId(snapshot._id),
+        version: snapshot.version,
+        generatedAt: snapshot.generatedAt,
+        isLatest: true,
+      },
+    };
+  },
+
+  getLatestProjectReportByProject: async ({ projectKey, projectId, user }) => {
+    const dataset = await buildProjectDatasetFromDb({ projectKey, projectId, user });
+    const snapshot = await getLatestProjectReportSnapshot({ projectId: dataset.project._id });
+    if (!snapshot) return null;
+
+    return {
+      ...snapshot.reportPayload,
+      snapshot: {
+        id: toId(snapshot._id),
+        version: snapshot.version,
+        generatedAt: snapshot.generatedAt,
+        isLatest: snapshot.isLatest,
+        generationMode: snapshot.generationMode,
+      },
+    };
   },
 
   generateProjectReport: async (input = {}) => {

@@ -3,6 +3,30 @@ import apiClient from "./apiClient";
 const PROJECT_REPORT_TIMEOUT_MS = 0;
 
 const projectReportService = {
+  getLatestProjectReportByProjectKey: async (projectKey) => {
+    try {
+      const response = await apiClient.get(`/reports/project-report/key/${projectKey}/latest`, {
+        timeout: 30000,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error loading latest project report by key:", error);
+      throw error;
+    }
+  },
+
+  getLatestProjectReportByProjectId: async (projectId) => {
+    try {
+      const response = await apiClient.get(`/reports/project-report/id/${projectId}/latest`, {
+        timeout: 30000,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error loading latest project report by id:", error);
+      throw error;
+    }
+  },
+
   generateProjectReportByProjectKey: async (projectKey) => {
     try {
       const response = await apiClient.get(`/reports/project-report/key/${projectKey}`, {
