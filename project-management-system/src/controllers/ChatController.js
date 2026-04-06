@@ -1,4 +1,5 @@
 const chatService = require("../services/ChatService");
+const linkPreview = require('link-preview-js');
 
 const ChatController = {
   sendMessage: async (req, res) => {
@@ -105,6 +106,82 @@ const ChatController = {
       } catch (error) {
            res.status(500).json({ message: error.message });
       }
+  },
+
+  // --- PIN MESSAGE ---
+  pinMessage: async (req, res) => {
+    try {
+      const { messageId } = req.body;
+      const { conversationId } = req.params;
+      const conversation = await chatService.pinMessage(conversationId, messageId, req.user.id);
+      res.status(200).json(conversation);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  },
+
+  unpinMessage: async (req, res) => {
+    try {
+      const { messageId } = req.body;
+      const { conversationId } = req.params;
+      const conversation = await chatService.unpinMessage(conversationId, messageId, req.user.id);
+      res.status(200).json(conversation);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  },
+
+  // --- POLLS ---
+  createPoll: async (req, res) => {
+    try {
+      const { conversationId, question, options } = req.body;
+      const message = await chatService.createPoll(req.user.id, conversationId, question, options);
+      res.status(200).json(message);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  },
+
+  votePoll: async (req, res) => {
+    try {
+      const { messageId, optionId } = req.body;
+      const message = await chatService.votePoll(messageId, optionId, req.user.id);
+      res.status(200).json(message);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  },
+
+  // --- LINK PREVIEW & GIPHY ---
+  getLinkPreview: async (req, res) => {
+    try {
+      const { url } = req.body;
+      const data = await linkPreview.getLinkPreview(url);
+      res.status(200).json(data);
+    } catch (error) {
+      res.status(400).json({ message: "Could not generate link preview." });
+    }
+  },
+
+  sendGiphy: async (req, res) => {
+    try {
+      const { conversationId, giphyUrl } = req.body;
+      const message = await chatService.sendGiphy(req.user.id, conversationId, giphyUrl);
+      res.status(200).json(message);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  },
+
+  // --- DO NOT DISTURB ---
+  setDND: async (req, res) => {
+    try {
+      const { durationMinutes } = req.body; // e.g., 30, 60, 120, or 0 to turn off
+      const user = await chatService.setDND(req.user.id, durationMinutes);
+      res.status(200).json({ dndUntil: user.chatSettings.dndUntil });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   }
 };
 

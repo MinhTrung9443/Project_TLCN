@@ -359,11 +359,70 @@ export const ChatProvider = ({ children }) => {
       }
   };
 
+  const handlePinMessage = async (messageId) => {
+    try {
+        const updatedConv = await chatService.pinMessage(selectedConversation._id, messageId);
+        setSelectedConversation(updatedConv);
+        // Có thể emit socket ở đây nếu muốn real-time pin
+    } catch (error) {
+        console.error("Pin failed:", error);
+    }
+  };
+
+  const handleUnpinMessage = async (messageId) => {
+    try {
+        const updatedConv = await chatService.unpinMessage(selectedConversation._id, messageId);
+        setSelectedConversation(updatedConv);
+    } catch (error) {
+        console.error("Unpin failed:", error);
+    }
+  };
+
+  const handleCreatePoll = async (question, options) => {
+    try {
+        const data = await chatService.createPoll(selectedConversation._id, question, options);
+        if (socketService.socket) {
+            socketService.socket.emit("new message", data);
+        }
+        setMessages((prev) => [...prev, data]);
+        updateChatLists(data, selectedConversation._id);
+    } catch (error) {
+        console.error("Create poll failed:", error);
+    }
+  };
+
+  const handleVotePoll = async (messageId, optionId) => {
+    try {
+        const data = await chatService.votePoll(messageId, optionId);
+        // Cập nhật local
+        setMessages(prev => prev.map(m => m._id === messageId ? data : m));
+        // Nên emit socket để update real-time cho poll
+    } catch (error) {
+        console.error("Vote poll failed:", error);
+    }
+  };
+
+  const handleSendGiphy = async (giphyUrl) => {
+    try {
+        const data = await chatService.sendGiphy(selectedConversation._id, giphyUrl);
+        if (socketService.socket) {
+            socketService.socket.emit("new message", data);
+        }
+        setMessages((prev) => [...prev, data]);
+        updateChatLists(data, selectedConversation._id);
+    } catch (error) {
+        console.error("Send Giphy failed:", error);
+    }
+  };
+
   const loadMessages = async (conversationId) => {
     try {
       // Reset messages để tránh hiện tin cũ của chat trước
       setMessages([]);
 
+      const convDetails = await chatService.getDetails(conversationId);
+      setSelectedConversation(convDetails);
+      
       const msgs = await chatService.getMessages(conversationId);
       setMessages(msgs);
 
@@ -400,6 +459,11 @@ export const ChatProvider = ({ children }) => {
     markAsRead,
     recallMessage,
     sendReaction,
+    handlePinMessage,
+    handleUnpinMessage,
+    handleCreatePoll,
+    handleVotePoll,
+    handleSendGiphy,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

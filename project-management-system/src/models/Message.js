@@ -1,6 +1,24 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+const pollOptionSchema = new Schema({
+    text: { type: String, required: true },
+    voters: [{ type: Schema.Types.ObjectId, ref: "User" }]
+});
+
+const pollSchema = new Schema({
+    question: { type: String, required: true },
+    options: [pollOptionSchema]
+});
+
+const linkPreviewSchema = new Schema({
+    url: { type: String, required: true },
+    title: String,
+    description: String,
+    image: String,
+    siteName: String
+});
+
 const messageSchema = new Schema(
   {
     sender: {
@@ -17,6 +35,11 @@ const messageSchema = new Schema(
       ref: "Conversation",
       required: true,
     },
+    type: {
+      type: String,
+      enum: ["text", "poll", "giphy", "notification"],
+      default: "text"
+    },
     // Hỗ trợ lưu thông tin file đính kèm
     attachments: [
       {
@@ -26,6 +49,8 @@ const messageSchema = new Schema(
         publicId: String,
       },
     ],
+    poll: pollSchema,
+    linkPreview: linkPreviewSchema,
     readBy: [
       {
         type: Schema.Types.ObjectId,
@@ -46,7 +71,9 @@ const messageSchema = new Schema(
             userId: { type: Schema.Types.ObjectId, ref: "User" },
             type: { type: String }, // e.g., 'like', 'love', 'haha', 'wow', 'sad', 'angry'
         }
-    ]
+    ],
+    poll: pollSchema,
+    linkPreview: linkPreviewSchema
   },
   {
     timestamps: true,

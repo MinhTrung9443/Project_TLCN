@@ -71,6 +71,9 @@ const userSchema = new Schema(
         ref: "Group",
       },
     ],
+    chatSettings: {
+      dndUntil: { type: Date }, // Do Not Disturb until this time
+    },
   },
   {
     timestamps: true,
