@@ -41,6 +41,7 @@
     "react-scripts": "5.0.1",
     "react-select": "^5.10.2",
     "react-speech-recognition": "^3.10.0",
+    "react-speech-recognition": "^3.10.0",
     "react-toastify": "^11.0.5",
     "regenerator-runtime": "^0.14.1",
     "remark-gfm": "^4.0.1",
