@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { groupService } from "../services/groupService";
-import { useAuth } from "../contexts/AuthContext";
-import "../styles/pages/GroupListPage.css";
-
+import { toast } from "react-toastify";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import EmptyState from "../components/ui/EmptyState";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 import CreateEditGroupModal from "../components/group/CreateEditGroupModal";
 import ConfirmationModal from "../components/common/ConfirmationModal";
-import { toast } from "react-toastify";
+import { groupService } from "../services/groupService";
+import { useAuth } from "../contexts/AuthContext";
 
 const GroupListPage = () => {
   const { user } = useAuth();
@@ -104,7 +108,6 @@ const GroupListPage = () => {
     setIsConfirmOpen(true);
   };
 
-  // small animated counter component
   const CountUp = ({ end = 0, duration = 700 }) => {
     const [value, setValue] = useState(0);
     useEffect(() => {
@@ -121,7 +124,7 @@ const GroupListPage = () => {
       const rafId = requestAnimationFrame(step);
       return () => cancelAnimationFrame(rafId);
     }, [end, duration]);
-    return <span className="stat-number">{value}</span>;
+    return <span className="text-3xl font-bold text-neutral-900">{value}</span>;
   };
 
   const handleDeleteConfirm = async () => {
@@ -136,112 +139,142 @@ const GroupListPage = () => {
     }
   };
 
-  return (
-    <div className="group-page-container">
-      <div className="group-page-header">
-        <div className="header-content">
-          <h1 className="group-page-title">Groups</h1>
-        </div>
-        {isAdmin && (
-          <button onClick={handleOpenCreateModal} className="create-button">
-            <span className="plus-icon">+</span>
-            Create Group
-          </button>
-        )}
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <LoadingSpinner size="lg" text="Loading teams..." />
       </div>
+    );
+  }
 
-      {loading ? (
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading teams...</p>
-        </div>
-      ) : groups.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📁</div>
-          <h3>No teams found</h3>
-          <p>Create your first team to get started</p>
-        </div>
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Teams & Groups"
+        subtitle="Manage your organization teams and collaborate effectively"
+        icon="groups"
+        badge="Team Management"
+        actions={
+          isAdmin && (
+            <Button icon="add" onClick={handleOpenCreateModal}>
+              Create Team
+            </Button>
+          )
+        }
+      />
+
+      {groups.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon="groups"
+            title="No teams yet"
+            description="Create your first team to get started with collaboration."
+            action={
+              isAdmin && (
+                <Button icon="add" onClick={handleOpenCreateModal}>
+                  Create Team
+                </Button>
+              )
+            }
+          />
+        </Card>
       ) : (
-        <div className="groups-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <div key={group._id} className={`group-card ${group.status === "inactive" ? "inactive" : ""}`}>
-              <div className="group-card-header">
-                <div className="group-name-section">
-                  <h3 className="group-name">{group.name}</h3>
-                  <span className={`status-badge ${group.status}`}>
-                    <span className="status-dot" aria-hidden></span>
-                    {group.status === "active" ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                {isAdmin && (
-                  <div className="action-menu-container" ref={openActionMenu === group._id ? menuRef : null}>
-                    <button className="action-menu-trigger" onClick={() => handleToggleActionMenu(group._id)}>
-                      ⋮
-                    </button>
-                    {openActionMenu === group._id && (
-                      <div className="action-menu-dropdown">
-                        <button
-                          className="action-menu-item"
-                          onClick={() => {
-                            handleOpenEditModal(group);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <span className="menu-icon">✏️</span>
-                          Edit
-                        </button>
-                        <button
-                          className="action-menu-item"
-                          onClick={() => {
-                            handleToggleStatus(group);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <span className="menu-icon">{group.status === "active" ? "🔒" : "🔓"}</span>
-                          {group.status === "active" ? "Deactivate" : "Activate"}
-                        </button>
-                        <button
-                          className="action-menu-item delete"
-                          onClick={() => {
-                            handleOpenDeleteConfirm(group._id);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <span className="menu-icon">🗑️</span>
-                          Delete
-                        </button>
-                      </div>
-                    )}
+            <Card
+              key={group._id}
+              hoverable
+              className={`h-full ${group.status === "inactive" ? "opacity-60" : ""}`}
+              header={
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-neutral-900 truncate mb-2">{group.name}</h3>
+                    <Badge variant={group.status === "active" ? "success" : "neutral"} size="sm">
+                      {group.status === "active" ? "Active" : "Inactive"}
+                    </Badge>
                   </div>
-                )}
-              </div>
+                  {isAdmin && (
+                    <div className="relative" ref={openActionMenu === group._id ? menuRef : null}>
+                      <button
+                        className="p-2 text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
+                        onClick={() => handleToggleActionMenu(group._id)}
+                      >
+                        <span className="material-symbols-outlined">more_vert</span>
+                      </button>
+                      {openActionMenu === group._id && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2 z-10">
+                          <button
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                            onClick={() => {
+                              handleOpenEditModal(group);
+                              setOpenActionMenu(null);
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-base">edit</span>
+                            Edit
+                          </button>
+                          <button
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                            onClick={() => {
+                              handleToggleStatus(group);
+                              setOpenActionMenu(null);
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-base">{group.status === "active" ? "lock" : "lock_open"}</span>
+                            {group.status === "active" ? "Deactivate" : "Activate"}
+                          </button>
+                          <button
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-accent-600 hover:bg-accent-50"
+                            onClick={() => {
+                              handleOpenDeleteConfirm(group._id);
+                              setOpenActionMenu(null);
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              }
+            >
+              <div className="space-y-6">
+                <p className="text-sm text-neutral-600 leading-relaxed min-h-[40px]">{group.description || "No description provided"}</p>
 
-              <p className="group-description">{group.description || "No description provided"}</p>
-
-              <div className="group-stats">
-                <div className="stat-item">
-                  <div className="stat-icon active-icon">👥</div>
-                  <div className="stat-content">
-                    <CountUp end={group.totalActives || 0} />
-                    <span className="stat-label">Active Members</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-success-50 rounded-lg border border-success-100">
+                    <div className="w-10 h-10 rounded-lg bg-success-100 flex items-center justify-center text-success-600">
+                      <span className="material-symbols-outlined">group</span>
+                    </div>
+                    <div>
+                      <CountUp end={group.totalActives || 0} />
+                      <div className="text-xs text-neutral-600">Active</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-100">
+                    <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-600">
+                      <span className="material-symbols-outlined">person_off</span>
+                    </div>
+                    <div>
+                      <CountUp end={group.totalInactives || 0} />
+                      <div className="text-xs text-neutral-600">Inactive</div>
+                    </div>
                   </div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-icon inactive-icon">💤</div>
-                  <div className="stat-content">
-                    <CountUp end={group.totalInactives || 0} />
-                    <span className="stat-label">Inactive Members</span>
-                  </div>
-                </div>
-              </div>
 
-              <div className="group-card-footer">
-                <button className="view-members-btn" onClick={() => navigate(`/app/organization/group/${group._id}`)}>
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  icon="arrow_forward"
+                  iconPosition="right"
+                  onClick={() => navigate(`/app/organization/group/${group._id}`)}
+                >
                   View Members
-                  <span className="arrow-icon">→</span>
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

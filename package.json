@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@google/genai": "^1.45.0",
+    "ai": "^6.0.116",
+    "react-speech-recognition": "^4.0.1",
+    "regenerator-runtime": "^0.14.1"
+  }
+}

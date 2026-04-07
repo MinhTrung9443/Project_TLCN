@@ -1,5 +1,9 @@
 const Task = require("../models/Task");
 const Project = require("../models/Project");
+const Priority = require("../models/Priority");
+const TaskType = require("../models/TaskType");
+const Platform = require("../models/Platform");
+const Sprint = require("../models/Sprint");
 const mongoose = require("mongoose");
 const { logAction } = require("./AuditLogHelper");
 const { logHistory } = require("./HistoryService");
@@ -11,6 +15,7 @@ const Workflow = require("../models/Workflow");
 const cloudinary = require("../config/cloudinary");
 const path = require("path");
 const fs = require("fs");
+const ProjectDocument = require("../models/ProjectDocument");
 // Hàm lấy task theo projectId
 const getTasksByProjectKey = async (projectKey) => {
   // 1. Tìm project để lấy projectId
@@ -423,7 +428,7 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
 
-    // Validate startDate with project dates if provided
+    // Validate startDate with project dates (only if task has startDate)
     if (newStartDate) {
       if (project.startDate && new Date(newStartDate) < new Date(project.startDate)) {
         const error = new Error("Task start date cannot be before project start date");
@@ -437,7 +442,7 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
 
-    // Validate dueDate with project dates if provided
+    // Validate dueDate with project dates (only if task has dueDate)
     if (newDueDate) {
       if (project.startDate && new Date(newDueDate) < new Date(project.startDate)) {
         const error = new Error("Task due date cannot be before project start date");
@@ -451,30 +456,35 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
 
-    // If task has a sprint, validate dates with sprint dates
+    // If task has a sprint, validate dates with sprint dates (only if task has dates)
     if (originalTask.sprintId) {
       const Sprint = require("../models/Sprint");
       const sprint = await Sprint.findById(originalTask.sprintId);
       if (sprint) {
-        if (newStartDate && sprint.startDate && new Date(newStartDate) < new Date(sprint.startDate)) {
-          const error = new Error("Task start date cannot be before sprint start date");
-          error.statusCode = 400;
-          throw error;
+        if (newStartDate) {
+          if (sprint.startDate && new Date(newStartDate) < new Date(sprint.startDate)) {
+            const error = new Error("Task start date cannot be before sprint start date");
+            error.statusCode = 400;
+            throw error;
+          }
+          if (sprint.endDate && new Date(newStartDate) > new Date(sprint.endDate)) {
+            const error = new Error("Task start date cannot be after sprint end date");
+            error.statusCode = 400;
+            throw error;
+          }
         }
-        if (newStartDate && sprint.endDate && new Date(newStartDate) > new Date(sprint.endDate)) {
-          const error = new Error("Task start date cannot be after sprint end date");
-          error.statusCode = 400;
-          throw error;
-        }
-        if (newDueDate && sprint.startDate && new Date(newDueDate) < new Date(sprint.startDate)) {
-          const error = new Error("Task due date cannot be before sprint start date");
-          error.statusCode = 400;
-          throw error;
-        }
-        if (newDueDate && sprint.endDate && new Date(newDueDate) > new Date(sprint.endDate)) {
-          const error = new Error("Task due date cannot be after sprint end date");
-          error.statusCode = 400;
-          throw error;
+
+        if (newDueDate) {
+          if (sprint.startDate && new Date(newDueDate) < new Date(sprint.startDate)) {
+            const error = new Error("Task due date cannot be before sprint start date");
+            error.statusCode = 400;
+            throw error;
+          }
+          if (sprint.endDate && new Date(newDueDate) > new Date(sprint.endDate)) {
+            const error = new Error("Task due date cannot be after sprint end date");
+            error.statusCode = 400;
+            throw error;
+          }
         }
       }
     }
@@ -555,7 +565,7 @@ const updateTask = async (taskId, updateData, userId) => {
     const workflow = await Workflow.findOne({ projectId: projectIdObj._id });
     if (workflow && workflow.statuses) {
       const statusObject = workflow.statuses.find(
-        (s) => s._id.toString() === populatedTask.statusId._id?.toString() || s._id.toString() === populatedTask.statusId.toString()
+        (s) => s._id.toString() === populatedTask.statusId._id?.toString() || s._id.toString() === populatedTask.statusId.toString(),
       );
       if (statusObject) {
         populatedTask.statusId = statusObject;
@@ -573,10 +583,24 @@ const updateTask = async (taskId, updateData, userId) => {
   });
 
   try {
-    if (originalTask.assigneeId && originalTask.assigneeId.toString() !== userId.toString()) {
-      const changer = await User.findById(userId);
-      const changerName = changer?.fullname || "Someone";
+    const changer = await User.findById(userId);
+    const changerName = changer?.fullname || "Someone";
 
+    const oldAssigneeId = originalTask.assigneeId?.toString?.() || null;
+    const newAssigneeId = updateData.assigneeId?.toString?.() || null;
+
+    if (newAssigneeId && newAssigneeId !== oldAssigneeId && newAssigneeId !== userId.toString()) {
+      await notificationService.notifyTaskAssigned({
+        taskId: updatedTask._id,
+        taskKey: updatedTask.key,
+        taskName: updatedTask.name,
+        assigneeId: newAssigneeId,
+        assignerName: changerName,
+        projectKey: populatedTask?.projectId?.key || "",
+      });
+    }
+
+    if (originalTask.assigneeId && originalTask.assigneeId.toString() !== userId.toString()) {
       const changedFields = [];
       const fieldNames = {
         name: "name",
@@ -603,8 +627,12 @@ const updateTask = async (taskId, updateData, userId) => {
           title: "Task Updated",
           message: `${changerName} updated ${changesText} of "${updatedTask.name}"`,
           type: "task_updated",
-          relatedId: updatedTask._id,
+          relatedId: updatedTask.key || updatedTask._id,
           relatedType: "Task",
+          actorId: userId,
+          actorName: changerName,
+          metadata: { taskName: updatedTask.name, changedFields },
+          enableGrouping: true,
         });
       }
     }
@@ -657,54 +685,78 @@ const changeTaskSprint = async (taskId, sprintId, userId) => {
   if (sprintId) {
     const Sprint = require("../models/Sprint");
     sprint = await Sprint.findById(sprintId);
-    if (sprint && sprint.startDate) {
-      updateData.startDate = sprint.startDate;
+
+    // Chỉ set startDate từ sprint nếu task chưa có startDate VÀ sprint startDate hợp lệ với project
+    if (sprint && sprint.startDate && !task.startDate) {
+      // Kiểm tra sprint startDate có hợp lệ với project không
+      const isValidWithProject =
+        (!project.startDate || new Date(sprint.startDate) >= new Date(project.startDate)) &&
+        (!project.endDate || new Date(sprint.startDate) <= new Date(project.endDate));
+
+      // Chỉ set nếu hợp lệ, nếu không thì bỏ qua (không báo lỗi, chỉ set sprintId)
+      if (isValidWithProject) {
+        updateData.startDate = sprint.startDate;
+      }
     }
   }
 
-  // Validate ngày: task phải nằm trong khoảng ngày của project
-  if (project.startDate && task.startDate && new Date(task.startDate) < new Date(project.startDate)) {
-    const error = new Error("Task start date cannot be before project start date");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (project.endDate && task.startDate && new Date(task.startDate) > new Date(project.endDate)) {
-    const error = new Error("Task start date cannot be after project end date");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (project.startDate && task.dueDate && new Date(task.dueDate) < new Date(project.startDate)) {
-    const error = new Error("Task due date cannot be before project start date");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (project.endDate && task.dueDate && new Date(task.dueDate) > new Date(project.endDate)) {
-    const error = new Error("Task due date cannot be after project end date");
-    error.statusCode = 400;
-    throw error;
+  // Xác định giá trị ngày cuối cùng sẽ được sử dụng (sau khi update)
+  const finalStartDate = updateData.startDate !== undefined ? updateData.startDate : task.startDate;
+  const finalDueDate = task.dueDate; // dueDate không thay đổi trong hàm này
+
+  // Validate ngày: chỉ validate nếu task có ngày (sử dụng giá trị SAU khi update)
+  if (finalStartDate) {
+    if (project.startDate && new Date(finalStartDate) < new Date(project.startDate)) {
+      const error = new Error("Task start date cannot be before project start date");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (project.endDate && new Date(finalStartDate) > new Date(project.endDate)) {
+      const error = new Error("Task start date cannot be after project end date");
+      error.statusCode = 400;
+      throw error;
+    }
   }
 
-  // Nếu có sprint, validate ngày task phải nằm trong khoảng sprint
+  if (finalDueDate) {
+    if (project.startDate && new Date(finalDueDate) < new Date(project.startDate)) {
+      const error = new Error("Task due date cannot be before project start date");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (project.endDate && new Date(finalDueDate) > new Date(project.endDate)) {
+      const error = new Error("Task due date cannot be after project end date");
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  // Nếu có sprint, validate ngày task phải nằm trong khoảng sprint (chỉ khi task có ngày)
   if (sprint) {
-    if (sprint.startDate && task.startDate && new Date(task.startDate) < new Date(sprint.startDate)) {
-      const error = new Error("Task start date cannot be before sprint start date");
-      error.statusCode = 400;
-      throw error;
+    if (finalStartDate) {
+      if (sprint.startDate && new Date(finalStartDate) < new Date(sprint.startDate)) {
+        const error = new Error("Task start date cannot be before sprint start date");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (sprint.endDate && new Date(finalStartDate) > new Date(sprint.endDate)) {
+        const error = new Error("Task start date cannot be after sprint end date");
+        error.statusCode = 400;
+        throw error;
+      }
     }
-    if (sprint.endDate && task.startDate && new Date(task.startDate) > new Date(sprint.endDate)) {
-      const error = new Error("Task start date cannot be after sprint end date");
-      error.statusCode = 400;
-      throw error;
-    }
-    if (sprint.startDate && task.dueDate && new Date(task.dueDate) < new Date(sprint.startDate)) {
-      const error = new Error("Task due date cannot be before sprint start date");
-      error.statusCode = 400;
-      throw error;
-    }
-    if (sprint.endDate && task.dueDate && new Date(task.dueDate) > new Date(sprint.endDate)) {
-      const error = new Error("Task due date cannot be after sprint end date");
-      error.statusCode = 400;
-      throw error;
+
+    if (finalDueDate) {
+      if (sprint.startDate && new Date(finalDueDate) < new Date(sprint.startDate)) {
+        const error = new Error("Task due date cannot be before sprint start date");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (sprint.endDate && new Date(finalDueDate) > new Date(sprint.endDate)) {
+        const error = new Error("Task due date cannot be after sprint end date");
+        error.statusCode = 400;
+        throw error;
+      }
     }
   }
 
@@ -738,7 +790,7 @@ const updateTaskStatus = async (taskId, statusId, userId) => {
   console.log("Workflow transitions:", workflow.transitions);
 
   const isValidTransition = workflow.transitions.some(
-    (t) => t.from.toString() === currentStatusId.toString() && t.to.toString() === statusId.toString()
+    (t) => t.from.toString() === currentStatusId.toString() && t.to.toString() === statusId.toString(),
   );
 
   console.log("Is valid transition:", isValidTransition);
@@ -820,9 +872,150 @@ const deleteTask = async (taskId, userId) => {
   return { message: "Task deleted successfully" };
 };
 const getTaskHistory = async (taskId) => {
-  return TaskHistory.find({ taskId: taskId, userId: { $exists: true, $ne: null } })
+  const historyRecords = await TaskHistory.find({ taskId: taskId, userId: { $exists: true, $ne: null } })
     .populate("userId", "fullname avatar")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!historyRecords.length) {
+    return historyRecords;
+  }
+
+  const fieldConfig = {
+    assigneeId: "user",
+    reporterId: "user",
+    createdById: "user",
+    priorityId: "priority",
+    taskTypeId: "taskType",
+    platformId: "platform",
+    sprintId: "sprint",
+    statusId: "status",
+  };
+
+  const isObjectIdLike = (value) => {
+    if (!value) return false;
+    if (typeof value === "object" && value._id) {
+      return /^[a-f\d]{24}$/i.test(String(value._id));
+    }
+    return typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
+  };
+
+  const toObjectIdString = (value) => {
+    if (!value) return null;
+    if (typeof value === "object" && value._id) return String(value._id);
+    return String(value);
+  };
+
+  const idsByType = {
+    user: new Set(),
+    priority: new Set(),
+    taskType: new Set(),
+    platform: new Set(),
+    sprint: new Set(),
+    status: new Set(),
+  };
+
+  historyRecords.forEach((item) => {
+    const mappedType = fieldConfig[item.fieldName];
+    if (!mappedType) return;
+
+    [item.oldValue, item.newValue].forEach((value) => {
+      if (!isObjectIdLike(value)) return;
+      idsByType[mappedType].add(toObjectIdString(value));
+    });
+  });
+
+  const [users, priorities, taskTypes, platforms, sprints, taskWithProject] = await Promise.all([
+    idsByType.user.size
+      ? User.find({ _id: { $in: Array.from(idsByType.user) } })
+          .select("fullname")
+          .lean()
+      : [],
+    idsByType.priority.size
+      ? Priority.find({ _id: { $in: Array.from(idsByType.priority) } })
+          .select("name")
+          .lean()
+      : [],
+    idsByType.taskType.size
+      ? TaskType.find({ _id: { $in: Array.from(idsByType.taskType) } })
+          .select("name")
+          .lean()
+      : [],
+    idsByType.platform.size
+      ? Platform.find({ _id: { $in: Array.from(idsByType.platform) } })
+          .select("name")
+          .lean()
+      : [],
+    idsByType.sprint.size
+      ? Sprint.find({ _id: { $in: Array.from(idsByType.sprint) } })
+          .select("name")
+          .lean()
+      : [],
+    Task.findById(taskId).select("projectId").lean(),
+  ]);
+
+  const userNameMap = new Map(users.map((item) => [item._id.toString(), item.fullname]));
+  const priorityNameMap = new Map(priorities.map((item) => [item._id.toString(), item.name]));
+  const taskTypeNameMap = new Map(taskTypes.map((item) => [item._id.toString(), item.name]));
+  const platformNameMap = new Map(platforms.map((item) => [item._id.toString(), item.name]));
+  const sprintNameMap = new Map(sprints.map((item) => [item._id.toString(), item.name]));
+
+  const statusNameMap = new Map();
+  if (taskWithProject?.projectId) {
+    const workflow = await Workflow.findOne({ projectId: taskWithProject.projectId }).select("statuses").lean();
+    if (workflow?.statuses?.length) {
+      workflow.statuses.forEach((status) => {
+        statusNameMap.set(status._id.toString(), status.name);
+      });
+    }
+  }
+
+  const mapValue = (fieldName, value) => {
+    if (value === null || value === undefined || value === "") return null;
+
+    if (typeof value === "object") {
+      if (value.fullname) return value.fullname;
+      if (value.name) return value.name;
+      if (value._id) {
+        const objectIdValue = String(value._id);
+        if (fieldName === "assigneeId" || fieldName === "reporterId" || fieldName === "createdById")
+          return userNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "priorityId") return priorityNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "taskTypeId") return taskTypeNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "platformId") return platformNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "sprintId") return sprintNameMap.get(objectIdValue) || objectIdValue;
+        if (fieldName === "statusId") return statusNameMap.get(objectIdValue) || objectIdValue;
+      }
+      return String(value);
+    }
+
+    if (fieldName === "assigneeId" || fieldName === "reporterId" || fieldName === "createdById") {
+      return userNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "priorityId") {
+      return priorityNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "taskTypeId") {
+      return taskTypeNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "platformId") {
+      return platformNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "sprintId") {
+      return sprintNameMap.get(String(value)) || String(value);
+    }
+    if (fieldName === "statusId") {
+      return statusNameMap.get(String(value)) || String(value);
+    }
+
+    return String(value);
+  };
+
+  return historyRecords.map((item) => ({
+    ...item,
+    oldValue: mapValue(item.fieldName, item.oldValue),
+    newValue: mapValue(item.fieldName, item.newValue),
+  }));
 };
 
 const addAttachment = async (taskId, file, userId) => {
@@ -852,9 +1045,124 @@ const addAttachment = async (taskId, file, userId) => {
 
   const updatedTask = await task.save();
 
+  // Create ProjectDocument entry for task attachment (share with PM + Leader)
+  try {
+    const project = await Project.findById(task.projectId).lean();
+    if (project) {
+      const sharedWith = project.members.filter((m) => m.role === "PROJECT_MANAGER" || m.role === "LEADER").map((m) => m.userId);
+
+      await ProjectDocument.create({
+        projectId: task.projectId,
+        filename: newAttachment.filename,
+        url: newAttachment.url,
+        public_id: newAttachment.public_id,
+        category: "other",
+        version: "v1",
+        tags: [],
+        sourceType: "task",
+        parent: {
+          taskId: task._id,
+          taskKey: task.key,
+          taskName: task.name,
+        },
+        uploadedBy: userId,
+        sharedWith,
+        uploadedAt: new Date(),
+      });
+    }
+  } catch (docError) {
+    console.error("[TaskService] Failed to create ProjectDocument:", docError.message);
+  }
+
   await logHistory(taskId, userId, "Attachment", null, `Đã thêm tệp đính kèm: ${file.originalname}`, "UPDATE");
 
   // Dùng lại hàm populate của bạn để trả về dữ liệu đầy đủ
+  return populateFullTask(Task.findById(updatedTask._id));
+};
+
+const addAttachmentsFromDocuments = async (taskId, documentIds, userId) => {
+  if (!Array.isArray(documentIds) || documentIds.length === 0) {
+    const error = new Error("No document selected");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const task = await Task.findById(taskId);
+  if (!task) {
+    const error = new Error("Không tìm thấy công việc");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const docs = await ProjectDocument.find({
+    _id: { $in: documentIds },
+    projectId: task.projectId,
+  }).lean();
+
+  const userIdStr = userId.toString();
+  const allowedDocs = docs.filter((doc) => {
+    const uploadedBy = doc.uploadedBy?.toString?.() || doc.uploadedBy?.toString?.();
+    const sharedIds = (doc.sharedWith || []).map((id) => id.toString());
+    return uploadedBy === userIdStr || sharedIds.includes(userIdStr);
+  });
+
+  if (allowedDocs.length === 0) {
+    const error = new Error("You do not have access to selected documents");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const existingKeys = new Set((task.attachments || []).map((att) => att.public_id || att.url));
+  const newAttachments = allowedDocs
+    .map((doc) => ({
+      filename: doc.filename,
+      url: doc.url,
+      public_id: doc.public_id || doc._id.toString(),
+      uploadedAt: doc.uploadedAt || new Date(),
+    }))
+    .filter((att) => !existingKeys.has(att.public_id || att.url));
+
+  if (newAttachments.length === 0) {
+    const error = new Error("Selected documents are already attached");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  task.attachments.push(...newAttachments);
+  const updatedTask = await task.save();
+
+  // Create ProjectDocument entries for task attachments
+  try {
+    const project = await Project.findById(task.projectId).lean();
+    if (project) {
+      const sharedWith = project.members.filter((m) => m.role === "PROJECT_MANAGER" || m.role === "LEADER").map((m) => m.userId);
+      await ProjectDocument.insertMany(
+        newAttachments.map((att) => ({
+          projectId: task.projectId,
+          filename: att.filename,
+          url: att.url,
+          public_id: att.public_id,
+          category: "other",
+          version: "v1",
+          tags: [],
+          sourceType: "task",
+          parent: {
+            taskId: task._id,
+            taskKey: task.key,
+            taskName: task.name,
+          },
+          uploadedBy: userId,
+          sharedWith,
+          uploadedAt: new Date(),
+        })),
+      );
+    }
+  } catch (docError) {
+    console.error("[TaskService] Failed to create ProjectDocument from doc attach:", docError.message);
+  }
+
+  await logHistory(taskId, userId, "Attachment", null, `Đã đính kèm tệp từ tài liệu dự án`, "UPDATE");
+
   return populateFullTask(Task.findById(updatedTask._id));
 };
 
@@ -1095,7 +1403,7 @@ const removeAssigneeFromIncompleteTasks = async (userId) => {
       },
       {
         $set: { assigneeId: null }, // Đưa về Unassigned
-      }
+      },
     );
 
     console.log(`Đã gỡ User ${userId} khỏi ${result.modifiedCount} task chưa hoàn thành.`);
@@ -1114,6 +1422,7 @@ module.exports = {
   deleteTask,
   getTaskHistory,
   addAttachment,
+  addAttachmentsFromDocuments,
   deleteAttachment,
   linkTask,
   unlinkTask,

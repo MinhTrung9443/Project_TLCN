@@ -31,30 +31,34 @@ export const searchTasks = (params) => {
 };
 
 export const addAttachment = async (taskId, file) => {
-    const formData = new FormData();
-    formData.append('attachmentFile', file); // 'attachment' phải khớp với tên field trong upload.single() ở backend
+  const formData = new FormData();
+  formData.append("attachmentFile", file); // 'attachment' phải khớp với tên field trong upload.single() ở backend
 
-    const config = {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    };
+  const config = {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  };
 
-    const response = await apiClient.post(`/tasks/${taskId}/attachments`, formData, config);
-    return response.data;
+  const response = await apiClient.post(`/tasks/${taskId}/attachments`, formData, config);
+  return response.data;
+};
+export const addAttachmentFromDocument = async (taskId, documentIds) => {
+  const response = await apiClient.post(`/tasks/${taskId}/attachments/from-doc`, { documentIds });
+  return response.data;
 };
 export const deleteAttachment = async (taskId, attachmentId) => {
-    const response = await apiClient.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
-    return response.data;
+  const response = await apiClient.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
+  return response.data;
 };
 export const linkTask = async (taskId, targetTaskId, linkType) => {
-    const response = await apiClient.post(`/tasks/${taskId}/links`, { targetTaskId, linkType });
-    return response.data;
+  const response = await apiClient.post(`/tasks/${taskId}/links`, { targetTaskId, linkType });
+  return response.data;
 };
 
 export const unlinkTask = async (taskId, linkId) => {
-    const response = await apiClient.delete(`/tasks/${taskId}/links/${linkId}`);
-    return response.data;
+  const response = await apiClient.delete(`/tasks/${taskId}/links/${linkId}`);
+  return response.data;
 };
 export const getTaskByKey = (taskKey) => {
   return apiClient.get(`/tasks/key/${taskKey}`);

@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
-import "../styles/pages/MyProfilePage.css";
+import { useAuth } from "../contexts/AuthContext";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Badge from "../components/ui/Badge";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 import userService from "../services/userService";
 
 const MyProfilePage = () => {
@@ -19,6 +24,7 @@ const MyProfilePage = () => {
 
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  
   useEffect(() => {
     if (user) {
       const userData = {
@@ -43,23 +49,15 @@ const MyProfilePage = () => {
       [name]: value,
     }));
   };
-  const handleStatusToggle = (e) => {
-    const newStatus = e.target.checked ? "active" : "inactive";
-    setFormData((prevState) => ({
-      ...prevState,
-      status: newStatus,
-    }));
-  };
 
   const handleAvatarClick = () => {
-    fileInputRef.current.click(); // Kích hoạt input ẩn
+    fileInputRef.current.click();
   };
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file ảnh
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file.");
       return;
@@ -67,11 +65,8 @@ const MyProfilePage = () => {
 
     setIsUploading(true);
     try {
-      // Gọi API upload file (đã setup ở các bước trước)
       const response = await userService.uploadFile(file);
 
-      // Cập nhật URL ảnh vào formData
-      // Lưu ý: Lúc này ảnh mới hiển thị trên UI, nhưng CHƯA LƯU vào database user cho đến khi bấm nút SAVE
       setFormData((prev) => ({
         ...prev,
         avatar: response.imageUrl,
@@ -92,28 +87,23 @@ const MyProfilePage = () => {
 
     try {
       const response = await userService.updateProfile(formData);
-
-      const updatedUser = response.user || response.data?.user; // Tùy cấu trúc trả về của backend
-
+      const updatedUser = response.user || response.data?.user;
       const token = localStorage.getItem("token");
       login(updatedUser, token);
-
       toast.success("Profile updated successfully!");
-
-      // Cập nhật initialData sau khi save thành công
       setInitialData(formData);
     } catch (error) {
       console.error("Failed to update profile:", error);
       toast.error(error.response?.data?.message || "Failed to update profile.");
     }
   };
+  
   const hasChanges = () => {
     if (!initialData) return false;
     return JSON.stringify(formData) !== JSON.stringify(initialData);
   };
 
   const handleCancel = () => {
-    // Reset về dữ liệu ban đầu từ context user
     if (initialData) {
       setFormData(initialData);
     }
@@ -121,106 +111,167 @@ const MyProfilePage = () => {
   };
 
   if (loading) {
-    return <div className="loading-container">Loading profile...</div>;
+    return (
+      <div className="min-h-[360px] flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading profile..." />
+      </div>
+    );
   }
 
-  return (
-    <div className="profile-page-container">
-      <div className="profile-header">
-        <div className="header-left">
-          <h1 className="profile-title">My Profile</h1>
-          <p className="profile-sub">Manage your personal details and account settings</p>
+  // --- COMPONENT MỚI: DẠNG NGANG (HORIZONTAL ROW) ---
+  const InfoRow = ({ icon, label, children }) => (
+    <div className="flex items-center justify-between p-3 rounded-lg border border-neutral-100 bg-white hover:border-neutral-200 transition-colors">
+      {/* Bên trái: Icon + Tên thuộc tính */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-neutral-50 text-neutral-500 flex items-center justify-center shrink-0 border border-neutral-100">
+          <span className="material-symbols-outlined text-[20px]">{icon}</span>
         </div>
+        <span className="text-sm font-medium text-neutral-500 uppercase tracking-wide">{label}</span>
       </div>
-      <form onSubmit={handleSubmit} className="profile-form">
-        <div className="profile-main-content">
-          <div className="profile-tabs">
-            <span className="tab-item active">Personal</span>
-          </div>
+      
+      {/* Bên phải: Giá trị (children) */}
+      <div className="text-right font-semibold text-neutral-900 pl-4">
+        {children}
+      </div>
+    </div>
+  );
 
-          <div className="form-section">
-            <h3 className="section-title">Basic Info</h3>
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="fullname" className="required">
-                  Full Name
-                </label>
-                <input type="text" id="fullname" name="fullname" value={formData.fullname} onChange={handleChange} required />
+  return (
+    <div className="min-h-screen bg-neutral-50">
+      <PageHeader title="My Profile" subtitle="Manage your personal details and account preferences" icon="account_circle" badge="Account settings" />
+
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          
+          {/* --- SIDEBAR CARD --- */}
+          <Card className="lg:col-span-2 h-fit" padding={false}>
+            <div className="p-6">
+              {/* Avatar Section */}
+              <div className="flex flex-col items-center pb-8 mb-6 border-b border-neutral-100">
+                <div className="relative group cursor-pointer" onClick={!isUploading ? handleAvatarClick : undefined}>
+                  <div className="w-28 h-28 rounded-full border-[3px] border-white shadow-md overflow-hidden bg-primary-100 text-primary-600 flex items-center justify-center relative">
+                    {formData.avatar ? (
+                      <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    ) : (
+                      <span className="text-4xl font-semibold">{user.fullname ? user.fullname.charAt(0).toUpperCase() : "U"}</span>
+                    )}
+                    
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                       <span className="material-symbols-outlined text-white text-2xl">photo_camera</span>
+                    </div>
+
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <h3 className="mt-3 text-lg font-bold text-neutral-900 text-center">{user?.fullname}</h3>
+                <p className="text-sm text-neutral-500 text-center">@{user?.username}</p>
+
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-4"
+                  icon="cloud_upload"
+                  onClick={handleAvatarClick}
+                  disabled={isUploading}
+                >
+                  Change Photo
+                </Button>
               </div>
-              <div className="form-group">
-                <label htmlFor="username" className="required">
-                  Username
-                </label>
-                <input type="text" id="username" name="username" value={formData.username} onChange={handleChange} required disabled />
-              </div>
-              <div className="form-group">
-                <label htmlFor="email" className="required">
-                  Email
-                </label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required disabled />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phone">Phone</label>
-                <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} />
-              </div>
-              <div className="form-group">
-                <label htmlFor="gender">Gender</label>
-                <select id="gender" name="gender" value={formData.gender} onChange={handleChange}>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="status">Status</label>
-                <label className="toggle-switch">
-                  <input type="checkbox" id="status" name="status" checked={formData.status === "active"} onChange={handleStatusToggle} />
-                  <span className="slider"></span>
-                </label>
+
+              {/* Info List Section - Đã sửa thành hàng ngang */}
+              <div className="space-y-3">
+                <InfoRow icon="badge" label="Role">
+                  {user?.role || "Member"}
+                </InfoRow>
+                
+                <InfoRow icon="mail" label="Email">
+                   {/* Dùng break-all hoặc truncate nếu email quá dài */}
+                   <span className="break-all text-sm">{user?.email}</span>
+                </InfoRow>
+                
+                <InfoRow icon="verified" label="Status">
+                  <div className="flex justify-end">
+                    <Badge
+                        variant={formData.status === "active" ? "success" : "neutral"}
+                        size="sm"
+                        icon={formData.status === "active" ? "check" : "pause"}
+                      >
+                        {formData.status === "active" ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </InfoRow>
               </div>
             </div>
-          </div>
-          <div className="form-actions">
-            <button type="button" className="btn-cancel" onClick={handleCancel} disabled={!hasChanges()}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-save" disabled={!hasChanges()}>
-              Save
-            </button>
-          </div>
-        </div>
+          </Card>
 
-        <div className="profile-sidebar">
-          <div className="avatar-section">
-            {/* Logic hiển thị Avatar: Nếu có link ảnh thì hiện ảnh, không thì hiện chữ cái */}
-            <div className="avatar-display">
-              {formData.avatar ? (
-                <img src={formData.avatar} alt="Avatar" className="avatar-img-preview" />
-              ) : user.fullname ? (
-                user.fullname.charAt(0).toUpperCase()
-              ) : (
-                "U"
-              )}
+          {/* --- MAIN CONTENT (Form) --- */}
+          <Card className="lg:col-span-3">
+            <div className="flex flex-col gap-2 pb-4 border-b border-neutral-200 mb-6">
+              <div className="flex items-center gap-2 text-neutral-900 font-semibold text-lg">
+                <span className="material-symbols-outlined">info</span>
+                Basic information
+              </div>
+              <p className="text-sm text-neutral-600">Update your personal details and contact information.</p>
             </div>
 
-            {/* Input ẩn để chọn file */}
-            <input type="file" ref={fileInputRef} style={{ display: "none" }} accept="image/*" onChange={handleFileChange} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="Full name"
+                name="fullname"
+                value={formData.fullname}
+                onChange={handleChange}
+                required
+                placeholder="Enter your full name"
+                icon="person"
+              />
+              <Input label="Username" name="username" value={formData.username} onChange={handleChange} disabled icon="alternate_email" />
+              <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} disabled icon="mail" />
+              <Input
+                label="Phone number"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Enter your phone number"
+                icon="call"
+              />
 
-            {/* Nút bấm kích hoạt upload */}
-            <button type="button" className="btn-upload-avatar" onClick={handleAvatarClick} disabled={isUploading}>
-              {isUploading ? "Uploading..." : "Upload Avatar"}
-            </button>
-            <div className="sidebar-info">
-              <div className="info-row">
-                <div className="info-label">Role</div>
-                <div className="info-value">{user?.role || "Member"}</div>
-              </div>
-              <div className="info-row">
-                <div className="info-label">Email</div>
-                <div className="info-value small">{user?.email}</div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Gender</label>
+                <div className="relative">
+                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                      <span className="material-symbols-outlined text-[20px]">wc</span>
+                   </div>
+                   <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-neutral-300 pl-10 pr-4 py-2.5 text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none"
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
+
+            <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-neutral-200">
+              <Button type="button" variant="secondary" icon="close" onClick={handleCancel} disabled={!hasChanges()}>
+                Cancel
+              </Button>
+              <Button type="submit" icon="save" disabled={!hasChanges()}>
+                Save changes
+              </Button>
+            </div>
+          </Card>
         </div>
       </form>
     </div>

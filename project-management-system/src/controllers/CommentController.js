@@ -1,4 +1,7 @@
 const commentService = require("../services/CommentService");
+const Task = require("../models/Task");
+const Project = require("../models/Project");
+const ProjectDocument = require("../models/ProjectDocument");
 
 const handleGetComments = async (req, res) => {
   try {
@@ -28,14 +31,83 @@ const handleCreateComment = async (req, res) => {
         }))
       : [];
 
+    // Xử lý attachments từ Project Documents (documentIds)
+    const rawDocumentIds = req.body.documentIds;
+    const documentIds = Array.isArray(rawDocumentIds) ? rawDocumentIds : rawDocumentIds ? [rawDocumentIds] : [];
+
+    if (documentIds.length > 0) {
+      const task = await Task.findById(taskId).lean();
+      const projectId = task?.projectId;
+
+      const docs = await ProjectDocument.find({
+        _id: { $in: documentIds },
+        projectId: projectId,
+      }).lean();
+
+      const userIdStr = userId.toString();
+      const allowedDocs = docs.filter((doc) => {
+        const uploadedBy = doc.uploadedBy?.toString?.() || doc.uploadedBy?.toString?.();
+        const sharedIds = (doc.sharedWith || []).map((id) => id.toString());
+        return uploadedBy === userIdStr || sharedIds.includes(userIdStr);
+      });
+
+      const existingKeys = new Set(attachments.map((att) => att.public_id || att.url));
+      allowedDocs.forEach((doc) => {
+        const publicId = doc.public_id || doc._id.toString();
+        if (existingKeys.has(publicId) || existingKeys.has(doc.url)) return;
+        attachments.push({
+          filename: doc.filename,
+          url: doc.url,
+          public_id: publicId,
+        });
+        existingKeys.add(publicId);
+      });
+    }
+
     const comment = await commentService.createComment(
       {
         ...req.body,
         taskId: taskId,
         attachments: attachments,
       },
-      userId
+      userId,
     );
+
+    // Create ProjectDocument entries for comment attachments (share with PM + Leader)
+    if (attachments.length > 0) {
+      try {
+        const task = await Task.findById(taskId).lean();
+        const project = task ? await Project.findById(task.projectId).lean() : null;
+
+        if (task && project) {
+          const sharedWith = project.members.filter((m) => m.role === "PROJECT_MANAGER" || m.role === "LEADER").map((m) => m.userId);
+
+          await ProjectDocument.insertMany(
+            attachments.map((att) => ({
+              projectId: task.projectId,
+              filename: att.filename,
+              url: att.url,
+              public_id: att.public_id,
+              category: "other",
+              version: "v1",
+              tags: [],
+              sourceType: "comment",
+              parent: {
+                commentId: comment._id,
+                taskId: task._id,
+                taskKey: task.key,
+                taskName: task.name,
+              },
+              uploadedBy: userId,
+              sharedWith,
+              uploadedAt: new Date(),
+            })),
+          );
+        }
+      } catch (docError) {
+        console.error("[CommentController] Failed to create ProjectDocument:", docError.message);
+      }
+    }
 
     res.status(201).json(comment);
   } catch (error) {

@@ -1,19 +1,13 @@
 import React from "react";
-import { Card, Container } from "react-bootstrap";
 
-const FormCard = ({ title, children }) => {
+const FormCard = ({ title, children, variant, className = "", ...props }) => {
   return (
-    <Container
-      className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh" }}
-    >
-      <Card className="p-4 shadow" style={{ maxWidth: "400px", width: "100%" }}>
-        <Card.Body>
-          <h2 className="text-center mb-4">{title}</h2>
-          {children}
-        </Card.Body>
-      </Card>
-    </Container>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className={`bg-white rounded-xl shadow-lg border border-gray-200 max-w-[480px] w-full p-8 ${className}`} {...props}>
+        {title && <h2 className="text-2xl font-bold text-center text-gray-900 mb-6">{title}</h2>}
+        <div>{children}</div>
+      </div>
+    </div>
   );
 };
 

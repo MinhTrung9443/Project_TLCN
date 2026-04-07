@@ -1,9 +1,19 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { toast } from "react-toastify";
-import { updateTask, linkTask, unlinkTask, searchTasks, addAttachment, deleteAttachment, getAllowedStatuses } from "../../services/taskService";
+import {
+  updateTask,
+  linkTask,
+  unlinkTask,
+  searchTasks,
+  addAttachment,
+  addAttachmentFromDocument,
+  deleteAttachment,
+  getAllowedStatuses,
+} from "../../services/taskService";
 import { getProjectMember } from "../../services/projectService";
 import { useAuth } from "../../contexts/AuthContext";
 import { ProjectContext } from "../../contexts/ProjectContext";
+import { getProjectDocuments } from "../../services/projectDocsService";
 import typeTaskService from "../../services/typeTaskService";
 import priorityService from "../../services/priorityService";
 import platformService from "../../services/platformService";
@@ -12,9 +22,10 @@ import ActionsMenu from "../common/ActionsMenu";
 import CommentsTab from "./CommentsTab";
 import HistoryTab from "./HistoryTab";
 import ConfirmationModal from "../common/ConfirmationModal";
-import "../../styles/components/TaskDetailPanel.css";
 import { IconComponent } from "../common/IconPicker";
 import TaskDetailsTab from "./TaskDetailsTab";
+import apiClient from "../../services/apiClient";
+
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
   { name: "FaStar", color: "#2ECC71" },
@@ -29,9 +40,16 @@ const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaFileAlt", color: "#00B8D9" },
 ];
 
-const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [], showCloseButton = true }) => {
+const statusCategoryStyles = {
+  "To Do": "bg-neutral-100 text-neutral-700 border-neutral-200",
+  "In Progress": "bg-primary-100 text-primary-700 border-primary-200",
+  Done: "bg-success-100 text-success-700 border-success-200",
+  default: "bg-neutral-100 text-neutral-700 border-neutral-200",
+};
+
+const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [], showCloseButton = true, isCompact = false }) => {
   const { user } = useAuth();
-  const { userProjectRole } = useContext(ProjectContext);
+  const { userProjectRole, selectedProjectKey, projectData } = useContext(ProjectContext);
   const [editableTask, setEditableTask] = useState(task);
   const [activeTab, setActiveTab] = useState("Details");
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
@@ -43,6 +61,12 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
   const [isDeleteAttachmentModalOpen, setIsDeleteAttachmentModalOpen] = useState(false);
   const [selectedLinkId, setSelectedLinkId] = useState(null);
   const [selectedAttachmentId, setSelectedAttachmentId] = useState(null);
+  const [showAttachmentSourceModal, setShowAttachmentSourceModal] = useState(false);
+  const [showDocPicker, setShowDocPicker] = useState(false);
+  const [projectDocs, setProjectDocs] = useState([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [selectedDocIds, setSelectedDocIds] = useState([]);
+  const [docSearch, setDocSearch] = useState("");
   useEffect(() => {
     if (nameTextAreaRef.current) {
       nameTextAreaRef.current.style.height = "auto";
@@ -157,7 +181,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
           if (user.role !== "admin") {
             // Check if user is PM in this project
             const isPM = res.data.members?.some(
-              (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER"
+              (member) => (member.userId._id === user._id || member.userId === user._id) && member.role === "PROJECT_MANAGER",
             );
 
             if (!isPM) {
@@ -179,7 +203,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
 
               // Filter to only allowed members (or current assignee to prevent breaking existing assignments)
               allMembers = allMembers.filter(
-                (m) => allowedMemberIds.includes(m.value.toString()) || m.value.toString() === currentAssigneeId?.toString()
+                (m) => allowedMemberIds.includes(m.value.toString()) || m.value.toString() === currentAssigneeId?.toString(),
               );
             }
           }
@@ -258,7 +282,24 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
     }
   }, [task]);
 
-  if (!editableTask) return null;
+  const handleCreateGithubBranch = async () => {
+    try {
+      toast.info("Đang tạo nhánh trên GitHub...");
+      const res = await apiClient.post("/github/branches", {
+        projectId: editableTask.projectId?._id || editableTask.projectId,
+        taskId: editableTask._id,
+      });
+      toast.success(res.data.message);
+      if (res.data.branch) {
+        setEditableTask((prev) => ({ ...prev, githubBranch: res.data.branch }));
+        if (onTaskUpdate) {
+          onTaskUpdate({ ...editableTask, githubBranch: res.data.branch });
+        }
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Lỗi khi tạo nhánh GitHub");
+    }
+  };
 
   const handleUpdate = async (fieldName, value) => {
     const updateValue = value === "" ? null : value;
@@ -290,10 +331,10 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         if (taskStart < sprintStart || taskEnd > sprintEnd) {
           toast.error(
             `Task dates (${new Date(newStartDate).toLocaleDateString()} - ${new Date(
-              newDueDate
+              newDueDate,
             ).toLocaleDateString()}) must be within sprint dates (${new Date(selectedSprint.startDate).toLocaleDateString()} - ${new Date(
-              selectedSprint.endDate
-            ).toLocaleDateString()})`
+              selectedSprint.endDate,
+            ).toLocaleDateString()})`,
           );
           return;
         }
@@ -353,8 +394,41 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
   };
 
   const handleAddAttachment = () => {
+    setShowAttachmentSourceModal(true);
+  };
+
+  const handlePickUpload = () => {
+    setShowAttachmentSourceModal(false);
     fileInputRef.current.click();
   };
+
+  const handlePickFromDocs = () => {
+    setShowAttachmentSourceModal(false);
+    setShowDocPicker(true);
+  };
+
+  const fetchProjectDocs = async () => {
+    if (!selectedProjectKey) return;
+    setDocsLoading(true);
+    try {
+      const res = await getProjectDocuments(selectedProjectKey, "all");
+      const allDocs = [
+        ...(res.data.projectDocs || []),
+        ...(res.data.taskAttachments || []),
+        ...(res.data.commentAttachments || []),
+        ...(res.data.meetingAttachments || []),
+      ];
+      setProjectDocs(allDocs);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to load project documents");
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showDocPicker) fetchProjectDocs();
+  }, [showDocPicker]);
 
   // 2. THÊM HÀM MỚI: Xử lý khi người dùng đã chọn file
   const handleFileSelect = async (event) => {
@@ -395,93 +469,183 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
     }
   };
 
+  const toggleDocSelection = (docId) => {
+    setSelectedDocIds((prev) => (prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]));
+  };
+
+  const handleAttachDocsToTask = async () => {
+    if (selectedDocIds.length === 0) {
+      toast.warn("Please select at least one document");
+      return;
+    }
+    try {
+      const updatedTaskWithAttachment = await addAttachmentFromDocument(editableTask._id, selectedDocIds);
+      setEditableTask(updatedTaskWithAttachment);
+      onTaskUpdate(updatedTaskWithAttachment);
+      toast.success("Attachment added successfully!");
+      setShowDocPicker(false);
+      setSelectedDocIds([]);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to attach document.");
+    }
+  };
+
   const typeIconInfo = PREDEFINED_TASKTYPE_ICONS.find((i) => i.name === editableTask.taskTypeId?.icon);
 
+  if (!task) return null;
+
   return (
-    <div className="task-detail-panel">
+    <div className={`flex flex-col bg-white h-full overflow-x-hidden ${task ? "" : "hidden"}`}>
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
-      <header className="panel-header">
-        <div className="panel-header-left">
-          <div className="task-key-container">
+      <header className={`flex items-start gap-3 ${isCompact ? "p-3 border-b border-neutral-200" : "p-6 border-b border-neutral-200 bg-neutral-50"}`}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
             {typeIconInfo && (
-              <span className="icon-wrapper-list-small" style={{ backgroundColor: typeIconInfo.color }} title={editableTask.taskTypeId.name}>
+              <span
+                className="w-7 h-7 rounded flex items-center justify-center text-white text-sm flex-shrink-0"
+                style={{ backgroundColor: typeIconInfo.color }}
+                title={editableTask.taskTypeId.name}
+              >
                 <IconComponent name={editableTask.taskTypeId.icon} />
               </span>
             )}
-            <a href={`/task/${editableTask.key}`} target="_blank" rel="noopener noreferrer" className="task-key-text">
+            <a
+              href={`/app/task/${editableTask.key}`}
+              className={`font-semibold text-primary-600 hover:text-primary-700 hover:underline truncate ${isCompact ? "text-sm" : "text-lg"}`}
+            >
               {editableTask.key}
             </a>
           </div>
 
-          <div className="editable-task-name-wrapper" data-replicated-value={editableTask.name}>
-            <textarea
-              className="editable-task-name"
-              value={editableTask.name}
-              onChange={(e) => setEditableTask((prev) => ({ ...prev, name: e.target.value }))}
-              onBlur={() => handleUpdate("name", editableTask.name)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  e.target.blur();
-                }
-              }}
-              rows="1"
-              spellCheck="false"
-              placeholder="Enter a task name..."
-            />
-          </div>
-        </div>
-        <div className="panel-header-right">
-          <ActionsMenu onDelete={() => setIsDeleteTaskModalOpen(true)} onAddAttachment={handleAddAttachment} />
-          {showCloseButton && (
-            <button onClick={onClose} className="close-btn">
-              &times;
-            </button>
+          {!isCompact && (
+            <div className="relative" data-replicated-value={editableTask.name}>
+              <textarea
+                className="w-full text-xl font-semibold text-neutral-900 border-none outline-none resize-none bg-transparent focus:ring-2 focus:ring-primary-500 rounded px-2 py-1"
+                value={editableTask.name}
+                onChange={(e) => setEditableTask((prev) => ({ ...prev, name: e.target.value }))}
+                onBlur={() => handleUpdate("name", editableTask.name)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    e.target.blur();
+                  }
+                }}
+                rows="1"
+                spellCheck="false"
+                placeholder="Enter a task name..."
+              />
+            </div>
           )}
         </div>
-      </header>
-      <main className="panel-body">
-        <div className="panel-tabs">
-          <button className={`tab-btn ${activeTab === "Details" ? "active" : ""}`} onClick={() => setActiveTab("Details")}>
-            Details
-          </button>
-          <button className={`tab-btn ${activeTab === "Comments" ? "active" : ""}`} onClick={() => setActiveTab("Comments")}>
-            Comments
-          </button>
-          <button className={`tab-btn ${activeTab === "History" ? "active" : ""}`} onClick={() => setActiveTab("History")}>
-            History
-          </button>
-        </div>
-
-        <div className="panel-tab-content">
-          {activeTab === "Details" && (
-            <TaskDetailsTab
-              editableTask={editableTask}
-              setEditableTask={setEditableTask}
-              handleUpdate={handleUpdate}
-              statuses={allowedStatuses.length > 0 ? allowedStatuses : statuses}
-              projectMembers={projectMembers}
-              projectTaskTypes={projectTaskTypes}
-              projectPriorities={projectPriorities}
-              projectPlatforms={projectPlatforms}
-              projectSprints={projectSprints}
-              allProjectTasks={allProjectTasks}
-              onLinkTask={handleLinkTask}
-              onUnlinkTask={(linkId) => {
-                setSelectedLinkId(linkId);
-                setIsDeleteLinkModalOpen(true);
-              }}
+        {!isCompact && (
+          <div className="flex items-start gap-2 flex-shrink-0">
+            {/* Github Branch Button moved to Details Tab */}
+            <ActionsMenu
+              onDelete={() => setIsDeleteTaskModalOpen(true)}
               onAddAttachment={handleAddAttachment}
-              onDeleteAttachment={(attachmentId) => {
-                setSelectedAttachmentId(attachmentId);
-                setIsDeleteAttachmentModalOpen(true);
-              }}
-              userProjectRole={userProjectRole}
-              user={user}
+              onAddAttachmentFromDocs={handlePickFromDocs}
             />
+            {showCloseButton && (
+              <button
+                onClick={onClose}
+                className="text-neutral-500 hover:text-neutral-900 text-3xl font-light leading-none p-1 hover:bg-neutral-200 rounded"
+              >
+                &times;
+              </button>
+            )}
+          </div>
+        )}
+        {isCompact && (
+          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-900 text-2xl font-light leading-none p-0.5 flex-shrink-0">
+            ×
+          </button>
+        )}
+      </header>
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 overflow-x-hidden">
+        {!isCompact && (
+          <div className="flex border-b border-neutral-200 px-6 bg-white flex-shrink-0">
+            <button
+              className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Details" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
+              onClick={() => setActiveTab("Details")}
+            >
+              Details
+            </button>
+            <button
+              className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Comments" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
+              onClick={() => setActiveTab("Comments")}
+            >
+              Comments
+            </button>
+            <button
+              className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "History" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
+              onClick={() => setActiveTab("History")}
+            >
+              History
+            </button>
+          </div>
+        )}
+
+        <div className={`flex-1 overflow-y-auto overflow-x-hidden ${isCompact ? "p-3" : "p-6"} min-h-0`}>
+          {!isCompact ? (
+            <>
+              {activeTab === "Details" && (
+                <TaskDetailsTab
+                  editableTask={editableTask}
+                  setEditableTask={setEditableTask}
+                  handleUpdate={handleUpdate}
+                  handleCreateGithubBranch={handleCreateGithubBranch}
+                  statuses={allowedStatuses.length > 0 ? allowedStatuses : statuses}
+                  projectMembers={projectMembers}
+                  projectTaskTypes={projectTaskTypes}
+                  projectPriorities={projectPriorities}
+                  projectPlatforms={projectPlatforms}
+                  projectSprints={projectSprints}
+                  allProjectTasks={allProjectTasks}
+                  onLinkTask={handleLinkTask}
+                  onUnlinkTask={(linkId) => {
+                    setSelectedLinkId(linkId);
+                    setIsDeleteLinkModalOpen(true);
+                  }}
+                  onAddAttachment={handleAddAttachment}
+                  onDeleteAttachment={(attachmentId) => {
+                    setSelectedAttachmentId(attachmentId);
+                    setIsDeleteAttachmentModalOpen(true);
+                  }}
+                  userProjectRole={userProjectRole}
+                  user={user}
+                />
+              )}
+              {activeTab === "Comments" && <CommentsTab taskId={editableTask._id} />}
+              {activeTab === "History" && <HistoryTab taskId={editableTask._id} />}
+            </>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-xs font-semibold text-neutral-500 uppercase">Sprint</p>
+                <p className="text-neutral-900 font-medium">{editableTask.sprintId?.name || "Backlog"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-neutral-500 uppercase">Status</p>
+                <p
+                  className={`inline-block px-2 py-1 text-xs font-medium rounded border ${statusCategoryStyles[editableTask.statusId?.category] || statusCategoryStyles.default}`}
+                >
+                  {editableTask.statusId?.name || "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-neutral-500 uppercase">Assignee</p>
+                <p className="text-neutral-900 font-medium">{editableTask.assigneeId?.fullname || "-"}</p>
+              </div>
+              <div className="pt-2 border-t border-neutral-200">
+                <button
+                  onClick={() => setActiveTab("Details")}
+                  className="w-full text-center px-2 py-1.5 text-xs font-medium text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                >
+                  View Full Details
+                </button>
+              </div>
+            </div>
           )}
-          {activeTab === "Comments" && <CommentsTab taskId={editableTask._id} />}
-          {activeTab === "History" && <HistoryTab taskId={editableTask._id} />}
         </div>
       </main>
 
@@ -514,6 +678,104 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         title="Delete Attachment"
         message="Are you sure you want to delete this attachment? This action cannot be undone."
       />
+
+      {showAttachmentSourceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-5 w-[420px]">
+            <h4 className="text-lg font-semibold mb-3">Add Attachment</h4>
+            <div className="space-y-2">
+              <button
+                onClick={handlePickUpload}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600"
+              >
+                Upload File
+              </button>
+              <button
+                onClick={handlePickFromDocs}
+                className="w-full px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-md hover:bg-neutral-200"
+              >
+                Choose from Documents
+              </button>
+              <button
+                onClick={() => setShowAttachmentSourceModal(false)}
+                className="w-full px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50 rounded-md"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDocPicker && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-5 w-[520px] max-h-[70vh] flex flex-col">
+            <h4 className="text-lg font-semibold mb-3">Attach from Documents</h4>
+            <div className="mb-3">
+              <input
+                type="text"
+                value={docSearch}
+                onChange={(e) => setDocSearch(e.target.value)}
+                placeholder="Search documents..."
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto border border-neutral-200 rounded-md">
+              {docsLoading ? (
+                <div className="p-4 text-center text-neutral-500">Loading documents...</div>
+              ) : projectDocs.length === 0 ? (
+                <div className="p-4 text-center text-neutral-500">No documents available</div>
+              ) : (
+                <div className="divide-y">
+                  {projectDocs
+                    .filter((doc) => {
+                      const q = docSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return (doc.filename || "").toLowerCase().includes(q);
+                    })
+                    .map((doc) => {
+                      const attachedKeys = new Set((editableTask.attachments || []).map((att) => att.public_id || att.url));
+                      const isAlreadyAttached = attachedKeys.has(doc.public_id || doc.url);
+                      return (
+                        <label key={doc._id} className={`flex items-center p-3 gap-3 ${isAlreadyAttached ? "opacity-50" : "hover:bg-neutral-50"}`}>
+                          <input
+                            type="checkbox"
+                            disabled={isAlreadyAttached}
+                            checked={selectedDocIds.includes(doc._id)}
+                            onChange={() => toggleDocSelection(doc._id)}
+                          />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-neutral-900 truncate">{doc.filename}</div>
+                            <div className="text-xs text-neutral-500 truncate">
+                              {doc.sourceType || "project"} • {doc.category || "other"}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => {
+                  setShowDocPicker(false);
+                  setSelectedDocIds([]);
+                }}
+                className="px-4 py-2 text-sm font-medium text-neutral-600 bg-neutral-100 rounded-md hover:bg-neutral-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAttachDocsToTask}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600"
+              >
+                Attach Selected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -18,6 +18,7 @@ const {
   handleGetProjectByKey,
   handleGetProjectById,
   handleGetProjectMembers,
+  handleGetProjectDetails,
   handleRemoveMember,
   handleRemoveTeam,
   handleChangeMemberRole,
@@ -25,8 +26,10 @@ const {
   handleAddMemberToTeam,
   handleRemoveMemberFromTeam,
 } = require("../controllers/ProjectController");
+const ProjectDocumentController = require("../controllers/ProjectDocumentController");
 
 const { protect, admin, isProjectManager, isProjectMember } = require("../middleware/authMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
 // ===============================================
 // === 1. CÁC HÀNH ĐỘNG CỦA ADMIN HỆ THỐNG ===
@@ -51,6 +54,7 @@ router.post("/key/:projectKey/add-from-group", protect, isProjectManager, handle
 router.get("/key/:projectKey/members", protect, isProjectMember, handleGetProjectMembers);
 router.get("/", protect, handleGetAllProjects);
 
+router.get("/key/:projectKey/details", protect, isProjectMember, handleGetProjectDetails);
 router.get("/key/:projectKey", protect, isProjectMember, handleGetProjectByKey);
 router.get("/:id", protect, handleGetProjectById);
 

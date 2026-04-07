@@ -30,10 +30,19 @@ const sprintSchema = new Schema(
       default: "Not Start",
       required: true,
     },
+    startDateNotifiedAt: {
+      type: Date,
+    },
+    endingSoonNotifiedAt: {
+      type: Date,
+    },
+    endDateNotifiedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Sprint", sprintSchema);

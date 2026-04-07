@@ -8,42 +8,40 @@ const GanttProjectBar = ({ project, barStyle }) => {
   if (!hasValidDates) {
     // Không hiển thị thanh timeline nếu thiếu ngày
     return (
-      <div className="gantt-row gantt-row-project">
-        <div className="gantt-right">
-          <div className="gantt-timeline">{/* Không hiển thị bar */}</div>
-        </div>
+      <div className="flex items-center border-b border-slate-100 hover:bg-slate-50 transition-colors">
+        <div className="w-full h-14 flex items-center justify-center">{/* Không hiển thị bar */}</div>
       </div>
     );
   }
 
   // Determine status class
-  const getStatusClass = () => {
+  const getStatusColor = () => {
     const status = project.status?.toLowerCase() || "";
 
     if (status === "completed") {
-      return "status-done";
+      return "bg-emerald-500";
     }
     if (status === "active") {
-      return "status-in-progress";
+      return "bg-sky-500";
     }
     if (status === "paused") {
-      return "status-paused";
+      return "bg-amber-500";
     }
 
-    return "status-in-progress"; // Default
+    return "bg-sky-500"; // Default
   };
 
   const tooltip = `${formatDate(project.startDate)} - ${formatDate(project.endDate)}`;
-  const statusClass = getStatusClass();
+  const statusColor = getStatusColor();
 
   return (
-    <div className="gantt-row gantt-row-project">
-      <div className="gantt-right">
-        <div className="gantt-timeline">
-          <div className={`gantt-bar gantt-bar-project ${statusClass}`} style={barStyle} title={tooltip}>
-            <span className="gantt-bar-label">{project.key}</span>
-          </div>
-        </div>
+    <div className="border-b border-slate-100 hover:bg-slate-50 transition-colors h-14 relative flex items-center">
+      <div
+        className={`${statusColor} rounded-md px-2 py-1 text-xs font-semibold text-white shadow-sm hover:shadow-md transition-shadow absolute h-7`}
+        style={barStyle}
+        title={tooltip}
+      >
+        <span className="truncate">{project.key}</span>
       </div>
     </div>
   );

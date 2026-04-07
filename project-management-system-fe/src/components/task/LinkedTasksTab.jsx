@@ -64,11 +64,11 @@ const LinkedTasksTab = ({ task, allProjectTasks, onLink, onUnlink }) => {
   };
 
   return (
-    <div className="linked-tasks-section">
-      <h4>Linked Tasks</h4>
-      <div className="add-link-form">
+    <div className="space-y-4">
+      <h4 className="text-lg font-semibold text-neutral-900">Linked Tasks</h4>
+      <div className="flex gap-3">
         <Select
-          className="link-type-select"
+          className="min-w-[160px] w-40"
           value={selectedLinkType}
           onChange={setSelectedLinkType}
           options={LinkTypeOptions}
@@ -80,7 +80,7 @@ const LinkedTasksTab = ({ task, allProjectTasks, onLink, onUnlink }) => {
           }}
         />
         <Select
-          className="link-task-select"
+          className="flex-1 min-w-[200px]"
           value={selectedTaskToLink}
           onChange={setSelectedTaskToLink}
           options={taskOptions}
@@ -93,27 +93,38 @@ const LinkedTasksTab = ({ task, allProjectTasks, onLink, onUnlink }) => {
             control: (base) => ({ ...base, minWidth: "200px" }),
           }}
         />
-        <button onClick={handleLink} disabled={isLinking || !selectedTaskToLink} className="link-btn">
+        <button
+          onClick={handleLink}
+          disabled={isLinking || !selectedTaskToLink}
+          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {isLinking ? "Linking..." : "Link"}
         </button>
       </div>
 
-      <ul className="linked-tasks-list">
+      <ul className="space-y-2">
         {(task.linkedTasks || []).map((link) => {
           const linkedTaskInfo = link.taskId;
           if (!linkedTaskInfo) return null;
           const iconInfo = getIconInfo(linkedTaskInfo.taskTypeId);
           return (
-            <li key={link._id} className="linked-task-item">
-              <span className="link-relation">{link.type}</span>
-              <div className="linked-task-details">
-                <span className="icon-wrapper-list-small" style={{ backgroundColor: iconInfo.color }} title={linkedTaskInfo.taskTypeId?.name}>
+            <li
+              key={link._id}
+              className="flex items-center gap-3 p-3 bg-neutral-50 border border-neutral-200 rounded-lg hover:bg-neutral-100 transition-colors"
+            >
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">{link.type}</span>
+              <div className="flex items-center gap-2 flex-1">
+                <span
+                  className="w-6 h-6 rounded flex items-center justify-center text-white text-xs"
+                  style={{ backgroundColor: iconInfo.color }}
+                  title={linkedTaskInfo.taskTypeId?.name}
+                >
                   <IconComponent name={linkedTaskInfo.taskTypeId?.icon || "FaTasks"} />
                 </span>
-                <span className="linked-task-key">{linkedTaskInfo.key}</span>
-                <span className="linked-task-name">{linkedTaskInfo.name}</span>
+                <span className="text-sm font-semibold text-primary-600">{linkedTaskInfo.key}</span>
+                <span className="text-sm text-neutral-700 truncate">{linkedTaskInfo.name}</span>
               </div>
-              <button onClick={() => handleUnlink(link._id)} className="unlink-btn">
+              <button onClick={() => handleUnlink(link._id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                 <FaTrash />
               </button>
             </li>

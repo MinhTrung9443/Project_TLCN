@@ -13,7 +13,11 @@ import SprintSelector from "../../components/sprint/SprintSelector";
 import { isTransitionAllowed, getTransitionErrorMessage } from "../../utils/workflowTransitions";
 import { useAuth } from "../../contexts/AuthContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import "../../styles/pages/ManageSprint/ActiveSprintPage.css";
+import PageHeader from "../../components/ui/PageHeader";
+import Button from "../../components/ui/Button";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
+import { VscRunAll } from "react-icons/vsc";
 
 const ActiveSprintPage = () => {
   const { projectKey } = useParams();
@@ -31,7 +35,7 @@ const ActiveSprintPage = () => {
   // Use custom hook for sprint data management
   const { currentSprint, setCurrentSprint, availableSprints, tasks, setTasks, workflowStatuses, workflow, loading, fetchSprintTasks } = useSprintData(
     effectiveProjectKey,
-    searchParams
+    searchParams,
   );
 
   // Fetch user project role
@@ -67,7 +71,7 @@ const ActiveSprintPage = () => {
                 (team.members || []).some((m) => {
                   const memId = m?._id || m;
                   return memId === userId;
-                })
+                }),
               );
               if (isTeamMember) {
                 role = "MEMBER";
@@ -182,21 +186,20 @@ const ActiveSprintPage = () => {
 
   if (loading) {
     return (
-      <div className="active-sprint-loading">
-        <div className="loading-spinner"></div>
-        <span>Loading sprint data...</span>
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="lg" text="Loading sprint data..." />
       </div>
     );
   }
 
   if (availableSprints.length === 0) {
     return (
-      <div className="active-sprint-empty">
-        <div className="empty-state">
-          <span className="material-symbols-outlined">sprint</span>
-          <h3>No Active Sprints</h3>
-          <p>There are no started sprints in this project.</p>
-        </div>
+      <div className="py-12">
+        <EmptyState
+          icon="sprint"
+          title="No Active Sprints"
+          description="There are no started sprints in this project. Go to Backlog to create and start a sprint."
+        />
       </div>
     );
   }
@@ -204,21 +207,28 @@ const ActiveSprintPage = () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="active-sprint-page">
-        <div className="active-sprint-header">
-          <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
+        <PageHeader
+          icon={VscRunAll}
+          title="Active Sprint"
+          description="Manage and track your sprint board"
+          actions={
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              <SprintSelector currentSprint={currentSprint} availableSprints={availableSprints} onSprintChange={handleSprintChange} />
+              {currentSprint && canManageSprints && !isKanbanProject ? (
+                <Button onClick={handleCompleteSprint} disabled={isCompleting} icon="check_circle" iconPosition="left" variant="success">
+                  {isCompleting ? "Completing..." : "Complete Sprint"}
+                </Button>
+              ) : null}
+            </div>
+          }
+        />
 
-          {currentSprint && canManageSprints && !isKanbanProject && (
-            <button className="btn-complete-sprint" onClick={handleCompleteSprint} disabled={isCompleting}>
-              <span className="material-symbols-outlined">check_circle</span>
-              {isCompleting ? "Completing..." : "Complete Sprint"}
-            </button>
-          )}
-        </div>
-
-        <div className="active-sprint-board">
-          {workflowStatuses.map((status) => (
-            <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
-          ))}
+        <div className="sprint-container flex flex-col gap-3 pt-2">
+          <div className="active-sprint-board flex items-start justify-center gap-3 overflow-x-auto pb-6 pt-2 pr-2 w-full snap-x snap-mandatory">
+            {workflowStatuses.map((status) => (
+              <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
+            ))}
+          </div>
         </div>
 
         <ConfirmationModal

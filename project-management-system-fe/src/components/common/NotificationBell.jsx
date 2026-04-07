@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import socketService from "../../services/socketService";
 import notificationService from "../../services/notificationService";
-import { getProjectById } from "../../services/projectService";
+import { getProjectById, getProjectByKey } from "../../services/projectService";
 import sprintService from "../../services/sprintService";
 import { toast } from "react-toastify";
 import { ProjectContext } from "../../contexts/ProjectContext";
-import "./NotificationBell.css";
 
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +20,40 @@ const NotificationBell = () => {
   const navigate = useNavigate();
   const { setProject } = useContext(ProjectContext);
 
+  const canUseBrowserNotification = () => typeof window !== "undefined" && "Notification" in window;
+
+  const ensureNotificationPermission = async () => {
+    if (!canUseBrowserNotification()) return "denied";
+    if (Notification.permission === "granted") return "granted";
+    if (Notification.permission === "denied") return "denied";
+    try {
+      return await Notification.requestPermission();
+    } catch (error) {
+      console.error("Failed to request browser notification permission:", error);
+      return "denied";
+    }
+  };
+
+  const showBrowserNotification = (notification) => {
+    if (!canUseBrowserNotification() || Notification.permission !== "granted") return;
+
+    const shouldPush = document.hidden || !document.hasFocus();
+    if (!shouldPush) return;
+
+    const browserNotification = new Notification(notification.title || "Notification", {
+      body: notification.message || "You have a new notification",
+      tag: notification.groupKey || notification._id || `notification-${Date.now()}`,
+      icon: "/favicon.ico",
+      renotify: true,
+    });
+
+    browserNotification.onclick = async () => {
+      window.focus();
+      await handleNotificationClick(notification);
+      browserNotification.close();
+    };
+  };
+
   // Fetch initial notifications
   useEffect(() => {
     fetchNotifications();
@@ -31,8 +64,17 @@ const NotificationBell = () => {
   useEffect(() => {
     const handleNewNotification = (notification) => {
       console.log("📩 New notification received:", notification);
-      setNotifications((prev) => [notification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+      setNotifications((prev) => {
+        const existingIndex = prev.findIndex((item) => item._id === notification._id);
+        if (existingIndex === -1) {
+          return [notification, ...prev];
+        }
+
+        const next = [...prev];
+        next.splice(existingIndex, 1);
+        return [notification, ...next];
+      });
+      showBrowserNotification(notification);
 
       // Show toast with full information
       const toastOptions = {
@@ -42,6 +84,7 @@ const NotificationBell = () => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
+        toastId: notification.groupKey || notification._id,
       };
 
       // Format message with full details
@@ -54,7 +97,7 @@ const NotificationBell = () => {
             <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
             <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
           </div>,
-          toastOptions
+          toastOptions,
         );
       } else if (notification.priority === "HIGH") {
         toast.warning(
@@ -62,7 +105,7 @@ const NotificationBell = () => {
             <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
             <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
           </div>,
-          toastOptions
+          toastOptions,
         );
       } else if (notification.priority === "MEDIUM") {
         toast.info(
@@ -70,7 +113,7 @@ const NotificationBell = () => {
             <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
             <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
           </div>,
-          toastOptions
+          toastOptions,
         );
       } else {
         // LOW priority - use success type
@@ -79,7 +122,7 @@ const NotificationBell = () => {
             <strong style={{ fontSize: "14px" }}>{notification.title}</strong>
             <div style={{ fontSize: "13px", marginTop: "6px", lineHeight: "1.4" }}>{fullMessage}</div>
           </div>,
-          toastOptions
+          toastOptions,
         );
       }
     };
@@ -241,6 +284,19 @@ const NotificationBell = () => {
     } else if (notification.relatedType === "Group" && notification.relatedId) {
       // Group notifications: relatedId is the group ID
       navigate(`/app/organization/group/${notification.relatedId}`);
+    } else if (notification.relatedType === "Meeting") {
+      const projectKey = notification?.metadata?.projectKey;
+      if (projectKey) {
+        try {
+          const response = await getProjectByKey(projectKey);
+          setProject(response.data);
+        } catch (error) {
+          console.error("Error fetching project by key:", error);
+        }
+        navigate(`/app/task-mgmt/projects/${projectKey}/meetings`);
+      } else {
+        toast.error("Could not navigate to project meetings");
+      }
     }
 
     setIsOpen(false);
@@ -261,12 +317,19 @@ const NotificationBell = () => {
       sprint_completed: "check_circle",
       group_member_added: "group_add",
       group_member_removed: "group_remove",
+      meeting_invited: "event",
     };
     return icons[type] || "notifications";
   };
 
   const getPriorityClass = (priority) => {
-    return `priority-${priority?.toLowerCase() || "low"}`;
+    const classes = {
+      critical: "border-l-4 border-red-500",
+      high: "border-l-4 border-orange-500",
+      medium: "border-l-4 border-blue-500",
+      low: "border-l-4 border-gray-400",
+    };
+    return classes[priority?.toLowerCase()] || classes.low;
   };
 
   const getTimeAgo = (date) => {
@@ -280,59 +343,81 @@ const NotificationBell = () => {
   };
 
   return (
-    <div className="notification-bell-container" ref={dropdownRef}>
-      <button className="notification-bell-button" onClick={() => setIsOpen(!isOpen)}>
-        <span className="material-symbols-outlined">notifications</span>
-        {unreadCount > 0 && <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+    <div className="relative" ref={dropdownRef}>
+      <button
+        className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+        onClick={async () => {
+          await ensureNotificationPermission();
+          setIsOpen(!isOpen);
+        }}
+      >
+        <span className="material-symbols-outlined text-gray-700">notifications</span>
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
       </button>
 
       {isOpen && (
-        <div className="notification-dropdown">
-          <div className="notification-dropdown-header">
-            <h3>Notifications</h3>
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900">Notifications</h3>
             {unreadCount > 0 && (
-              <button className="mark-all-read-btn" onClick={handleMarkAllAsRead}>
+              <button className="text-sm text-primary-600 hover:text-primary-700 font-medium" onClick={handleMarkAllAsRead}>
                 Mark all as read
               </button>
             )}
           </div>
 
-          <div className="notification-list" ref={listRef}>
+          <div className="overflow-y-auto flex-1" ref={listRef}>
             {notifications.length === 0 ? (
-              <div className="notification-empty">
-                <span className="material-symbols-outlined">notifications_off</span>
-                <p>No notifications yet</p>
+              <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                <span className="material-symbols-outlined text-4xl mb-2">notifications_off</span>
+                <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
               <>
                 {notifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className={`notification-item ${!notification.isRead ? "unread" : ""} ${getPriorityClass(notification.priority)}`}
+                    className={`flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      !notification.isRead ? "bg-purple-50" : ""
+                    } ${getPriorityClass(notification.priority)}`}
                     onClick={() => handleNotificationClick(notification)}
                   >
-                    <div className="notification-icon">
-                      <span className="material-symbols-outlined">{getNotificationIcon(notification.type)}</span>
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
+                      <span className="material-symbols-outlined text-xl">{getNotificationIcon(notification.type)}</span>
                     </div>
-                    <div className="notification-content">
-                      <div className="notification-title">{notification.title}</div>
-                      <div className="notification-message">{notification.message}</div>
-                      <div className="notification-time">{getTimeAgo(notification.createdAt)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold text-gray-900 text-sm">{notification.title}</div>
+                        {(notification.groupCount || 1) > 1 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                            +{notification.groupCount - 1}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1 line-clamp-2">{notification.message}</div>
+                      <div className="text-xs text-gray-500 mt-1">{getTimeAgo(notification.createdAt)}</div>
                     </div>
-                    {!notification.isRead && <div className="notification-unread-dot"></div>}
+                    {!notification.isRead && <div className="w-2 h-2 rounded-full bg-primary-600 flex-shrink-0 mt-2"></div>}
                   </div>
                 ))}
 
                 {loading && (
-                  <div className="notification-loading">
-                    <div className="spinner"></div>
-                    <p>Loading more...</p>
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <div className="w-8 h-8 border-3 border-neutral-200 border-t-primary-600 rounded-full animate-spin"></div>
+                    <p className="text-sm text-gray-600 mt-2">Loading more...</p>
                   </div>
                 )}
 
                 {!loading && hasMore && (
-                  <div className="notification-load-more">
-                    <button className="load-more-btn" onClick={loadMoreNotifications}>
+                  <div className="p-4">
+                    <button
+                      className="w-full flex items-center justify-center gap-2 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors font-medium"
+                      onClick={loadMoreNotifications}
+                    >
                       <span className="material-symbols-outlined">expand_more</span>
                       Load More Notifications
                     </button>
@@ -340,9 +425,9 @@ const NotificationBell = () => {
                 )}
 
                 {!loading && !hasMore && notifications.length > 0 && (
-                  <div className="notification-end">
-                    <span className="material-symbols-outlined">check_circle</span>
-                    <p>You've reached the end</p>
+                  <div className="flex flex-col items-center justify-center py-6 text-gray-500">
+                    <span className="material-symbols-outlined text-2xl mb-1">check_circle</span>
+                    <p className="text-sm">You've reached the end</p>
                   </div>
                 )}
               </>

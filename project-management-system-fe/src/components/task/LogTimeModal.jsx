@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import timeLogService from "../../services/timeLogService";
 import { toast } from "react-toastify";
-import "../../styles/components/task/LogTimeModal.css";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
 
 const LogTimeModal = ({ isOpen, onClose, taskId, onTimeLogged }) => {
   const [timeSpent, setTimeSpent] = useState("");
@@ -48,24 +49,22 @@ const LogTimeModal = ({ isOpen, onClose, taskId, onTimeLogged }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="log-time-modal-overlay" onClick={onClose}>
-      <div className="log-time-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="log-time-modal-header">
-          <h3>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg w-90% max-w-md shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center px-6 py-4 border-b border-neutral-200">
+          <h3 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
             <span className="material-symbols-outlined">schedule</span>
             Log Work Time
           </h3>
-          <button className="close-btn" onClick={onClose}>
+          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-900 transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="log-time-modal-body">
-          <div className="form-group">
-            <label htmlFor="timeSpent" className="required">
-              Time Spent (hours)
-            </label>
-            <input
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div>
+            <Input
+              label="Time Spent (hours)"
               type="number"
               id="timeSpent"
               step="0.1"
@@ -75,13 +74,13 @@ const LogTimeModal = ({ isOpen, onClose, taskId, onTimeLogged }) => {
               placeholder="e.g., 2.5"
               required
               autoFocus
+              helperText="Enter time in hours (e.g., 0.5 = 30 minutes)"
             />
-            <small className="hint">Enter time in hours (e.g., 0.5 = 30 minutes)</small>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="comment" className="required">
-              Work Description
+          <div>
+            <label htmlFor="comment" className="block text-sm font-semibold text-neutral-900 mb-2">
+              Work Description <span className="text-danger-600">*</span>
             </label>
             <textarea
               id="comment"
@@ -90,27 +89,18 @@ const LogTimeModal = ({ isOpen, onClose, taskId, onTimeLogged }) => {
               onChange={(e) => setComment(e.target.value)}
               placeholder="Describe what you worked on..."
               required
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-vertical text-neutral-900"
             />
-            <small className="hint">Example: "Fixed login bug", "Implemented user profile page"</small>
+            <small className="block text-xs text-neutral-600 mt-1 italic">Example: "Fixed login bug", "Implemented user profile page"</small>
           </div>
 
-          <div className="log-time-modal-footer">
-            <button type="button" className="btn-cancel" onClick={onClose}>
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
+            <Button type="button" variant="secondary" size="md" onClick={onClose}>
               Cancel
-            </button>
-            <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <span className="spinner-small"></span>
-                  Logging...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined">check</span>
-                  Log Time
-                </>
-              )}
-            </button>
+            </Button>
+            <Button type="submit" variant="primary" size="md" disabled={loading} icon={loading ? "sync" : "check"}>
+              {loading ? "Logging..." : "Log Time"}
+            </Button>
           </div>
         </form>
       </div>

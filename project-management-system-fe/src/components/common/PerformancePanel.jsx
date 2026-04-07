@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import performanceService from "../../services/performanceService";
 import { toast } from "react-toastify";
-import "../../styles/components/PerformancePanel.css";
 
 const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStartDate, defaultEndDate, onClose }) => {
   const [loading, setLoading] = useState(true);
@@ -72,11 +71,11 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
 
   if (loading) {
     return (
-      <div className="performance-panel-overlay" onClick={onClose}>
-        <div className="performance-panel" onClick={(e) => e.stopPropagation()}>
-          <div className="performance-loading">
-            <div className="spinner-large"></div>
-            <p>Loading performance data...</p>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-3 text-slate-700">
+            <span className="material-symbols-outlined animate-spin text-sky-600">progress_activity</span>
+            Loading performance data...
           </div>
         </div>
       </div>
@@ -90,249 +89,263 @@ const PerformancePanel = ({ userId, userName, userAvatar, projectId, defaultStar
   const { summary, tasks } = performance;
 
   return (
-    <div className="performance-panel-overlay" onClick={onClose}>
-      <div className="performance-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="performance-header">
-          <div className="performance-header-left">
-            <div className="user-avatar-large">
-              {userAvatar ? <img src={userAvatar} alt={userName} /> : <div className="avatar-placeholder-large">{userName?.[0] || "?"}</div>}
+        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-sky-50 to-slate-50 px-6 py-4">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-sky-200 flex items-center justify-center bg-sky-100 text-sky-700 font-semibold text-lg">
+              {userAvatar ? <img src={userAvatar} alt={userName} className="h-full w-full object-cover" /> : <span>{userName?.[0] || "?"}</span>}
             </div>
-            <div className="user-info-header">
-              <h2>{userName}</h2>
-              <p className="performance-subtitle">Performance Analysis</p>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">{userName}</h2>
+              <p className="text-sm text-slate-500">Performance Analysis</p>
             </div>
           </div>
-          <button className="close-btn-performance" onClick={onClose}>
+          <button className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition" onClick={onClose}>
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         {/* Date Range Filter */}
-        <div className="performance-date-filter">
-          <div className="date-filter-group">
-            <label htmlFor="startDate">From:</label>
-            <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="date-input" />
-          </div>
-          <div className="date-filter-group">
-            <label htmlFor="endDate">To:</label>
-            <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="date-input" />
-          </div>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-slate-50 px-6 py-3">
+          <label className="text-sm text-slate-600 flex flex-col gap-1">
+            From:
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            />
+          </label>
+          <label className="text-sm text-slate-600 flex flex-col gap-1">
+            To:
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            />
+          </label>
           {(startDate || endDate) && (
             <button
-              className="clear-filter-btn"
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white transition-colors"
               onClick={() => {
                 setStartDate("");
                 setEndDate("");
               }}
             >
-              <span className="material-symbols-outlined">clear</span>
+              <span className="material-symbols-outlined text-base">refresh</span>
               Clear
             </button>
           )}
         </div>
 
         {/* Tabs */}
-        <div className="performance-tabs">
-          <button className={`performance-tab ${activeTab === "overview" ? "active" : ""}`} onClick={() => setActiveTab("overview")}>
-            <span className="material-symbols-outlined">analytics</span>
+        <div className="flex border-b border-slate-200">
+          <button
+            className={`flex items-center gap-2 px-6 py-3 text-sm font-semibold transition-colors ${
+              activeTab === "overview" ? "border-b-2 border-sky-600 text-sky-600" : "text-slate-600 hover:text-slate-900"
+            }`}
+            onClick={() => setActiveTab("overview")}
+          >
+            <span className="material-symbols-outlined text-lg">analytics</span>
             Overview
           </button>
-          <button className={`performance-tab ${activeTab === "tasks" ? "active" : ""}`} onClick={() => setActiveTab("tasks")}>
-            <span className="material-symbols-outlined">task_alt</span>
+          <button
+            className={`flex items-center gap-2 px-6 py-3 text-sm font-semibold transition-colors ${
+              activeTab === "tasks" ? "border-b-2 border-sky-600 text-sky-600" : "text-slate-600 hover:text-slate-900"
+            }`}
+            onClick={() => setActiveTab("tasks")}
+          >
+            <span className="material-symbols-outlined text-lg">task_alt</span>
             Tasks ({tasks.length})
           </button>
         </div>
 
         {/* Content */}
-        <div className="performance-content">
+        <div className="p-6">
           {activeTab === "overview" && (
-            <div className="overview-tab">
+            <div className="space-y-6">
               {/* Overall Efficiency Card */}
-              <div className="spi-card-large">
-                <div className="spi-label">Overall Efficiency</div>
-                <div className="spi-value-large" style={{ color: getEfficiencyColor(summary.overallEfficiency) }}>
-                  {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
+              <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-blue-50 p-6 space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">Overall Efficiency</div>
+                <div className="flex items-end gap-4">
+                  <div className="flex-1">
+                    <div className="text-5xl font-bold" style={{ color: getEfficiencyColor(summary.overallEfficiency) }}>
+                      {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
+                    </div>
+                    <div
+                      className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold text-white"
+                      style={{ backgroundColor: getRatingColor(summary.performanceRating) }}
+                    >
+                      {summary.performanceRating}
+                    </div>
+                  </div>
                 </div>
-                <div className="spi-rating" style={{ backgroundColor: getRatingColor(summary.performanceRating) }}>
-                  {summary.performanceRating}
-                </div>
-                <div className="spi-formula">
+                <div className="space-y-2 text-sm text-slate-700">
                   <p>
-                    Efficiency = (<span className="formula-highlight">Total Est</span> / <span className="formula-highlight">Total Act</span>) × 100%
+                    Efficiency = <span className="font-semibold text-sky-700">Total Est</span> /{" "}
+                    <span className="font-semibold text-sky-700">Total Act</span> × 100%
                   </p>
-                  <p className="formula-detail">
-                    Efficiency = ({summary.totalEstimatedTime}h) / ({summary.totalActualTime}h) × 100% ={" "}
+                  <p className="text-slate-600">
+                    = ({summary.totalEstimatedTime}h) / ({summary.totalActualTime}h) × 100% ={" "}
                     {summary.overallEfficiency !== null ? `${summary.overallEfficiency.toFixed(0)}%` : "N/A"}
                   </p>
-                  <p className="formula-note" style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px" }}>
-                    * Chỉ tính cho các task đã hoàn thành (Done)
-                  </p>
+                  <p className="text-xs text-slate-500 italic">* Only calculated for completed tasks (Done)</p>
                 </div>
               </div>
 
               {/* Stats Grid */}
-              <div className="performance-stats-grid">
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#e0e7ff" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#6366f1" }}>
-                      schedule
-                    </span>
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Estimated Time</div>
-                    <div className="stat-value">{formatHours(summary.totalEstimatedTime)}</div>
-                  </div>
-                </div>
-
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#fef3c7" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#f59e0b" }}>
-                      timelapse
-                    </span>
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Actual Time</div>
-                    <div className="stat-value">{formatHours(summary.totalActualTime)}</div>
-                  </div>
-                </div>
-
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#dbeafe" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#3b82f6" }}>
-                      speed
-                    </span>
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Efficiency</div>
-                    <div className="stat-value">{summary.efficiency}</div>
-                  </div>
-                </div>
-
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#d1fae5" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#10b981" }}>
-                      check_circle_outline
-                    </span>
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-label">On-Time Completion</div>
-                    <div className="stat-value">{summary.onTimePercentage !== null ? `${summary.onTimePercentage.toFixed(0)}%` : "N/A"}</div>
-                    <div className="stat-detail" style={{ fontSize: "11px", color: "#6b7280", marginTop: "4px" }}>
-                      {summary.onTimeCount || 0} / {summary.tasksWithDueDate || 0} tasks
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  {
+                    label: "Estimated Time",
+                    value: formatHours(summary.totalEstimatedTime),
+                    icon: "schedule",
+                    color: "text-indigo-600",
+                    bg: "bg-indigo-50",
+                  },
+                  {
+                    label: "Actual Time",
+                    value: formatHours(summary.totalActualTime),
+                    icon: "timelapse",
+                    color: "text-amber-600",
+                    bg: "bg-amber-50",
+                  },
+                  {
+                    label: "On-Time Completion",
+                    value: summary.onTimePercentage !== null ? `${summary.onTimePercentage.toFixed(0)}%` : "N/A",
+                    icon: "check_circle_outline",
+                    color: "text-emerald-600",
+                    bg: "bg-emerald-50",
+                    sub: `${summary.onTimeCount || 0} / ${summary.tasksWithDueDate || 0} tasks`,
+                  },
+                  { label: "Completed Tasks", value: summary.completedTasks, icon: "check_circle", color: "text-cyan-600", bg: "bg-cyan-50" },
+                  { label: "In Progress", value: summary.inProgressTasks, icon: "pending", color: "text-rose-600", bg: "bg-rose-50" },
+                  { label: "To Do", value: summary.todoTasks || 0, icon: "inbox", color: "text-slate-600", bg: "bg-slate-100" },
+                ].map((stat, idx) => (
+                  <div key={idx} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-10 w-10 rounded-lg ${stat.bg} flex items-center justify-center ${stat.color}`}>
+                        <span className="material-symbols-outlined text-xl">{stat.icon}</span>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">{stat.label}</p>
+                        <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                        {stat.sub && <p className="text-xs text-slate-500 mt-0.5">{stat.sub}</p>}
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#e0f2fe" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#0284c7" }}>
-                      check_circle
-                    </span>
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-label">Completed Tasks</div>
-                    <div className="stat-value">{summary.completedTasks}</div>
-                  </div>
-                </div>
-
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ backgroundColor: "#fce7f3" }}>
-                    <span className="material-symbols-outlined" style={{ color: "#ec4899" }}>
-                      pending
-                    </span>
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-label">In Progress</div>
-                    <div className="stat-value">{summary.inProgressTasks}</div>
-                  </div>
-                </div>
+                ))}
               </div>
 
-              {/* Performance Interpretation */}
-              <div className="performance-info-box">
-                <h4>
-                  <span className="material-symbols-outlined">info</span>
+              {/* Performance Guide */}
+              <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <span className="material-symbols-outlined text-sky-600">info</span>
                   Understanding Efficiency
-                </h4>
-                <ul>
-                  <li>
-                    <strong>Efficiency ≥ 100%:</strong> Excellent - Completed faster than estimated
+                </div>
+                <ul className="space-y-2 text-sm text-slate-700">
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-emerald-600 min-w-fit">Efficiency ≥ 100%:</span>
+                    <span>Excellent - Completed faster than estimated</span>
                   </li>
-                  <li>
-                    <strong>Efficiency ≥ 80%:</strong> Good - Close to estimated time
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-sky-600 min-w-fit">Efficiency ≥ 80%:</span>
+                    <span>Good - Close to estimated time</span>
                   </li>
-                  <li>
-                    <strong>Efficiency ≥ 60%:</strong> Average - Slightly over estimated time
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-amber-600 min-w-fit">Efficiency ≥ 60%:</span>
+                    <span>Average - Slightly over estimated time</span>
                   </li>
-                  <li>
-                    <strong>Efficiency &lt; 60%:</strong> Needs Improvement - Significantly over estimated time
+                  <li className="flex gap-2">
+                    <span className="font-semibold text-rose-600 min-w-fit">Efficiency &lt; 60%:</span>
+                    <span>Needs Improvement - Significantly over estimated time</span>
                   </li>
                 </ul>
-                <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#f0f9ff", borderRadius: "6px" }}>
-                  <strong style={{ color: "#0284c7" }}>On-Time Completion:</strong>
-                  <p style={{ fontSize: "13px", color: "#475569", marginTop: "4px" }}>
-                    Percentage of completed tasks finished before or on their due date
-                  </p>
+                <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm">
+                  <p className="font-semibold text-sky-900">On-Time Completion</p>
+                  <p className="text-slate-600 mt-1">Percentage of completed tasks finished before or on their due date</p>
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === "tasks" && (
-            <div className="tasks-tab">
+            <div className="space-y-3">
               {tasks.length === 0 ? (
-                <div className="empty-state">
-                  <span className="material-symbols-outlined">inbox</span>
-                  <p>No completed tasks found</p>
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-slate-600">
+                  <div className="flex justify-center mb-2">
+                    <span className="material-symbols-outlined text-4xl text-slate-400">inbox</span>
+                  </div>
+                  <p className="font-medium">No completed tasks found</p>
                 </div>
               ) : (
-                <div className="tasks-list">
+                <div className="space-y-2">
                   {tasks.map((task) => (
-                    <div key={task._id} className="task-performance-item">
-                      <div className="task-performance-header">
-                        <div className="task-info">
-                          <span className="task-key">{task.key}</span>
-                          <span className="task-name">{task.name}</span>
+                    <div key={task._id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-sky-600">{task.key}</span>
+                            <span className="font-semibold text-slate-900">{task.name}</span>
+                          </div>
                         </div>
-                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
                           {task.isOnTime !== null && (
-                            <div
-                              className="task-spi-badge"
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white"
                               style={{ backgroundColor: task.isOnTime ? "#10b981" : "#ef4444" }}
-                              title={task.isOnTime ? "Completed on time" : "Completed late"}
                             >
+                              <span className="material-symbols-outlined text-base">{task.isOnTime ? "check_circle" : "schedule"}</span>
                               {task.isOnTime ? "On Time" : "Late"}
-                            </div>
+                            </span>
                           )}
                           {task.efficiency !== null && (
-                            <div className="task-spi-badge" style={{ backgroundColor: getEfficiencyColor(task.efficiency) }}>
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white"
+                              style={{ backgroundColor: getEfficiencyColor(task.efficiency) }}
+                            >
                               {task.efficiency.toFixed(0)}%
-                            </div>
+                            </span>
                           )}
                         </div>
                       </div>
-                      <div className="task-performance-details">
-                        <div className="task-detail-item">
-                          <span className="material-symbols-outlined">schedule</span>
-                          <span>Est: {formatHours(task.estimatedTime)}</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base text-sky-600">schedule</span>
+                          <div>
+                            <p className="text-xs text-slate-500">Est</p>
+                            <p className="font-semibold">{formatHours(task.estimatedTime)}</p>
+                          </div>
                         </div>
-                        <div className="task-detail-item">
-                          <span className="material-symbols-outlined">timelapse</span>
-                          <span>Act: {formatHours(task.actualTime)}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base text-amber-600">timelapse</span>
+                          <div>
+                            <p className="text-xs text-slate-500">Act</p>
+                            <p className="font-semibold">{formatHours(task.actualTime)}</p>
+                          </div>
                         </div>
                         {task.dueDate && (
-                          <div className="task-detail-item">
-                            <span className="material-symbols-outlined">event</span>
-                            <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-slate-600">event</span>
+                            <div>
+                              <p className="text-xs text-slate-500">Due</p>
+                              <p className="font-semibold">{new Date(task.dueDate).toLocaleDateString()}</p>
+                            </div>
                           </div>
                         )}
-                        <div className="task-detail-item">
-                          <div className="progress-bar-mini">
-                            <div className="progress-fill-mini" style={{ width: "100%" }}></div>
-                          </div>
-                          <span>100%</span>
+                        <div>
+                          <p className="text-xs text-slate-500">Complete</p>
+                          <p className="font-semibold text-emerald-600">100%</p>
                         </div>
+                      </div>
+                      <div className="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full w-full bg-emerald-500 rounded-full"></div>
                       </div>
                     </div>
                   ))}

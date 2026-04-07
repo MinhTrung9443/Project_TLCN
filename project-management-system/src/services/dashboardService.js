@@ -3,6 +3,7 @@ const Project = require("../models/Project");
 const AuditLog = require("../models/AuditLog");
 const TimeLog = require("../models/TimeLog");
 const Sprint = require("../models/Sprint");
+const Workflow = require("../models/Workflow");
 
 const dashboardService = {
   async getUserOverview(userId) {
@@ -63,7 +64,7 @@ const dashboardService = {
           role: role,
           endDate: project.endDate,
         };
-      })
+      }),
     );
 
     // Recent Activity: lấy từ bảng AuditLog, chỉ lấy các thay đổi do user này thực hiện
@@ -131,7 +132,7 @@ const dashboardService = {
           entityUrl,
           relatedId: log.recordId, // Thêm relatedId để frontend có thể fetch data nếu cần
         };
-      })
+      }),
     );
 
     return {
@@ -145,12 +146,57 @@ const dashboardService = {
   },
 
   async getMyTasks(userId, filters) {
-    const { projectId, priorityId, statusId } = filters;
+    const { projectId, priorityId, statusId, startDate, endDate } = filters || {};
     const query = { assigneeId: userId };
     if (projectId) query.projectId = projectId;
     if (priorityId) query.priorityId = priorityId;
     if (statusId) query.statusId = statusId;
-    return Task.find(query).populate("projectId", "name key").populate("statusId", "name").sort({ dueDate: 1 });
+
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+    const hasValidStart = start instanceof Date && !Number.isNaN(start.valueOf());
+    const hasValidEnd = end instanceof Date && !Number.isNaN(end.valueOf());
+
+    if (hasValidStart && hasValidEnd) {
+      query.$or = [
+        { startDate: { $lte: end }, dueDate: { $gte: start } },
+        { startDate: { $exists: false }, dueDate: { $gte: start, $lte: end } },
+        { dueDate: { $exists: false }, startDate: { $gte: start, $lte: end } },
+      ];
+    } else if (hasValidStart) {
+      query.$or = [{ dueDate: { $gte: start } }, { startDate: { $gte: start } }];
+    } else if (hasValidEnd) {
+      query.$or = [{ dueDate: { $lte: end } }, { startDate: { $lte: end } }];
+    }
+
+    const tasks = await Task.find(query).populate("projectId", "name key workflowId").sort({ dueDate: 1 }).lean();
+
+    const workflowIds = [...new Set(tasks.map((task) => task?.projectId?.workflowId?.toString()).filter(Boolean))];
+
+    const workflows = await Workflow.find({ _id: { $in: workflowIds } })
+      .select("statuses")
+      .lean();
+    const workflowMap = new Map(workflows.map((workflow) => [workflow._id.toString(), workflow]));
+
+    return tasks.map((task) => {
+      const workflowId = task?.projectId?.workflowId?.toString();
+      const workflow = workflowId ? workflowMap.get(workflowId) : null;
+      const statusIdValue = task?.statusId?.toString?.() || task?.statusId;
+      const resolvedStatus = workflow?.statuses?.find((status) => status._id.toString() === statusIdValue?.toString?.());
+
+      if (resolvedStatus) {
+        return {
+          ...task,
+          statusId: {
+            _id: resolvedStatus._id,
+            name: resolvedStatus.name,
+            category: resolvedStatus.category,
+          },
+        };
+      }
+
+      return task;
+    });
   },
 
   async getUserActivityFeed(userId, limit = 20) {

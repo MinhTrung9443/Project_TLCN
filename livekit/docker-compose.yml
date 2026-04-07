@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: livekit
+    command: ["--config", "/config/livekit.yaml"]
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+      - "50000-50010:50000-50010/udp"
+    volumes:
+      - ./livekit.yaml:/config/livekit.yaml
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: redis-server
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis-data:

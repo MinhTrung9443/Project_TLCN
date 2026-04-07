@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react"; // <-- Thêm useMemo vào import
+import ReactMarkdown from "react-markdown";
 import moment from "moment";
 import EmojiPicker from "emoji-picker-react"; // <-- Thêm import cho EmojiPicker
 import apiClient from "../../services/apiClient";
@@ -108,112 +109,153 @@ const CommentItem = ({ comment, onCommentUpdated, onCommentDeleted, activeReplyI
   };
 
   return (
-    <div className="comment-item-container">
-      <div className="comment-item">
-        <img src={comment.userId.avatar || DEFAULT_AVATAR} alt={comment.userId.fullname || "Unknown User"} className="avatar" />
-        <div className="comment-body">
-          <div className="comment-header">
-            <strong>{comment.userId.fullname || "Unknown User"}</strong>
-            <span>{moment(comment.createdAt).fromNow()}</span>
-          </div>
-
-          {/* --- BỔ SUNG LẠI NỘI DUNG COMMENT BỊ THIẾU --- */}
+    <div className="space-y-1">
+      <div className="flex gap-2">
+        <img
+          src={comment.userId.avatar || DEFAULT_AVATAR}
+          alt={comment.userId.fullname || "Unknown User"}
+          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          {/* Comment Bubble */}
           {isEditing ? (
-            <div className="comment-edit-form">
-              <textarea value={editedContent} onChange={(e) => setEditedContent(e.target.value)} />
-              <button onClick={handleUpdate}>Save</button>
-              <button onClick={() => setIsEditing(false)}>Cancel</button>
+            <div className="space-y-2 mb-1 p-3 bg-neutral-100 rounded-2xl max-w-lg">
+              <textarea
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                className="w-full px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+              <div className="flex gap-1">
+                <button
+                  onClick={handleUpdate}
+                  className="flex-1 px-2 py-1 bg-primary-600 hover:bg-primary-700 text-white rounded text-xs font-medium transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 px-2 py-1 border border-neutral-300 text-neutral-700 rounded text-xs font-medium hover:bg-neutral-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
-            <>
-              <p>{comment.content}</p>
-
-              {/* Display attachments */}
-              {comment.attachments && comment.attachments.length > 0 && (
-                <div className="comment-attachments-list">
-                  {comment.attachments.map((attachment, index) => (
-                    <div key={index} className="attachment-item">
-                      {isImage(attachment.filename) ? (
-                        <div className="attachment-image">
-                          <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                            <img
-                              src={attachment.url}
-                              alt={attachment.filename}
-                              style={{
-                                maxWidth: "150px",
-                                maxHeight: "150px",
-                                borderRadius: "8px",
-                                objectFit: "contain",
-                                display: "block",
-                              }}
-                            />
-                          </a>
-                          <div className="attachment-filename">{attachment.filename}</div>
-                        </div>
-                      ) : (
-                        <div className="attachment-file">
-                          <span className="material-symbols-outlined">attach_file</span>
-                          <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                            {attachment.filename}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+            <div className="inline-block max-w-lg">
+              <div className="relative bg-neutral-100 rounded-2xl px-3 py-2">
+                <div className="font-semibold text-sm text-neutral-900 mb-0.5">{comment.userId.fullname || "Unknown User"}</div>
+                <div className="text-sm text-neutral-900 break-words [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-800 [&_code]:bg-neutral-200 [&_code]:px-1 [&_code]:rounded [&_p]:mb-1 last:[&_p]:mb-0">
+                  <ReactMarkdown>{comment.content}</ReactMarkdown>
                 </div>
-              )}
-            </>
+
+                {/* Display attachments */}
+                {comment.attachments && comment.attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {comment.attachments.map((attachment, index) => (
+                      <div key={index} className="flex-shrink-0">
+                        {isImage(attachment.filename) ? (
+                          <div className="flex flex-col gap-1">
+                            <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="inline-block">
+                              <img src={attachment.url} alt={attachment.filename} className="max-w-[200px] max-h-[200px] rounded-lg object-contain" />
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 p-1.5 bg-white rounded text-xs">
+                            <span className="material-symbols-outlined text-xs text-neutral-600">attach_file</span>
+                            <a
+                              href={attachment.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary-600 hover:text-primary-700 truncate"
+                            >
+                              {attachment.filename}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Reactions on bubble */}
+                {groupedReactions.length > 0 && (
+                  <div className="absolute -bottom-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 bg-white rounded-full border border-neutral-200 shadow-sm">
+                    {groupedReactions.slice(0, 3).map(({ emoji }) => (
+                      <span key={emoji} className="text-xs">
+                        {emoji}
+                      </span>
+                    ))}
+                    <span className="text-xs text-neutral-600 ml-0.5">{groupedReactions.reduce((sum, r) => sum + r.count, 0)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
-          {/* --- Reactions và Actions đặt ở đây --- */}
-          <div className="comment-footer">
-            <div className="comment-reactions">
-              {groupedReactions.map(({ emoji, count }) => (
-                <span key={emoji} className="reaction-chip">
-                  {emoji} {count}
-                </span>
-              ))}
-              <button className="add-reaction-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="Add reaction">
-                +
-              </button>
-            </div>
-            <div className="comment-actions">
-              <button onClick={() => setActiveReplyId(isReplying ? null : comment._id)}>{isReplying ? "Cancel" : "Reply"}</button>
-              {isOwner && (
-                <>
-                  <button onClick={() => setIsEditing(true)}>Edit</button>
-                  <button onClick={() => setIsDeleteModalOpen(true)}>Delete</button>
-                </>
-              )}
-            </div>
+          {/* Actions below bubble - Facebook style */}
+          <div className="flex items-center gap-3 mt-1 ml-3 text-xs">
+            <span className="text-neutral-500 font-semibold">{moment(comment.createdAt).fromNow()}</span>
+            <button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="text-neutral-600 hover:text-neutral-900 font-semibold hover:underline"
+            >
+              Thích
+            </button>
+            <button
+              onClick={() => setActiveReplyId(isReplying ? null : comment._id)}
+              className="text-neutral-600 hover:text-neutral-900 font-semibold hover:underline"
+            >
+              {isReplying ? "Hủy" : "Trả lời"}
+            </button>
+            {isOwner && (
+              <>
+                <button onClick={() => setIsEditing(true)} className="text-neutral-600 hover:text-neutral-900 font-semibold hover:underline">
+                  Chỉnh sửa
+                </button>
+                <button onClick={() => setIsDeleteModalOpen(true)} className="text-neutral-600 hover:text-neutral-900 font-semibold hover:underline">
+                  Xóa
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Emoji picker nằm ngoài luồng bình thường */}
+      {/* Emoji picker */}
       {showEmojiPicker && (
-        <div className="emoji-picker-container">
+        <div className="ml-10 mt-1 p-2 bg-white rounded-lg border border-neutral-200 shadow-lg inline-block">
           <EmojiPicker onEmojiClick={handleEmojiClick} />
         </div>
       )}
 
       {/* Form Reply */}
       {isReplying && (
-        <form onSubmit={handlePostReply} className="comment-form reply-form">
-          <textarea
-            value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
-            placeholder={`Replying to ${comment.userId.fullname}...`}
-            rows="2"
-            autoFocus
-          />
-          <button type="submit">Post Reply</button>
-        </form>
+        <div className="ml-10 mt-1">
+          <form onSubmit={handlePostReply} className="flex gap-2">
+            <img src={DEFAULT_AVATAR} alt="Your avatar" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+            <div className="flex-1 bg-neutral-100 rounded-2xl px-3 py-2">
+              <textarea
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                placeholder="Viết câu trả lời..."
+                rows="1"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handlePostReply(e);
+                  }
+                }}
+                className="w-full text-sm bg-transparent border-none focus:outline-none resize-none"
+              />
+            </div>
+          </form>
+        </div>
       )}
 
-      {/* Render comment con (đệ quy) */}
+      {/* Nested comments */}
       {comment.children && comment.children.length > 0 && (
-        <div className="comment-replies">
+        <div className="ml-10 mt-2 space-y-2">
           {comment.children.map((childComment) => (
             <CommentItem
               key={childComment._id}

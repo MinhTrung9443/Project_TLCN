@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getTaskByKey, deleteTask } from "../../services/taskService";
 import TaskDetailPanel from "../../components/task/TaskDetailPanel";
-import "../../styles/pages/ManageTask/TaskDetailPage.css"; // Tạo file CSS mới nếu cần
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 
 const TaskDetailPage = () => {
   const { taskKey } = useParams();
@@ -85,15 +85,19 @@ const TaskDetailPage = () => {
   };
 
   if (loading) {
-    return <div className="loading-container">Loading task...</div>;
+    return (
+      <div className="flex items-center justify-center w-full h-screen">
+        <LoadingSpinner size="lg" text="Loading task..." />
+      </div>
+    );
   }
 
   if (!task) {
-    return <div className="loading-container">Task not found.</div>;
+    return <div className="flex items-center justify-center w-full h-screen text-neutral-600">Task not found.</div>;
   }
 
   return (
-    <div className="task-detail-page-wrapper">
+    <div className="w-full h-full">
       {/* 
         Tái sử dụng TaskDetailPanel.
         Chúng ta truyền một hàm onClose giả để nó không bị lỗi, 

@@ -3,3 +3,18 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+
+// Mock react-speech-recognition
+jest.mock('react-speech-recognition', () => ({
+  __esModule: true,
+  useSpeechRecognition: () => ({
+    transcript: '',
+    listening: false,
+    resetTranscript: jest.fn(),
+    browserSupportsSpeechRecognition: true,
+  }),
+  default: {
+    startListening: jest.fn(),
+    stopListening: jest.fn(),
+  }
+}));

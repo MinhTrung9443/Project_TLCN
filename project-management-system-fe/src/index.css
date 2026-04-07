@@ -1,24 +1,141 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&display=swap");
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply m-0 font-sans bg-white text-neutral-900;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code {
+    @apply font-mono;
+  }
+
+  a {
+    @apply no-underline;
+  }
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+@layer components {
+  .fade-in {
+    @apply opacity-0 animate-fade-in;
+  }
+
+  .btn-hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-0.5;
+  }
+}
+
+@layer utilities {
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease;
+  }
 }
 
 /* Global style for required field indicator */
 label.required::after {
   content: " *";
-  color: #ef4444;
-  font-weight: bold;
-  margin-left: 2px;
+  @apply text-red-600 font-bold ml-0.5;
 }
 
 .required {
-  color: #ef4444;
-  font-weight: bold;
+  @apply text-red-600 font-bold;
+}
+
+/* Custom scrollbar for meeting room sidebars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* LiveKit video conference styling */
+.lk-video-conference {
+  background: #1f2937;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Video grid layout */
+.lk-participant-row {
+  gap: 0.75rem;
+  margin: 0.5rem;
+}
+
+/* Individual participant tiles */
+.lk-participant-tile {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #111827;
+}
+
+.lk-participant-tile video {
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+.lk-participant-name {
+  background: rgba(0, 0, 0, 0.6);
+  color: #f3f4f6;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Single participant frame sizing */
+.lk-grid-layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lk-grid-layout .lk-participant-row:only-child {
+  max-width: 100%;
+}
+
+.lk-grid-layout .lk-participant-row:only-child .lk-participant-tile:only-child {
+  max-width: 75vw;
+  max-height: 75vh;
+  width: auto;
+  height: auto;
+}
+
+/* Control bar pointer events */
+.lk-control-bar {
+  pointer-events: auto;
 }

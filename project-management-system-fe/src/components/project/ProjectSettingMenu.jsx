@@ -1,46 +1,59 @@
 import React, { useContext } from "react";
 import { NavLink, useParams } from "react-router-dom";
 import { ProjectContext } from "../../contexts/ProjectContext";
-import "../../components/Setting/SettingMenu.css";
 
 const ProjectSettingMenu = () => {
   const { projectKey } = useParams();
   const { projectData } = useContext(ProjectContext);
 
   const menuItems = [
-    { path: "general", label: "General", icon: "settings" },
-    { path: "members", label: "Members", icon: "group" },
-    { path: "tasktype", label: "Task Type", icon: "task" },
-    { path: "priority", label: "Priority", icon: "flag" },
-    { path: "platform", label: "Platform", icon: "devices" },
-    { path: "workflow", label: "Workflow", icon: "account_tree" },
+    { path: "general", label: "General", icon: "info", description: "Basic info" },
+    { path: "members", label: "Members", icon: "group", description: "Team access" },
+    { path: "tasktype", label: "Task Type", icon: "category", description: "Work categories" },
+    { path: "priority", label: "Priority", icon: "flag", description: "Urgency levels" },
+    { path: "platform", label: "Platform", icon: "devices_other", description: "Target platforms" },
+    { path: "workflow", label: "Workflow", icon: "account_tree", description: "Status flow" },
   ];
 
-  return (
-    <div className="setting-menu-wrapper">
-      <div className="setting-menu-header">
-        <div className="header-info">
-          <h1 className="page-title">
-            <span className="material-symbols-outlined">settings</span>
-            {projectData?.name || "Project"} Settings
-          </h1>
-          <p className="page-subtitle">Configure project settings, members, and workflows</p>
-        </div>
-      </div>
+  if (projectData?.status === "completed") {
+    menuItems.push({
+      path: "__project_report__",
+      label: "Project Report",
+      icon: "analytics",
+      description: "Final delivery insights",
+    });
+  }
 
-      <nav className="setting-tabs">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={`/app/task-mgmt/projects/${projectKey}/settings/${item.path}`}
-            className={({ isActive }) => `tab-item ${isActive ? "active" : ""}`}
+  return (
+    <nav className="p-3 space-y-1">
+      {menuItems.map((item) => (
+        <NavLink
+          key={item.path}
+          to={
+            item.path === "__project_report__"
+              ? `/app/task-mgmt/projects/${projectKey}/report`
+              : `/app/task-mgmt/projects/${projectKey}/settings/${item.path}`
+          }
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              isActive ? "bg-primary-50 text-primary-700 shadow-sm" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+            }`
+          }
+        >
+          <div
+            className={({ isActive }) =>
+              `w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? "bg-primary-100" : "bg-neutral-100"}`
+            }
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
-            <span className="tab-label">{item.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-    </div>
+            <span className="material-symbols-outlined text-lg">{item.icon}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold">{item.label}</div>
+            <div className="text-xs text-neutral-500">{item.description}</div>
+          </div>
+        </NavLink>
+      ))}
+    </nav>
   );
 };
 

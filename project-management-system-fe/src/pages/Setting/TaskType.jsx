@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
-// KHÔNG CẦN useParams ở đây vì đây là trang global
-import { toast } from "react-toastify";
-import typeTaskService from "../../services/typeTaskService";
 import * as FaIcons from "react-icons/fa";
 import * as VscIcons from "react-icons/vsc";
-import "../../styles/pages/ManageProject/ProjectSettings_TaskType.css";
+import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
+import typeTaskService from "../../services/typeTaskService";
+import PageHeader from "../../components/ui/PageHeader";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import Badge from "../../components/ui/Badge";
+import EmptyState from "../../components/ui/EmptyState";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import IconPicker from "../../components/Setting/IconPicker";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
+
 const PREDEFINED_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
   { name: "FaStar", color: "#2ECC71" },
@@ -28,27 +34,7 @@ const IconComponent = ({ name }) => {
   return <Icon />;
 };
 
-const IconPicker = ({ selectedIcon, onSelect }) => {
-  return (
-    <div className="icon-picker-container">
-      {PREDEFINED_ICONS.map((icon) => (
-        <button
-          key={icon.name}
-          type="button"
-          className={`icon-picker-button ${selectedIcon === icon.name ? "selected" : ""}`}
-          onClick={() => onSelect(icon.name)}
-        >
-          <div className="icon-display" style={{ backgroundColor: icon.color }}>
-            <IconComponent name={icon.name} />
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-};
-
 const SettingTaskTypePage = () => {
-  // Tên component cho trang Global Settings
   const { user } = useAuth();
   const [taskTypes, setTaskTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +47,6 @@ const SettingTaskTypePage = () => {
   const fetchTaskTypes = useCallback(async () => {
     try {
       setLoading(true);
-      // Service này không cần projectKey
       const response = await typeTaskService.getAllTypeTask();
       setTaskTypes(response.data);
     } catch (error) {
@@ -79,6 +64,7 @@ const SettingTaskTypePage = () => {
     setCurrentTaskType(taskType ? { ...taskType } : { name: "", icon: "FaTasks", description: "" });
     setIsModalOpen(true);
   };
+
   const handleCloseModal = () => setIsModalOpen(false);
 
   const handleChange = (e) => {
@@ -97,7 +83,6 @@ const SettingTaskTypePage = () => {
       name: currentTaskType.name,
       icon: currentTaskType.icon,
       description: currentTaskType.description,
-      // Khi tạo mới từ trang global, nó là item mặc định nên projectId = null
       projectId: currentTaskType.projectId || null,
     };
     try {
@@ -105,7 +90,6 @@ const SettingTaskTypePage = () => {
         await typeTaskService.updateTypeTask(currentTaskType._id, payload);
         toast.success("Task type updated successfully!");
       } else {
-        // Không truyền projectKey, vì đây là tạo mới cho hệ thống
         await typeTaskService.createTypeTask(payload);
         toast.success("Task type created successfully!");
       }
@@ -135,84 +119,163 @@ const SettingTaskTypePage = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="py-24">
+        <LoadingSpinner size="lg" text="Loading task types..." />
+      </div>
+    );
+  }
 
   return (
-    <div className="settings-list-container">
-      <div className="settings-list-header">
-        <div className="header-col col-icon">Icon</div>
-        <div className="header-col col-name">Task Type</div>
-        <div className="header-col col-description">Description</div>
-        {user.role === "admin" && (
-          <div className="header-col col-actions">
-            <button className="btn-add-icon" onClick={() => handleOpenModal()}>
-              <VscIcons.VscAdd />
-            </button>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen bg-neutral-50">
+      <PageHeader
+        title="Task Types"
+        subtitle="Define the categories of work your team tracks"
+        icon="category"
+        badge={`${taskTypes.length} configured`}
+        actions={
+          user.role === "admin" ? (
+            <Button icon="add" onClick={() => handleOpenModal()}>
+              Create task type
+            </Button>
+          ) : null
+        }
+      />
 
-      <div className="settings-list-body">
-        {" "}
-        {/* Bọc trong một div để có style nhất quán */}
-        {taskTypes.map((tt) => {
-          const iconInfo = PREDEFINED_ICONS.find((i) => i.name === tt.icon);
-          const iconColor = iconInfo ? iconInfo.color : "#4BADE8";
-          return (
-            <div className="settings-list-row" key={tt._id}>
-              <div className="row-col col-icon">
-                <span className="icon-wrapper" style={{ backgroundColor: iconColor }}>
-                  <IconComponent name={tt.icon} />
-                </span>
-              </div>
-              <div className="row-col col-name">{tt.name}</div>
-              <div className="row-col col-description">{tt.description || "-"}</div>
-              {user.role === "admin" && !tt.projectId && (
-                <div className="row-col col-actions">
-                  <button className="btn-edit" onClick={() => handleOpenModal(tt)}>
-                    <FaIcons.FaPencilAlt />
-                  </button>
-                  <button className="btn-delete" onClick={() => handleDeleteClick(tt)}>
-                    <FaIcons.FaTrash />
-                  </button>
-                </div>
-              )}
-              {user.role === "admin" && tt.projectId && (
-                <div className="row-col col-actions">
-                  <span className="menu-item-disabled">Managed in Project</span>
-                </div>
-              )}
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        <Card header={<div className="text-sm text-neutral-600">Use task types to distinguish bugs, features, chores, and more.</div>}>
+          {taskTypes.length === 0 ? (
+            <EmptyState
+              icon="category"
+              title="No task types yet"
+              description="Create task types to help teams classify work and reporting."
+              action={
+                user.role === "admin" ? (
+                  <Button icon="add" onClick={() => handleOpenModal()}>
+                    Create task type
+                  </Button>
+                ) : null
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {taskTypes.map((tt) => {
+                const iconInfo = PREDEFINED_ICONS.find((i) => i.name === tt.icon);
+                const iconColor = iconInfo ? iconInfo.color : "#4BADE8";
+                return (
+                  <Card
+                    key={tt._id}
+                    hoverable
+                    className="h-full"
+                    header={
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl shadow"
+                            style={{ backgroundColor: iconColor }}
+                          >
+                            <IconComponent name={tt.icon} />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-neutral-900">{tt.name}</h3>
+                            <p className="text-sm text-neutral-500">{tt.level ? `Level ${tt.level}` : "Standard"}</p>
+                          </div>
+                        </div>
+                        {tt.projectId && (
+                          <Badge variant="primary" size="sm" icon="hub">
+                            Project
+                          </Badge>
+                        )}
+                      </div>
+                    }
+                    footer={
+                      user.role === "admin" && !tt.projectId ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="secondary" size="sm" icon="edit" onClick={() => handleOpenModal(tt)}>
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-accent-600 hover:bg-accent-50"
+                            icon="delete"
+                            onClick={() => handleDeleteClick(tt)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      ) : null
+                    }
+                  >
+                    <p className="text-sm text-neutral-600 line-clamp-3">{tt.description || "No description"}</p>
+                  </Card>
+                );
+              })}
             </div>
-          );
-        })}
+          )}
+        </Card>
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>{currentTaskType?._id ? "Edit Default Task Type" : "Create Default Task Type"}</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="name" className="required">
-                  Task Type
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
+          <div className="bg-white rounded-xl w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase text-neutral-500">Task type</p>
+                <h2 className="text-lg font-semibold text-neutral-900">{currentTaskType?._id ? "Edit task type" : "Create task type"}</h2>
+              </div>
+              <Button variant="ghost" size="sm" icon="close" onClick={handleCloseModal} />
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium text-neutral-800">
+                  Name
                 </label>
-                <input id="name" name="name" value={currentTaskType.name} onChange={handleChange} required />
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={currentTaskType?.name || ""}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g. Bug, Feature, Story"
+                  className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
               </div>
-              <div className="form-group">
-                <label>Icon</label>
-                <IconPicker selectedIcon={currentTaskType.icon} onSelect={handleIconSelect} />
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-neutral-800">Icon</p>
+                <IconPicker
+                  icons={PREDEFINED_ICONS.map((icon) => ({
+                    ...icon,
+                    component: <IconComponent name={icon.name} />,
+                  }))}
+                  selectedIcon={currentTaskType?.icon || "FaTasks"}
+                  onSelect={handleIconSelect}
+                />
               </div>
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea id="description" name="description" rows="3" value={currentTaskType.description || ""} onChange={handleChange}></textarea>
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium text-neutral-800">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows="3"
+                  value={currentTaskType?.description || ""}
+                  onChange={handleChange}
+                  placeholder="Optional description"
+                  className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                ></textarea>
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-200">
+                <Button type="button" variant="secondary" onClick={handleCloseModal}>
                   Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                </Button>
+                <Button type="submit" disabled={isSaving} icon="save">
                   {isSaving ? "Saving..." : "Save"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

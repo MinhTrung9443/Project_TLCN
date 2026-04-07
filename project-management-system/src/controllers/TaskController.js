@@ -157,6 +157,20 @@ const handleAddAttachment = async (req, res) => {
   }
 };
 
+const handleAddAttachmentFromDocument = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { documentIds } = req.body;
+    const userId = req.user.id;
+
+    const updatedTask = await taskService.addAttachmentsFromDocuments(taskId, documentIds, userId);
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    console.error("Error adding attachment from documents:", error);
+    res.status(error.statusCode || 500).json({ message: error.message || "Server Error" });
+  }
+};
+
 const handleDeleteAttachment = async (req, res) => {
   try {
     const { taskId, attachmentId } = req.params;
@@ -268,6 +282,7 @@ module.exports = {
   handleDeleteTask,
   handleGetTaskHistory,
   handleAddAttachment,
+  handleAddAttachmentFromDocument,
   handleDeleteAttachment,
   handleLinkTask,
   handleUnlinkTask,

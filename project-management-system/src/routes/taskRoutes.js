@@ -10,6 +10,7 @@ const {
   handleDeleteTask,
   handleGetTaskHistory,
   handleAddAttachment,
+  handleAddAttachmentFromDocument,
   handleDeleteAttachment,
   handleLinkTask,
   handleUnlinkTask,
@@ -38,6 +39,7 @@ router.get("/:taskId/comments", protect, handleGetComments);
 router.post("/:taskId/comments", protect, upload.array("attachments", 5), handleCreateComment);
 
 router.post("/:taskId/attachments", protect, upload.single("attachmentFile"), handleAddAttachment);
+router.post("/:taskId/attachments/from-doc", protect, handleAddAttachmentFromDocument);
 router.delete("/:taskId/attachments/:attachmentId", protect, handleDeleteAttachment);
 
 router.post("/:taskId/links", protect, handleLinkTask);

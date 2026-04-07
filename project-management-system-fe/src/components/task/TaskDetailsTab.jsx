@@ -6,29 +6,16 @@ import LinkedTasksTab from "./LinkedTasksTab";
 import LogTimeModal from "./LogTimeModal";
 import TimeLogList from "./TimeLogList";
 const statusCategoryStyles = {
-  "To Do": {
-    backgroundColor: "#dfe1e6", // Xám
-    color: "#42526E",
-  },
-  "In Progress": {
-    backgroundColor: "#deebff", // Xanh dương nhạt
-    color: "#0747A6",
-  },
-  Done: {
-    backgroundColor: "#e3fcef", // Xanh lá nhạt
-    color: "#0B875B",
-  },
-  // Thêm màu cho các category khác nếu có
-  default: {
-    // Màu mặc định nếu không khớp
-    backgroundColor: "#dfe1e6",
-    color: "#42526E",
-  },
+  "To Do": "bg-neutral-100 text-neutral-700 border border-neutral-200",
+  "In Progress": "bg-primary-100 text-primary-700 border border-primary-200",
+  Done: "bg-success-100 text-success-700 border border-success-200",
+  default: "bg-neutral-100 text-neutral-700 border border-neutral-200",
 };
 const TaskDetailsTab = ({
   editableTask,
   setEditableTask,
   handleUpdate,
+  handleCreateGithubBranch,
   statuses,
   projectMembers,
   projectTaskTypes,
@@ -87,21 +74,10 @@ const TaskDetailsTab = ({
   const selectedStatusOption = statusOptions.find((opt) => opt.value === currentStatusId);
 
   const formatOptionLabel = ({ label, category }) => {
-    const style = statusCategoryStyles[category] || statusCategoryStyles.default;
+    const styleClass = statusCategoryStyles[category] || statusCategoryStyles.default;
     return (
-      <div style={{ display: "inline-block" }}>
-        <span
-          style={{
-            ...style,
-            borderRadius: "3px",
-            padding: "3px 8px",
-            fontWeight: 600,
-            fontSize: "12px",
-            textTransform: "uppercase", // In hoa cho đẹp
-          }}
-        >
-          {label}
-        </span>
+      <div className="inline-block">
+        <span className={`${styleClass} rounded px-2 py-1 font-semibold text-xs uppercase`}>{label}</span>
       </div>
     );
   };
@@ -137,27 +113,27 @@ const TaskDetailsTab = ({
 
   return (
     <>
-      <div className="panel-section">
-        <div className="detail-item-editable">
-          <strong>Progress</strong>
-          <div className="progress-bar-container">
+      <div className="p-6 border-b border-neutral-200">
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Progress</strong>
+          <div className="flex items-center gap-4">
             <input
               type="range"
               min="0"
               max="100"
               value={editableTask.progress || 0}
-              className="progress-slider"
+              className="flex-1 h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
               onChange={(e) => setEditableTask((prev) => ({ ...prev, progress: parseInt(e.target.value, 10) }))}
               onMouseUp={(e) => handleUpdate("progress", parseInt(e.target.value, 10))}
             />
-            <span>{editableTask.progress || 0}%</span>
+            <span className="text-sm font-semibold text-neutral-700 min-w-[3rem] text-right">{editableTask.progress || 0}%</span>
           </div>
         </div>
       </div>
 
-      <div className="panel-section detail-grid-editable">
-        <div className="detail-item-editable">
-          <strong>Status</strong>
+      <div className="p-6 border-b border-neutral-200 grid grid-cols-2 gap-x-6 gap-y-4">
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Status</strong>
           <Select
             value={selectedStatusOption}
             options={statusOptions}
@@ -167,8 +143,8 @@ const TaskDetailsTab = ({
             placeholder={statusOptions.length === 0 ? "Loading..." : "Select..."}
           />
         </div>
-        <div className="detail-item-editable">
-          <strong>Assignee</strong>
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Assignee</strong>
           <Select
             value={findOption(projectMembers, editableTask.assigneeId)}
             options={projectMembers} // Sử dụng danh sách members
@@ -178,18 +154,18 @@ const TaskDetailsTab = ({
             isDisabled={Boolean(editableTask.assigneeId)}
           />
         </div>
-        <div className="detail-item-editable">
-          <strong>Reporter</strong>
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Reporter</strong>
           <input
             type="text"
             value={editableTask.reporterId?.fullname || "N/A"}
-            className="editable-input"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
             disabled
             style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
           />
         </div>
-        <div className="detail-item-editable">
-          <strong>Type</strong>
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Type</strong>
           <Select
             value={findOption(projectTaskTypes, editableTask.taskTypeId)}
             options={projectTaskTypes}
@@ -197,8 +173,8 @@ const TaskDetailsTab = ({
             placeholder={projectTaskTypes.length === 0 ? "Loading..." : "Select..."}
           />
         </div>
-        <div className="detail-item-editable">
-          <strong>Priority</strong>
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Priority</strong>
           <Select
             value={findOption(projectPriorities, editableTask.priorityId?._id)}
             options={projectPriorities}
@@ -206,18 +182,18 @@ const TaskDetailsTab = ({
             placeholder={projectPriorities.length === 0 ? "Loading..." : "Select..."}
           />
         </div>
-        <div className="detail-item-editable">
-          <strong>Sprint</strong>
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Sprint</strong>
           <Select
             value={findOption(projectSprints, editableTask.sprintId?._id)}
             options={projectSprints}
             onChange={(option) => handleUpdate("sprintId", option ? option.value : null)}
             isClearable
-            placeholder={!editableTask ? "" : projectSprints.length === 0 && editableTask.projectId ? "Loading..." : "Backlog"}
+            placeholder={!editableTask ? "" : "Backlog"}
           />
         </div>
-        <div className="detail-item-editable">
-          <strong>Platform</strong>
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Platform</strong>
           <Select
             value={findOption(projectPlatforms, editableTask.platformId?._id)}
             options={projectPlatforms}
@@ -225,39 +201,70 @@ const TaskDetailsTab = ({
             placeholder={projectPlatforms.length === 0 ? "Loading..." : "Select..."}
           />
         </div>
-        <div className="detail-item-editable">
-          <strong>Start Date</strong>
+        
+        {/* Development (GitHub Branch) */}
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Development</strong>
+          <div className="h-[42px] flex items-center">
+            {!editableTask.githubBranch ? (
+                <button
+                  title="Create new branch on GitHub"
+                  onClick={handleCreateGithubBranch}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-neutral-800 hover:bg-neutral-900 border border-transparent rounded-lg w-full justify-center shadow-sm transition-colors duration-200"
+                >
+                  <i className="bi bi-github"></i>
+                  Create Branch
+                </button>
+              ) : (
+                <a
+                  href={editableTask.projectId?.githubRepoName ? `https://github.com/${editableTask.projectId.githubRepoName}/tree/${editableTask.githubBranch}` : `https://github.com/hnhung31/HTML/tree/${editableTask.githubBranch}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg w-full justify-center max-w-full"
+                >
+                  <i className="bi bi-github shrink-0"></i>
+                  <span className="truncate">{editableTask.githubBranch}</span>
+                </a>
+              )}
+            </div>
+          </div>
+
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Start Date</strong>
           <input
             type="date"
             value={editableTask.startDate ? new Date(editableTask.startDate).toISOString().split("T")[0] : ""}
             onChange={(e) => handleUpdate("startDate", e.target.value)}
-            className="editable-input"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
           />
         </div>
-        <div className="detail-item-editable">
-          <strong>Due Date</strong>
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Due Date</strong>
           <input
             type="date"
             value={editableTask.dueDate ? new Date(editableTask.dueDate).toISOString().split("T")[0] : ""}
             onChange={(e) => handleUpdate("dueDate", e.target.value)}
-            className="editable-input"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
           />
         </div>
       </div>
 
       {/* Time Tracking Section */}
-      <div className="panel-section">
-        <div className="section-header">
-          <h4>Time Tracking</h4>
-          <button className="log-time-btn" onClick={() => setShowLogTimeModal(true)}>
-            <span className="material-symbols-outlined">schedule</span>
+      <div className="p-6 border-b border-neutral-200">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-lg font-semibold text-neutral-900">Time Tracking</h4>
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
+            onClick={() => setShowLogTimeModal(true)}
+          >
+            <span className="material-symbols-outlined text-lg">schedule</span>
             Log Time
           </button>
         </div>
 
-        <div className="detail-grid-editable">
-          <div className="detail-item-editable">
-            <strong>Estimated Time (hours)</strong>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="space-y-2">
+            <strong className="text-sm font-medium text-neutral-700">Estimated Time (hours)</strong>
             <input
               type="number"
               min="0"
@@ -265,18 +272,18 @@ const TaskDetailsTab = ({
               value={editableTask.estimatedTime || 0}
               onChange={(e) => setEditableTask((prev) => ({ ...prev, estimatedTime: parseFloat(e.target.value) || 0 }))}
               onBlur={(e) => handleUpdate("estimatedTime", parseFloat(e.target.value) || 0)}
-              className="editable-input"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
               placeholder="0"
               disabled={user?.role !== "admin" && userProjectRole === "MEMBER"}
               style={user?.role !== "admin" && userProjectRole === "MEMBER" ? { backgroundColor: "#f1f5f9", cursor: "not-allowed" } : {}}
             />
           </div>
-          <div className="detail-item-editable">
-            <strong>Actual Time (hours)</strong>
+          <div className="space-y-2">
+            <strong className="text-sm font-medium text-neutral-700">Actual Time (hours)</strong>
             <input
               type="number"
               value={editableTask.actualTime || 0}
-              className="editable-input"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
               disabled
               style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
             />
@@ -285,10 +292,10 @@ const TaskDetailsTab = ({
 
         {/* Time Remaining Bar */}
         {editableTask.estimatedTime > 0 && (
-          <div className="time-remaining-section">
-            <div className="time-remaining-header">
-              <strong>Time Remaining</strong>
-              <span className="time-remaining-text">
+          <div className="mt-6 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+            <div className="flex items-center justify-between mb-2">
+              <strong className="text-sm font-medium text-neutral-700">Time Remaining</strong>
+              <span className="text-sm">
                 {(() => {
                   const remaining = (editableTask.estimatedTime || 0) - (editableTask.actualTime || 0);
                   const isOvertime = remaining < 0;
@@ -305,18 +312,18 @@ const TaskDetailsTab = ({
                 })()}
               </span>
             </div>
-            <div className="time-remaining-bar">
+            <div className="w-full h-2 bg-neutral-200 rounded-full overflow-hidden my-3">
               <div
-                className="time-spent-fill"
+                className="h-full transition-all duration-300"
                 style={{
                   width: `${Math.min(((editableTask.actualTime || 0) / (editableTask.estimatedTime || 1)) * 100, 100)}%`,
                   backgroundColor: (editableTask.actualTime || 0) > (editableTask.estimatedTime || 0) ? "#ef4444" : "#3b82f6",
                 }}
               ></div>
             </div>
-            <div className="time-remaining-labels">
-              <span className="time-label">Spent: {editableTask.actualTime || 0}h</span>
-              <span className="time-label">Budget: {editableTask.estimatedTime || 0}h</span>
+            <div className="flex items-center justify-between text-xs text-neutral-600">
+              <span>Spent: {editableTask.actualTime || 0}h</span>
+              <span>Budget: {editableTask.estimatedTime || 0}h</span>
             </div>
           </div>
         )}
@@ -326,20 +333,20 @@ const TaskDetailsTab = ({
       </div>
 
       {/* Description */}
-      <div className="panel-section">
-        <h4>Description</h4>
+      <div className="p-6 border-b border-neutral-200">
+        <h4 className="text-lg font-semibold text-neutral-900 mb-4">Description</h4>
         <RichTextEditor value={editableTask.description || ""} onChange={handleDescriptionUpdate} />
       </div>
-      <div className="panel-section">
+      <div className="p-6 border-b border-neutral-200">
         <LinkedTasksTab task={editableTask} allProjectTasks={allProjectTasks} onLink={onLinkTask} onUnlink={onUnlinkTask} />
       </div>
 
-      <div className="panel-section">
+      <div className="p-6 border-b border-neutral-200">
         <AttachmentsTab attachments={editableTask.attachments} onAdd={onAddAttachment} onDelete={onDeleteAttachment} />
       </div>
 
-      <footer className="panel-footer">
-        <span>Created By: {editableTask.createdById?.fullname || "N/A"}</span>
+      <footer className="p-4 bg-neutral-50 border-t border-neutral-200">
+        <span className="text-sm text-neutral-600">Created By: {editableTask.createdById?.fullname || "N/A"}</span>
       </footer>
 
       {/* Log Time Modal */}

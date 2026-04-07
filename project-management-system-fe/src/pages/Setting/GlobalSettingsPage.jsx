@@ -1,24 +1,20 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-// Import các component con cho từng tab
 import SettingsTaskTypes from "./TaskType";
 import SettingsPriorities from "./Priority";
 import SettingsPlatforms from "./Platform";
-
-// Import Menu Tab
 import SettingMenu from "../../components/Setting/SettingMenu";
-import "./GlobalSettingsPage.css";
+import PageHeader from "../../components/ui/PageHeader";
+import { VscSettingsGear } from "react-icons/vsc";
 
 const GlobalSettingsPage = () => {
-  const { tabName = "tasktypes" } = useParams(); // Mặc định là 'tasktypes'
+  const { tabName = "tasktypes" } = useParams();
   const navigate = useNavigate();
 
   const handleTabChange = (newTab) => {
     navigate(`/app/settings/${newTab.toLowerCase()}`);
   };
 
-  // Hàm render nội dung dựa vào `tabName`
   const renderTabContent = () => {
     switch (tabName.toLowerCase()) {
       case "priorities":
@@ -32,9 +28,20 @@ const GlobalSettingsPage = () => {
   };
 
   return (
-    <div className="global-settings-container">
-      <SettingMenu activeTab={tabName} onTabChange={handleTabChange} />
-      <div className="settings-content-area">{renderTabContent()}</div>
+    <div className="space-y-6">
+      <PageHeader
+        icon={VscSettingsGear}
+        title="Global Settings"
+        description="Configure default task types, priorities, and platforms for your projects"
+        badge="Admin"
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-1">
+          <SettingMenu activeTab={tabName} onTabChange={handleTabChange} />
+        </div>
+        <div className="lg:col-span-4">{renderTabContent()}</div>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 const Notification = require("../models/Notification");
+const Task = require("../models/Task");
 
 class NotificationService {
   constructor() {
@@ -39,14 +40,28 @@ class NotificationService {
     GROUP_MEMBER_ADDED: "group_member_added",
     GROUP_MEMBER_REMOVED: "group_member_removed",
 
+    // Meeting notifications
+    MEETING_INVITED: "meeting_invited",
+    MEETING_REMINDER: "meeting_reminder",
+
     // System notifications
     WORKFLOW_CHANGED: "workflow_changed",
+    SPRINT_END_DATE_REACHED: "sprint_end_date_reached",
   };
 
   static PRIORITIES = {
     CRITICAL: ["task_overdue", "task_deadline_soon", "task_deleted"],
     HIGH: ["task_assigned", "task_priority_changed"],
-    MEDIUM: ["task_status_changed", "task_commented", "sprint_ending_soon", "task_deadline_changed", "task_updated"],
+    MEDIUM: [
+      "task_status_changed",
+      "task_commented",
+      "sprint_ending_soon",
+      "task_deadline_changed",
+      "task_updated",
+      "meeting_invited",
+      "meeting_reminder",
+      "sprint_end_date_reached",
+    ],
     LOW: ["project_member_added", "group_member_added", "sprint_started", "sprint_completed"],
   };
 
@@ -64,31 +79,183 @@ class NotificationService {
   // CREATE & SEND NOTIFICATION
   // ============================================
 
-  async createAndSend({ userId, title, message, type, relatedId = null, relatedType = null, priority = null, sendRealtime = true }) {
+  buildGroupMessage(type, metadata, latestActorName, actorCount, fallbackMessage) {
+    if (type === NotificationService.TYPES.TASK_COMMENTED && metadata?.taskName) {
+      if (actorCount <= 1) {
+        return fallbackMessage;
+      }
+      return `${latestActorName} and ${actorCount - 1} other${actorCount - 1 > 1 ? "s" : ""} commented on "${metadata.taskName}"`;
+    }
+
+    if (type === NotificationService.TYPES.TASK_UPDATED && metadata?.taskName) {
+      if (actorCount <= 1) {
+        return fallbackMessage;
+      }
+      return `${latestActorName} and ${actorCount - 1} other${actorCount - 1 > 1 ? "s" : ""} updated "${metadata.taskName}"`;
+    }
+
+    if (type === NotificationService.TYPES.TASK_STATUS_CHANGED && metadata?.taskName) {
+      if (actorCount <= 1) {
+        return fallbackMessage;
+      }
+      return `${latestActorName} and ${actorCount - 1} other${actorCount - 1 > 1 ? "s" : ""} changed status of "${metadata.taskName}"`;
+    }
+
+    if (type === NotificationService.TYPES.TASK_PRIORITY_CHANGED && metadata?.taskName) {
+      if (actorCount <= 1) {
+        return fallbackMessage;
+      }
+      return `${latestActorName} and ${actorCount - 1} other${actorCount - 1 > 1 ? "s" : ""} changed priority of "${metadata.taskName}"`;
+    }
+
+    return fallbackMessage;
+  }
+
+  buildGroupTitle(type, actorCount, fallbackTitle) {
+    if (type === NotificationService.TYPES.TASK_COMMENTED && actorCount > 1) {
+      return "New Comments on Task";
+    }
+    if (type === NotificationService.TYPES.TASK_UPDATED && actorCount > 1) {
+      return "Task Updated by Multiple People";
+    }
+    if (type === NotificationService.TYPES.TASK_STATUS_CHANGED && actorCount > 1) {
+      return "Task Status Updated";
+    }
+    if (type === NotificationService.TYPES.TASK_PRIORITY_CHANGED && actorCount > 1) {
+      return "Task Priority Updated";
+    }
+    return fallbackTitle;
+  }
+
+  async createAndSend({
+    userId,
+    title,
+    message,
+    type,
+    relatedId = null,
+    relatedType = null,
+    priority = null,
+    sendRealtime = true,
+    actorId = null,
+    actorName = null,
+    metadata = {},
+    enableGrouping = false,
+    groupingWindowMinutes = 30,
+  }) {
     try {
       // Auto-calculate priority if not provided
       const notificationPriority = priority || this.getPriority(type);
+      const normalizedRelatedId = relatedId == null ? null : String(relatedId);
 
-      // Save to database
-      const notification = await Notification.create({
-        userId,
-        title,
-        message,
-        type,
-        relatedId,
-        relatedType,
-        isRead: false,
-      });
+      const resolvedGroupKey = normalizedRelatedId && relatedType ? `${type}:${relatedType}:${normalizedRelatedId}` : null;
+      const groupingEnabled = enableGrouping && resolvedGroupKey;
+
+      let notification;
+
+      if (groupingEnabled) {
+        const windowStart = new Date(Date.now() - groupingWindowMinutes * 60 * 1000);
+        notification = await Notification.findOne({
+          userId,
+          type,
+          relatedId: normalizedRelatedId,
+          relatedType,
+          groupKey: resolvedGroupKey,
+          isRead: false,
+          createdAt: { $gte: windowStart },
+        }).sort({ createdAt: -1 });
+      }
+
+      if (notification) {
+        notification.groupCount = (notification.groupCount || 1) + 1;
+
+        if (actorId) {
+          const actorIdStr = actorId.toString();
+          const actorIds = (notification.actorIds || []).map((id) => id.toString());
+          if (!actorIds.includes(actorIdStr)) {
+            notification.actorIds = [...(notification.actorIds || []), actorId];
+          }
+        }
+
+        if (actorName) {
+          const actorNames = notification.actorNames || [];
+          if (!actorNames.includes(actorName)) {
+            notification.actorNames = [...actorNames, actorName];
+          }
+          notification.latestActorName = actorName;
+        }
+
+        notification.actorCount = Math.max(
+          (notification.actorIds || []).length,
+          (notification.actorNames || []).length,
+          notification.actorCount || 0,
+          actorName ? 1 : 0,
+        );
+
+        notification.metadata = {
+          ...(notification.metadata || {}),
+          ...(metadata || {}),
+        };
+        notification.priority = notificationPriority;
+
+        notification.message = this.buildGroupMessage(
+          type,
+          notification.metadata,
+          notification.latestActorName || actorName || "Someone",
+          notification.actorCount,
+          message,
+        );
+
+        notification.title = this.buildGroupTitle(type, notification.actorCount, title);
+        notification.createdAt = new Date();
+        await notification.save();
+      } else {
+        // Save to database
+        notification = await Notification.create({
+          userId,
+          title,
+          message,
+          type,
+          priority: notificationPriority,
+          relatedId: normalizedRelatedId,
+          relatedType,
+          groupKey: resolvedGroupKey,
+          actorIds: actorId ? [actorId] : [],
+          actorNames: actorName ? [actorName] : [],
+          actorCount: actorName ? 1 : 0,
+          groupCount: 1,
+          latestActorName: actorName || null,
+          metadata: metadata || {},
+          isRead: false,
+        });
+      }
 
       // Send via WebSocket if enabled
       if (sendRealtime && this.io) {
+        let realtimeRelatedId = notification.relatedId;
+        const relatedIdAsString = notification.relatedId ? String(notification.relatedId) : null;
+        if (notification.relatedType === "Task" && relatedIdAsString && /^[a-f\d]{24}$/i.test(relatedIdAsString)) {
+          try {
+            const task = await Task.findById(relatedIdAsString).select("key").lean();
+            if (task?.key) {
+              realtimeRelatedId = task.key;
+            }
+          } catch (taskLookupError) {
+            console.error("[NotificationService] Failed to resolve task key for realtime payload:", taskLookupError.message);
+          }
+        }
+
         this.io.to(`user:${userId}`).emit("notification", {
           _id: notification._id,
           title: notification.title,
           message: notification.message,
           type: notification.type,
-          relatedId: notification.relatedId,
+          relatedId: realtimeRelatedId,
           relatedType: notification.relatedType,
+          metadata: notification.metadata || {},
+          groupKey: notification.groupKey || null,
+          actorCount: notification.actorCount || 0,
+          groupCount: notification.groupCount || 1,
+          latestActorName: notification.latestActorName || null,
           isRead: notification.isRead,
           createdAt: notification.createdAt,
           priority: notificationPriority,
@@ -125,7 +292,7 @@ class NotificationService {
     });
   }
 
-  async notifyTaskCommented({ taskId, taskKey, taskName, commenterName, commentPreview, recipientIds }) {
+  async notifyTaskCommented({ taskId, taskKey, taskName, commenterId, commenterName, commentPreview, recipientIds }) {
     const notifications = recipientIds.map((userId) =>
       this.createAndSend({
         userId,
@@ -134,13 +301,17 @@ class NotificationService {
         type: NotificationService.TYPES.TASK_COMMENTED,
         relatedId: taskKey || taskId,
         relatedType: "Task",
-      })
+        actorId: commenterId,
+        actorName: commenterName,
+        metadata: { taskName },
+        enableGrouping: true,
+      }),
     );
 
     return Promise.all(notifications);
   }
 
-  async notifyTaskUpdated({ taskId, taskKey, taskName, changedBy, recipientIds, changeSummary = null }) {
+  async notifyTaskUpdated({ taskId, taskKey, taskName, changedById = null, changedBy, recipientIds, changeSummary = null }) {
     const message = changeSummary ? `${changedBy} updated "${taskName}": ${changeSummary}` : `${changedBy} updated "${taskName}"`;
 
     const notifications = recipientIds.map((userId) =>
@@ -151,13 +322,17 @@ class NotificationService {
         type: NotificationService.TYPES.TASK_UPDATED,
         relatedId: taskKey || taskId,
         relatedType: "Task",
-      })
+        actorId: changedById,
+        actorName: changedBy,
+        metadata: { taskName },
+        enableGrouping: true,
+      }),
     );
 
     return Promise.all(notifications);
   }
 
-  async notifyTaskStatusChanged({ taskId, taskKey, taskName, oldStatus, newStatus, changedBy, recipientIds }) {
+  async notifyTaskStatusChanged({ taskId, taskKey, taskName, oldStatus, newStatus, changedById = null, changedBy, recipientIds }) {
     const notifications = recipientIds.map((userId) =>
       this.createAndSend({
         userId,
@@ -166,13 +341,17 @@ class NotificationService {
         type: NotificationService.TYPES.TASK_STATUS_CHANGED,
         relatedId: taskKey || taskId,
         relatedType: "Task",
-      })
+        actorId: changedById,
+        actorName: changedBy,
+        metadata: { taskName, oldStatus, newStatus },
+        enableGrouping: true,
+      }),
     );
 
     return Promise.all(notifications);
   }
 
-  async notifyTaskPriorityChanged({ taskId, taskKey, taskName, oldPriority, newPriority, changedBy, recipientIds }) {
+  async notifyTaskPriorityChanged({ taskId, taskKey, taskName, oldPriority, newPriority, changedById = null, changedBy, recipientIds }) {
     // Only notify if priority increased to High or Critical
     if (!["High", "Critical"].includes(newPriority)) {
       return;
@@ -184,9 +363,13 @@ class NotificationService {
         title: "Task Priority Changed",
         message: `${changedBy} changed priority of "${taskName}" from ${oldPriority} to ${newPriority}`,
         type: NotificationService.TYPES.TASK_PRIORITY_CHANGED,
-        relatedId: taskId,
+        relatedId: taskKey || taskId,
         relatedType: "Task",
-      })
+        actorId: changedById,
+        actorName: changedBy,
+        metadata: { taskName, oldPriority, newPriority },
+        enableGrouping: true,
+      }),
     );
 
     return Promise.all(notifications);
@@ -203,8 +386,9 @@ class NotificationService {
     });
   }
 
-  async notifyTaskOverdue({ taskId, taskName, assigneeId, projectLeadId }) {
-    const notifications = [assigneeId, projectLeadId]
+  async notifyTaskOverdue({ taskId, taskName, assigneeId, projectLeadId, projectLeadIds = [] }) {
+    const resolvedLeadIds = Array.isArray(projectLeadIds) && projectLeadIds.length > 0 ? projectLeadIds : [projectLeadId];
+    const notifications = [...new Set([assigneeId, ...resolvedLeadIds].filter((id) => id).map((id) => id.toString()))]
       .filter((id) => id)
       .map((userId) =>
         this.createAndSend({
@@ -214,7 +398,7 @@ class NotificationService {
           type: NotificationService.TYPES.TASK_OVERDUE,
           relatedId: taskId,
           relatedType: "Task",
-        })
+        }),
       );
 
     return Promise.all(notifications);
@@ -229,6 +413,17 @@ class NotificationService {
       userId: newMemberId,
       title: "Added to Project",
       message: `${addedByName} added you to project "${projectName}" as ${role}`,
+      type: NotificationService.TYPES.PROJECT_MEMBER_ADDED,
+      relatedId: projectId,
+      relatedType: "Project",
+    });
+  }
+
+  async notifyProjectManagerAssigned({ projectId, projectName, projectManagerId, assignedByName }) {
+    return this.createAndSend({
+      userId: projectManagerId,
+      title: "You are Project Manager",
+      message: `${assignedByName} assigned you as Project Manager for project "${projectName}"`,
       type: NotificationService.TYPES.PROJECT_MEMBER_ADDED,
       relatedId: projectId,
       relatedType: "Project",
@@ -261,31 +456,41 @@ class NotificationService {
   // SPRINT NOTIFICATIONS
   // ============================================
 
-  async notifySprintStarted({ sprintId, sprintName, memberIds, taskCount }) {
-    const notifications = memberIds.map((userId) =>
+  async notifySprintStarted({ sprintId, sprintName, memberIds = [], recipientIds = [], taskCount = {}, customTitle = null, customMessage = null }) {
+    const resolvedRecipientIds = recipientIds.length > 0 ? recipientIds : memberIds;
+    const notifications = resolvedRecipientIds.map((userId) =>
       this.createAndSend({
         userId,
-        title: "Sprint Started",
-        message: `Sprint "${sprintName}" has started. You have ${taskCount[userId] || 0} tasks`,
+        title: customTitle || "Sprint Started",
+        message: customMessage || `Sprint "${sprintName}" has started. You have ${taskCount[userId] || 0} tasks`,
         type: NotificationService.TYPES.SPRINT_STARTED,
         relatedId: sprintId,
         relatedType: "Sprint",
-      })
+      }),
     );
 
     return Promise.all(notifications);
   }
 
-  async notifySprintEndingSoon({ sprintId, sprintName, memberIds, incompleteTasks }) {
-    const notifications = memberIds.map((userId) =>
+  async notifySprintEndingSoon({
+    sprintId,
+    sprintName,
+    memberIds = [],
+    recipientIds = [],
+    incompleteTasks = {},
+    customTitle = null,
+    customMessage = null,
+  }) {
+    const resolvedRecipientIds = recipientIds.length > 0 ? recipientIds : memberIds;
+    const notifications = resolvedRecipientIds.map((userId) =>
       this.createAndSend({
         userId,
-        title: "Sprint Ending Soon",
-        message: `Sprint "${sprintName}" ends in 1 day. You have ${incompleteTasks[userId] || 0} incomplete tasks`,
+        title: customTitle || "Sprint Ending Soon",
+        message: customMessage || `Sprint "${sprintName}" ends in 1 day. You have ${incompleteTasks[userId] || 0} incomplete tasks`,
         type: NotificationService.TYPES.SPRINT_ENDING_SOON,
         relatedId: sprintId,
         relatedType: "Sprint",
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -300,7 +505,7 @@ class NotificationService {
         type: NotificationService.TYPES.SPRINT_COMPLETED,
         relatedId: sprintId,
         relatedType: "Sprint",
-      })
+      }),
     );
 
     return Promise.all(notifications);
@@ -333,17 +538,61 @@ class NotificationService {
   }
 
   // ============================================
-  // HELPER METHODS
+  // MEETING NOTIFICATIONS
   // ============================================
 
-  getPriority(type) {
-    for (const [priority, types] of Object.entries(NotificationService.PRIORITIES)) {
-      if (types.includes(type)) {
-        return priority;
-      }
-    }
-    return "LOW";
+  async notifyMeetingInvited({ meetingId, meetingTitle, invitedUserId, inviterName, projectKey = null }) {
+    return this.createAndSend({
+      userId: invitedUserId,
+      title: "Meeting Invitation",
+      message: `${inviterName} invited you to meeting "${meetingTitle}"`,
+      type: NotificationService.TYPES.MEETING_INVITED,
+      relatedId: meetingId,
+      relatedType: "Meeting",
+      metadata: {
+        projectKey,
+      },
+    });
   }
+
+  async notifyMeetingReminder({ meetingId, meetingTitle, recipientId, minutesBefore, startTime, projectKey = null }) {
+    return this.createAndSend({
+      userId: recipientId,
+      title: "Meeting Reminder",
+      message: `Meeting "${meetingTitle}" starts in ${minutesBefore} minutes`,
+      type: NotificationService.TYPES.MEETING_REMINDER,
+      relatedId: meetingId,
+      relatedType: "Meeting",
+      metadata: {
+        minutesBefore,
+        startTime,
+        projectKey,
+      },
+    });
+  }
+
+  async notifySprintEndDateReached({ sprintId, sprintName, projectKey = null, recipientIds, incompleteCount }) {
+    const notifications = recipientIds.map((userId) =>
+      this.createAndSend({
+        userId,
+        title: "Sprint End Date Reached",
+        message: `Sprint "${sprintName}" has reached its end date. Remaining incomplete tasks: ${incompleteCount}`,
+        type: NotificationService.TYPES.SPRINT_END_DATE_REACHED,
+        relatedId: sprintId,
+        relatedType: "Sprint",
+        metadata: {
+          projectKey,
+          incompleteCount,
+        },
+      }),
+    );
+
+    return Promise.all(notifications);
+  }
+
+  // ============================================
+  // HELPER METHODS
+  // ============================================
 
   // Get unread count for user
   async getUnreadCount(userId) {
@@ -356,9 +605,10 @@ class NotificationService {
   }
 
   // Mark notification as read
-  async markAsRead(notificationId) {
+  async markAsRead(notificationId, userId = null) {
     try {
-      return await Notification.findByIdAndUpdate(notificationId, { isRead: true }, { new: true });
+      const query = userId ? { _id: notificationId, userId } : { _id: notificationId };
+      return await Notification.findOneAndUpdate(query, { isRead: true }, { new: true });
     } catch (error) {
       console.error("Error marking notification as read:", error);
       throw error;

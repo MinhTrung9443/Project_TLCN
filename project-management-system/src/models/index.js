@@ -10,6 +10,13 @@ const Comment = require("./Comment");
 const TaskHistory = require("./TaskHistory");
 const Notification = require("./Notification.js");
 const AuditLog = require("./AuditLog");
+const Meeting = require("./Meeting");
+const Transcript = require("./Transcript");
+const Summary = require("./Summary");
+const ActionItem = require("./ActionItem");
+const ProcessingLog = require("./ProcessingLog");
+const ProjectDocument = require("./ProjectDocument");
+const ProjectReportSnapshot = require("./ProjectReportSnapshot");
 
 module.exports = {
   User,
@@ -24,5 +31,11 @@ module.exports = {
   Comment,
   TaskHistory,
   Notification,
-  AuditLog,
+  Meeting,
+  Transcript,
+  Summary,
+  ActionItem,
+  ProcessingLog,
+  ProjectDocument,
+  ProjectReportSnapshot,
 };

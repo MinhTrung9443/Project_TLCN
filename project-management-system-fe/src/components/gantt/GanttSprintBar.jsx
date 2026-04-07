@@ -8,44 +8,38 @@ const GanttSprintBar = ({ sprint, barStyle }) => {
   if (!hasValidDates) {
     // Không hiển thị thanh timeline nếu thiếu ngày
     return (
-      <div className="gantt-row gantt-row-sprint">
-        <div className="gantt-right">
-          <div className="gantt-timeline">{/* Không hiển thị bar */}</div>
-        </div>
+      <div className="flex items-center border-b border-slate-100 hover:bg-slate-50 transition-colors">
+        <div className="w-full h-14 flex items-center justify-center">{/* Không hiển thị bar */}</div>
       </div>
     );
   }
 
-  // Determine status class
-  const getStatusClass = () => {
+  // Determine status color
+  const getStatusColor = () => {
     const status = sprint.status?.toLowerCase() || "";
     const today = new Date();
     const startDate = new Date(sprint.startDate);
     const endDate = new Date(sprint.endDate);
 
     if (status === "completed" || status === "done") {
-      return "status-completed";
+      return "bg-emerald-500";
     }
     if (status === "active" || (startDate <= today && endDate >= today)) {
-      return "status-active";
+      return "bg-sky-500";
     }
     if (startDate > today) {
-      return "status-planned";
+      return "bg-slate-400";
     }
 
-    return "status-active"; // Default
+    return "bg-sky-500"; // Default
   };
 
   const tooltip = `${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}`;
-  const statusClass = getStatusClass();
+  const statusColor = getStatusColor();
 
   return (
-    <div className="gantt-row gantt-row-sprint">
-      <div className="gantt-right">
-        <div className="gantt-timeline">
-          <div className={`gantt-bar gantt-bar-sprint ${statusClass}`} style={barStyle} title={tooltip} />
-        </div>
-      </div>
+    <div className="border-b border-slate-100 hover:bg-slate-50 transition-colors h-14 relative flex items-center">
+      <div className={`${statusColor} rounded-md h-7 shadow-sm hover:shadow-md transition-shadow absolute`} style={barStyle} title={tooltip} />
     </div>
   );
 };

@@ -1,0 +1,129 @@
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+
+// Sub-document để lưu trạng thái tham gia của mỗi thành viên
+const ParticipantSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "declined"],
+      default: "pending",
+    },
+    reason: {
+      type: String,
+    },
+  },
+  { _id: false },
+);
+
+const MeetingSchema = new Schema(
+  {
+    title: {
+      type: String,
+      trim: true,
+    },
+    projectId: {
+      type: Schema.Types.ObjectId,
+      ref: "Project",
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["scheduled", "ongoing", "completed", "canceled"],
+      default: "scheduled",
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    relatedTeamId: {
+      type: Schema.Types.ObjectId,
+      ref: "Group",
+    },
+    relatedTaskId: {
+      type: Schema.Types.ObjectId,
+      ref: "Task",
+    },
+    participants: [ParticipantSchema],
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    meetingLink: {
+      type: String,
+      trim: true,
+    },
+    videoLink: {
+      type: String,
+      trim: true,
+    },
+    chatHistoryLink: {
+      type: String,
+      trim: true,
+    },
+    attachments: [
+      {
+        filename: {
+          type: String,
+          required: true,
+        },
+        url: {
+          type: String,
+          required: true,
+        },
+        public_id: {
+          type: String,
+          required: true,
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    startTime: {
+      type: Date,
+      required: true,
+    },
+    endTime: {
+      type: Date,
+      required: true,
+    },
+    transcriptId: {
+      type: Schema.Types.ObjectId,
+      ref: "Transcript",
+    },
+    summaryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Summary",
+    },
+    processingStatus: {
+      type: String,
+      enum: ["pending", "processing", "completed", "failed"],
+      default: "pending",
+    },
+    lastJobId: {
+      type: String,
+    },
+    reminder15SentAt: {
+      type: Date,
+    },
+    reminder5SentAt: {
+      type: Date,
+    },
+  },
+  { timestamps: true },
+);
+
+// Tối ưu hóa truy vấn
+MeetingSchema.index({ projectId: 1, startTime: -1 });
+MeetingSchema.index({ "participants.userId": 1, startTime: -1 });
+
+const Meeting = mongoose.model("Meeting", MeetingSchema);
+module.exports = Meeting;

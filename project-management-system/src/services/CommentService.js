@@ -48,6 +48,7 @@ const createComment = async (commentData, userId) => {
           taskId: task._id,
           taskKey: task.key,
           taskName: task.name,
+          commenterId: userId,
           commenterName,
           commentPreview,
           recipientIds: Array.from(recipientIds),

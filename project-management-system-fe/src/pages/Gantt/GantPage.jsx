@@ -5,7 +5,6 @@ import GanttHeader from "../../components/gantt/GanttHeader";
 import GanttLeftSection from "../../components/gantt/GanttLeftSection";
 import GanttRightSection from "../../components/gantt/GanttRightSection";
 import { generateTimelineColumns, calculateBarPosition, calculateDateRange } from "../../components/gantt/ganttUtils";
-import "../../styles/pages/Gantt/GanttPage.css";
 
 const GanttPage = () => {
   // Get user from AuthContext
@@ -128,7 +127,7 @@ const GanttPage = () => {
             (task) =>
               task.key?.toLowerCase().includes(lowerKeyword) ||
               task.name?.toLowerCase().includes(lowerKeyword) ||
-              task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword)
+              task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword),
           );
         }
 
@@ -142,7 +141,7 @@ const GanttPage = () => {
                   (task) =>
                     task.key?.toLowerCase().includes(lowerKeyword) ||
                     task.name?.toLowerCase().includes(lowerKeyword) ||
-                    task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword)
+                    task.assigneeId?.fullname?.toLowerCase().includes(lowerKeyword),
                 );
               }
               return filteredSprint;
@@ -154,7 +153,7 @@ const GanttPage = () => {
       })
       .filter(
         (item) =>
-          item.name?.toLowerCase().includes(lowerKeyword) || (item.tasks && item.tasks.length > 0) || (item.sprints && item.sprints.length > 0)
+          item.name?.toLowerCase().includes(lowerKeyword) || (item.tasks && item.tasks.length > 0) || (item.sprints && item.sprints.length > 0),
       );
   };
 
@@ -188,8 +187,8 @@ const GanttPage = () => {
             stats.total++;
 
             // Check status
-            const statusName = task.statusId?.name?.toLowerCase() || "";
-            const statusCategory = task.statusId?.category?.toLowerCase() || "";
+            const statusName = task.status?.name?.toLowerCase() || "";
+            const statusCategory = task.status?.category?.toLowerCase() || "";
             const dueDate = task.dueDate ? new Date(task.dueDate) : null;
 
             // Done: status category is 'done'
@@ -234,46 +233,45 @@ const GanttPage = () => {
   const statistics = calculateStatistics();
 
   return (
-    <div className="gantt-page" data-timeview={timeView}>
-      {/* Header */}
-      <GanttHeader
-        filter={filter}
-        setFilter={setFilter}
-        showFilterPanel={showFilterPanel}
-        setShowFilterPanel={setShowFilterPanel}
-        groupBy={groupBy}
-        showGroupByPanel={showGroupByPanel}
-        setShowGroupByPanel={setShowGroupByPanel}
-        handleGroupByChange={handleGroupByChange}
-        timeView={timeView}
-        setTimeView={setTimeView}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        statistics={statistics}
-        searchKeyword={searchKeyword}
-        setSearchKeyword={setSearchKeyword}
-      />
-
-      {/* Gantt Chart */}
-      <div className="gantt-container">
-        {/* Left Section - Fixed */}
-        <GanttLeftSection
-          projects={filteredGanttData}
+    <div className="gantt-page min-h-screen bg-slate-50" data-timeview={timeView}>
+      <div className="h-screen flex flex-col">
+        <GanttHeader
+          filter={filter}
+          setFilter={setFilter}
+          showFilterPanel={showFilterPanel}
+          setShowFilterPanel={setShowFilterPanel}
           groupBy={groupBy}
-          expandedItems={expandedItems}
-          toggleExpand={toggleExpand}
-          leftSectionRef={leftSectionRef}
+          showGroupByPanel={showGroupByPanel}
+          setShowGroupByPanel={setShowGroupByPanel}
+          handleGroupByChange={handleGroupByChange}
+          timeView={timeView}
+          setTimeView={setTimeView}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          statistics={statistics}
+          searchKeyword={searchKeyword}
+          setSearchKeyword={setSearchKeyword}
         />
 
-        {/* Right Section - Scrollable */}
-        <GanttRightSection
-          projects={filteredGanttData}
-          groupBy={groupBy}
-          expandedItems={expandedItems}
-          timelineColumns={timelineColumns}
-          calculateBarPosition={calculatePosition}
-          rightSectionRef={rightSectionRef}
-        />
+        <div className="flex-1 flex overflow-hidden bg-white">
+          <GanttLeftSection
+            projects={filteredGanttData}
+            groupBy={groupBy}
+            expandedItems={expandedItems}
+            toggleExpand={toggleExpand}
+            leftSectionRef={leftSectionRef}
+          />
+
+          <GanttRightSection
+            projects={filteredGanttData}
+            groupBy={groupBy}
+            expandedItems={expandedItems}
+            timelineColumns={timelineColumns}
+            calculateBarPosition={calculatePosition}
+            rightSectionRef={rightSectionRef}
+            timeView={timeView}
+          />
+        </div>
       </div>
     </div>
   );

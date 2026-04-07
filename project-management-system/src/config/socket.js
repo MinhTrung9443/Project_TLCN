@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const notificationService = require("../services/NotificationService");
+const Message = require("../models/Message");
 
 class SocketManager {
   constructor() {
@@ -11,7 +12,7 @@ class SocketManager {
   initialize(server) {
     this.io = new Server(server, {
       cors: {
-        origin: ["http://localhost:3000", process.env.CLIENT_URL],
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
         credentials: true,
       },
       pingTimeout: 60000,
@@ -72,7 +73,7 @@ class SocketManager {
     // Handle mark as read
     socket.on("notification:read", async (notificationId) => {
       try {
-        await notificationService.markAsRead(notificationId);
+        await notificationService.markAsRead(notificationId, userId);
         this.sendUnreadCount(userId);
       } catch (error) {
         console.error("Error marking notification as read:", error);
@@ -112,6 +113,97 @@ class SocketManager {
       socket.leave(`task:${taskId}`);
       console.log(`📋 User ${userId} stopped watching task: ${taskId}`);
     });
+    // ---------------- CHAT Functionality ----------------
+    // Handle user join a specific conversation room
+    socket.on("join chat", (room) => {
+      socket.join(room);
+      console.log(`User ${userId} joined chat room: ${room}`);
+    });
+
+    // TRONG FILE: SocketManager.js (Server)
+
+    socket.on("new message", (newMessageReceived) => {
+      try {
+        const chat = newMessageReceived.conversationId;
+        const senderId = newMessageReceived.sender._id || newMessageReceived.sender;
+        const conversationIdStr = chat._id ? chat._id.toString() : chat.toString();
+
+        // ---------------------------------------------------------
+        // CÁCH 1: Gửi Realtime cho những người ĐANG MỞ đoạn chat này (Quan trọng cho Group/Project)
+        // ---------------------------------------------------------
+        // Bất kỳ ai đã chạy socket.emit('join chat', conversationId) sẽ nhận được
+        socket.to(conversationIdStr).emit("message received", newMessageReceived);
+
+        // ---------------------------------------------------------
+        // CÁCH 2: Gửi Notification cho Chat 1-1 (Direct) hoặc khi người dùng đang ở trang khác
+        // ---------------------------------------------------------
+        if (chat.participants && chat.participants.length > 0) {
+          chat.participants.forEach((participant) => {
+            const pId = participant._id ? participant._id.toString() : participant.toString();
+            const sId = senderId.toString();
+
+            if (pId === sId) return; // Không gửi cho chính mình
+
+            // Chỉ gửi vào room cá nhân nếu đây là chat 1-1 (để hiện noti)
+            // Hoặc bạn có thể giữ logic này cho cả Group nếu muốn hiện noti đỏ trên menu
+            this.io.to(`user:${pId}`).emit("message received", newMessageReceived);
+          });
+        }
+      } catch (error) {
+        console.error("❌ Error new message:", error);
+      }
+    });
+    socket.on("mark as read", async ({ conversationId, userId }) => {
+      // LOG ĐỂ DEBUG: Xem server có nhận được lệnh không
+      console.log(`👁️ SERVER: User ${userId} mark read conversation ${conversationId}`);
+
+      try {
+        // 1. Update Database
+        await Message.updateMany(
+          {
+            conversationId: conversationId,
+            readBy: { $ne: userId },
+          },
+          { $addToSet: { readBy: userId } },
+        );
+
+        // 2. CHUYỂN ID SANG STRING ĐỂ GỬI ROOM
+        const roomName = conversationId.toString();
+
+        console.log(`📡 SERVER: Bắn tin 'message read' vào room: ${roomName}`);
+
+        // Gửi cho tất cả người đang mở đoạn chat này (trừ người vừa đọc)
+        socket.to(roomName).emit("message read", {
+          conversationId: roomName,
+          readerId: userId,
+        });
+      } catch (error) {
+        console.error("❌ SERVER Error:", error);
+      }
+    });
+
+    socket.on("typing", (room) => {
+      socket.in(room).emit("typing", room);
+    });
+    socket.on("stop typing", (room) => {
+      socket.in(room).emit("stop typing", room);
+    });
+
+    // Handle recall message
+    socket.on("recall message", ({ conversationId, messageId }) => {
+      const roomName = conversationId._id ? conversationId._id.toString() : conversationId.toString();
+      socket.to(roomName).emit("message recalled", { messageId: messageId.toString() });
+    });
+
+    // Handle reaction
+    socket.on("send reaction", ({ conversationId, messageId, reaction, userId }) => {
+      const roomName = conversationId.toString();
+      socket.to(roomName).emit("message reaction update", {
+        messageId,
+        reaction,
+        userId,
+      });
+    });
   }
 
   async sendUnreadCount(userId) {
@@ -123,27 +215,22 @@ class SocketManager {
     }
   }
 
-  // Send notification to specific user
   sendToUser(userId, event, data) {
     this.io.to(`user:${userId}`).emit(event, data);
   }
 
-  // Send to project room
   sendToProject(projectId, event, data) {
     this.io.to(`project:${projectId}`).emit(event, data);
   }
 
-  // Send to task room
   sendToTask(taskId, event, data) {
     this.io.to(`task:${taskId}`).emit(event, data);
   }
 
-  // Check if user is online
   isUserOnline(userId) {
     return this.connectedUsers.has(userId);
   }
 
-  // Get IO instance
   getIO() {
     return this.io;
   }

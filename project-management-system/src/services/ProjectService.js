@@ -1,4 +1,5 @@
 const Project = require("../models/Project");
+const Task = require("../models/Task");
 const TaskType = require("../models/TaskType");
 const Priority = require("../models/Priority");
 const Platform = require("../models/Platform");
@@ -148,6 +149,20 @@ const createProject = async (projectData, userId) => {
     recordId: savedProject._id,
     newData: savedProject,
   });
+
+  try {
+    if (projectManagerId && projectManagerId.toString() !== userId.toString()) {
+      const creator = await User.findById(userId).select("fullname").lean();
+      await notificationService.notifyProjectManagerAssigned({
+        projectId: savedProject._id,
+        projectName: savedProject.name,
+        projectManagerId,
+        assignedByName: creator?.fullname || "Admin",
+      });
+    }
+  } catch (notificationError) {
+    console.error("Failed to send project manager assignment notification:", notificationError);
+  }
 
   return savedProject;
 };
@@ -648,7 +663,7 @@ const addMembersFromGroupToProject = async (projectKey, data, actor) => {
   if (!finalLeaderId) {
     // Tìm member nào trong memberIds đang là LEADER trong project.members
     const existingLeaderInMembers = project.members.find(
-      (m) => m.role === "LEADER" && memberIds.some((mid) => mid.toString() === m.userId.toString())
+      (m) => m.role === "LEADER" && memberIds.some((mid) => mid.toString() === m.userId.toString()),
     );
 
     // Hoặc tìm member nào đang là leaderId trong một team khác
@@ -723,6 +738,17 @@ const removeMemberFromProject = async (projectKey, userIdToRemove) => {
   });
 
   await project.save();
+
+  try {
+    await notificationService.notifyProjectMemberRemoved({
+      projectId: project._id,
+      projectName: project.name,
+      removedMemberId: userIdToRemove,
+    });
+  } catch (notificationError) {
+    console.error("Failed to send project member removed notification:", notificationError);
+  }
+
   return project; // Trả về project đã cập nhật
 };
 
@@ -856,6 +882,30 @@ const changeTeamLeader = async (projectKey, teamId, newLeaderId) => {
   }
 
   await project.save();
+
+  try {
+    if (oldLeaderId.toString() !== newLeaderId.toString()) {
+      await Promise.all([
+        notificationService.notifyProjectRoleChanged({
+          projectId: project._id,
+          projectName: project.name,
+          memberId: oldLeaderId,
+          oldRole: "LEADER",
+          newRole: "MEMBER",
+        }),
+        notificationService.notifyProjectRoleChanged({
+          projectId: project._id,
+          projectName: project.name,
+          memberId: newLeaderId,
+          oldRole: "MEMBER",
+          newRole: "LEADER",
+        }),
+      ]);
+    }
+  } catch (notificationError) {
+    console.error("Failed to send team leader change notifications:", notificationError);
+  }
+
   return project;
 };
 const addMemberToTeamInProject = async (projectKey, teamId, userIdToAdd) => {
@@ -893,6 +943,43 @@ const removeMemberFromTeamInProject = async (projectKey, teamId, userIdToRemove)
   return project;
 };
 
+const getProjectDetails = async (projectKey) => {
+  const project = await Project.findOne({ key: projectKey.toUpperCase(), isDeleted: false })
+    .populate({
+      path: "members.userId",
+      select: "_id fullname username email avatar status",
+    })
+    .populate({
+      path: "teams.teamId",
+      model: "Group",
+      select: "name status",
+    })
+    .populate({
+      path: "teams.leaderId",
+      select: "_id fullname username email avatar status",
+    })
+    .populate({
+      path: "teams.members",
+      select: "_id fullname username email avatar status",
+    })
+    .lean();
+
+  if (!project) {
+    const error = new Error("Project not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const tasks = await Task.find({ projectId: project._id })
+    .populate("assigneeId", "_id fullname username email avatar")
+    .populate("reporterId", "_id fullname username email avatar")
+    .lean();
+
+  const projectManager = project.members.find((m) => m.role === "PROJECT_MANAGER");
+
+  return { ...project, projectManager: projectManager ? projectManager.userId : null, tasks };
+};
+
 module.exports = {
   createProject,
   getAllProjects,
@@ -913,4 +1000,5 @@ module.exports = {
   changeTeamLeader,
   addMemberToTeamInProject,
   removeMemberFromTeamInProject,
+  getProjectDetails,
 };

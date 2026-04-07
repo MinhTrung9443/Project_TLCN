@@ -1,30 +1,31 @@
-// src/components/landing/Header.jsx
-import React from 'react';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
   const navigate = useNavigate();
 
   return (
-    <Navbar expand="lg" className="navbar-transparent">
-      <Container>
-        <Navbar.Brand href="/">
-          <span style={{color: '#1a237e'}}>Zentask</span>
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="mx-auto"> {/* mx-auto để căn giữa menu */}
-          </Nav>
-          <Button 
-            onClick={() => navigate('/login')}
-            style={{backgroundColor: '#3f51b5', border: 'none', fontWeight: '600', padding: '10px 25px'}}
-          >
-            Go to App
-          </Button>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+    <nav className="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex-shrink-0">
+            <button onClick={() => navigate("/")} className="text-2xl font-bold text-blue-900 hover:text-blue-800">
+              Zentask
+            </button>
+          </div>
+          <div className="hidden md:block">
+            <div className="ml-auto flex items-center">
+              <button
+                onClick={() => navigate("/login")}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-full transition-colors duration-200"
+              >
+                Go to App
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 };
 

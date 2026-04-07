@@ -19,56 +19,47 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
         canDrop: monitor.canDrop(),
       }),
     }),
-    [status, workflow]
+    [status, workflow],
   );
 
-  const getCategoryLabel = () => {
+  const getCategoryColor = () => {
     switch (status.category) {
       case "To Do":
-        return "TO DO";
+        return "from-gray-500 to-gray-600";
       case "In Progress":
-        return "IN PROGRESS";
+        return "from-blue-500 to-blue-600";
       case "Done":
-        return "DONE";
+        return "from-green-500 to-green-600";
       default:
-        return status.name.toUpperCase();
-    }
-  };
-
-  const getCategoryClass = () => {
-    switch (status.category) {
-      case "To Do":
-        return "todo";
-      case "In Progress":
-        return "inprogress";
-      case "Done":
-        return "done";
-      default:
-        return status.name.toLowerCase().replace(" ", "");
+        return "from-purple-500 to-purple-600";
     }
   };
 
   return (
-    <div className="board-column" ref={drop}>
-      <div className={`board-column-header board-column-header-${getCategoryClass()}`}>
-        <div className="header-content">
-          <span className="status-name">{status.name}</span>
-          <span className="status-category">({status.category})</span>
+    <div
+      className="flex flex-col bg-neutral-50 rounded-lg border border-neutral-200 min-w-[260px] max-w-[280px] h-[65vh] shadow-sm snap-start shrink-0"
+      ref={drop}
+    >
+      <div className={`bg-gradient-to-r ${getCategoryColor()} text-white px-3 py-2.5 rounded-t-lg`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{status.name}</span>
+            <span className="text-sm opacity-90">({status.category})</span>
+          </div>
+          <span className="bg-white bg-opacity-20 px-2 py-1 rounded text-sm font-medium">{tasks.length}</span>
         </div>
-        <span className="board-column-count">{tasks.length}</span>
       </div>
       <div
-        className={`board-column-body ${isOver && canDrop ? "drop-over" : ""} ${isOver && !canDrop ? "drop-not-allowed" : ""}`}
-        style={{ minHeight: "400px" }}
+        className={`flex-1 p-3 overflow-y-auto min-h-0 ${isOver && canDrop ? "bg-primary-50 border-2 border-primary-300" : ""} ${isOver && !canDrop ? "bg-red-50 border-2 border-red-300" : ""}`}
       >
         {isOver && !canDrop && (
-          <div className="drop-blocked-indicator">
-            <span className="material-symbols-outlined">block</span>
-            <span>Transition not allowed</span>
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-red-600">
+            <span className="material-symbols-outlined text-4xl">block</span>
+            <span className="font-medium">Transition not allowed</span>
           </div>
         )}
         {tasks.length === 0 ? (
-          <div className="board-column-empty">Drop tasks here</div>
+          <div className="flex items-center justify-center py-8 text-neutral-400 text-sm">Drop tasks here</div>
         ) : (
           tasks.map((task) => <TaskCard key={task._id} task={task} />)
         )}

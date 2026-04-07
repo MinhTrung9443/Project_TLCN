@@ -3,8 +3,9 @@ import { createProject } from "../../services/projectService";
 import userService from "../../services/userService";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
-
-import "../../styles/pages/ManageProject/CreateProjectModal.css";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import Select from "../ui/Select";
 
 const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
   const { user: currentUser } = useAuth();
@@ -91,12 +92,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.key ||
-      !formData.type ||
-      !formData.projectManagerId
-    ) {
+    if (!formData.name || !formData.key || !formData.type || !formData.projectManagerId) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -120,66 +116,69 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-header">Create Project</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={handleClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b border-neutral-200 p-6 flex items-start justify-between z-10">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600">
+              <span className="material-symbols-outlined text-2xl">folder_open</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-900">Create New Project</h2>
+              <p className="text-sm text-neutral-600 mt-1">Set up your project workspace</p>
+            </div>
+          </div>
+          <button
+            onClick={handleClose}
+            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-neutral-500 transition-colors"
+            type="button"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="name" className="form-label">
-                Project Name <span className="required-star">*</span>
-              </label>
-              <input
-                type="text"
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <Input
+                label="Project Name"
                 name="name"
                 id="name"
+                type="text"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="form-input"
+                placeholder="Enter project name"
                 required
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="key" className="form-label">
-                Key <span className="required-star">*</span>
-              </label>
-              <input
-                type="text"
+
+            <div>
+              <Input
+                label="Key"
                 name="key"
                 id="key"
+                type="text"
                 value={formData.key}
                 onChange={handleInputChange}
-                className="form-input"
+                placeholder="e.g., PROJ"
                 required
               />
             </div>
-            <div className="form-group form-group-span-2">
-              <label htmlFor="type" className="form-label">
-                Type <span className="required-star">*</span>
-              </label>
-              <select
-                name="type"
-                id="type"
-                value={formData.type}
-                onChange={handleInputChange}
-                className="form-select"
-                required
-              >
+
+            <div>
+              <Select label="Type" name="type" id="type" value={formData.type} onChange={handleInputChange} required>
                 <option value="Scrum">Scrum</option>
                 <option value="Kanban">Kanban</option>
-              </select>
+              </Select>
             </div>
-            <div className="form-group form-group-span-2">
-              <label htmlFor="projectManagerId" className="form-label">
-                Project Manager <span className="required-star">*</span>
-              </label>
-              <select
+
+            <div>
+              <Select
+                label="Project Manager"
                 name="projectManagerId"
                 id="projectManagerId"
                 value={formData.projectManagerId}
                 onChange={handleInputChange}
-                className="form-select"
                 required
               >
                 <option value="" disabled>
@@ -191,52 +190,33 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated }) => {
                       {user.username}
                     </option>
                   ))}
-              </select>
+              </Select>
             </div>
-            <div className="form-group">
-              <label htmlFor="startDate" className="form-label">
-                Start Date
-              </label>
-              <input
-                type="date"
-                name="startDate"
-                id="startDate"
-                value={formData.startDate}
-                onChange={handleInputChange}
-                className="form-input"
-              />
+
+            <div>
+              <Input label="Start Date" name="startDate" id="startDate" type="date" value={formData.startDate} onChange={handleInputChange} />
             </div>
-            <div className="form-group">
-              <label htmlFor="endDate" className="form-label">
-                End Date
-              </label>
-              <input
-                type="date"
+
+            <div>
+              <Input
+                label="End Date"
                 name="endDate"
                 id="endDate"
+                type="date"
                 value={formData.endDate}
                 onChange={handleInputChange}
-                className="form-input"
+                error={dateError}
               />
-              {dateError && <p className="error-message">{dateError}</p>}
             </div>
           </div>
 
-          <div className="modal-actions">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="modal-btn modal-btn-cancel"
-            >
+          <div className="flex items-center justify-end gap-3 pt-6 border-t border-neutral-200">
+            <Button type="button" variant="secondary" size="md" onClick={handleClose} icon="close">
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="modal-btn modal-btn-primary"
-            >
-              {isSubmitting ? "Creating..." : "Create"}
-            </button>
+            </Button>
+            <Button type="submit" variant="primary" size="md" disabled={isSubmitting} icon={isSubmitting ? "sync" : "check_circle"}>
+              {isSubmitting ? "Creating..." : "Create Project"}
+            </Button>
           </div>
         </form>
       </div>

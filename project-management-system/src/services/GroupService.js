@@ -103,13 +103,15 @@ class GroupService {
     if (userToAdd.status !== "active") {
       throw createError(400, "Only active users can be added to a group");
     }
+    const existingGroup = await Group.findById(groupId).select("members name");
+    if (!existingGroup) {
+      throw createError(404, "Group not found");
+    }
+
+    const alreadyMember = existingGroup.members.some((memberId) => memberId.toString() === userId.toString());
     const group = await Group.findByIdAndUpdate(groupId, { $addToSet: { members: userId } }, { new: true });
 
     await User.findByIdAndUpdate(userId, { $addToSet: { group: groupId } });
-
-    if (!group) {
-      throw createError(404, "Group not found");
-    }
 
     // Gửi thông báo cho member mới
     try {
@@ -119,12 +121,14 @@ class GroupService {
         addedByName = adder?.fullname || "Group Admin";
       }
 
-      await notificationService.notifyGroupMemberAdded({
-        groupId: group._id,
-        groupName: group.name,
-        newMemberId: userId,
-        addedByName,
-      });
+      if (!alreadyMember) {
+        await notificationService.notifyGroupMemberAdded({
+          groupId: group._id,
+          groupName: group.name,
+          newMemberId: userId,
+          addedByName,
+        });
+      }
     } catch (notificationError) {
       console.error("Failed to send group member added notification:", notificationError);
     }
@@ -145,12 +149,16 @@ class GroupService {
       throw createError(400, "Only active users can be added to a group");
     }
 
-    // Add all members to group
-    const group = await Group.findByIdAndUpdate(groupId, { $addToSet: { members: { $each: userIds } } }, { new: true });
-
-    if (!group) {
+    const existingGroup = await Group.findById(groupId).select("members name");
+    if (!existingGroup) {
       throw createError(404, "Group not found");
     }
+
+    const existingMemberSet = new Set((existingGroup.members || []).map((memberId) => memberId.toString()));
+    const newlyAddedUserIds = userIds.filter((id) => !existingMemberSet.has(id.toString()));
+
+    // Add all members to group
+    const group = await Group.findByIdAndUpdate(groupId, { $addToSet: { members: { $each: userIds } } }, { new: true });
 
     // Update all users to include this group
     await User.updateMany({ _id: { $in: userIds } }, { $addToSet: { group: groupId } });
@@ -163,7 +171,7 @@ class GroupService {
         addedByName = adder?.fullname || "Group Admin";
       }
 
-      for (const userId of userIds) {
+      for (const userId of newlyAddedUserIds) {
         await notificationService.notifyGroupMemberAdded({
           groupId: group._id,
           groupName: group.name,
@@ -227,19 +235,10 @@ class GroupService {
 
     // Send notification
     try {
-      let removedByName = "Group Admin";
-      if (removedBy) {
-        const remover = await User.findById(removedBy);
-        removedByName = remover?.fullname || "Group Admin";
-      }
-
-      await notificationService.createAndSend({
-        recipientId: userId,
-        type: "group_member_removed",
-        title: "Removed from Group",
-        message: `You have been removed from group "${group.name}" by ${removedByName}`,
-        relatedEntityType: "Group",
-        relatedEntityId: group._id,
+      await notificationService.notifyGroupMemberRemoved({
+        groupId: group._id,
+        groupName: group.name,
+        removedMemberId: userId,
       });
     } catch (notificationError) {
       console.error("Failed to send group member removed notification:", notificationError);

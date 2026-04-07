@@ -3,9 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import authService from "../services/AuthService.js";
 import { toast } from "react-toastify";
 
-import "../styles/ForgotPassword.css";
-
-// Không cần import logobg nữa vì nó được gọi trong CSS
 import logo from "../assets/logo.png";
 
 const ForgotPasswordPage = () => {
@@ -65,87 +62,104 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="forgot-password-page-container">
-      {/* CỘT BÊN TRÁI (HÌNH ẢNH) - ĐÃ SỬA */}
-      <div className="forgot-password-image-panel">{/* Phần này sẽ hiển thị ảnh nền được định nghĩa trong Login.css */}</div>
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 font-sans">
+      <div className="w-full max-w-lg">
+        <div className="bg-white rounded-2xl shadow-sm p-12">
+          <div className="text-center mb-8">
+            <img src={logo} alt="Logo" className="w-32 h-auto mx-auto mb-6" />
+            <h2 className="text-4xl font-bold text-blue-900 mb-2">{isSentRequest ? "New Password" : "Forgot Password"}</h2>
+            <p className="text-lg text-neutral-600 leading-relaxed">
+              {isSentRequest ? "Check your email for the OTP to reset your password." : "Please enter your email to reset your password."}
+            </p>
+          </div>
 
-      {/* CỘT BÊN PHẢI (FORM) */}
-
-      {isSentRequest === false ? (
-        <div className="form-panel">
-          <div className="form-content">
-            <img src={logo} alt="Logo" className="logo" />
-            <h2>Forgot Password</h2>
-            <p className="subtitle">Please enter your email to reset your password.</p>
-
-            <form onSubmit={handleForgotPassword}>
-              <div className="input-group">
-                <label>Email</label>
+          {isSentRequest === false ? (
+            <form onSubmit={handleForgotPassword} className="space-y-6">
+              <div>
+                <label className="block text-base font-semibold text-neutral-900 mb-2">
+                  Email <span className="text-red-600">*</span>
+                </label>
                 <input
                   type="email"
-                  id="email"
                   name="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your.email@example.com"
                   required
+                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-base focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
                 />
               </div>
-              <Link to="/login" className="login-link">
-                Back to Login
-              </Link>
 
-              <button type="submit" className="btn-request-otp">
+              <div className="flex justify-end">
+                <Link to="/login" className="text-primary-600 no-underline text-sm font-medium hover:text-primary-700 transition-colors">
+                  Back to Login
+                </Link>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-6 rounded-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+              >
                 Send OTP
               </button>
             </form>
-          </div>
-        </div>
-      ) : (
-        <div className="form-panel">
-          <div className="form-content">
-            <img src={logo} alt="Logo" className="logo" />
-            <h2>New Password</h2>
-            <p className="subtitle">Check your email for the OTP to reset your password.</p>
-            <form onSubmit={handleResetPassword}>
-              <div className="input-group">
-                <label>OTP</label>
-                <input type="text" id="OTP" name="OTP" placeholder="Enter the OTP" required value={otp} onChange={(e) => setOtp(e.target.value)} />
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div>
+                <label className="block text-base font-semibold text-neutral-900 mb-2">
+                  OTP <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="OTP"
+                  placeholder="Enter the OTP"
+                  required
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-base focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
+                />
               </div>
 
-              <div className="input-group">
-                <label htmlFor="newPassword">New Password</label>
+              <div>
+                <label className="block text-base font-semibold text-neutral-900 mb-2">
+                  New Password <span className="text-red-600">*</span>
+                </label>
                 <input
                   type="password"
-                  id="newPassword"
                   name="newPassword"
                   placeholder="Enter your new password"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-base focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
                 />
               </div>
 
-              <div className="input-group">
-                <label htmlFor="repeatPassword">Repeat Password</label>
+              <div>
+                <label className="block text-base font-semibold text-neutral-900 mb-2">
+                  Repeat Password <span className="text-red-600">*</span>
+                </label>
                 <input
                   type="password"
-                  id="repeatPassword"
                   name="repeatPassword"
                   placeholder="Repeat your new password"
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-base focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
                 />
               </div>
 
-              <button type="submit" className="btn-reset-password">
+              <button
+                type="submit"
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-6 rounded-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+              >
                 Reset Password
               </button>
             </form>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

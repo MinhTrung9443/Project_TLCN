@@ -25,16 +25,19 @@ class NotificationController {
         notifications.map(async (notif) => {
           if (notif.relatedType === "Task" && notif.relatedId) {
             try {
-              const task = await Task.findById(notif.relatedId).select("key").lean();
-              if (task && task.key) {
-                return { ...notif, relatedId: task.key }; // Replace ID with key
+              const relatedIdAsString = String(notif.relatedId);
+              if (/^[a-f\d]{24}$/i.test(relatedIdAsString)) {
+                const task = await Task.findById(relatedIdAsString).select("key").lean();
+                if (task && task.key) {
+                  return { ...notif, relatedId: task.key }; // Replace ID with key
+                }
               }
             } catch (err) {
               console.error("Error fetching task key:", err);
             }
           }
           return notif;
-        })
+        }),
       );
 
       const total = await Notification.countDocuments(query);

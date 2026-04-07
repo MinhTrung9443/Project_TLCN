@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const Project = require("../models/Project");
 const { logAction } = require("./AuditLogHelper");
-const taskService = require("./TaskService"); 
+const taskService = require("./TaskService");
 
 class UserService {
   async updateProfile(userId, updateData, actorId) {
@@ -42,19 +42,19 @@ class UserService {
     }
   }
 
-  async getAllUsers(page = 1, limit = 20) {
+  async getAllUsers(page = 1, limit = 100) {
     // Nếu không có page và limit, chúng ta muốn lấy hết
     // Kiểm tra xem req.query có rỗng không
     const hasPagination = page && limit && !isNaN(page) && !isNaN(limit);
 
     if (hasPagination) {
       const skip = (page - 1) * limit;
-      const users = await User.find().select("-password").skip(skip).limit(limit).populate("group", "name -_id").lean();
+      const users = await User.find({ status: "active" }).select("-password").skip(skip).limit(limit).populate("group", "name -_id").lean();
       // ... (trả về kết quả phân trang)
       return users; // Giả sử trả về mảng
     } else {
-      // Nếu không có tham số phân trang, lấy TẤT CẢ user
-      const users = await User.find().select("-password").lean();
+      // Nếu không có tham số phân trang, lấy TẤT CẢ user active
+      const users = await User.find({ status: "active" }).select("-password").lean();
       return users;
     }
   }
@@ -176,7 +176,7 @@ class UserService {
         firstName: newUser.fullname,
         username: newUser.email,
         password: userData.password,
-        loginUrl: process.env.CLIENT_URL || "http://localhost:3000/login",
+        loginUrl: `${process.env.FRONTEND_URL}/login`,
       });
     } catch (emailErr) {
       console.error("Failed to send account created email:", emailErr);
