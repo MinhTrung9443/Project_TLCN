@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 import apiClient from "../../services/apiClient";
 import chatService from "../../services/chatService";
+import { toast } from 'react-toastify';
 import ChatInfo from "./ChatInfo";
 
 // --- Sub-component: Message Item ---
@@ -261,6 +262,77 @@ const ChatWindow = () => {
     const [pollQuestion, setPollQuestion] = useState("");
     const [pollOptions, setPollOptions] = useState(["", ""]);
 
+    // GIF state
+    const [showGifPicker, setShowGifPicker] = useState(false);
+    const [gifQuery, setGifQuery] = useState("");
+    const [gifs, setGifs] = useState([]);
+    const [searchingGifs, setSearchingGifs] = useState(false);
+
+    // DND state
+    const [showDNDMenu, setShowDNDMenu] = useState(false);
+    const [dndUntil, setDndUntil] = useState(() => {
+        const storedDnd = localStorage.getItem(`dnd_${user?._id}`);
+        return storedDnd ? new Date(storedDnd) : null;
+    });
+
+    useEffect(() => {
+        // Sync DND state across components if needed
+        if (dndUntil) {
+            localStorage.setItem(`dnd_${user?._id}`, dndUntil.toISOString());
+        } else {
+            localStorage.removeItem(`dnd_${user?._id}`);
+        }
+    }, [dndUntil, user]);
+
+    // Search Tenor API
+    useEffect(() => {
+        if (!showGifPicker) return;
+        const fetchGifs = async () => {
+            setSearchingGifs(true);
+            try {
+                let url;
+                if (gifQuery.trim()) {
+                    url = `https://api.tenor.com/v1/search?q=${encodeURIComponent(gifQuery)}&key=LIVDSRZULELA&limit=20`;
+                } else {
+                    url = `https://api.tenor.com/v1/trending?key=LIVDSRZULELA&limit=20`;
+                }
+                const res = await fetch(url);
+                const data = await res.json();
+                setGifs(data.results || []);
+            } catch (err) {
+                console.error("Failed to fetch GIFs", err);
+            } finally {
+                setSearchingGifs(false);
+            }
+        };
+
+        const timer = setTimeout(() => {
+            fetchGifs();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [gifQuery, showGifPicker]);
+
+    // Handle Setting DND
+    const handleSetDND = async (duration) => {
+        try {
+            await chatService.setDND(duration);
+            if (duration === 0) {
+                toast.info('Do Not Disturb is turned off', { position: "top-center" });
+                setDndUntil(null);
+            } else {
+                let durationText = duration >= 60 ? `${duration / 60} hour(s)` : `${duration} minutes`;
+                toast.success(`Do Not Disturb is set for ${durationText}`, { position: "top-center" });
+                const newTime = new Date();
+                newTime.setMinutes(newTime.getMinutes() + duration);
+                setDndUntil(newTime);
+            }
+            setShowDNDMenu(false);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to set DND", { position: "top-center" });
+        }
+    };
+
     // Lưu trữ text trước khi bật mic để append thêm thay vì ghi đè
     const prevInputRef = useRef("");
 
@@ -443,7 +515,7 @@ const ChatWindow = () => {
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col relative min-w-0">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b bg-white shadow-sm z-10 shrink-0">
+                <div className="flex items-center justify-between p-4 border-b bg-white shadow-sm z-50 shrink-0 relative">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setSelectedConversation(null)}
@@ -458,12 +530,34 @@ const ChatWindow = () => {
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowInfo(!showInfo)}
-                        className={`p-2 rounded-full hover:bg-gray-100 ${showInfo ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}
-                    >
-                        <FaInfoCircle size={20} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowDNDMenu(!showDNDMenu)}
+                                className={`text-sm p-1.5 rounded flex items-center gap-1 transition-colors ${dndUntil && new Date() < dndUntil ? 'bg-red-100 text-red-600 font-semibold border border-red-300' : (showDNDMenu ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}`}
+                                title={dndUntil && new Date() < dndUntil ? `DND active until ${new Date(dndUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "Set Do Not Disturb"}
+                            >
+                                🔕 <span>{dndUntil && new Date() < dndUntil ? "DND Active" : "DND"}</span>
+                            </button>
+                            {showDNDMenu && (
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-white border rounded shadow-xl z-50 p-2 text-sm flex flex-col gap-1">
+                                    <div className="font-bold text-gray-700 px-2 pb-1 border-b mb-1">Set Duration</div>
+                                    <button onClick={() => handleSetDND(15)} className="text-left px-2 py-1 hover:bg-gray-100 rounded">15 minutes</button>
+                                    <button onClick={() => handleSetDND(60)} className="text-left px-2 py-1 hover:bg-gray-100 rounded">1 hour</button>
+                                    <button onClick={() => handleSetDND(8 * 60)} className="text-left px-2 py-1 hover:bg-gray-100 rounded">8 hours</button>
+                                    <button onClick={() => handleSetDND(24 * 60)} className="text-left px-2 py-1 hover:bg-gray-100 rounded">24 hours</button>
+                                    <button onClick={() => handleSetDND(0)} className="text-left px-2 py-1 hover:bg-gray-100 rounded text-red-500">Off</button>
+                                </div>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={() => setShowInfo(!showInfo)}
+                            className={`p-2 rounded-full hover:bg-gray-100 ${showInfo ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}
+                        >
+                            <FaInfoCircle size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Pinned Messages Area */}
@@ -592,6 +686,56 @@ const ChatWindow = () => {
                     </div>
                 )}
 
+                {/* GIF Picker Window */}
+                {showGifPicker && (
+                    <div className="p-3 bg-white border-t border-gray-200 flex flex-col z-20" style={{ height: '300px' }}>
+                        <div className="flex justify-between items-center mb-2">
+                            <h4 className="font-bold text-sm text-gray-700">Search GIFs</h4>
+                            <button onClick={() => setShowGifPicker(false)} className="text-gray-400 hover:text-red-500"><FaTimes /></button>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search Tenor..."
+                            className="w-full p-2 text-sm border rounded outline-none focus:border-blue-400 mb-2 bg-gray-50"
+                            value={gifQuery}
+                            onChange={(e) => setGifQuery(e.target.value)}
+                            autoFocus
+                        />
+                        <div className="flex-1 overflow-y-auto grid grid-cols-2 lg:grid-cols-4 gap-2 custom-scrollbar pr-1 relative">
+                            {searchingGifs && (
+                                <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
+                                    <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" />
+                                </div>
+                            )}
+                            {gifs.map(gif => {
+                                // Tenor v1 API structure varies, usually formats are under media[0]
+                                const gifUrl = gif.media?.[0]?.gif?.url || gif.media?.[0]?.tinygif?.url;
+                                if (!gifUrl) return null;
+                                return (
+                                    <img
+                                        key={gif.id}
+                                        src={gifUrl}
+                                        alt={gif.content_description || "GIF"}
+                                        className="w-full h-24 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={async () => {
+                                            setShowGifPicker(false);
+                                            await handleSendGiphy(gifUrl);
+                                            scrollToBottom();
+                                        }}
+                                        loading="lazy"
+                                    />
+                                );
+                            })}
+                            {!searchingGifs && gifs.length === 0 && (
+                                <div className="col-span-full text-center text-sm text-gray-500 my-4">
+                                    No GIFs found
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-[10px] text-gray-400 text-center mt-2">Powered By Tenor</div>
+                    </div>
+                )}
+
                 {/* Input Form */}
                 <form onSubmit={handleSend} className="p-3 bg-white border-t flex items-end gap-2 shrink-0">
                     <input
@@ -617,6 +761,18 @@ const ChatWindow = () => {
                     >
                         <FaPoll size={20} />
                     </button>
+
+                    {/* GIF Picker Toggle */}
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => setShowGifPicker(!showGifPicker)}
+                            className={`p-2 mb-1 transition-colors ${showGifPicker ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'}`}
+                            title="Send a GIF"
+                        >
+                            <FaRegImages size={20} />
+                        </button>
+                    </div>
 
                     {browserSupportsSpeechRecognition && (
                         <button
