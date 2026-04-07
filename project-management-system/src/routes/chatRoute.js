@@ -157,4 +157,19 @@ router.get("/:conversationId/attachments", ChatController.getAttachments);
 router.post("/recall", ChatController.recallMessage);
 router.post("/reaction", ChatController.toggleReaction);
 
+// Ghim tin nhắn
+router.post("/:conversationId/pin", ChatController.pinMessage);
+router.post("/:conversationId/unpin", ChatController.unpinMessage);
+
+// Thăm dò ý kiến
+router.post("/poll", ChatController.createPoll);
+router.post("/poll/vote", ChatController.votePoll);
+
+// Chế độ không làm phiền
+router.post("/user/dnd", ChatController.setDND);
+
+// Xem trước link & Giphy
+router.post("/link-preview", ChatController.getLinkPreview);
+router.post("/giphy", ChatController.sendGiphy);
+
 module.exports = router;

@@ -24,6 +24,8 @@ import HistoryTab from "./HistoryTab";
 import ConfirmationModal from "../common/ConfirmationModal";
 import { IconComponent } from "../common/IconPicker";
 import TaskDetailsTab from "./TaskDetailsTab";
+import apiClient from "../../services/apiClient";
+
 const PREDEFINED_TASKTYPE_ICONS = [
   { name: "FaTasks", color: "#4BADE8" },
   { name: "FaStar", color: "#2ECC71" },
@@ -47,7 +49,7 @@ const statusCategoryStyles = {
 
 const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses = [], showCloseButton = true, isCompact = false }) => {
   const { user } = useAuth();
-  const { userProjectRole, selectedProjectKey } = useContext(ProjectContext);
+  const { userProjectRole, selectedProjectKey, projectData } = useContext(ProjectContext);
   const [editableTask, setEditableTask] = useState(task);
   const [activeTab, setActiveTab] = useState("Details");
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
@@ -279,6 +281,25 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
       ]);
     }
   }, [task]);
+
+  const handleCreateGithubBranch = async () => {
+    try {
+      toast.info("Đang tạo nhánh trên GitHub...");
+      const res = await apiClient.post("/github/branches", {
+        projectId: editableTask.projectId?._id || editableTask.projectId,
+        taskId: editableTask._id,
+      });
+      toast.success(res.data.message);
+      if (res.data.branch) {
+        setEditableTask((prev) => ({ ...prev, githubBranch: res.data.branch }));
+        if (onTaskUpdate) {
+          onTaskUpdate({ ...editableTask, githubBranch: res.data.branch });
+        }
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Lỗi khi tạo nhánh GitHub");
+    }
+  };
 
   const handleUpdate = async (fieldName, value) => {
     const updateValue = value === "" ? null : value;
@@ -518,6 +539,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         </div>
         {!isCompact && (
           <div className="flex items-start gap-2 flex-shrink-0">
+            {/* Github Branch Button moved to Details Tab */}
             <ActionsMenu
               onDelete={() => setIsDeleteTaskModalOpen(true)}
               onAddAttachment={handleAddAttachment}
@@ -571,6 +593,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
                   editableTask={editableTask}
                   setEditableTask={setEditableTask}
                   handleUpdate={handleUpdate}
+                  handleCreateGithubBranch={handleCreateGithubBranch}
                   statuses={allowedStatuses.length > 0 ? allowedStatuses : statuses}
                   projectMembers={projectMembers}
                   projectTaskTypes={projectTaskTypes}

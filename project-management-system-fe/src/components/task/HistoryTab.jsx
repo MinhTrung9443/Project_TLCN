@@ -62,6 +62,26 @@ const HistoryTab = ({ taskId }) => {
             <code className="bg-neutral-100 px-1 py-0.5 rounded text-xs">{item.newValue ? String(item.newValue).substring(0, 20) : "None"}</code>
           </span>
         );
+      case "CREATE_GITHUB_BRANCH":
+        return (
+          <span>
+            <strong>{user}</strong> created a new GitHub branch:{" "}
+            <code className="bg-blue-50 text-blue-700 px-1 py-0.5 border border-blue-200 rounded text-xs">
+              <i className="bi bi-github mr-1"></i>
+              {item.newValue || "Branch"}
+            </code>
+          </span>
+        );
+      case "LINK_GITHUB_BRANCH":
+        return (
+          <span>
+            <strong>{user}</strong> linked an existing GitHub branch:{" "}
+            <code className="bg-blue-50 text-blue-700 px-1 py-0.5 border border-blue-200 rounded text-xs">
+              <i className="bi bi-github mr-1"></i>
+              {item.newValue || "Branch"}
+            </code>
+          </span>
+        );
       default:
         return <span>An action was performed</span>;
     }

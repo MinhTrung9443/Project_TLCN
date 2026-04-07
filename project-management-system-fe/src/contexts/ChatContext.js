@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
 import socketService from "../services/socketService";
 import chatService from "../services/chatService";
@@ -21,6 +22,7 @@ export const ChatProvider = ({ children }) => {
   const [projectChannels, setProjectChannels] = useState({ general: null, teams: [] });
 
   const processedMessageIds = useRef(new Set());
+  const activeLoadRef = useRef(null);
 
   // --- HELPER: Cập nhật danh sách chat (Sidebar) khi có tin mới ---
   const updateChatLists = useCallback((newMessage, currentChatId) => {
@@ -203,6 +205,84 @@ export const ChatProvider = ({ children }) => {
         });
       }
 
+      // Check DND and show Notification for messages from others
+      const senderId = newMessageReceived.sender._id || newMessageReceived.sender;
+      if (senderId !== user._id) {
+          const dndStored = localStorage.getItem(`dnd_${user._id}`);
+          let isDndActive = false;
+          if (dndStored) {
+              const dndDate = new Date(dndStored);
+              if (new Date() < dndDate) {
+                  isDndActive = true;
+              } else {
+                  localStorage.removeItem(`dnd_${user._id}`);
+              }
+          }
+
+          if (!isDndActive) {
+               // Show toast if chat is not currently open/active
+               if (!selectedConversation || selectedConversation._id !== incomingChatId) {
+                   const senderName = newMessageReceived.sender.username || "Someone";
+                   const shortMsg = newMessageReceived.content || "Sent an attachment";
+                   const avatar = newMessageReceived.sender.avatar || "https://via.placeholder.com/40";
+                   
+                   toast(
+                       <div 
+                           className="flex items-center gap-3 w-full cursor-pointer"
+                           onClick={() => {
+                               // Open the chat box if hidden
+                               openChat();
+                               // Switch to the correct tab based on chat type (DIRECT vs PROJECTS)
+                               const chatType = newMessageReceived.conversationId.type;
+                               const isDirect = chatType === 'DIRECT' || (!chatType && newMessageReceived.conversationId.participants);
+                               setActiveTab(isDirect ? "INDIVIDUALS" : "PROJECTS");
+                                 // Let ChatWindow trigger loadMessages automatically
+                                 setSelectedConversation({ _id: incomingChatId });
+                           }}
+                       >
+                           <img src={avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm shrink-0" />
+                           <div className="flex flex-col flex-1 overflow-hidden">
+                               <span className="font-bold text-sm text-gray-800 truncate">{senderName}</span>
+                               <span className="text-xs text-gray-500 truncate w-full">{shortMsg}</span>
+                           </div>
+                       </div>, 
+                       {
+                           position: "bottom-right",
+                           autoClose: 4000,
+                           hideProgressBar: true,
+                           closeOnClick: true,
+                           pauseOnHover: true,
+                           draggable: true,
+                           className: "rounded-xl shadow-lg border border-gray-100",
+                           bodyClassName: "p-0 m-0"
+                       }
+                   );
+               }
+               // Play sound
+               try {
+                   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                   const oscillator = audioCtx.createOscillator();
+                   const gainNode = audioCtx.createGain();
+                   
+                   oscillator.connect(gainNode);
+                   gainNode.connect(audioCtx.destination);
+                   
+                   // Tone settings for a pleasant "Ding"
+                   oscillator.type = 'sine';
+                   oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Pitch
+                   
+                   // Volume fade out
+                   gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                   gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                   
+                   oscillator.start(audioCtx.currentTime);
+                   oscillator.stop(audioCtx.currentTime + 0.3);
+               } catch (error) {
+                   console.log("Audio play blocked by browser:", error);
+               }
+          }
+      }
+
       updateChatLists(newMessageReceived, selectedConversation ? selectedConversation._id : null);
     };
 
@@ -359,18 +439,86 @@ export const ChatProvider = ({ children }) => {
       }
   };
 
+  const handlePinMessage = async (messageId) => {
+    try {
+        const updatedConv = await chatService.pinMessage(selectedConversation._id, messageId);
+        setSelectedConversation(updatedConv);
+        // Có thể emit socket ở đây nếu muốn real-time pin
+    } catch (error) {
+        console.error("Pin failed:", error);
+    }
+  };
+
+  const handleUnpinMessage = async (messageId) => {
+    try {
+        const updatedConv = await chatService.unpinMessage(selectedConversation._id, messageId);
+        setSelectedConversation(updatedConv);
+    } catch (error) {
+        console.error("Unpin failed:", error);
+    }
+  };
+
+  const handleCreatePoll = async (question, options) => {
+    try {
+        const data = await chatService.createPoll(selectedConversation._id, question, options);
+        if (socketService.socket) {
+            socketService.socket.emit("new message", data);
+        }
+        setMessages((prev) => [...prev, data]);
+        updateChatLists(data, selectedConversation._id);
+    } catch (error) {
+        console.error("Create poll failed:", error);
+    }
+  };
+
+  const handleVotePoll = async (messageId, optionId) => {
+    try {
+        const data = await chatService.votePoll(messageId, optionId);
+        // Cập nhật local
+        setMessages(prev => prev.map(m => m._id === messageId ? data : m));
+        // Nên emit socket để update real-time cho poll
+    } catch (error) {
+        console.error("Vote poll failed:", error);
+    }
+  };
+
+  const handleSendGiphy = async (giphyUrl) => {
+    try {
+        // Gửi nội dung rỗng, chỉ đính kèm ảnh động
+        await sendMessage("", selectedConversation._id, [
+            { url: giphyUrl, type: "image", name: "giphy.gif" }
+        ]);
+    } catch (error) {
+        console.error("Send Giphy failed:", error);
+    }
+  };
+
   const loadMessages = async (conversationId) => {
     try {
+      const currentId = typeof conversationId === 'object' ? conversationId._id : conversationId;
+      activeLoadRef.current = currentId;
+
       // Reset messages để tránh hiện tin cũ của chat trước
       setMessages([]);
 
-      const msgs = await chatService.getMessages(conversationId);
+      const convDetails = await chatService.getDetails(currentId);
+      
+      // Prevent stale response from overwriting newer navigation 
+      if (activeLoadRef.current !== currentId) return;
+
+      setSelectedConversation(convDetails);
+
+      const msgs = await chatService.getMessages(currentId);
+      
+      // Prevent stale response from overwriting newer navigation 
+      if (activeLoadRef.current !== currentId) return;
+
       setMessages(msgs);
 
       // Emit join chat để server biết user này đang active ở room này
       // (Hỗ trợ tính năng "typing...", "read receipt" sau này)
       if (socketService.socket) {
-        socketService.socket.emit("join chat", conversationId);
+        socketService.socket.emit("join chat", currentId);
       }
     } catch (error) {
       console.error("Load messages failed", error);
@@ -400,6 +548,11 @@ export const ChatProvider = ({ children }) => {
     markAsRead,
     recallMessage,
     sendReaction,
+    handlePinMessage,
+    handleUnpinMessage,
+    handleCreatePoll,
+    handleVotePoll,
+    handleSendGiphy,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

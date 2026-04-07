@@ -3,6 +3,7 @@ import { FaRobot, FaTimes, FaPaperPlane, FaExternalLinkAlt } from "react-icons/f
 import apiClient from "../../services/apiClient";
 import ReactMarkdown from "react-markdown";
 import { Link } from "react-router-dom";
+import Draggable from 'react-draggable';
 
 const AI_REQUEST_TIMEOUT_MS = 60000;
 
@@ -17,6 +18,9 @@ const AIAssistantWidget = () => {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionFilter, setMentionFilter] = useState("");
   const messagesEndRef = useRef(null);
+  const btnNodeRef = useRef(null);
+  const chatNodeRef = useRef(null);
+  const dragRef = useRef(false);
 
   // Fetch users for mentions on widget load
   useEffect(() => {
@@ -106,28 +110,54 @@ const AIAssistantWidget = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999]">
-      {/* Nút bật tắt Chat */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-4 shadow-xl transition-transform transform hover:scale-105 flex items-center justify-center animate-bounce-slow"
-          title="Trợ lý AI"
+    <>
+      {/* 1. LAYER NÚT BẤM (BUTTON) - Kéo tự do, nhưng sẽ ẩn đi khi mở Chat */}
+      <Draggable 
+        nodeRef={btnNodeRef} 
+        bounds="body"
+        onStart={() => { dragRef.current = false; }}
+        onDrag={() => { dragRef.current = true; }}
+      >
+        <div 
+          ref={btnNodeRef} 
+          className={`fixed z-[9999] ${isOpen ? 'hidden' : 'block'}`}
+          style={{ bottom: '24px', right: '24px' }}
         >
-          <FaRobot className="text-2xl" />
-        </button>
-      )}
+          <button
+            onClick={(e) => {
+              // Chỉ mở nếu người dùng thực sự click chứ không phải do thả chuột sau khi kéo
+              if (!dragRef.current) setIsOpen(true);
+            }}
+            className="bg-indigo-600 cursor-move text-white rounded-full p-4 shadow-xl hover:bg-indigo-700 transition-transform transform hover:scale-105 flex items-center justify-center animate-bounce-slow"
+            title="Kéo tôi đi chỗ khác!"
+          >
+            <FaRobot className="text-2xl pointer-events-none" />
+          </button>
+        </div>
+      </Draggable>
 
-      {/* Cửa sổ Chat */}
-      {isOpen && (
-        <div className="bg-white rounded-xl shadow-2xl w-[350px] sm:w-[400px] h-[550px] flex flex-col border border-gray-200 overflow-hidden transform transition-all">
+      {/* 2. LAYER CỬA SỔ CHAT - Có thể kéo bằng thanh Header, cũng sẽ ẩn/chiếm không gian tùy state */}
+      <Draggable 
+        nodeRef={chatNodeRef} 
+        handle=".drag-handle" 
+        bounds="body"
+      >
+        <div 
+          ref={chatNodeRef} 
+          className={`fixed z-[9999] bg-white rounded-xl shadow-2xl w-[350px] sm:w-[400px] h-[550px] border border-gray-200 overflow-hidden transform transition-all ${isOpen ? 'flex flex-col' : 'hidden'}`}
+          style={{ bottom: '24px', right: '24px' }}
+        >
           {/* Header */}
-          <div className="bg-indigo-600 text-white p-4 flex justify-between items-center shrink-0">
-            <div className="flex items-center gap-2">
+          <div className="drag-handle cursor-move bg-indigo-600 text-white p-4 flex justify-between items-center shrink-0">
+            <div className="flex items-center gap-2 pointer-events-none">
               <FaRobot className="text-xl" />
               <h3 className="font-semibold text-lg">AI Assistant</h3>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-white hover:text-indigo-200 transition-colors p-1">
+            <button 
+              onClick={() => setIsOpen(false)} 
+              onPointerDown={(e) => e.stopPropagation()} // Chống lỗi click bị chặn bởi kéo thả Draggable
+              className="text-white hover:text-indigo-200 cursor-pointer transition-colors p-1"
+            >
               <FaTimes className="text-lg" />
             </button>
           </div>
@@ -237,22 +267,24 @@ const AIAssistantWidget = () => {
                 type="text"
                 value={input}
                 onChange={handleInputChange}
+                onPointerDown={(e) => e.stopPropagation()} // Đảm bảo input không bị chặn bởi draggable
                 placeholder="Hỏi AI hoặc gõ @ để gắn thành viên..."
                 className="flex-1 px-4 py-2.5 bg-gray-100 border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-[15px] transition-all"
                 disabled={isLoading}
               />
               <button
                 type="submit"
+                onPointerDown={(e) => e.stopPropagation()} 
                 disabled={isLoading || !input.trim()}
-                className="bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-md flex items-center justify-center"
+                className="bg-indigo-600 z-[9999] text-white p-3 rounded-full hover:bg-indigo-700 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-md flex items-center justify-center"
               >
                 <FaPaperPlane />
               </button>
             </form>
           </div>
         </div>
-      )}
-    </div>
+      </Draggable>
+    </>
   );
 };
 

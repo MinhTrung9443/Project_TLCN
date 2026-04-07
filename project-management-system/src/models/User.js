@@ -50,6 +50,12 @@ const userSchema = new Schema(
       default: "user",
       required: true,
     },
+    githubId: {
+      type: String,
+    },
+    githubAccessToken: {
+      type: String,
+    },
     lastLogin: {
       type: Date,
     },
@@ -65,6 +71,9 @@ const userSchema = new Schema(
         ref: "Group",
       },
     ],
+    chatSettings: {
+      dndUntil: { type: Date }, // Do Not Disturb until this time
+    },
   },
   {
     timestamps: true,

@@ -3,13 +3,18 @@ const Message = require("../models/Message");
 const User = require("../models/User");
 const Project = require("../models/Project"); 
 const Group = require("../models/Group");
+const { getLinkPreview } = require('link-preview-js');
 
 class ChatService {
   async getConversationDetails(conversationId) {
       const conv = await Conversation.findById(conversationId)
           .populate("participants", "username email avatar fullname")
           .populate("projectId", "name members")
-          .populate("teamId", "name members leaderId");
+          .populate("teamId", "name members leaderId")
+          .populate({
+              path: "pinnedMessages",
+              populate: { path: "sender", select: "username avatar" }
+          });
       
       if (!conv) throw new Error("Conversation not found");
 
@@ -134,12 +139,32 @@ class ChatService {
       throw new Error("Message must contain content or attachments");
     }
 
+    // Check for links
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = content.match(urlRegex);
+    let linkPreviewData = null;
+    if (urls && urls.length > 0) {
+        try {
+            const preview = await getLinkPreview(urls[0]);
+            linkPreviewData = {
+                url: preview.url,
+                title: preview.title,
+                description: preview.description,
+                image: preview.images ? preview.images[0] : null,
+                siteName: preview.siteName
+            };
+        } catch (e) {
+            console.warn("Could not generate link preview:", e.message);
+        }
+    }
+
     const newMessage = {
       sender: senderId,
       content: content,
       conversationId: conversationId,
       attachments: attachments || [],
       replyTo: replyTo,
+      linkPreview: linkPreviewData
     };
 
     let message = await Message.create(newMessage);
@@ -209,6 +234,115 @@ class ChatService {
       
       await message.save();
       return message; // Return full message for easy updates
+  }
+
+  // --- PIN MESSAGE ---
+  async pinMessage(conversationId, messageId, userId) {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    if (!conversation.pinnedMessages) {
+        conversation.pinnedMessages = [];
+    }
+
+    const messageIdStr = messageId.toString();
+    if (!conversation.pinnedMessages.some(id => id.toString() === messageIdStr)) {
+        conversation.pinnedMessages.push(messageId);
+        await conversation.save();
+    }
+    return conversation.populate({
+        path: "pinnedMessages",
+        populate: { path: "sender", select: "username avatar" }
+    });
+  }
+
+  async unpinMessage(conversationId, messageId, userId) {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    if (!conversation.pinnedMessages) {
+        conversation.pinnedMessages = [];
+    }
+
+    conversation.pinnedMessages = conversation.pinnedMessages.filter(id => id.toString() !== messageId.toString());
+    await conversation.save();
+    return conversation.populate({
+        path: "pinnedMessages",
+        populate: { path: "sender", select: "username avatar" }
+    });
+  }
+
+  // --- POLLS ---
+  async createPoll(senderId, conversationId, question, options) {
+    const pollData = {
+        question,
+        options: options.map(opt => ({ text: opt, voters: [] }))
+    };
+    const newMessage = {
+        sender: senderId,
+        conversationId,
+        type: 'poll',
+        poll: pollData
+    };
+    let message = await Message.create(newMessage);
+    message = await message.populate("sender", "username email avatar");
+    await Conversation.findByIdAndUpdate(conversationId, { lastMessage: message._id });
+    return message;
+  }
+
+  async votePoll(messageId, optionId, userId) {
+    const message = await Message.findById(messageId);
+    if (!message || message.type !== 'poll') throw new Error("Poll not found");
+
+    // Remove user from any other option they might have voted for
+    message.poll.options.forEach(opt => {
+        opt.voters = opt.voters.filter(voterId => voterId.toString() !== userId);
+    });
+
+    // Add user to the new option
+    const option = message.poll.options.id(optionId);
+    if (option && !option.voters.some(v => v.toString() === userId.toString())) {
+        option.voters.push(userId);
+    }
+
+    await message.save();
+    return message;
+  }
+
+  // --- GIPHY ---
+  async sendGiphy(senderId, conversationId, giphyUrl) {
+      const newMessage = {
+          sender: senderId,
+          conversationId,
+          type: 'giphy',
+          content: giphyUrl, // Store Giphy URL in content
+          attachments: [{
+              url: giphyUrl,
+              type: 'image',
+              name: 'giphy.gif'
+          }]
+      };
+      let message = await Message.create(newMessage);
+      message = await message.populate("sender", "username email avatar");
+      await Conversation.findByIdAndUpdate(conversationId, { lastMessage: message._id });
+      return message;
+  }
+
+  // --- DO NOT DISTURB ---
+  async setDND(userId, durationMinutes) {
+      const user = await User.findById(userId);
+      if (!user) throw new Error("User not found");
+
+      if (durationMinutes > 0) {
+          const dndUntil = new Date();
+          dndUntil.setMinutes(dndUntil.getMinutes() + durationMinutes);
+          user.chatSettings.dndUntil = dndUntil;
+      } else {
+          user.chatSettings.dndUntil = null;
+      }
+      
+      await user.save();
+      return user;
   }
 
   // 2. Lấy tin nhắn của hội thoại
