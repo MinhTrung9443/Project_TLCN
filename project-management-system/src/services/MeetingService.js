@@ -57,7 +57,7 @@ const MeetingService = {
    * @param {string} creatorId ID người tạo
    * @returns {Promise<object>} Cuộc họp đã tạo
    */
-  async createMeeting(meetingData, creatorId) {
+  async createMeeting(meetingData, creatorId, userRole) {
     const { projectId, participants = [] } = meetingData;
     const project = await Project.findById(projectId).select("key members teams").lean();
     if (!project) {
@@ -69,7 +69,9 @@ const MeetingService = {
     const isTeamLeader = project.teams.some((t) => t.leaderId.equals(creatorId));
     const isTeamMember = project.teams.some((t) => t.members.some((m) => m.equals(creatorId)));
 
-    if (!project || (!isProjectMember && !isTeamLeader && !isTeamMember)) {
+    const isAdmin = userRole === "admin";
+
+    if (!project || (!isAdmin && !isProjectMember && !isTeamLeader && !isTeamMember)) {
       throw new Error("You are not a member of the project.");
     }
 
