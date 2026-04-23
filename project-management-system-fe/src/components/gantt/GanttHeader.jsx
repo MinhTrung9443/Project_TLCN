@@ -17,6 +17,7 @@ const GanttHeader = ({
   statistics = { atRisk: 0, done: 0, delay: 0, inProgress: 0, unplanned: 0, total: 0 },
   searchKeyword,
   setSearchKeyword,
+  loadingProgress = { page: 0, totalPages: 0, isLoading: false },
 }) => {
   const groupByRef = useRef(null);
   const filterRef = useRef(null);
@@ -61,6 +62,12 @@ const GanttHeader = ({
                   <span className="material-symbols-outlined text-base">schedule</span>
                   Timeline Management
                 </span>
+                {loadingProgress.isLoading && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                    <span className="material-symbols-outlined text-base">progress_activity</span>
+                    Loading {loadingProgress.page}/{loadingProgress.totalPages || "?"}
+                  </span>
+                )}
               </div>
               <p className="mt-1 text-sm text-slate-500">Visualize project schedules and track task progress across all sprints</p>
             </div>

@@ -33,6 +33,7 @@ const GanttPage = () => {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showGroupByPanel, setShowGroupByPanel] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [loadingProgress, setLoadingProgress] = useState({ page: 0, totalPages: 0, isLoading: false });
 
   // Sync scroll between left and right sections
   useEffect(() => {
@@ -60,8 +61,13 @@ const GanttPage = () => {
 
   // Fetch Gantt data
   useEffect(() => {
+    let cancelled = false;
+
     const fetchData = async () => {
       try {
+        setLoadingProgress({ page: 0, totalPages: 0, isLoading: true });
+        setGanttData([]);
+
         // Add statusFilter to filter object
         const filterWithStatus = {
           ...filter,
@@ -70,19 +76,48 @@ const GanttPage = () => {
         // Nếu có startDate/endDate thì truyền cho API, nếu rỗng thì bỏ
         if (!filterWithStatus.startDate) delete filterWithStatus.startDate;
         if (!filterWithStatus.endDate) delete filterWithStatus.endDate;
-        const response = await ganttService.getGanttData(filterWithStatus, groupBy);
-        console.log("Gantt Data Response:", response);
 
-        // API trả về { message, data: { type, data } }
-        const ganttResult = response.data || response;
-        setGanttData(ganttResult.data || []);
+        const pageSize = 8;
+        let nextPage = 1;
+        let hasMore = true;
+        let accumulatedData = [];
+
+        while (hasMore && !cancelled) {
+          const response = await ganttService.getGanttData({ ...filterWithStatus, page: nextPage, limit: pageSize }, groupBy);
+          console.log("Gantt Data Response:", response);
+
+          const ganttResult = response.data || response;
+          const pageData = ganttResult.data || [];
+          accumulatedData = nextPage === 1 ? pageData : [...accumulatedData, ...pageData];
+
+          if (!cancelled) {
+            setGanttData(accumulatedData);
+            setLoadingProgress({
+              page: ganttResult.pagination?.page || nextPage,
+              totalPages: ganttResult.pagination?.totalPages || nextPage,
+              isLoading: ganttResult.pagination?.hasMore || false,
+            });
+          }
+
+          hasMore = !!ganttResult.pagination?.hasMore;
+          nextPage = ganttResult.pagination?.nextPage || nextPage + 1;
+        }
       } catch (error) {
         console.error("Error fetching gantt data:", error);
         setGanttData([]);
+        setLoadingProgress({ page: 0, totalPages: 0, isLoading: false });
+      } finally {
+        if (!cancelled) {
+          setLoadingProgress((prev) => ({ ...prev, isLoading: false }));
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [filter, groupBy, statusFilter]); // Add statusFilter to dependencies
 
   // Toggle expand/collapse
@@ -251,6 +286,7 @@ const GanttPage = () => {
           statistics={statistics}
           searchKeyword={searchKeyword}
           setSearchKeyword={setSearchKeyword}
+          loadingProgress={loadingProgress}
         />
 
         <div className="flex-1 flex overflow-hidden bg-white">
