@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect, isProjectMember } = require("../middleware/authMiddleware");
+const { protect, isProjectMember, isProjectManager } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 const ProjectDocumentController = require("../controllers/ProjectDocumentController");
 
@@ -20,8 +20,9 @@ router.post(
   "/key/:projectKey/documents",
   protect,
   isProjectMember,
+  isProjectManager, // Check permission BEFORE upload to Cloudinary
   (req, res, next) => {
-    console.log("🚀 [Route] POST /api/projects/key/:projectKey/documents - After auth");
+    console.log("🚀 [Route] POST /api/projects/key/:projectKey/documents - After auth & permission check");
     console.log("🚀 [Route] projectKey:", req.params.projectKey);
     console.log("🚀 [Route] user:", req.user?._id?.toString() || "NO USER");
     console.log("🚀 [Route] Content-Type:", req.headers["content-type"]);

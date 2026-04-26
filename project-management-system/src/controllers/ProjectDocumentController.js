@@ -104,22 +104,6 @@ const ProjectDocumentController = {
       console.log("👥 [uploadDocument] Project members count:", project.members?.length);
       console.log("👥 [uploadDocument] Project teams count:", project.teams?.length);
 
-      // Admin or PM can upload project documents
-      const userId = req.user._id.toString();
-      const isAdmin = req.user?.role === "admin";
-      console.log("🔍 [uploadDocument] Looking for user in members, userId:", userId);
-
-      const userMember = project.members.find((m) => m.userId.toString() === userId);
-      console.log("👤 [uploadDocument] userMember found:", userMember ? "YES" : "NO");
-      if (userMember) {
-        console.log("👤 [uploadDocument] userMember role:", userMember.role);
-      }
-
-      if (!isAdmin && (!userMember || userMember.role !== "PROJECT_MANAGER")) {
-        console.log("❌ [uploadDocument] Access denied - not PM/admin");
-        return res.status(403).json({ message: "Only Project Manager or Admin can upload documents" });
-      }
-
       if (!req.file) {
         console.log("❌ [uploadDocument] No file provided");
         return res.status(400).json({ message: "No file provided" });
