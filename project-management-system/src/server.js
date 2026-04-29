@@ -14,15 +14,43 @@ const PORT = process.env.PORT || 8080;
 // Kết nối database
 connectDB();
 
-// Register queue worker
-console.log("📋 Registering summarize worker...");
-summarizeQueue.process(summarizeWorker);
+// Register queue workers when the queues are ready. If Redis is down, defer registration.
+console.log("📋 Preparing summarize worker registration...");
+const registerSummarizeWorker = () => {
+  try {
+    console.log("📋 Registering summarize worker...");
+    summarizeQueue.process(summarizeWorker);
+  } catch (err) {
+    console.error("Failed to register summarize worker:", err.message || err);
+  }
+};
 
-console.log("⚙️ Registering automation workers...");
-automationQueue.process("meeting-status-sync", 1, async () => automationService.syncMeetingsToOngoing());
-automationQueue.process("meeting-reminders", 1, async () => automationService.sendMeetingReminders());
-automationQueue.process("task-deadline-monitor", 1, async () => automationService.monitorTaskDeadlines());
-automationQueue.process("sprint-lifecycle-monitor", 1, async () => automationService.monitorSprintLifecycle());
+if (typeof summarizeQueue.isQueueReady === "function" && summarizeQueue.isQueueReady()) {
+  registerSummarizeWorker();
+} else {
+  console.warn("Summarize queue not ready; will register worker when ready.");
+  summarizeQueue.once("ready", registerSummarizeWorker);
+}
+
+console.log("⚙️ Preparing automation workers registration...");
+const registerAutomationWorkers = () => {
+  try {
+    automationQueue.process("meeting-status-sync", 1, async () => automationService.syncMeetingsToOngoing());
+    automationQueue.process("meeting-reminders", 1, async () => automationService.sendMeetingReminders());
+    automationQueue.process("task-deadline-monitor", 1, async () => automationService.monitorTaskDeadlines());
+    automationQueue.process("sprint-lifecycle-monitor", 1, async () => automationService.monitorSprintLifecycle());
+    console.log("⚙️ Automation workers registered");
+  } catch (err) {
+    console.error("Failed to register automation workers:", err.message || err);
+  }
+};
+
+if (typeof automationQueue.isQueueReady === "function" && automationQueue.isQueueReady()) {
+  registerAutomationWorkers();
+} else {
+  console.warn("Automation queue not ready; will register workers when ready.");
+  automationQueue.once("ready", registerAutomationWorkers);
+}
 
 ensureAutomationJobs()
   .then(() => {

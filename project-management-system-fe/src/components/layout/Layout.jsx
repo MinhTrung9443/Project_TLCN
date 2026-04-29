@@ -24,7 +24,7 @@ const Layout = () => {
           </div>
           {!user && <Footer />}
         </main>
-        <ChatWidget /> 
+        <ChatWidget />
         <AIAssistantWidget />
       </div>
     </div>
