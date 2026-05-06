@@ -15,7 +15,7 @@ class AIAssistantService {
     }
 
     // Cấp độ 1: Nhà Phân Tích (Phân tích rủi ro, workload, trả lời theo quyền)
-    async analyzeProjectRisk(projectData, userQuestion, userInfo) {
+    async analyzeProjectRisk(projectData, userQuestion, userInfo, history = []) {
         let systemPrompt = `Bạn là Trợ lý ảo Quản lý Dự án AI (Analyst) của hệ thống.
 Thông tin về User đang trò chuyện với bạn:
 - Tên: ${userInfo.fullName}
@@ -36,8 +36,14 @@ Nhiệm vụ của bạn:
 - Bạn CHỈ ĐƯỢC PHÉP lấy những task có trường "assignee" TRÙNG KHỚP HOÀN TOÀN với Email (${userInfo.email}) hoặc Tên (${userInfo.fullName}). 
 - QUAN TRỌNG: TUYỆT ĐỐI KHÔNG lấy task của người khác đắp vào.
 
-3. TRẢ LỜI ĐA DẠNG CÁC CÂU HỎI VỀ THUỘC TÍNH TASK / PROJECT:
-- Dùng tư duy logic để lọc (mức độ ưu tiên, trạng thái TO DO/IN PROGRESS/DONE, Loại Bug/Feat...).
+3. NẾU USER HỎI SỐ LƯỢNG TASK HAY LIỆT KÊ TRONG 1 DỰ ÁN:
+- Chú ý: Dữ liệu JSON truyền tới bạn là DANH SÁCH MỞ RỘNG gồm toàn bộ task từ NHIỀU dự án khác nhau!
+- Bắt buộc bạn phải TỰ LỘC bằng tay qua trường "projectName" trùng khớp dự án được hỏi để được danh sách rút gọn.
+- Sau khi được danh sách đó, hãy TỰ ĐẾM bằng tay ra con số chiều dài để trả lời.
+- CẤM TIỆT việc lấy chiều dài tổng gốc (hay trường total) để gán cho 1 dự án riêng lẻ! Nhớ kĩ!
+
+4. TRẢ LỜI ĐA DẠNG CÁC CÂU HỎI VỀ THUỘC TÍNH TASK / PROJECT:
+- Dùng tư duy logic để lọc (mức độ ưu tiên, trạng thái TO DO/IN Progress/DONE, Loại Bug/Feat...).
 - NẾU TÌM ĐƯỢC: Trình bày rõ ràng.
 - NẾU KHÔNG TÌM ĐƯỢC: Phải trả lời thành thật là "Hiện tại không có task nào thỏa mãn điều kiện" hoặc "Bạn không có quyền truy cập". Không bịa đặt dữ liệu (ảo giác).
 
@@ -49,22 +55,61 @@ Dữ liệu (chỉ là những task Backend cấp sát quyền cho user):
 ${JSON.stringify(projectData, null, 2)}
 `;
         try {
+            // Chuẩn bị message format gồm cả lịch sử để AI không quên context (Session memory)
+            const formattedHistory = history.map(msg => ({ role: msg.role, content: msg.content }));
+            
+            // Lịch sử gửi sang từ Controller ở msg cuối cùng là "question"
+            // Ta cần gán content đó thành câu prompt chứa thông tin projectData + câu hỏi để AI phân tích
+            if (formattedHistory.length > 0 && formattedHistory[formattedHistory.length - 1].role === 'user') {
+                formattedHistory[formattedHistory.length - 1].content = prompt;
+            } else {
+                formattedHistory.push({ role: 'user', content: prompt });
+            }
+
             const response = await openai.chat.completions.create({
                 model: this.model,
+                max_tokens: 2000,
                 messages: [
                     { role: "system", content: systemPrompt },
-                    { role: "user", content: prompt }
+                    ...formattedHistory
                 ]
             });
             return response.choices[0].message.content;
         } catch (error) {
             console.error("AI Analysis Error:", error);
-            throw new Error("Failed to analyze project risk via AI.");
+
+            // Try to detect a 402 / credit limit message and retry with fewer tokens if possible
+            const rawMsg = (error && (error.error?.message || error.message)) || '';
+            const affordMatch = rawMsg.match(/afford(?:ed)?(?:[^\d]*(\d+))/i) || rawMsg.match(/(\d+) tokens/i);
+            const affordable = affordMatch ? Number(affordMatch[1]) : null;
+
+            if (error.status === 402 || error.code === 402 || affordable) {
+                const retryMax = affordable ? Math.max(512, affordable - 50) : 1000;
+                try {
+                    console.warn(`AI Analysis: retrying with reduced max_tokens=${retryMax}`);
+                    const retryResponse = await openai.chat.completions.create({
+                        model: this.model,
+                        max_tokens: retryMax,
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            ...formattedHistory
+                        ]
+                    });
+                    return retryResponse.choices[0].message.content;
+                } catch (retryErr) {
+                    console.error("AI Analysis Retry Error:", retryErr);
+                    // rethrow the original error so caller can react to 402 properly
+                    throw error;
+                }
+            }
+
+            // For other errors, rethrow so the controller can handle/display appropriate message
+            throw error;
         }
     }
 
     // Cấp độ 2: Thư Ký Thực Thi (Function Calling tạo JSON Tool)
-    async parseTaskCommand(naturalLanguageCommand) {
+    async parseTaskCommand(naturalLanguageCommand, history = []) {
         const tools = [
             {
                 type: "function",
@@ -85,7 +130,6 @@ ${JSON.stringify(projectData, null, 2)}
                             startDate: { type: "string", description: "Ngày bắt đầu (Y-M-D) (vd: '2026-03-16')" },
                             dueDate: { type: "string", description: "Ngày kết thúc, hạn chót (Y-M-D) (vd: '2026-03-20')" }
                         },
-                        // Bỏ required "taskName" để tránh LLM bịa ra tên task khi user nói chung chung
                         required: []
                     }
                 }
@@ -93,9 +137,23 @@ ${JSON.stringify(projectData, null, 2)}
         ];
 
         try {
+            const systemContent = "Bạn là hệ thống trích xuất thông tin tạo Task từ đoạn chat. Nhiệm vụ của bạn là xem ĐOẠN HỘI THOẠI và trích xuất thông tin người dùng yêu cầu tạo mới để điền vào function create_task. LUẬT NGUYÊN TẮC: Bạn chỉ trích xuất 'taskName' nếu người dùng nêu RÕ CÔNG VIỆC CỤ THỂ cần làm (như 'sửa lỗi', 'viết api', 'thiết kế ui', 'viết tài liệu'). NẾU câu lệnh CHỈ LÀ YÊU CẦU TẠO TASK CHUNG CHUNG MÀ KHÔNG CÓ CHI TIẾT (vd: 'tạo task cho dự án X' hoặc 'thêm 1 task'), bạn BẮT BUỘC để trống (null) 'taskName'. Ngày hôm nay là " + new Date().toISOString().split('T')[0];
+
+            let messages = [{ role: "system", content: systemContent }];
+            
+            // Xây dựng ngữ cảnh với các tin nhắn trước
+            history.forEach(msg => {
+                if (msg.role === 'user' || msg.role === 'assistant') {
+                    messages.push({ role: msg.role, content: msg.content || "" });
+                }
+            });
+            // Thêm câu lệnh thực tại của người dùng
+            messages.push({ role: "user", content: naturalLanguageCommand });
+
             const response = await openai.chat.completions.create({
                 model: this.model,
-                messages: [{ role: "system", content: "Bạn là hệ thống trích xuất thông tin tạo Task từ văn bản. LUẬT NGUYÊN TẮC QUAN TRỌNG: Bạn chỉ trích xuất 'taskName' nếu người dùng nêu rõ RÕ CÔNG VIỆC CỤ THỂ cần làm (như 'sửa lỗi', 'viết api', 'thiết kế ui'). NẾU câu lệnh chỉ là yêu cầu RẤT CHUNG CHUNG ví dụ như 'tạo task cho dự án X' hoặc 'thêm 1 task' MÀ KHÔNG CÓ CHI TIẾT CÔNG VIỆC CỤ THỂ BÊN TRONG, bạn BẮT BUỘC bỏ trống (null) 'taskName'." }, { role: "user", content: `Trích xuất thông tin tạo task từ ĐOẠN HỘI THOẠI sau (nếu có ngày tháng như 'hôm nay', hãy dùng gốc là ${new Date().toISOString().split('T')[0]}): "${naturalLanguageCommand}"` }],
+                max_tokens: 1500,
+                messages: messages,
                 tools: tools,
                 tool_choice: { type: "function", function: { name: "create_task" } }
             });

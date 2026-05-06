@@ -3,6 +3,12 @@ const router = express.Router();
 const aiAssistantController = require("../controllers/AIAssistantController");
 const { protect } = require("../middleware/authMiddleware");
 
+// Quản lý phiên chat
+router.get("/sessions", protect, aiAssistantController.getSessions);
+router.post("/sessions", protect, aiAssistantController.createSession);
+router.get("/sessions/:sessionId/messages", protect, aiAssistantController.getSessionMessages);
+router.delete("/sessions/:sessionId", protect, aiAssistantController.deleteSession);
+
 // Route Cấp độ 1: Nhà Phân Tích
 router.post("/analyze-risk", protect, aiAssistantController.handleAnalyzeRisk);
 

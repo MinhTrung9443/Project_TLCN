@@ -7,29 +7,93 @@ const Priority = require("../models/Priority");
 const TaskType = require("../models/TaskType");
 const Workflow = require("../models/Workflow");
 const taskService = require("../services/TaskService");
+const AIChatSession = require("../models/AIChatSession");
+const AIChatMessage = require("../models/AIChatMessage");
+
+
+const getSessions = async (req, res) => {
+  try {
+    const sessions = await AIChatSession.find({ user: req.user.id }).sort({ updatedAt: -1 }).limit(20);
+    res.status(200).json(sessions);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi tải phiên chat" });
+  }
+};
+
+const createSession = async (req, res) => {
+  try {
+    const session = await AIChatSession.create({ user: req.user.id, title: "Cuộc trò chuyện mới" });
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi tạo phiên chat" });
+  }
+};
+
+const getSessionMessages = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await AIChatSession.findOne({ _id: sessionId, user: req.user.id });
+    if (!session) return res.status(404).json({ message: "Không tìm thấy" });
+    const messages = await AIChatMessage.find({ session: sessionId }).sort({ createdAt: 1 });
+    res.status(200).json(messages);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi tải tin nhắn" });
+  }
+};
+
+const deleteSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    await AIChatSession.findOneAndDelete({ _id: sessionId, user: req.user.id });
+    await AIChatMessage.deleteMany({ session: sessionId });
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi xoá phiên chat" });
+  }
+};
 
 const handleAnalyzeRisk = async (req, res) => {
   try {
-    const { targetProjectName, question, history } = req.body;
+    const { targetProjectName, question, history, sessionId } = req.body;
     const userId = req.user.id;
 
-    // Xây dựng chuỗi ngữ cảnh từ history
-    const inTaskCreationContext =
-      history &&
-      history.length > 0 &&
-      history.some((m) => m.role === "user" && /tạo|thêm|add|create|make/i.test(m.content) && /task|công việc|việc/i.test(m.content)) &&
-      history[history.length - 1].role === "assistant" &&
-      !/thành công|success/i.test(history[history.length - 1].content);
+    let session;
+    // Nếu có sessionId, ta phải tìm và dùng nó
+    if (sessionId) {
+      session = await AIChatSession.findOne({ _id: sessionId, user: userId });
+      if (!session) {
+        return res.status(404).json({ message: "Phiên chat không tồn tại hoặc bạn không có quyền truy cập." });
+      }
+    } else {
+      // Nếu không có sessionId, tạo phiên mới
+      const displayTitle = question ? question.substring(0, 30) + "..." : "Phân tích rủi ro";
+      session = await AIChatSession.create({ user: userId, title: displayTitle });
+    }
 
-    const conversationContext = history ? history.map((m) => m.role + ": " + m.content).join(" | ") : "";
-    const fullMessageWithContext = conversationContext ? `${conversationContext} | ${question}` : question;
+    // Xây dựng chuỗi ngữ cảnh từ history của session (chỉ lấy tối đa 8 tin nhắn gần nhất)
+    const conversationHistory = await AIChatMessage.find({ session: session._id })
+      .sort({ createdAt: -1 })
+      .limit(8);
+    const historyForAI = conversationHistory.map(msg => ({ role: msg.role, content: msg.content })).reverse();
 
-    // 0. QUICK INTENT CHECK (Có phải người dùng muốn TẠO TASK không?)
-    // Keywords siêu cơ bản để tránh phải tốn API check intent mọi lần chat
-    const isTaskCreation = (/tạo|thêm|add|create|make/i.test(question) && /task|công việc|việc/i.test(question)) || inTaskCreationContext;
+    const lastAssistantMessage = historyForAI.length > 0 && historyForAI[historyForAI.length - 1].role === "assistant" 
+      ? historyForAI[historyForAI.length - 1].content 
+      : "";
+
+    const lastUserMessage = historyForAI.length > 1 && historyForAI[historyForAI.length - 2].role === "user"
+      ? historyForAI[historyForAI.length - 2].content
+      : "";
+
+    const inTaskCreationContext = /chưa cung cấp tên công việc|chưa cung cấp tên dự án|không tìm thấy dự án hoặc bạn chưa/i.test(lastAssistantMessage);
+
+    const isQuestion = /\b(tại sao|sao lại|vì sao|đâu|bao nhiêu|giải thích|làm thế nào|như thế nào|hả)\b/i.test(question) || question.trim().endsWith("?");
+    const hasCreateKeywords = /\b(tạo|thêm|add|create|make|giao|phân)\b/i.test(question) && /\b(task|công việc|việc)\b/i.test(question);
+    const isTaskCreation = (hasCreateKeywords && !isQuestion) || inTaskCreationContext;
 
     if (isTaskCreation) {
-      req.body.command = fullMessageWithContext;
+      req.body.command = question; 
+      req.body.historyForAI = historyForAI; 
+      req.body.sessionId = session._id; 
       return handleChatCommand(req, res);
     }
 
@@ -37,9 +101,14 @@ const handleAnalyzeRisk = async (req, res) => {
     const user = await User.findById(userId);
     const isSystemAdmin = user?.role === "admin";
 
-    // Lấy danh sách dự án user đang tham gia và gán vai trò
+    // Lấy danh sách dự án user đang tham gia và gán vai trò (chỉ lấy dự án chưa bị xóa mềm)
     const userProjects = await Project.find({
-      $or: [{ "members.userId": userId }, { "teams.leaderId": userId }],
+      isDeleted: false,
+      $or: [
+        { "members.userId": userId },
+        { "teams.leaderId": userId },
+        { "teams.members": userId }
+      ],
     }).lean();
 
     const allowedProjectIds = userProjects.map((p) => p._id);
@@ -104,12 +173,22 @@ const handleAnalyzeRisk = async (req, res) => {
       .limit(Number.isFinite(maxTasksForAI) && maxTasksForAI > 0 ? maxTasksForAI : 300)
       .lean();
 
-    if (!dbTasks || dbTasks.length === 0) {
-      return res.status(200).json({ recommendation: "Chưa có task nào trong hệ thống hoặc trong dự án bạn chọn." });
+    // Debug log: Đếm số lượng task thực tế trả về từ DB
+    console.log("[AI DEBUG] Tổng số task lấy được từ DB:", dbTasks.length);
+    if (query.projectId) {
+      // Nếu đang filter theo 1 dự án cụ thể
+      console.log("[AI DEBUG] Đang filter theo projectId:", query.projectId);
+      if (Array.isArray(dbTasks)) {
+        const projectNames = dbTasks.map(t => t.projectId && t.projectId.name).filter(Boolean);
+        console.log("[AI DEBUG] Danh sách projectName thực tế:", projectNames);
+      }
     }
 
+    // Xóa đoạn return sớm nếu không có task, để AI có cơ hội trả lời câu hỏi thông thường
+    const taskListToMap = dbTasks || [];
+
     // 5. Format lại Data cho ngắn gọn trước khi gửi cho AI (Tránh tốn token)
-    const formattedData = dbTasks.map((task) => ({
+    const formattedData = taskListToMap.map((task) => ({
       taskName: task.name,
       projectName: task.projectId?.name || "N/A",
       assignee: task.assigneeId?.fullName || task.assigneeId?.email || "Chưa giao cho ai",
@@ -120,49 +199,97 @@ const handleAnalyzeRisk = async (req, res) => {
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : null,
       isOverdue: task.dueDate && new Date(task.dueDate) < new Date(),
       progress: task.progress || 0,
+      taskKey: task.key,
+      taskLink: task.key ? `/app/task/${task.key}` : null,
+    }));
+
+    // Danh sách dự án user tham gia (dù có task hay không)
+    const allUserProjects = userProjects.map((p) => ({
+      projectName: p.name,
+      status: p.status || "active", // Nếu có trường trạng thái, lấy ra, không thì mặc định active
+      role: userRolesInProjects.find(r => r.projectName === p.name)?.role || "MEMBER"
     }));
 
     const projectDataPayload = {
-      currentDate: new Date().toISOString().split("T")[0], // Gửi ngày tháng hiện tại
-      totalTasks: formattedData.length,
+      currentDate: new Date().toISOString().split("T")[0],
+      warning: "Danh sách này chứa task của NHIỀU dự án khác nhau. AI cần tự lọc theo projectName. Danh sách projects luôn đầy đủ, kể cả dự án không có task.",
+      totalTasksAcrossAllAllowedProjects: formattedData.length,
       tasks: formattedData,
+      projects: allUserProjects
     };
 
-    const analysisResult = await aiAssistantService.analyzeProjectRisk(projectDataPayload, question, userInfo);
-    res.status(200).json({ recommendation: analysisResult });
+    // Thêm câu hỏi của user vào history trước khi gửi đi
+    historyForAI.push({ role: 'user', content: question });
+
+    const analysisResult = await aiAssistantService.analyzeProjectRisk(projectDataPayload, question, userInfo, historyForAI);
+    
+    // Lưu tin nhắn user và assistant vào DB
+    await AIChatMessage.create({ session: session._id, role: "user", content: question });
+    await AIChatMessage.create({ session: session._id, role: "assistant", content: analysisResult });
+    
+    // Cập nhật thời gian cho session
+    session.updatedAt = new Date();
+    await session.save();
+    
+    res.status(200).json({ recommendation: analysisResult, sessionId: session._id });
   } catch (error) {
     console.error("Analysis Controller Error:", error);
-    res.status(500).json({ message: "Lỗi hệ thống khi AI phân tích rủi ro." });
+    
+    let errorMsg = "Lỗi hệ thống khi AI phân tích rủi ro.";
+    const is402 = error && (error.status === 402 || error.code === 402 || (error.error && (error.error.code === 402 || (error.error.status === 402))) || (error.message && error.message.includes("402")));
+    if (is402) {
+      errorMsg = "API Key của dịch vụ AI đã hết Token hoặc quá giới hạn hạn mức (Credits). Vui lòng nạp thêm API để tiếp tục!";
+    }
+
+    const fallbackSessionId = typeof session !== "undefined" && session?._id 
+      ? session._id 
+      : req.body.sessionId;
+
+    res.status(200).json({
+      recommendation: errorMsg,
+      sessionId: fallbackSessionId
+    });
   }
 };
 
 const handleChatCommand = async (req, res) => {
   try {
-    const { command } = req.body;
-
-    // 1. Lấy user hiện tại từ token xác thực
+    const { command, sessionId, historyForAI } = req.body;
     const userId = req.user.id;
 
-    const parsedCommand = await aiAssistantService.parseTaskCommand(command);
-
-    if (!parsedCommand || parsedCommand.function !== "create_task") {
-      return res.status(200).json({ recommendation: "Không hiểu lệnh hoặc chưa hỗ trợ lệnh này." });
+    let session;
+    if (sessionId) {
+      session = await AIChatSession.findOne({ _id: sessionId, user: userId });
+      if (!session) {
+        return res.status(404).json({ message: "Phiên chat không tồn tại hoặc bạn không có quyền truy cập." });
+      }
+    } else {
+      session = await AIChatSession.create({ user: userId, title: "Tạo task: " + command.substring(0, 30) });
     }
 
-    // 2. Lấy Text Name từ AI
+    const parsedCommand = await aiAssistantService.parseTaskCommand(command, historyForAI || []);
+
+    if (!parsedCommand || parsedCommand.function !== "create_task") {
+      const response = "Không hiểu lệnh hoặc chưa hỗ trợ lệnh này.";
+      await AIChatMessage.create({ session: session._id, role: "user", content: command });
+      await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
+      session.updatedAt = new Date();
+      await session.save();
+      return res.status(200).json({ recommendation: response, sessionId: session._id });
+    }
+
     const { taskName, assigneeName, sprintName, platformName, priorityLevel, projectName, taskTypeName, statusName, startDate, dueDate } =
       parsedCommand.params;
 
     if (!taskName) {
-      return res
-        .status(200)
-        .json({
-          recommendation:
-            "Bạn muốn tạo công việc mới nhưng chưa cung cấp tên công việc (ví dụ: 'tạo task sửa lỗi đăng nhập'). Hãy cung cấp tên task nhé!",
-        });
+      const response = "Bạn muốn tạo công việc mới nhưng chưa cung cấp tên công việc (ví dụ: 'tạo task sửa lỗi đăng nhập'). Hãy cung cấp tên task nhé!";
+      await AIChatMessage.create({ session: session._id, role: "user", content: command });
+      await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
+      session.updatedAt = new Date();
+      await session.save();
+      return res.status(200).json({ recommendation: response, sessionId: session._id });
     }
 
-    // 3. Mapping Object IDs dùng Schema Task.js
     const taskData = {
       name: taskName,
       reporterId: userId,
@@ -179,24 +306,30 @@ const handleChatCommand = async (req, res) => {
     }
 
     if (!taskData.projectId || !targetProject) {
-      return res
-        .status(200)
-        .json({
-          recommendation:
-            "Không tìm thấy dự án hoặc bạn chưa cung cấp tên dự án. Vui lòng cho biết thêm tên dự án để tạo task nhé! (Ví dụ: tạo task XYZ cho dự án ABC)",
-        });
+      const response = "Không tìm thấy dự án hoặc bạn chưa cung cấp tên dự án. Vui lòng cho biết thêm tên dự án để tạo task nhé! (Ví dụ: tạo task XYZ cho dự án ABC)";
+      await AIChatMessage.create({ session: session._id, role: "user", content: command });
+      await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
+      session.updatedAt = new Date();
+      await session.save();
+      return res.status(200).json({ recommendation: response, sessionId: session._id });
     }
 
-    // Kiểm tra xem User hiện tại có nằm trong dự án không
+    const currentUserObj = await User.findById(userId);
+    const isSystemAdmin = currentUserObj?.role === "admin";
+    
     const isCurrentUserMember =
       targetProject.members?.some((m) => m.userId.toString() === userId.toString()) ||
       targetProject.teams?.some(
         (t) => t.leaderId?.toString() === userId.toString() || t.members?.some((mId) => mId.toString() === userId.toString()),
       );
-    if (!isCurrentUserMember) {
-      return res
-        .status(200)
-        .json({ recommendation: `Bạn không phải là thành viên của dự án **${targetProject.name}** nên hệ thống từ chối tạo task tại đây.` });
+      
+    if (!isCurrentUserMember && !isSystemAdmin) {
+      const response = `Bạn không phải là thành viên của dự án **${targetProject.name}** nên hệ thống từ chối tạo task tại đây.`;
+      await AIChatMessage.create({ session: session._id, role: "user", content: command });
+      await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
+      session.updatedAt = new Date();
+      await session.save();
+      return res.status(200).json({ recommendation: response, sessionId: session._id });
     }
 
     let assigneeWarning = "";
@@ -206,13 +339,14 @@ const handleChatCommand = async (req, res) => {
         $or: [{ email: new RegExp(`^${safeAssigneeName}$`, "i") }, { fullname: new RegExp(safeAssigneeName, "i") }],
       });
       if (user) {
-        // Kiểm tra user được giao có nằm trong dự án không (kiểm tra cả trong members và teams)
+        // Kiểm tra user được giao có nằm trong dự án không hoặc user được giao là admin
         const isAssigneeInProject =
+          user.role === "admin" ||
           targetProject.members?.some((m) => m.userId.toString() === user._id.toString()) ||
           targetProject.teams?.some(
             (t) => t.leaderId?.toString() === user._id.toString() || t.members?.some((mId) => mId.toString() === user._id.toString()),
           );
-        if (isAssigneeInProject) {
+        if (isAssigneeInProject || isSystemAdmin) {
           taskData.assigneeId = user._id;
         } else {
           assigneeWarning = ` (⚠️ User ${user.fullname} không thuộc dự án này nên hệ thống đã bỏ trống người được giao)`;
@@ -288,27 +422,62 @@ const handleChatCommand = async (req, res) => {
     }
 
     if (!taskData.statusId) {
-      return res.status(200).json({ recommendation: "Không tìm thấy trạng thái mặc định (To Do) cho project này nên không thể tự động tạo." });
+      const response = "Không tìm thấy trạng thái mặc định (To Do) cho project này nên không thể tự động tạo.";
+      await AIChatMessage.create({ session: session._id, role: "user", content: command });
+      await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
+      session.updatedAt = new Date();
+      await session.save();
+      return res.status(200).json({ recommendation: response, sessionId: session._id });
     }
 
     // 4. Tạo Task & gửi lệnh lưu vào DB
     const newTask = await taskService.createTask(taskData, userId);
     const taskUrl = `/app/task/${newTask.key}`;
+    
+    const aiResponse = `🎉 Thành công! Công việc của bạn đã được tạo.\n- **Task mới:** [${newTask.key}] - ${newTask.name}\n- **Thành viên:** ${taskData.assigneeId ? assigneeName : "Chưa gán"}${assigneeWarning}\n\n👉 [Click vào đây để xem chi tiết Task](${taskUrl})`;
 
+    // Lưu tin nhắn user và AI vào CSDL
+    await AIChatMessage.create({
+      session: session._id,
+      role: "user",
+      content: command
+    });
+    await AIChatMessage.create({
+      session: session._id,
+      role: "assistant",
+      content: aiResponse
+    });
+    
+    // Cập nhật thời gian và có thể cả title cho session
+    session.title = "Tạo task: " + newTask.name;
+    session.updatedAt = new Date();
+    await session.save();
+    
     res.status(200).json({
-      recommendation: `🎉 Thành công! Công việc của bạn đã được tạo.
-- **Task mới:** [${newTask.key}] - ${newTask.name}
-- **Thành viên:** ${taskData.assigneeId ? assigneeName : "Chưa gán"}${assigneeWarning}
-
-👉 [Click vào đây để xem chi tiết Task](${taskUrl})`,
+      recommendation: aiResponse,
+      sessionId: session._id,
+      taskKey: newTask.key
     });
   } catch (error) {
     console.error("Chat Command Controller Error:", error);
-    res.status(200).json({ recommendation: `Lỗi hệ thống khi tạo task: ${error.message}` });
+    let errorMsg = `Lỗi hệ thống khi tạo task: ${error.message}`;
+    if (error.message && error.message.includes("402")) {
+       errorMsg = "Lỗi khi tạo task: API Key AI của bạn đã hết hạn mức Token.";
+    }
+    
+    const fallbackSessionId = typeof session !== "undefined" && session?._id 
+      ? session._id 
+      : req.body.sessionId;
+      
+    res.status(200).json({ recommendation: errorMsg, sessionId: fallbackSessionId });
   }
 };
 
 module.exports = {
+  getSessions,
+  createSession,
+  getSessionMessages,
+  deleteSession,
   handleAnalyzeRisk,
   handleChatCommand,
 };
