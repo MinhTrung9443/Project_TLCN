@@ -81,6 +81,20 @@ const BacklogPage = () => {
     setEditModalOpen(true);
   };
 
+  const handleSaveSprint = async (updatedData) => {
+    if (!sprintToEdit?._id) return;
+
+    try {
+      await sprintService.updateSprint(sprintToEdit._id, updatedData);
+      toast.success("Sprint updated.");
+      setEditModalOpen(false);
+      setSprintToEdit(null);
+      await fetchSprintList();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to update sprint.");
+    }
+  };
+
   const handleStartSprint = async (sprint) => {
     try {
       await sprintService.updateSprint(sprint._id, { status: "Started" });
@@ -231,7 +245,7 @@ const BacklogPage = () => {
           sprint={sprintToEdit}
           project={projectData}
           onClose={() => setEditModalOpen(false)}
-          onSave={() => {}}
+          onSave={handleSaveSprint}
         />
 
         <CreateTaskModal
