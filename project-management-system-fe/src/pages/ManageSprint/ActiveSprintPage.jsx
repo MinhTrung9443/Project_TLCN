@@ -206,7 +206,7 @@ const ActiveSprintPage = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="active-sprint-page">
+      <div className="active-sprint-page w-full min-w-0">
         <PageHeader
           icon={VscRunAll}
           title="Active Sprint"
@@ -223,8 +223,8 @@ const ActiveSprintPage = () => {
           }
         />
 
-        <div className="sprint-container flex flex-col gap-3 pt-2">
-          <div className="active-sprint-board flex items-start justify-center gap-3 overflow-x-auto pb-6 pt-2 pr-2 w-full snap-x snap-mandatory">
+        <div className="sprint-container flex min-w-0 flex-col gap-3 pt-2">
+          <div className="active-sprint-board flex min-w-0 items-start justify-start gap-3 overflow-x-auto pb-6 pt-2 pl-2 pr-2 w-full snap-x snap-mandatory">
             {workflowStatuses.map((status) => (
               <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
             ))}
