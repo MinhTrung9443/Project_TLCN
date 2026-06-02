@@ -68,6 +68,14 @@ const DashboardPage = () => {
     return d;
   };
 
+  const isTaskOverdue = (task, referenceDate = new Date()) => {
+    if (isTaskDone(task) || !task?.dueDate) {
+      return false;
+    }
+
+    return endOfDay(task.dueDate) < referenceDate;
+  };
+
   const formatDateShort = (date) => {
     return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
@@ -168,7 +176,7 @@ const DashboardPage = () => {
 
         const now = new Date();
         const doneCount = monthTasks.filter((task) => isTaskDone(task)).length;
-        const overdueCount = monthTasks.filter((task) => !isTaskDone(task) && task?.dueDate && new Date(task.dueDate) < now).length;
+        const overdueCount = monthTasks.filter((task) => isTaskOverdue(task, now)).length;
         const upcomingCount = monthTasks.filter((task) => !isTaskDone(task) && (!task?.dueDate || new Date(task.dueDate) >= now)).length;
 
         const taskEvents = monthTasks.map((task) => {
@@ -189,7 +197,7 @@ const DashboardPage = () => {
             date: taskStart,
             spanStart: taskStart,
             spanEnd: taskEnd,
-            status: done ? "completed" : taskEnd < now ? "overdue" : "upcoming",
+            status: done ? "completed" : isTaskOverdue(task, now) ? "overdue" : "upcoming",
             href: task.key ? `/app/task/${task.key}` : null,
             timeLabel: rangeLabel,
           };

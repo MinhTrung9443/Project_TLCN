@@ -8,7 +8,7 @@ const sprintService = {
   getSprintsByProjectKey: async (projectKey) => {
     try {
       // Tìm project
-      const project = await Project.findOne({ key: projectKey});
+      const project = await Project.findOne({ key: projectKey });
       if (!project) throw { statusCode: 404, message: "Project not found" };
 
       // Nếu là project Kanban, kiểm tra và tạo Kanban Board sprint nếu chưa có
@@ -115,7 +115,7 @@ const sprintService = {
         }
       }
 
-      const taskList = await Task.find({ sprintId});
+      const taskList = await Task.find({ sprintId });
       if (sprintData.status === "Completed") {
         const workflow = await Workflow.findOne({ projectId: sprint.projectId });
         if (workflow && workflow.statuses) {
@@ -126,11 +126,10 @@ const sprintService = {
                 task.sprintId = null;
                 await task.save();
               }
+            }
           }
         }
       }
-    }
-
 
       // Validate dates - compare only dates, not time
       if (sprintData.startDate && sprintData.endDate) {
@@ -187,8 +186,27 @@ const sprintService = {
             taskCount,
           });
         } else if (sprintData.status === "Completed") {
-          // Tính stats
-          const completed = tasks.filter((t) => t.statusId && t.statusId.category === "Done").length;
+          // Calculate stats: count tasks whose status belongs to the workflow's "Done" category.
+          let completed = 0;
+          try {
+            const workflowForProject = await Workflow.findOne({ projectId: updatedSprint.projectId });
+            let doneStatusId = null;
+            if (workflowForProject && workflowForProject.statuses) {
+              const doneStatus = workflowForProject.statuses.find((s) => s.category && s.category.toLowerCase() === "done");
+              doneStatusId = doneStatus ? doneStatus._id.toString() : null;
+            }
+
+            if (doneStatusId) {
+              completed = tasks.filter((t) => t.statusId && t.statusId.toString() === doneStatusId).length;
+            } else {
+              // Fallback: if workflow/status info unavailable, attempt best-effort check
+              completed = tasks.filter((t) => t.statusId && (t.statusId.category === "Done" || String(t.statusId).toLowerCase() === "done")).length;
+            }
+          } catch (e) {
+            console.error("Error computing sprint completed stats:", e);
+            completed = tasks.filter((t) => t.statusId).length;
+          }
+
           const stats = { completed, total: tasks.length };
 
           await notificationService.notifySprintCompleted({
@@ -234,7 +252,7 @@ const sprintService = {
   // Get started sprints by project key
   getStartedSprintsByProjectKey: async (projectKey) => {
     try {
-      const project = await Project.findOne({ key: projectKey});
+      const project = await Project.findOne({ key: projectKey });
       if (!project) throw { statusCode: 404, message: "Project not found" };
 
       const startedSprints = await Sprint.find({
@@ -276,7 +294,7 @@ const sprintService = {
             }
           }
           return task;
-        })
+        }),
       );
 
       return { sprint, tasks: enrichedTasks };
