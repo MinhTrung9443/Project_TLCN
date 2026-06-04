@@ -32,6 +32,19 @@ if (typeof summarizeQueue.isQueueReady === "function" && summarizeQueue.isQueueR
   summarizeQueue.once("ready", registerSummarizeWorker);
 }
 
+// Safety re-check: if queue becomes ready before "ready" listener was attached,
+// ensure the worker is still registered shortly after startup.
+setTimeout(() => {
+  try {
+    if (typeof summarizeQueue.isQueueReady === "function" && summarizeQueue.isQueueReady()) {
+      console.log("[Server] Post-startup check: summarize queue is ready — ensuring worker registration");
+      registerSummarizeWorker();
+    }
+  } catch (err) {
+    console.error("[Server] Post-startup worker registration check failed:", err?.message || err);
+  }
+}, 1000);
+
 console.log("⚙️ Preparing automation workers registration...");
 const registerAutomationWorkers = () => {
   try {
