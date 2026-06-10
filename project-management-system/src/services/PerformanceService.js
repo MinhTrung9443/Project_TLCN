@@ -7,6 +7,16 @@ const TaskHistory = require("../models/TaskHistory");
 const mongoose = require("mongoose");
 
 const performanceService = {
+  normalizeDateToStartOfDay: (dateValue) => {
+    if (!dateValue) return null;
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return null;
+
+    date.setHours(0, 0, 0, 0);
+    return date;
+  },
+
   normalizeDateToEndOfDay: (dateValue) => {
     if (!dateValue) return null;
 
@@ -134,8 +144,8 @@ const performanceService = {
 
       if (startDate || endDate) {
         taskFilter.updatedAt = {};
-        if (startDate) taskFilter.updatedAt.$gte = new Date(startDate);
-        if (endDate) taskFilter.updatedAt.$lte = new Date(endDate);
+        if (startDate) taskFilter.updatedAt.$gte = performanceService.normalizeDateToStartOfDay(startDate);
+        if (endDate) taskFilter.updatedAt.$lte = performanceService.normalizeDateToEndOfDay(endDate);
       }
 
       // Lấy tất cả tasks của user
@@ -347,8 +357,8 @@ const performanceService = {
 
       if (startDate || endDate) {
         timeLogFilter.logDate = {};
-        if (startDate) timeLogFilter.logDate.$gte = new Date(startDate);
-        if (endDate) timeLogFilter.logDate.$lte = new Date(endDate);
+        if (startDate) timeLogFilter.logDate.$gte = performanceService.normalizeDateToStartOfDay(startDate);
+        if (endDate) timeLogFilter.logDate.$lte = performanceService.normalizeDateToEndOfDay(endDate);
       }
 
       const timeLogs = await TimeLog.find(timeLogFilter).populate("taskId", "key name").sort({ logDate: -1 }).limit(limit);
@@ -429,15 +439,20 @@ const performanceService = {
         }
 
         // Get tasks assigned to team members in this project
+        const workflow = await Workflow.findOne({ projectId });
+        const doneStatusIds = new Set(
+          (workflow?.statuses || []).filter((status) => String(status.category).toLowerCase() === "done").map((status) => status._id.toString()),
+        );
+
         const tasks = await Task.find({
           projectId: projectId,
           assigneeId: { $in: memberIds },
-        }).select("_id status");
+        }).select("_id statusId");
 
         console.log(`Team ${team.teamId?.name} tasks found:`, tasks.length);
 
         const totalTasks = tasks.length;
-        const completedTasks = tasks.filter((t) => t.status === "done").length;
+        const completedTasks = tasks.filter((t) => t.statusId && doneStatusIds.has(String(t.statusId))).length;
 
         // Get time logs for team members' tasks
         const taskIds = tasks.map((t) => t._id);
@@ -532,6 +547,11 @@ const performanceService = {
       // Calculate stats for each member
       const memberStats = {};
 
+      const workflow = await Workflow.findOne({ projectId });
+      const doneStatusIds = new Set(
+        (workflow?.statuses || []).filter((status) => String(status.category).toLowerCase() === "done").map((status) => status._id.toString()),
+      );
+
       for (const member of membersToAnalyze) {
         // Handle both populated and non-populated member IDs
         const currentMemberId = mongoose.Types.ObjectId.isValid(member) ? member : member._id || member;
@@ -542,10 +562,10 @@ const performanceService = {
         const tasks = await Task.find({
           projectId: projectId,
           assigneeId: currentMemberId,
-        }).select("_id status");
+        }).select("_id statusId");
 
         const tasksAssigned = tasks.length;
-        const tasksCompleted = tasks.filter((t) => t.status === "done").length;
+        const tasksCompleted = tasks.filter((t) => t.statusId && doneStatusIds.has(String(t.statusId))).length;
 
         // Get time logs for this member's tasks
         const taskIds = tasks.map((t) => t._id);
