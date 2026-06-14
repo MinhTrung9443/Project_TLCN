@@ -61,22 +61,32 @@ const repeatableJobs = [
 ];
 
 async function ensureAutomationJobs() {
-  if (!isQueueReady) {
-    await automationQueue.isReady();
-    isQueueReady = true;
+  // Ensure the queue is ready before scheduling repeatable jobs.
+  try {
+    if (!isQueueReady) {
+      await automationQueue.isReady();
+      isQueueReady = true;
+    }
+  } catch (err) {
+    console.warn("[AutomationQueue] Could not connect to Redis; skipping scheduling repeatable jobs.", err.message || err);
+    return;
   }
 
   for (const jobConfig of repeatableJobs) {
-    await automationQueue.add(
-      jobConfig.name,
-      {},
-      {
-        jobId: `repeat:${jobConfig.name}`,
-        repeat: { cron: jobConfig.cron },
-        removeOnComplete: true,
-        removeOnFail: false,
-      },
-    );
+    try {
+      await automationQueue.add(
+        jobConfig.name,
+        {},
+        {
+          jobId: `repeat:${jobConfig.name}`,
+          repeat: { cron: jobConfig.cron },
+          removeOnComplete: true,
+          removeOnFail: false,
+        },
+      );
+    } catch (err) {
+      console.warn(`[AutomationQueue] Failed to add repeatable job ${jobConfig.name}:`, err.message || err);
+    }
   }
 }
 

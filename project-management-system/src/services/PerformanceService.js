@@ -7,6 +7,67 @@ const TaskHistory = require("../models/TaskHistory");
 const mongoose = require("mongoose");
 
 const performanceService = {
+  normalizeDateToStartOfDay: (dateValue) => {
+    if (!dateValue) return null;
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return null;
+
+    date.setHours(0, 0, 0, 0);
+    return date;
+  },
+
+  normalizeDateToEndOfDay: (dateValue) => {
+    if (!dateValue) return null;
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return null;
+
+    date.setHours(23, 59, 59, 999);
+    return date;
+  },
+
+  getTaskCompletionDate: async (task, workflow) => {
+    if (!task?._id) return null;
+
+    const doneStatusIds = (workflow?.statuses || [])
+      .filter((status) => String(status.category).toLowerCase() === "done")
+      .map((status) => status._id.toString());
+
+    if (doneStatusIds.length > 0) {
+      const statusHistory = await TaskHistory.find({
+        taskId: task._id,
+        fieldName: "statusId",
+      })
+        .sort({ createdAt: 1 })
+        .lean();
+
+      const doneHistory = statusHistory.find((history) => {
+        const newValueId = history?.newValue?._id ? history.newValue._id.toString() : history?.newValue?.toString?.();
+        return newValueId ? doneStatusIds.includes(newValueId) : false;
+      });
+
+      if (doneHistory) {
+        return new Date(doneHistory.createdAt);
+      }
+    }
+
+    const lastTimeLog = await TimeLog.findOne({ taskId: task._id }).sort({ createdAt: -1 }).select("createdAt").lean();
+    if (lastTimeLog?.createdAt) {
+      return new Date(lastTimeLog.createdAt);
+    }
+
+    if (task.completedAt) {
+      return new Date(task.completedAt);
+    }
+
+    if (task.statusId && String(task.statusId.category || "").toLowerCase() === "done" && task.updatedAt) {
+      return new Date(task.updatedAt);
+    }
+
+    return null;
+  },
+
   /**
    * Tính toán hiệu suất cho một task (chỉ áp dụng cho task Done)
    * Efficiency = (estimatedTime / actualTime) * 100%
@@ -36,35 +97,22 @@ const performanceService = {
    * Kiểm tra task có hoàn thành đúng hạn không
    * Lấy ngày hoàn thành từ TaskHistory khi status chuyển sang Done
    */
-  isCompletedOnTime: async (task, workflow) => {
+  isCompletedOnTime: async (task, workflow, completedDate = null) => {
     if (!task.dueDate) {
       return null; // Không có due date
     }
 
-    // Tìm tất cả các status có category "Done" trong workflow
-    const doneStatusIds = workflow.statuses.filter((status) => status.category === "Done").map((status) => status._id.toString());
-
-    if (doneStatusIds.length === 0) {
-      return null;
-    }
-
-    // Tìm lần đầu tiên task được chuyển sang status Done trong history
-    const doneHistory = await TaskHistory.findOne({
-      taskId: task._id,
-      fieldName: "statusId",
-      newValue: { $in: doneStatusIds },
-    })
-      .sort({ createdAt: 1 })
-      .lean();
-
-    if (!doneHistory) {
+    const completedDateValue = completedDate || (await performanceService.getTaskCompletionDate(task, workflow));
+    if (!completedDateValue) {
       return null; // Không tìm thấy history chuyển sang Done
     }
 
-    const completedDate = new Date(doneHistory.createdAt);
-    const dueDate = new Date(task.dueDate);
+    const dueDate = performanceService.normalizeDateToEndOfDay(task.dueDate);
+    if (!dueDate) {
+      return null;
+    }
 
-    return completedDate <= dueDate;
+    return completedDateValue.getTime() <= dueDate.getTime();
   },
 
   /**
@@ -96,8 +144,8 @@ const performanceService = {
 
       if (startDate || endDate) {
         taskFilter.updatedAt = {};
-        if (startDate) taskFilter.updatedAt.$gte = new Date(startDate);
-        if (endDate) taskFilter.updatedAt.$lte = new Date(endDate);
+        if (startDate) taskFilter.updatedAt.$gte = performanceService.normalizeDateToStartOfDay(startDate);
+        if (endDate) taskFilter.updatedAt.$lte = performanceService.normalizeDateToEndOfDay(endDate);
       }
 
       // Lấy tất cả tasks của user
@@ -130,7 +178,8 @@ const performanceService = {
       const tasksWithEfficiency = await Promise.all(
         doneTasks.map(async (task) => {
           const efficiencyData = performanceService.calculateTaskEfficiency(task);
-          const isOnTime = await performanceService.isCompletedOnTime(task, workflow);
+          const completedAt = await performanceService.getTaskCompletionDate(task, workflow);
+          const isOnTime = await performanceService.isCompletedOnTime(task, workflow, completedAt);
 
           return {
             _id: task._id,
@@ -145,9 +194,9 @@ const performanceService = {
             efficiency: efficiencyData ? efficiencyData.efficiency : null,
             isOnTime: isOnTime,
             dueDate: task.dueDate,
-            completedAt: task.completedAt || task.updatedAt,
+            completedAt,
           };
-        })
+        }),
       );
 
       // Tính toán tổng hợp cho tất cả tasks
@@ -308,8 +357,8 @@ const performanceService = {
 
       if (startDate || endDate) {
         timeLogFilter.logDate = {};
-        if (startDate) timeLogFilter.logDate.$gte = new Date(startDate);
-        if (endDate) timeLogFilter.logDate.$lte = new Date(endDate);
+        if (startDate) timeLogFilter.logDate.$gte = performanceService.normalizeDateToStartOfDay(startDate);
+        if (endDate) timeLogFilter.logDate.$lte = performanceService.normalizeDateToEndOfDay(endDate);
       }
 
       const timeLogs = await TimeLog.find(timeLogFilter).populate("taskId", "key name").sort({ logDate: -1 }).limit(limit);
@@ -390,15 +439,20 @@ const performanceService = {
         }
 
         // Get tasks assigned to team members in this project
+        const workflow = await Workflow.findOne({ projectId });
+        const doneStatusIds = new Set(
+          (workflow?.statuses || []).filter((status) => String(status.category).toLowerCase() === "done").map((status) => status._id.toString()),
+        );
+
         const tasks = await Task.find({
           projectId: projectId,
           assigneeId: { $in: memberIds },
-        }).select("_id status");
+        }).select("_id statusId");
 
         console.log(`Team ${team.teamId?.name} tasks found:`, tasks.length);
 
         const totalTasks = tasks.length;
-        const completedTasks = tasks.filter((t) => t.status === "done").length;
+        const completedTasks = tasks.filter((t) => t.statusId && doneStatusIds.has(String(t.statusId))).length;
 
         // Get time logs for team members' tasks
         const taskIds = tasks.map((t) => t._id);
@@ -493,6 +547,11 @@ const performanceService = {
       // Calculate stats for each member
       const memberStats = {};
 
+      const workflow = await Workflow.findOne({ projectId });
+      const doneStatusIds = new Set(
+        (workflow?.statuses || []).filter((status) => String(status.category).toLowerCase() === "done").map((status) => status._id.toString()),
+      );
+
       for (const member of membersToAnalyze) {
         // Handle both populated and non-populated member IDs
         const currentMemberId = mongoose.Types.ObjectId.isValid(member) ? member : member._id || member;
@@ -503,10 +562,10 @@ const performanceService = {
         const tasks = await Task.find({
           projectId: projectId,
           assigneeId: currentMemberId,
-        }).select("_id status");
+        }).select("_id statusId");
 
         const tasksAssigned = tasks.length;
-        const tasksCompleted = tasks.filter((t) => t.status === "done").length;
+        const tasksCompleted = tasks.filter((t) => t.statusId && doneStatusIds.has(String(t.statusId))).length;
 
         // Get time logs for this member's tasks
         const taskIds = tasks.map((t) => t._id);

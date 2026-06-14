@@ -8,10 +8,47 @@ const Workflow = require("../models/Workflow");
 const mongoose = require("mongoose");
 
 class GanttService {
+  buildProjectQuery(filter = {}, actor) {
+    const query = { isDeleted: false };
+
+    if (filter.projectIds && filter.projectIds.length > 0) {
+      query._id = { $in: filter.projectIds };
+    } else if (actor && actor.role !== "admin") {
+      query.$or = [{ "members.userId": actor._id }, { "teams.leaderId": actor._id }, { "teams.members": actor._id }];
+    }
+
+    const statusFilter = filter.statusFilter || "active";
+    if (statusFilter === "active") {
+      query.status = "active";
+    } else if (statusFilter === "completed") {
+      query.status = "completed";
+    } else if (statusFilter === "paused") {
+      query.status = "paused";
+    }
+
+    if (filter.startDate) {
+      query.startDate = { $gte: new Date(filter.startDate) };
+    }
+    if (filter.endDate) {
+      query.endDate = query.endDate || {};
+      query.endDate.$lte = new Date(filter.endDate);
+    }
+
+    return query;
+  }
+
+  getPagination(filter = {}) {
+    const page = Math.max(parseInt(filter.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(filter.limit, 10) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    return { page, limit, skip };
+  }
+
   async getGanttData(filter, groupby, actor) {
     try {
       let assigneeIds = [];
-      let projectIds = [];
+      const pagination = this.getPagination(filter);
 
       // 1.1 Filter by groups - get members from groups
       if (filter.groupIds && filter.groupIds.length > 0) {
@@ -31,23 +68,11 @@ class GanttService {
         assigneeIds = [...new Set(assigneeIds)];
       }
 
-      // 1.3 Filter by projects with role-based access
-      if (filter.projectIds && filter.projectIds.length > 0) {
-        projectIds = filter.projectIds;
-      } else if (actor) {
-        // Apply role-based filtering if no specific projects selected
-        const isAdmin = actor.role === "admin";
-        if (!isAdmin) {
-          // Non-admin: only show projects they participate in
-          const userProjects = await Project.find({
-            isDeleted: false,
-            $or: [{ "members.userId": actor._id }, { "teams.leaderId": actor._id }, { "teams.members": actor._id }],
-          }).select("_id");
-          projectIds = userProjects.map((p) => p._id);
-        }
-      }
+      const projectQuery = this.buildProjectQuery(filter, actor);
+      const totalProjects = await Project.countDocuments(projectQuery);
+      const projects = await Project.find(projectQuery).sort({ createdAt: -1 }).skip(pagination.skip).limit(pagination.limit);
 
-      // 1.4 Get statusFilter from filter object (default: 'active' shows only IN_PROGRESS)
+      const projectIds = projects.map((project) => project._id);
       const statusFilter = filter.statusFilter || "active";
 
       // Step 2: GROUP BY logic
@@ -58,31 +83,41 @@ class GanttService {
         result = { type: "none", data: [] };
       } else if (groupby.includes("project") && !groupby.includes("sprint") && !groupby.includes("task")) {
         // Only PROJECT
-        result = await this.getProjectsOnly(projectIds, assigneeIds, statusFilter, filter);
+        result = await this.getProjectsOnly(projects);
       } else if (groupby.includes("project") && groupby.includes("sprint") && !groupby.includes("task")) {
         // PROJECT + SPRINT
-        result = await this.getProjectsWithSprints(projectIds, assigneeIds, statusFilter, filter);
+        result = await this.getProjectsWithSprints(projects);
       } else if (groupby.includes("project") && groupby.includes("sprint") && groupby.includes("task")) {
         // PROJECT + SPRINT + TASK
-        result = await this.getProjectsWithSprintsAndTasks(projectIds, assigneeIds, statusFilter, filter);
+        result = await this.getProjectsWithSprintsAndTasks(projects, assigneeIds, filter);
       } else if (groupby.includes("project") && !groupby.includes("sprint") && groupby.includes("task")) {
         // PROJECT + TASK (no sprint)
-        result = await this.getProjectsWithTasks(projectIds, assigneeIds, statusFilter, filter);
+        result = await this.getProjectsWithTasks(projects, assigneeIds, filter);
       } else if (!groupby.includes("project") && groupby.includes("sprint") && !groupby.includes("task")) {
         // Only SPRINT (no project)
-        result = await this.getSprintsOnly(projectIds, assigneeIds, statusFilter, filter);
+        result = await this.getSprintsOnly(projectIds);
       } else if (!groupby.includes("project") && groupby.includes("sprint") && groupby.includes("task")) {
         // SPRINT + TASK (no project)
-        result = await this.getSprintsWithTasks(projectIds, assigneeIds, statusFilter, filter);
+        result = await this.getSprintsWithTasks(projectIds, assigneeIds, filter);
       } else if (!groupby.includes("project") && !groupby.includes("sprint") && groupby.includes("task")) {
         // Only TASK (no project, no sprint)
-        result = await this.getTasksOnly(projectIds, assigneeIds, statusFilter, filter);
+        result = await this.getTasksOnly(projectIds, assigneeIds, filter);
       } else {
         // Default
         result = { type: "default", data: [] };
       }
 
-      return result;
+      return {
+        ...result,
+        pagination: {
+          page: pagination.page,
+          limit: pagination.limit,
+          totalProjects,
+          totalPages: Math.max(Math.ceil(totalProjects / pagination.limit), 1),
+          hasMore: pagination.skip + projects.length < totalProjects,
+          nextPage: pagination.skip + projects.length < totalProjects ? pagination.page + 1 : null,
+        },
+      };
     } catch (error) {
       throw error;
     }
@@ -134,28 +169,7 @@ class GanttService {
   }
 
   // 1. GROUP BY: Project only
-  async getProjectsOnly(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
-    let query = { isDeleted: false };
-    if (projectIds.length > 0) {
-      query._id = { $in: projectIds };
-    }
-    // Apply status filter
-    if (statusFilter === "active") {
-      query.status = "active";
-    } else if (statusFilter === "completed") {
-      query.status = "completed";
-    } else if (statusFilter === "paused") {
-      query.status = "paused";
-    }
-    // Date filter: only filter projects by their start/endDate
-    if (filter.startDate) {
-      query.startDate = { $gte: new Date(filter.startDate) };
-    }
-    if (filter.endDate) {
-      query.endDate = query.endDate || {};
-      query.endDate.$lte = new Date(filter.endDate);
-    }
-    const projects = await Project.find(query).sort({ createdAt: -1 });
+  async getProjectsOnly(projects) {
     return {
       type: "project",
       data: projects.map((p) => ({
@@ -170,28 +184,7 @@ class GanttService {
   }
 
   // 2. GROUP BY: Project + Sprint
-  async getProjectsWithSprints(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
-    let projectQuery = { isDeleted: false };
-    if (projectIds.length > 0) {
-      projectQuery._id = { $in: projectIds };
-    }
-    // Apply status filter
-    if (statusFilter === "active") {
-      projectQuery.status = "active";
-    } else if (statusFilter === "completed") {
-      projectQuery.status = "completed";
-    } else if (statusFilter === "paused") {
-      projectQuery.status = "paused";
-    }
-    // Date filter: only filter projects by their start/endDate
-    if (filter.startDate) {
-      projectQuery.startDate = { $gte: new Date(filter.startDate) };
-    }
-    if (filter.endDate) {
-      projectQuery.endDate = projectQuery.endDate || {};
-      projectQuery.endDate.$lte = new Date(filter.endDate);
-    }
-    const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
+  async getProjectsWithSprints(projects) {
     const result = [];
     for (const project of projects) {
       // Get sprints of this project
@@ -219,28 +212,7 @@ class GanttService {
   }
 
   // 3. GROUP BY: Project + Sprint + Task
-  async getProjectsWithSprintsAndTasks(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
-    let projectQuery = { isDeleted: false };
-    if (projectIds.length > 0) {
-      projectQuery._id = { $in: projectIds };
-    }
-    // Apply status filter
-    if (statusFilter === "active") {
-      projectQuery.status = "active";
-    } else if (statusFilter === "completed") {
-      projectQuery.status = "completed";
-    } else if (statusFilter === "paused") {
-      projectQuery.status = "paused";
-    }
-    // Date filter: only filter projects by their start/endDate
-    if (filter.startDate) {
-      projectQuery.startDate = { $gte: new Date(filter.startDate) };
-    }
-    if (filter.endDate) {
-      projectQuery.endDate = projectQuery.endDate || {};
-      projectQuery.endDate.$lte = new Date(filter.endDate);
-    }
-    const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
+  async getProjectsWithSprintsAndTasks(projects, assigneeIds, filter = {}) {
     const workflowMapByProjectId = await this.getWorkflowMapByProjectIds(projects.map((project) => project._id));
     const result = [];
     for (const project of projects) {
@@ -298,22 +270,7 @@ class GanttService {
     };
   }
   // 4. GROUP BY: Project + Task (no sprint)
-  async getProjectsWithTasks(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
-    let projectQuery = { isDeleted: false };
-    if (projectIds.length > 0) {
-      projectQuery._id = { $in: projectIds };
-    }
-
-    // Apply status filter
-    if (statusFilter === "active") {
-      projectQuery.status = "active";
-    } else if (statusFilter === "completed") {
-      projectQuery.status = "completed";
-    } else if (statusFilter === "paused") {
-      projectQuery.status = "paused";
-    }
-
-    const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
+  async getProjectsWithTasks(projects, assigneeIds, filter = {}) {
     const workflowMapByProjectId = await this.getWorkflowMapByProjectIds(projects.map((project) => project._id));
     const result = [];
     for (const project of projects) {
@@ -353,7 +310,7 @@ class GanttService {
   }
 
   // 5. GROUP BY: Sprint only (no project)
-  async getSprintsOnly(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
+  async getSprintsOnly(projectIds) {
     let sprintQuery = {};
 
     if (projectIds.length > 0) {
@@ -376,7 +333,7 @@ class GanttService {
   }
 
   // 6. GROUP BY: Sprint + Task (no project)
-  async getSprintsWithTasks(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
+  async getSprintsWithTasks(projectIds, assigneeIds, filter = {}) {
     let sprintQuery = {};
 
     if (projectIds.length > 0) {
@@ -448,7 +405,7 @@ class GanttService {
   }
 
   // 7. GROUP BY: Task only (no project, no sprint)
-  async getTasksOnly(projectIds, assigneeIds, statusFilter = "active", filter = {}) {
+  async getTasksOnly(projectIds, assigneeIds, filter = {}) {
     let taskQuery = {};
     if (projectIds.length > 0) {
       taskQuery.projectId = { $in: projectIds };

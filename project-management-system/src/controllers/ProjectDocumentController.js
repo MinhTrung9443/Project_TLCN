@@ -49,11 +49,13 @@ const ProjectDocumentController = {
 
       const projectId = project._id;
       const userId = req.user?._id;
+      const isAdmin = req.user?.role === "admin";
 
-      const query = {
-        projectId,
-        $or: [{ sharedWith: userId }, { uploadedBy: userId }],
-      };
+      const query = { projectId };
+
+      if (!isAdmin) {
+        query.$or = [{ sharedWith: userId }, { uploadedBy: userId }];
+      }
 
       if (source !== "all") {
         query.sourceType = source;
@@ -101,21 +103,6 @@ const ProjectDocumentController = {
       console.log("✅ [uploadDocument] Project found:", project._id.toString());
       console.log("👥 [uploadDocument] Project members count:", project.members?.length);
       console.log("👥 [uploadDocument] Project teams count:", project.teams?.length);
-
-      // Only PM can upload project documents
-      const userId = req.user._id.toString();
-      console.log("🔍 [uploadDocument] Looking for user in members, userId:", userId);
-
-      const userMember = project.members.find((m) => m.userId.toString() === userId);
-      console.log("👤 [uploadDocument] userMember found:", userMember ? "YES" : "NO");
-      if (userMember) {
-        console.log("👤 [uploadDocument] userMember role:", userMember.role);
-      }
-
-      if (!userMember || userMember.role !== "PROJECT_MANAGER") {
-        console.log("❌ [uploadDocument] Access denied - not PM");
-        return res.status(403).json({ message: "Only Project Manager can upload documents" });
-      }
 
       if (!req.file) {
         console.log("❌ [uploadDocument] No file provided");
@@ -209,6 +196,10 @@ const ProjectDocumentController = {
 
       if (document.sourceType !== "project") {
         return res.status(400).json({ message: "Only project documents can be deleted" });
+      }
+
+      if (!document.uploadedBy || document.uploadedBy.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "Only uploader can delete document" });
       }
 
       try {

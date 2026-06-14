@@ -118,7 +118,7 @@ const LiveKitService = {
    * @param {string} userId - User ID
    * @returns {Promise<{canJoin: boolean, meeting: object, isHost: boolean}>}
    */
-  async validateParticipant(meetingId, userId) {
+  async validateParticipant(meetingId, userId, userRole) {
     const meeting = await Meeting.findById(meetingId).populate("createdBy", "fullname").populate("participants.userId", "fullname").lean();
 
     if (!meeting) {
@@ -128,6 +128,19 @@ const LiveKitService = {
     // Check if meeting is scheduled
     if (meeting.status !== "scheduled") {
       throw new Error(`Meeting is ${meeting.status}. Only scheduled meetings can be joined.`);
+    }
+
+    const isAdmin = userRole === "admin";
+
+    // Admin can join even when not invited or not a project member
+    if (isAdmin) {
+      const isHost = meeting.createdBy._id.toString() === userId.toString();
+
+      return {
+        canJoin: true,
+        meeting,
+        isHost,
+      };
     }
 
     // Check if user is in participants list

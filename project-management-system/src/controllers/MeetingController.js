@@ -8,7 +8,7 @@ const MeetingController = {
    */
   async createMeeting(req, res) {
     try {
-      const meeting = await MeetingService.createMeeting(req.body, req.user._id);
+      const meeting = await MeetingService.createMeeting(req.body, req.user._id, req.user.role);
       res.status(201).json(meeting);
     } catch (error) {
       res.status(400).json({ message: "Tạo cuộc họp thất bại", error: error.message });

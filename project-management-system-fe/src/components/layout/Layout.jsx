@@ -18,13 +18,15 @@ const Layout = () => {
       <div className="flex flex-1">
         {user && <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setSidebarCollapsed((prev) => !prev)} />}
 
-        <main className={`flex-1 flex flex-col overflow-auto transition-all duration-300 ${user ? (isSidebarCollapsed ? "ml-20" : "ml-64") : ""}`}>
+        <main
+          className={`flex-1 flex min-w-0 flex-col overflow-auto transition-all duration-300 ${user ? (isSidebarCollapsed ? "ml-20" : "ml-64") : ""}`}
+        >
           <div className="flex-1">
             <Outlet />
           </div>
           {!user && <Footer />}
         </main>
-        <ChatWidget /> 
+        <ChatWidget />
         <AIAssistantWidget />
       </div>
     </div>

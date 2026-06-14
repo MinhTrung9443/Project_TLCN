@@ -9,7 +9,7 @@ const { Meeting, Transcript, Summary, ActionItem, ProcessingLog } = require("../
 const cloudinary = require("../config/cloudinary");
 
 const openAiBaseUrl = process.env.OPENAI_BASE_URL || undefined;
-const transcriptionProvider = process.env.TRANSCRIPTION_PROVIDER || "openai";
+const transcriptionProvider = process.env.TRANSCRIPTION_PROVIDER || "deepgram";
 const openRouterHeaders = {
   ...(process.env.OPENROUTER_SITE_URL ? { "HTTP-Referer": process.env.OPENROUTER_SITE_URL } : {}),
   ...(process.env.OPENROUTER_APP_NAME ? { "X-Title": process.env.OPENROUTER_APP_NAME } : {}),
@@ -621,6 +621,11 @@ async function createTranscriptWithDeepgram(meeting) {
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
+        console.log("[SummarizeWorker] Deepgram request starting", {
+          url: meeting.videoLink,
+          model: process.env.DEEPGRAM_MODEL || "nova-2",
+          language: process.env.TRANSCRIBE_LANGUAGE || "vi",
+        });
         response = await axios.post(
           "https://api.deepgram.com/v1/listen",
           { url: meeting.videoLink },
@@ -641,9 +646,16 @@ async function createTranscriptWithDeepgram(meeting) {
             timeout: 120000,
           },
         );
+        console.log("[SummarizeWorker] Deepgram response received", { status: response.status });
         break;
       } catch (error) {
         lastError = error;
+        if (error.response) {
+          console.error("[SummarizeWorker] Deepgram error response:", {
+            status: error.response.status,
+            data: error.response.data,
+          });
+        }
         if (attempt < 3 && isRetryableConnectionError(error)) {
           const waitMs = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
           console.warn(`[SummarizeWorker] Deepgram attempt ${attempt} failed, retrying in ${waitMs}ms:`, error.message);

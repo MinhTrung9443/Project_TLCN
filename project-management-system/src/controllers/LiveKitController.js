@@ -14,7 +14,7 @@ const LiveKitController = {
       const userName = req.user.fullname;
 
       // Validate participant
-      const { canJoin, meeting, isHost } = await LiveKitService.validateParticipant(meetingId, userId);
+      const { canJoin, meeting, isHost } = await LiveKitService.validateParticipant(meetingId, userId, req.user.role);
 
       if (!canJoin) {
         return res.status(403).json({ message: "You cannot join this meeting." });

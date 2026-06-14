@@ -611,7 +611,7 @@ const MeetingRoomPageContent = ({
     <div className="h-screen bg-gray-900 flex flex-col overflow-hidden">
       <LiveKitRoom
         className="flex-1 flex flex-col overflow-hidden"
-        video={true}
+        video={false}
         audio={true}
         token={token}
         serverUrl={serverUrl}
@@ -853,6 +853,16 @@ const MeetingRoomPage = () => {
     setConnectionError("Disconnected");
   };
 
+  const handleForceEndMeeting = async () => {
+    try {
+      await endMeetingAPI(meetingId);
+      toast.success("Meeting ended");
+      navigate(-1);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to end meeting");
+    }
+  };
+
   const handleError = useCallback((error) => {
     console.error("LiveKit error:", error);
     toast.error(error?.message || "Connection failed");
@@ -887,6 +897,14 @@ const MeetingRoomPage = () => {
           </div>
           <h1 className="text-xl font-semibold text-gray-900 mb-2">Can't join meeting</h1>
           <p className="text-sm text-gray-600 mb-6">{connectionError || "Connection failed"}</p>
+          {isHost && (
+            <button
+              onClick={handleForceEndMeeting}
+              className="w-full mb-3 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+            >
+              End meeting anyway
+            </button>
+          )}
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
