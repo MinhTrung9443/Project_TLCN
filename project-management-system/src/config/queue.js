@@ -1,11 +1,12 @@
 const Queue = require("bull");
+const { createBullRedisOptions } = require("./redisConnectionOptions");
 
 // Create summarize queue
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 const summaryQueueName = process.env.SUMMARY_QUEUE_NAME || "summarize";
 console.log("[Queue] Using Redis URL:", redisUrl);
 console.log("[Queue] Using queue name:", summaryQueueName);
-const summarizeQueue = new Queue(summaryQueueName, redisUrl);
+const summarizeQueue = new Queue(summaryQueueName, createBullRedisOptions(redisUrl));
 
 let isQueueReady = false;
 

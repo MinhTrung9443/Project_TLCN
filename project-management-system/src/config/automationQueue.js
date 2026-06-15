@@ -1,4 +1,5 @@
 const Queue = require("bull");
+const { createBullRedisOptions } = require("./redisConnectionOptions");
 
 const redisUrl = process.env.REDIS_URL;
 const automationQueueName = process.env.AUTOMATION_QUEUE_NAME;
@@ -6,7 +7,7 @@ const automationQueueName = process.env.AUTOMATION_QUEUE_NAME;
 console.log("[AutomationQueue] Using Redis URL:", redisUrl);
 console.log("[AutomationQueue] Using queue name:", automationQueueName);
 
-const automationQueue = new Queue(automationQueueName, redisUrl);
+const automationQueue = new Queue(automationQueueName, createBullRedisOptions(redisUrl));
 
 let isQueueReady = false;
 
