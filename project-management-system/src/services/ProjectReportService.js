@@ -224,6 +224,25 @@ const getTaskPriority = (task, priorityMap) => {
   };
 };
 
+const calculateTaskEfficiency = (estimatedTime, actualTime) => {
+  if (!Number.isFinite(actualTime) || actualTime === 0) return null;
+  const estimated = Number.isFinite(estimatedTime) ? estimatedTime : 0;
+  return parseFloat(((estimated / actualTime) * 100).toFixed(2));
+};
+
+const calculatePerformanceRating = (efficiency) => {
+  if (efficiency === null || efficiency === undefined) return "No Data";
+  if (efficiency >= 100) return "Excellent";
+  if (efficiency >= 80) return "Good";
+  if (efficiency >= 60) return "Average";
+  return "Needs Improvement";
+};
+
+const calculateOnTimeCompletion = (completedAt, dueDate) => {
+  if (!dueDate || !completedAt) return null;
+  return completedAt.getTime() <= dueDate.getTime();
+};
+
 const getSprintDurationDays = (sprint) => {
   const startDate = toDate(sprint.startDate);
   const endDate = toDate(sprint.endDate);
@@ -296,6 +315,13 @@ const createMemberRecord = (name) => ({
   bugTasks: 0,
   estimateVarianceSum: 0,
   estimatedTaskCount: 0,
+  totalEfficiency: 0,
+  efficiencyTaskCount: 0,
+  averageEfficiency: null,
+  tasksWithDueDate: 0,
+  onTimeFinishCount: 0,
+  onTimeCompletionRate: null,
+  performanceRating: "No Data",
 });
 
 const pickRootCauseCategories = ({ bugDensity, overdueRate, estimationVariance, recurringIssueCount, tasksExceedingEstimateCount }) => {
@@ -744,6 +770,8 @@ const projectReportService = {
         }
         return !isCompleted && dueDate.getTime() < Date.now();
       })();
+      const efficiency = calculateTaskEfficiency(estimatedTime, actualTime);
+      const isOnTime = calculateOnTimeCompletion(completedAt, dueDate);
 
       return {
         raw: task,
@@ -760,10 +788,12 @@ const projectReportService = {
         progress,
         estimatedTime,
         actualTime,
+        efficiency,
         dueDate,
         completedAt,
         isCompleted,
         isOverdue,
+        isOnTime,
         isBug: isBugTask(task, taskTypeMap),
       };
     });
@@ -832,12 +862,24 @@ const projectReportService = {
         member.estimateVarianceSum += Math.abs(task.actualTime - task.estimatedTime) / task.estimatedTime;
         member.estimatedTaskCount += 1;
       }
+      if (task.efficiency !== null) {
+        member.totalEfficiency += task.efficiency;
+        member.efficiencyTaskCount += 1;
+      }
+      if (task.isOnTime !== null) {
+        member.tasksWithDueDate += 1;
+        if (task.isOnTime) member.onTimeFinishCount += 1;
+      }
     });
 
     memberStats.forEach((member, memberId) => {
       member.timeSpent = timeSpentByMember.get(memberId) || 0;
       member.averageEstimationVariance = member.estimatedTaskCount > 0 ? (member.estimateVarianceSum / member.estimatedTaskCount) * 100 : null;
       member.estimationAccuracy = member.averageEstimationVariance !== null ? clamp(100 - member.averageEstimationVariance, 0, 100) : null;
+      member.averageEfficiency = member.efficiencyTaskCount > 0 ? parseFloat((member.totalEfficiency / member.efficiencyTaskCount).toFixed(2)) : null;
+      member.onTimeCompletionRate =
+        member.tasksWithDueDate > 0 ? parseFloat(((member.onTimeFinishCount / member.tasksWithDueDate) * 100).toFixed(2)) : null;
+      member.performanceRating = calculatePerformanceRating(member.averageEfficiency);
       member.workloadUnits = member.tasks + member.timeSpent;
     });
 
@@ -1093,6 +1135,9 @@ const projectReportService = {
         formatHours(member.timeSpent),
         member.completedTasks,
         member.estimationAccuracy === null ? "N/A" : formatPercent(member.estimationAccuracy),
+        member.averageEfficiency === null ? "N/A" : formatPercent(member.averageEfficiency),
+        member.onTimeCompletionRate === null ? "N/A" : formatPercent(member.onTimeCompletionRate),
+        member.performanceRating,
       ]);
 
     const sprintRows = sprintStats.map((sprint) => [
@@ -1222,8 +1267,12 @@ const projectReportService = {
       buildTable(["Factor", "Score"], healthRows),
       ``,
       `## 3. Team Performance Analysis`,
-      buildTable(["Member", "Tasks", "Time Spent", "Completed", "Estimation Accuracy"], memberRows),
+      buildTable(
+        ["Member", "Tasks", "Time Spent", "Completed", "Estimation Accuracy", "Average Efficiency", "On-Time Rate", "Performance Rating"],
+        memberRows,
+      ),
       ``,
+
       `## 4. Workload Analysis`,
       `Balance level: **${workloadBalanceScore >= 80 ? "Balanced" : workloadBalanceScore >= 60 ? "Slightly uneven" : "Highly uneven"}**`,
       `Workload balance score: **${Math.round(workloadBalanceScore)}/100**`,
@@ -1307,7 +1356,18 @@ const projectReportService = {
         mostProductiveMember: mostProductiveMemberName,
         overloadedMembers: overloadedMembers.map((member) => member.name),
         underutilizedMembers: underutilizedMembers.map((member) => member.name),
+        memberPerformance: memberRecords.map((member) => ({
+          name: member.name,
+          tasks: member.tasks,
+          completedTasks: member.completedTasks,
+          timeSpent: Number(member.timeSpent.toFixed(2)),
+          estimationAccuracy: member.estimationAccuracy,
+          averageEfficiency: member.averageEfficiency,
+          onTimeCompletionRate: member.onTimeCompletionRate,
+          performanceRating: member.performanceRating,
+        })),
       },
+
       sprintInsights: {
         bestSprint: bestSprint?.sprint?.name || null,
         worstSprint: worstSprint?.sprint?.name || null,
