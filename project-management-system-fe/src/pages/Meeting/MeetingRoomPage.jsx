@@ -818,6 +818,7 @@ const MeetingRoomContent = ({ meetingId, meetingInfo, isHost, chatMessages, setC
 
 const MeetingRoomPage = () => {
   const { meetingId } = useParams();
+  const navigate = useNavigate();
   const [token, setToken] = useState("");
   const [serverUrl, setServerUrl] = useState("");
   const [loading, setLoading] = useState(true);
