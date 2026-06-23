@@ -370,32 +370,46 @@ const ensureReportAiConfigured = () => {
   throw error;
 };
 
-const buildNarrativeWithAi = async (facts) => {
+const buildDiagnosticInsightsWithAi = async (facts) => {
   ensureReportAiConfigured();
 
-  const systemPrompt = `You are a senior project analyst. Generate ONLY valid JSON and do not include markdown.
-Rules:
-- Use only the facts provided by user payload.
-- Do not invent projects, users, sprints, causes, or numbers.
-- Keep language concise, professional, and evidence-based.
-- If data is insufficient, explicitly say data is insufficient for that point.`;
+  const systemPrompt = `You are a Senior Agile Delivery Manager analyzing a software project's metrics.
+Your ONLY job is to diagnose root causes of inefficiencies and provide actionable lessons learned.
 
-  const userPrompt = `Create JSON with EXACT keys:
+CRITICAL RULES:
+1. CHECK PROJECT STATUS: If the project status is "completed" or isCompleted is true, YOU MUST NOT suggest reallocating tasks, changing current sprint scopes, or assisting current members. The project is OVER.
+2. For completed projects, all recommendations MUST be phrased as "Lessons Learned" or "Future Recommendations" for the NEXT similar projects.
+3. Focus purely on WHY things happened (Root Cause). If 10/10 tasks in a sprint were delayed, hypothesize why based on the workload or bug data.
+4. Do not summarize the stats. The stats are already known. Only provide the "So what?" and "Why?".
+5. Output ONLY strictly valid JSON.`;
+
+  const userPrompt = `Analyze the following project facts and provide diagnostic insights.
+
+PROJECT STATUS: ${facts.projectStatus} (Is Completed: ${facts.isCompleted})
+
+FACTS:
+- High Risk Sprints: ${JSON.stringify(facts.highRiskSprints)}
+- Overloaded Members: ${JSON.stringify(facts.overloadedMembers)}
+- Underutilized Members: ${JSON.stringify(facts.underutilizedMembers)}
+- Tasks Exceeding Estimate: ${facts.tasksExceedingEstimateCount}
+- Best Sprint: ${facts.bestSprint}
+- Worst Sprint: ${facts.worstSprint}
+
+Return JSON strictly matching this structure:
 {
-  "timelineBeginning": "string",
-  "timelineDevelopment": "string",
-  "timelineChallenges": "string",
-  "timelineCompletion": "string",
-  "productivityReason": "string",
-  "rootCauseAnalysis": ["string"],
-  "recommendations": ["string"],
-  "finalConclusion": "string",
-  "keyLessons": "string",
-  "futureRecommendations": "string"
-}
-
-Facts:
-${JSON.stringify(facts, null, 2)}`;
+  "workloadRootCauseAnalysis": [
+    "string (Max 2 sentences explaining WHY workload was imbalanced)"
+  ],
+  "estimationRootCause": [
+    "string (Explain why tasks exceeded estimates, linking to specific sprints if possible)"
+  ],
+  "keyLessonsLearned": [
+    "string (Actionable takeaways for FUTURE projects, derived from the worst sprint or risks)"
+  ],
+  "futureRecommendations": [
+    "string (Specific process changes to apply to the NEXT project to prevent these issues)"
+  ]
+}`;
 
   try {
     const response = await reportAiClient.chat.completions.create({
@@ -412,36 +426,30 @@ ${JSON.stringify(facts, null, 2)}`;
     const parsed = JSON.parse(content);
 
     const normalized = {
-      timelineBeginning: asNonEmptyText(parsed.timelineBeginning),
-      timelineDevelopment: asNonEmptyText(parsed.timelineDevelopment),
-      timelineChallenges: asNonEmptyText(parsed.timelineChallenges),
-      timelineCompletion: asNonEmptyText(parsed.timelineCompletion),
-      productivityReason: asNonEmptyText(parsed.productivityReason),
-      rootCauseAnalysis: asTextArray(parsed.rootCauseAnalysis, 8),
-      recommendations: asTextArray(parsed.recommendations, 6),
-      finalConclusion: asNonEmptyText(parsed.finalConclusion),
-      keyLessons: asNonEmptyText(parsed.keyLessons),
-      futureRecommendations: asNonEmptyText(parsed.futureRecommendations),
+      workloadRootCauseAnalysis: asTextArray(parsed.workloadRootCauseAnalysis, 6),
+      estimationRootCause: asTextArray(parsed.estimationRootCause, 6),
+      keyLessonsLearned: asTextArray(parsed.keyLessonsLearned, 6),
+      futureRecommendations: asTextArray(parsed.futureRecommendations, 8),
     };
 
-    const hasAnyNarrative = Object.values(normalized).some((value) => (Array.isArray(value) ? value.length > 0 : Boolean(value)));
-    if (!hasAnyNarrative) {
-      const error = new Error("AI returned empty narrative for project report.");
+    const hasAnyInsights = Object.values(normalized).some((value) => (Array.isArray(value) ? value.length > 0 : Boolean(value)));
+    if (!hasAnyInsights) {
+      const error = new Error("AI returned empty diagnostic insights for project report.");
       error.statusCode = 502;
       throw error;
     }
     return normalized;
   } catch (error) {
-    console.error("[ProjectReportService] AI narrative generation failed:", error.message);
+    console.error("[ProjectReportService] AI diagnostic generation failed:", error.message);
     if (!error.statusCode) {
       error.statusCode = 502;
-      error.message = `Failed to generate AI narrative: ${error.message}`;
+      error.message = `Failed to generate AI diagnostic insights: ${error.message}`;
     }
     throw error;
   }
 };
 
-const buildBugRootCauseCategoriesWithAi = async ({ projectName, bugTaskFacts, qualitySignals }) => {
+const buildBugRootCauseCategoriesWithAi = async ({ projectName, bugTaskFacts, qualitySignals, memberMap }) => {
   if (!bugTaskFacts.length) return [];
 
   ensureReportAiConfigured();
@@ -449,6 +457,19 @@ const buildBugRootCauseCategoriesWithAi = async ({ projectName, bugTaskFacts, qu
   const allowedCategories = BUG_ROOT_CAUSE_LIBRARY.map((item) => item.category);
   const libraryByCategory = new Map(BUG_ROOT_CAUSE_LIBRARY.map((item) => [item.category, item]));
   const knownTaskKeys = new Set(bugTaskFacts.map((task) => task.key).filter(Boolean));
+
+  const bugsByMember = new Map();
+  bugTaskFacts.forEach((task) => {
+    const member = task.assignee || "Unassigned";
+    if (!bugsByMember.has(member)) {
+      bugsByMember.set(member, []);
+    }
+    bugsByMember.get(member).push(task);
+  });
+
+  const memberBugContext = Array.from(bugsByMember.entries())
+    .map(([member, tasks]) => `${member}: ${tasks.length} bugs`)
+    .join("; ");
 
   const systemPrompt = `You are a senior QA root-cause analyst.
 Output ONLY valid JSON and classify bug tasks into root-cause categories.
@@ -467,7 +488,9 @@ Rules:
       "explanation": "string",
       "example": "string with real task key(s)",
       "evidenceTaskKeys": ["TASK-1", "TASK-2"],
-      "taskCount": 0
+      "affectedMembers": ["member1", "member2"],
+      "taskCount": 0,
+      "detailedAnalysis": "string explaining specific patterns"
     }
   ]
 }
@@ -477,6 +500,9 @@ ${JSON.stringify(allowedCategories, null, 2)}
 
 Project:
 ${JSON.stringify({ projectName, qualitySignals }, null, 2)}
+
+Member Bug Distribution:
+${memberBugContext}
 
 Bug tasks:
 ${JSON.stringify(bugTaskFacts, null, 2)}`;
@@ -501,9 +527,11 @@ ${JSON.stringify(bugTaskFacts, null, 2)}`;
         if (!category || !libraryByCategory.has(category)) return null;
 
         const evidenceTaskKeys = asTextArray(item.evidenceTaskKeys, 10).filter((key) => knownTaskKeys.has(key));
+        const affectedMembers = asTextArray(item.affectedMembers, 5);
         const fallbackExample = libraryByCategory.get(category).example;
         const example = asNonEmptyText(item.example) || fallbackExample;
         const explanation = asNonEmptyText(item.explanation) || libraryByCategory.get(category).explanation;
+        const detailedAnalysis = asNonEmptyText(item.detailedAnalysis) || "";
         const taskCount = Number.isFinite(Number(item.taskCount)) ? Number(item.taskCount) : evidenceTaskKeys.length;
 
         return {
@@ -511,7 +539,9 @@ ${JSON.stringify(bugTaskFacts, null, 2)}`;
           explanation,
           example,
           evidenceTaskKeys,
+          affectedMembers,
           taskCount,
+          detailedAnalysis,
         };
       })
       .filter(Boolean)
@@ -1003,24 +1033,53 @@ const projectReportService = {
       .sort((left, right) => right.bugDensity - left.bugDensity);
 
     const riskItems = [];
+
     if (highRiskSprints.length > 0) {
+      const topRisk = highRiskSprints[0];
+      const affectedBugs = bugBySprint.find((item) => item.sprintId === topRisk.sprintId);
       riskItems.push({
         level: "High",
-        title: `Sprint ${highRiskSprints[0].sprint.name || highRiskSprints[0].sprintId} has elevated bug density (${formatPercent(highRiskSprints[0].bugDensity)})`,
+        title: `Sprint ${topRisk.sprint.name || topRisk.sprintId} has elevated bug density (${formatPercent(topRisk.bugDensity)})`,
+        description: `This sprint produced ${affectedBugs?.bugs || 0} bugs out of ${topRisk.totalTasks} tasks. High bug density indicates quality issues, possible causes: insufficient testing, rushed implementation, or complexity misestimation.`,
+        impact: "May require additional testing cycles or hotfixes post-release",
       });
     }
 
     if (overloadedMembers.length > 0) {
+      const memberOverload = overloadedMembers.map((m) => `${m.name} (${m.tasks} tasks, ${m.workloadUnits.toFixed(1)} units)`).join("; ");
       riskItems.push({
-        level: "Medium",
+        level: "High",
         title: `${overloadedMembers.length} member(s) are carrying materially above-average workload`,
+        description: `Overloaded members: ${memberOverload}. Average workload: ${(totalWorkloadUnits / activeMembers.length).toFixed(1)} units.`,
+        impact: "Burnout risk, increased bug rate, quality degradation, potential timeline slippage",
       });
     }
 
     if (tasksExceedingEstimate.length > 0) {
+      const avgOverrun =
+        tasksExceedingEstimate.reduce((sum, task) => sum + ((task.actualTime - task.estimatedTime) / task.estimatedTime) * 100, 0) /
+        tasksExceedingEstimate.length;
       riskItems.push({
         level: tasksExceedingEstimate.length >= 3 ? "High" : "Medium",
         title: `${tasksExceedingEstimate.length} task(s) exceeded their estimate by more than 20%`,
+        description: `Average overrun: ${avgOverrun.toFixed(1)}%. Affected tasks: ${tasksExceedingEstimate
+          .slice(0, 5)
+          .map((t) => t.key)
+          .join(", ")}${tasksExceedingEstimate.length > 5 ? "..." : ""}`,
+        impact: "Estimation accuracy issue; future planning may be unreliable",
+      });
+    }
+
+    if (underutilizedMembers.length > 0) {
+      const underutilInfo = underutilizedMembers
+        .slice(0, 3)
+        .map((m) => `${m.name} (${m.tasks} tasks)`)
+        .join("; ");
+      riskItems.push({
+        level: "Low",
+        title: `${underutilizedMembers.length} member(s) are underutilized`,
+        description: `Underutilized members: ${underutilInfo}. May indicate uneven task distribution or capability misalignment.`,
+        impact: "Opportunity for better resource allocation and mentoring",
       });
     }
 
@@ -1028,6 +1087,8 @@ const projectReportService = {
       riskItems.push({
         level: "Low",
         title: "No dominant risk pattern is visible from the provided data",
+        description: "Project metrics are within acceptable ranges",
+        impact: "Minimal immediate risk",
       });
     }
 
@@ -1190,62 +1251,48 @@ const projectReportService = {
         estimationVariance: Number(estimationVariance.toFixed(2)),
         recurringIssues: recurringIssues.length,
       },
+      memberMap: userMap,
     });
 
     const rootCauseCategoryRows = rootCauseCategories.map((item) => [
       item.taskCount > 0 ? `${item.category} (${item.taskCount} bug task${item.taskCount > 1 ? "s" : ""})` : item.category,
       item.explanation,
-      item.evidenceTaskKeys?.length ? `${item.example} [Evidence: ${item.evidenceTaskKeys.join(", ")}]` : item.example,
+      (() => {
+        let analysis = item.example;
+        if (item.affectedMembers?.length) {
+          analysis += `\n**Affected Members:** ${item.affectedMembers.join(", ")}`;
+        }
+        if (item.evidenceTaskKeys?.length) {
+          analysis += `\n**Evidence:** ${item.evidenceTaskKeys.join(", ")}`;
+        }
+        if (item.detailedAnalysis) {
+          analysis += `\n**Analysis:** ${item.detailedAnalysis}`;
+        }
+        return analysis;
+      })(),
     ]);
 
-    const aiNarrative = await buildNarrativeWithAi({
-      project: {
-        name: projectName,
-        evaluation,
-        overallScore: scoreResult.overallScore,
-      },
-      summary: {
-        totalTasks,
-        completedTasks,
-        completionRate: Number(completionRate.toFixed(2)),
-        overdueTasks,
-        overdueRate: Number(overdueRate.toFixed(2)),
-        totalSprints: sprints.length,
-      },
-      sprintInsights: {
-        timelineStart: timelineStart?.name || null,
-        timelineMiddle: timelineMiddle?.name || null,
-        timelineEnd: timelineEnd?.name || null,
-        bestSprint: bestSprintName,
-        worstSprint: worstSprintName,
-        mostProductiveSprint: mostProductiveSprint?.sprint?.name || "N/A",
-      },
-      qualitySignals: {
-        bugTasks: bugTasks.length,
-        bugDensity: Number(bugDensity.toFixed(2)),
-        estimationVariance: Number(estimationVariance.toFixed(2)),
-        tasksExceedingEstimate: tasksExceedingEstimate.length,
-        overloadedMembers: overloadedMembers.length,
-        recurringIssues: recurringIssues.length,
-      },
-      rootCauseCategories: rootCauseCategories.map((item) => ({
-        category: item.category,
-        taskCount: item.taskCount,
-        evidenceTaskKeys: item.evidenceTaskKeys,
-      })),
-      risks: riskItems,
+    const aiNarrative = await buildDiagnosticInsightsWithAi({
+      projectStatus: project.status || "unknown",
+      isCompleted: project.status === "completed",
+      highRiskSprints: highRiskSprints.map((sprint) => sprint.sprint.name || sprint.sprintId),
+      overloadedMembers: overloadedMembers.map((member) => member.name),
+      underutilizedMembers: underutilizedMembers.map((member) => member.name),
+      tasksExceedingEstimateCount: tasksExceedingEstimate.length,
+      bestSprint: bestSprintName,
+      worstSprint: worstSprintName,
     });
 
-    const narrativeBeginning = aiNarrative.timelineBeginning;
-    const narrativeDevelopment = aiNarrative.timelineDevelopment;
-    const narrativeChallenges = aiNarrative.timelineChallenges;
-    const narrativeCompletion = aiNarrative.timelineCompletion;
-    const productivityReason = aiNarrative.productivityReason;
-    const rootCauseReasons = aiNarrative.rootCauseAnalysis;
-    const recommendationItems = aiNarrative.recommendations;
-    const finalConclusion = aiNarrative.finalConclusion;
-    const keyLessons = aiNarrative.keyLessons;
+    const workloadRootCauseAnalysis = aiNarrative.workloadRootCauseAnalysis;
+    const estimationRootCause = aiNarrative.estimationRootCause;
+    const keyLessonsLearned = aiNarrative.keyLessonsLearned;
     const futureRecommendations = aiNarrative.futureRecommendations;
+    const productOutcomeSummary = project.description || "No specific product outcome summary was available from the provided data.";
+    const finalConclusion = `Project completed status: ${project.status || "unknown"}. Overall evaluation indicates ${evaluation.toLowerCase()}.`;
+
+    const membersWithNoPerformanceData = memberRecords
+      .filter((member) => member.timeSpent > 0 && member.averageEfficiency === null)
+      .map((member) => member.name);
 
     const reportMarkdown = [
       `# Complete Project Report`,
@@ -1272,60 +1319,80 @@ const projectReportService = {
         memberRows,
       ),
       ``,
-
+      membersWithNoPerformanceData.length > 0
+        ? `Note: Members with time logs but missing matched estimate/actual data do not receive a performance rating: ${membersWithNoPerformanceData.join(", ")}.`
+        : ``,
+      ``,
       `## 4. Workload Analysis`,
       `Balance level: **${workloadBalanceScore >= 80 ? "Balanced" : workloadBalanceScore >= 60 ? "Slightly uneven" : "Highly uneven"}**`,
       `Workload balance score: **${Math.round(workloadBalanceScore)}/100**`,
+      `Average workload per member: **${(totalWorkloadUnits / activeMembers.length).toFixed(2)} units**`,
       ``,
+      ...(overloadedMembers.length > 0
+        ? [
+            `**Overloaded Members (>${((totalWorkloadUnits / activeMembers.length) * 1.3).toFixed(1)} units):**`,
+            buildBulletList(
+              overloadedMembers.map(
+                (m) => `${m.name}: ${m.workloadUnits.toFixed(1)} units (${m.tasks} tasks, ${formatHours(m.timeSpent)} time spent)`,
+              ),
+            ),
+            ``,
+          ]
+        : []),
+      ...(underutilizedMembers.length > 0
+        ? [
+            `**Underutilized Members (<${((totalWorkloadUnits / activeMembers.length) * 0.7).toFixed(1)} units):**`,
+            buildBulletList(underutilizedMembers.map((m) => `${m.name}: ${m.workloadUnits.toFixed(1)} units (${m.tasks} tasks)`)),
+            ``,
+          ]
+        : []),
       `## 5. Issue (Bug) Analysis`,
-      `Total bugs: **${bugTasks.length}**`,
+      `Total bugs: **${bugTasks.length}** (Bug density: ${formatPercent(bugDensity)})`,
+      ``,
+      `### Bugs by Sprint`,
       buildTable(["Sprint", "Bugs", "Total Tasks", "Bug Density"], bugRows),
       ``,
-      `Bug severity by priority:`,
+      `### Bugs by Member`,
+      `Note: Bug Count measures tasks classified as bug type; Member Tasks counts all assigned tasks for that member.`,
+      buildTable(
+        ["Member", "Bug Count", "Total Tasks"],
+        bugByMember.map((item) => {
+          const member = memberRecords.find((m) => m.name === item.member);
+          return [item.member, item.bugs, member ? member.tasks : "N/A"];
+        }),
+      ),
+      ``,
+      `### Bug Severity by Priority`,
       buildTable(["Priority", "Bug Count"], priorityRows),
       ``,
-      `### Bug Root Cause Categories`,
-      buildTable(["Root Cause Category", "Explanation", "Example"], rootCauseCategoryRows),
+      `### Recurring Issues`,
+      recurringIssues.length > 0
+        ? buildTable(
+            ["Issue Name", "Occurrences", "Affected Sprints", "Affected Members"],
+            recurringIssues.slice(0, 10).map((issue) => [issue.name, issue.count, issue.affectedSprints, issue.affectedMembers]),
+          )
+        : "No recurring issues detected.",
       ``,
-      `## 6. Risk Detection`,
-      buildBulletList(riskItems.map((item) => `[${item.level}] ${item.title}`)),
+      `### Bug Root Cause Analysis`,
+      buildTable(["Root Cause Category", "Explanation", "Details & Members"], rootCauseCategoryRows),
       ``,
-      `## 7. Sprint Analysis`,
-      buildTable(["Sprint", "Total Tasks", "Completed Tasks", "Completion Rate", "Delayed Tasks"], sprintRows),
+      `## 6. Risks & AI Assessment`,
+      riskItems.map((item) => `**[${item.level} Risk]** ${item.title}\n${item.description || ""}\n*Impact:* ${item.impact || ""}`).join("\n\n"),
       ``,
-      `Best sprint: **${bestSprintName}**`,
-      `Worst sprint: **${worstSprintName}**`,
+      `## 7. Workload Root Cause & Lessons Learned`,
+      buildBulletList(workloadRootCauseAnalysis, "No specific workload root-cause analysis available."),
       ``,
-      `## 8. Timeline Narrative`,
-      `Beginning: ${narrativeBeginning}`,
+      `## 8. Estimation Root Cause`,
+      buildBulletList(estimationRootCause, "No estimation root-cause insights available."),
       ``,
-      `Development: ${narrativeDevelopment}`,
+      `## 9. Future Lessons Learned`,
+      buildBulletList(keyLessonsLearned, "No lessons learned were identified."),
       ``,
-      `Challenges: ${narrativeChallenges}`,
+      `## 10. Process Improvement Suggestions`,
+      buildBulletList(futureRecommendations, "No future recommendations available."),
       ``,
-      `Completion: ${narrativeCompletion}`,
-      ``,
-      `## 9. Productivity Insight`,
-      `Most productive sprint: **${mostProductiveSprint?.sprint?.name || "N/A"}**`,
-      `Reason: ${productivityReason}`,
-      ``,
-      `## 10. Root Cause Analysis`,
-      buildBulletList(rootCauseReasons, "No clear root-cause pattern was visible from the supplied data."),
-      ``,
-      `## 11. Recommendations`,
-      buildBulletList(recommendationItems),
-      ``,
-      `## 12. Chart Data`,
-      "Use the JSON block at the end of this report for charts and dashboard widgets.",
-      ``,
-      `## 13. Final Conclusion`,
+      `## 11. Final Conclusion`,
       finalConclusion,
-      `Key lessons: ${keyLessons}`,
-      `Future recommendations: ${futureRecommendations}`,
-      ``,
-      `## 14. AI Confidence Score`,
-      `Confidence: **${confidence}%**`,
-      `Reason: the report uses the provided tasks, sprints, users, priorities, task types, workflows, and time logs, but the confidence is reduced when estimate, assignee, or workflow coverage is incomplete.`,
     ].join("\n");
 
     return {
@@ -1354,8 +1421,19 @@ const projectReportService = {
       },
       team: {
         mostProductiveMember: mostProductiveMemberName,
-        overloadedMembers: overloadedMembers.map((member) => member.name),
-        underutilizedMembers: underutilizedMembers.map((member) => member.name),
+        overloadedMembers: overloadedMembers.map((member) => ({
+          name: member.name,
+          tasks: member.tasks,
+          workloadUnits: Number(member.workloadUnits.toFixed(2)),
+          timeSpent: Number(member.timeSpent.toFixed(2)),
+          ratio: Number((member.workloadUnits / (totalWorkloadUnits / activeMembers.length)).toFixed(2)),
+        })),
+        underutilizedMembers: underutilizedMembers.map((member) => ({
+          name: member.name,
+          tasks: member.tasks,
+          workloadUnits: Number(member.workloadUnits.toFixed(2)),
+          ratio: Number((member.workloadUnits / (totalWorkloadUnits / activeMembers.length)).toFixed(2)),
+        })),
         memberPerformance: memberRecords.map((member) => ({
           name: member.name,
           tasks: member.tasks,
@@ -1365,6 +1443,7 @@ const projectReportService = {
           averageEfficiency: member.averageEfficiency,
           onTimeCompletionRate: member.onTimeCompletionRate,
           performanceRating: member.performanceRating,
+          bugTasks: member.bugTasks,
         })),
       },
 
@@ -1372,16 +1451,55 @@ const projectReportService = {
         bestSprint: bestSprint?.sprint?.name || null,
         worstSprint: worstSprint?.sprint?.name || null,
         mostProductiveSprint: mostProductiveSprint?.sprint?.name || null,
+        sprintDetails: sprintStats.map((sprint) => ({
+          name: sprint.sprint.name || "Unnamed sprint",
+          totalTasks: sprint.totalTasks,
+          completedTasks: sprint.completedTasks,
+          completionRate: Number(sprint.completionRate.toFixed(2)),
+          delayedTasks: sprint.delayedTasks,
+          delayedRate: Number(sprint.delayedRate.toFixed(2)),
+          bugTasks: sprint.bugTasks,
+          bugDensity: Number(sprint.bugDensity.toFixed(2)),
+          estimationVariance: Number(sprint.estimationVariance.toFixed(2)),
+          score: Number(sprint.score.toFixed(2)),
+          durationDays: sprint.durationDays ? Number(sprint.durationDays.toFixed(1)) : null,
+        })),
       },
       bugAnalysis: {
         totalBugs: bugTasks.length,
+        bugDensity: Number(bugDensity.toFixed(2)),
         bugsPerSprint: bugBySprint,
-        bugsPerMember: bugByMember,
+        bugsPerMember: bugByMember.map((item) => {
+          const memberRecord = memberRecords.find((m) => m.name === item.member);
+          const memberTasks = memberRecord?.tasks || 0;
+          return {
+            member: item.member,
+            bugs: item.bugs,
+            memberTasksTotal: memberTasks,
+            bugRate: memberTasks > 0 ? Number(((item.bugs / memberTasks) * 100).toFixed(2)) : 0,
+          };
+        }),
         bugsByPriority: bugByPriority,
-        recurringIssues,
-        rootCauseCategories,
+        recurringIssues: recurringIssues.map((issue) => ({
+          name: issue.name,
+          count: issue.count,
+          affectedSprints: issue.affectedSprints,
+          affectedMembers: issue.affectedMembers,
+        })),
+        rootCauseCategories: rootCauseCategories.map((item) => ({
+          category: item.category,
+          explanation: item.explanation,
+          taskCount: item.taskCount,
+          affectedMembers: item.affectedMembers,
+          evidenceTaskKeys: item.evidenceTaskKeys,
+        })),
       },
-      risks: riskItems,
+      risks: riskItems.map((item) => ({
+        level: item.level,
+        title: item.title,
+        description: item.description || "",
+        impact: item.impact || "",
+      })),
       chartData,
       markdown: `${reportMarkdown}\n\n\`\`\`json\n${JSON.stringify(chartData, null, 2)}\n\`\`\``,
       confidence,

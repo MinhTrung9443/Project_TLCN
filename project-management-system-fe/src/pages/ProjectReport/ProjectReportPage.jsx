@@ -349,6 +349,13 @@ const ProjectReportPage = () => {
   const taskStatusSeries = objectEntriesDesc(chartData?.taskStatus || {});
   const tasksPerMemberSeries = objectEntriesDesc(chartData?.tasksPerMember || {});
   const timeSpentPerMemberSeries = objectEntriesDesc(chartData?.timeSpentPerMember || {});
+  const bugsPerMemberSeries = (chartData?.bugsPerMember || []).map((item) => ({ label: item.member, value: item.bugs }));
+  const bugsByPrioritySeries = objectEntriesDesc(chartData?.bugsByPriority || {});
+  const recurringIssues = report?.bugAnalysis?.recurringIssues || [];
+  const teamOverloaded = report?.team?.overloadedMembers || [];
+  const teamUnderutilized = report?.team?.underutilizedMembers || [];
+  const risks = report?.risks || [];
+  const sprintDetails = report?.sprintInsights?.sprintDetails || [];
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.12),_transparent_30%),linear-gradient(180deg,_#f8fbff_0%,_#eef4fb_100%)] px-4 py-6 sm:px-6 lg:px-8">
@@ -548,6 +555,8 @@ const ProjectReportPage = () => {
                 description="Top contributors by logged effort (hours)."
                 data={timeSpentPerMemberSeries}
               />
+              <HorizontalBars title="Bugs per member" description="Members with most bug assignments." data={bugsPerMemberSeries} />
+              <HorizontalBars title="Bugs by priority" description="Bug distribution across priority levels." data={bugsByPrioritySeries} />
               <SprintBars
                 title="Bugs per sprint"
                 description="Bug counts by sprint from the generated dataset."
@@ -573,6 +582,148 @@ const ProjectReportPage = () => {
                 </div>
               </div>
             </div>
+
+            {risks.length > 0 && (
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-[0_15px_40px_rgba(15,23,42,0.05)]">
+                <h3 className="text-lg font-bold text-slate-900">Risk Detection</h3>
+                <p className="mt-2 text-sm text-slate-500">Identified risks from project data analysis.</p>
+                <div className="mt-4 space-y-3">
+                  {risks.map((risk, index) => {
+                    const levelColors = {
+                      High: "border-rose-300 bg-rose-50",
+                      Medium: "border-amber-300 bg-amber-50",
+                      Low: "border-emerald-300 bg-emerald-50",
+                    };
+                    const badgeColors = {
+                      High: "bg-rose-200 text-rose-900",
+                      Medium: "bg-amber-200 text-amber-900",
+                      Low: "bg-emerald-200 text-emerald-900",
+                    };
+                    return (
+                      <div key={`risk-${index}`} className={`rounded-lg border p-4 ${levelColors[risk.level] || levelColors.Low}`}>
+                        <div className="flex items-start gap-3">
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeColors[risk.level] || badgeColors.Low}`}>
+                            {risk.level}
+                          </span>
+                          <div className="flex-1">
+                            <p className="font-semibold text-slate-900">{risk.title}</p>
+                            {risk.description && <p className="mt-1 text-sm text-slate-700">{risk.description}</p>}
+                            {risk.impact && (
+                              <p className="mt-2 text-xs text-slate-600">
+                                <strong>Impact:</strong> {risk.impact}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {(teamOverloaded.length > 0 || teamUnderutilized.length > 0) && (
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-[0_15px_40px_rgba(15,23,42,0.05)]">
+                <h3 className="text-lg font-bold text-slate-900">Team Workload Analysis</h3>
+                <p className="mt-2 text-sm text-slate-500">Members with unbalanced workload distribution.</p>
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  {teamOverloaded.length > 0 && (
+                    <div className="rounded-lg border border-rose-300 bg-rose-50 p-4">
+                      <h4 className="font-semibold text-rose-900">Overloaded Members</h4>
+                      <div className="mt-3 space-y-2">
+                        {teamOverloaded.map((member, idx) => (
+                          <div key={`overload-${idx}`} className="text-sm">
+                            <p className="font-medium text-slate-900">{member.name}</p>
+                            <p className="text-xs text-slate-600">
+                              {member.tasks} tasks • {member.timeSpent.toFixed(1)}h • {member.ratio.toFixed(1)}x workload
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {teamUnderutilized.length > 0 && (
+                    <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-4">
+                      <h4 className="font-semibold text-emerald-900">Underutilized Members</h4>
+                      <div className="mt-3 space-y-2">
+                        {teamUnderutilized.map((member, idx) => (
+                          <div key={`underutil-${idx}`} className="text-sm">
+                            <p className="font-medium text-slate-900">{member.name}</p>
+                            <p className="text-xs text-slate-600">
+                              {member.tasks} tasks • {member.ratio.toFixed(1)}x workload
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {recurringIssues.length > 0 && (
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-[0_15px_40px_rgba(15,23,42,0.05)]">
+                <h3 className="text-lg font-bold text-slate-900">Recurring Issues</h3>
+                <p className="mt-2 text-sm text-slate-500">Bug patterns that appear multiple times across sprints.</p>
+                <div className="mt-4">
+                  <table className="w-full">
+                    <thead className="border-b-2 border-slate-200">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-slate-900">Issue</th>
+                        <th className="px-3 py-2 text-center text-sm font-semibold text-slate-900">Count</th>
+                        <th className="px-3 py-2 text-center text-sm font-semibold text-slate-900">Sprints</th>
+                        <th className="px-3 py-2 text-center text-sm font-semibold text-slate-900">Members</th>
+                      </tr>
+                    </thead>
+                    <tbody className="space-y-1">
+                      {recurringIssues.map((issue, idx) => (
+                        <tr key={`recurring-${idx}`} className="border-b border-slate-200">
+                          <td className="px-3 py-2 text-sm text-slate-700">{issue.name}</td>
+                          <td className="px-3 py-2 text-center text-sm font-semibold text-rose-700">{issue.count}</td>
+                          <td className="px-3 py-2 text-center text-sm text-slate-600">{issue.affectedSprints}</td>
+                          <td className="px-3 py-2 text-center text-sm text-slate-600">{issue.affectedMembers}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {sprintDetails.length > 0 && (
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-[0_15px_40px_rgba(15,23,42,0.05)]">
+                <h3 className="text-lg font-bold text-slate-900">Detailed Sprint Performance</h3>
+                <p className="mt-2 text-sm text-slate-500">Comprehensive metrics for each sprint.</p>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="border-b-2 border-slate-200 bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-900">Sprint</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-900">Tasks</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-900">Completed</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-900">Completion %</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-900">Delayed</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-900">Bugs</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-900">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sprintDetails.map((sprint, idx) => (
+                        <tr key={`sprint-${idx}`} className="border-b border-slate-200 hover:bg-slate-50">
+                          <td className="px-3 py-2 font-medium text-slate-900">{sprint.name}</td>
+                          <td className="px-3 py-2 text-center text-slate-600">{sprint.totalTasks}</td>
+                          <td className="px-3 py-2 text-center text-slate-600">{sprint.completedTasks}</td>
+                          <td className="px-3 py-2 text-center font-semibold text-slate-900">{sprint.completionRate.toFixed(1)}%</td>
+                          <td className="px-3 py-2 text-center text-slate-600">{sprint.delayedTasks}</td>
+                          <td className="px-3 py-2 text-center font-semibold text-rose-700">{sprint.bugTasks}</td>
+                          <td className="px-3 py-2 text-center font-bold text-sky-700">{sprint.score.toFixed(1)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             <details className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-[0_15px_40px_rgba(15,23,42,0.05)]">
               <summary className="cursor-pointer text-lg font-bold text-slate-900">Raw chart JSON</summary>
@@ -657,6 +808,12 @@ const ProjectReportPage = () => {
                 />
               </div>
               <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <HorizontalBars title="Bugs per member" description="Members with most bug assignments." data={bugsPerMemberSeries} />
+              </div>
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <HorizontalBars title="Bugs by priority" description="Bug distribution across priority levels." data={bugsByPrioritySeries} />
+              </div>
+              <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
                 <h3 className="text-lg font-bold text-slate-900">Health breakdown</h3>
                 <p className="mt-2 text-sm text-slate-500">The backend combines these factor scores into the final project health score.</p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -666,6 +823,148 @@ const ProjectReportPage = () => {
                   <ReportMetricCard label="Bug density" value={health.bugScore ?? "--"} valueColor="text-rose-700" />
                 </div>
               </div>
+
+              {risks.length > 0 && (
+                <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                  <h3 className="text-lg font-bold text-slate-900">Risk Detection</h3>
+                  <p className="mt-2 text-sm text-slate-500">Identified risks from project data analysis.</p>
+                  <div className="mt-4 space-y-3">
+                    {risks.map((risk, index) => {
+                      const levelColors = {
+                        High: "border-rose-300 bg-rose-50",
+                        Medium: "border-amber-300 bg-amber-50",
+                        Low: "border-emerald-300 bg-emerald-50",
+                      };
+                      const badgeColors = {
+                        High: "bg-rose-200 text-rose-900",
+                        Medium: "bg-amber-200 text-amber-900",
+                        Low: "bg-emerald-200 text-emerald-900",
+                      };
+                      return (
+                        <div key={`risk-${index}`} className={`rounded-lg border p-4 ${levelColors[risk.level] || levelColors.Low}`}>
+                          <div className="flex items-start gap-3">
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeColors[risk.level] || badgeColors.Low}`}>
+                              {risk.level}
+                            </span>
+                            <div className="flex-1">
+                              <p className="font-semibold text-slate-900">{risk.title}</p>
+                              {risk.description && <p className="mt-1 text-sm text-slate-700">{risk.description}</p>}
+                              {risk.impact && (
+                                <p className="mt-2 text-xs text-slate-600">
+                                  <strong>Impact:</strong> {risk.impact}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {(teamOverloaded.length > 0 || teamUnderutilized.length > 0) && (
+                <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                  <h3 className="text-lg font-bold text-slate-900">Team Workload Analysis</h3>
+                  <p className="mt-2 text-sm text-slate-500">Members with unbalanced workload distribution.</p>
+                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    {teamOverloaded.length > 0 && (
+                      <div className="rounded-lg border border-rose-300 bg-rose-50 p-4">
+                        <h4 className="font-semibold text-rose-900">Overloaded Members</h4>
+                        <div className="mt-3 space-y-2">
+                          {teamOverloaded.map((member, idx) => (
+                            <div key={`overload-${idx}`} className="text-sm">
+                              <p className="font-medium text-slate-900">{member.name}</p>
+                              <p className="text-xs text-slate-600">
+                                {member.tasks} tasks • {member.timeSpent.toFixed(1)}h • {member.ratio.toFixed(1)}x workload
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {teamUnderutilized.length > 0 && (
+                      <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-4">
+                        <h4 className="font-semibold text-emerald-900">Underutilized Members</h4>
+                        <div className="mt-3 space-y-2">
+                          {teamUnderutilized.map((member, idx) => (
+                            <div key={`underutil-${idx}`} className="text-sm">
+                              <p className="font-medium text-slate-900">{member.name}</p>
+                              <p className="text-xs text-slate-600">
+                                {member.tasks} tasks • {member.ratio.toFixed(1)}x workload
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {recurringIssues.length > 0 && (
+                <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                  <h3 className="text-lg font-bold text-slate-900">Recurring Issues</h3>
+                  <p className="mt-2 text-sm text-slate-500">Bug patterns that appear multiple times across sprints.</p>
+                  <div className="mt-4">
+                    <table className="w-full">
+                      <thead className="border-b-2 border-slate-200">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-slate-900">Issue</th>
+                          <th className="px-3 py-2 text-center text-sm font-semibold text-slate-900">Count</th>
+                          <th className="px-3 py-2 text-center text-sm font-semibold text-slate-900">Sprints</th>
+                          <th className="px-3 py-2 text-center text-sm font-semibold text-slate-900">Members</th>
+                        </tr>
+                      </thead>
+                      <tbody className="space-y-1">
+                        {recurringIssues.map((issue, idx) => (
+                          <tr key={`recurring-${idx}`} className="border-b border-slate-200">
+                            <td className="px-3 py-2 text-sm text-slate-700">{issue.name}</td>
+                            <td className="px-3 py-2 text-center text-sm font-semibold text-rose-700">{issue.count}</td>
+                            <td className="px-3 py-2 text-center text-sm text-slate-600">{issue.affectedSprints}</td>
+                            <td className="px-3 py-2 text-center text-sm text-slate-600">{issue.affectedMembers}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {sprintDetails.length > 0 && (
+                <div data-export-block="true" className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                  <h3 className="text-lg font-bold text-slate-900">Detailed Sprint Performance</h3>
+                  <p className="mt-2 text-sm text-slate-500">Comprehensive metrics for each sprint.</p>
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b-2 border-slate-200 bg-slate-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-900">Sprint</th>
+                          <th className="px-3 py-2 text-center font-semibold text-slate-900">Tasks</th>
+                          <th className="px-3 py-2 text-center font-semibold text-slate-900">Completed</th>
+                          <th className="px-3 py-2 text-center font-semibold text-slate-900">Completion %</th>
+                          <th className="px-3 py-2 text-center font-semibold text-slate-900">Delayed</th>
+                          <th className="px-3 py-2 text-center font-semibold text-slate-900">Bugs</th>
+                          <th className="px-3 py-2 text-center font-semibold text-slate-900">Score</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sprintDetails.map((sprint, idx) => (
+                          <tr key={`sprint-${idx}`} className="border-b border-slate-200 hover:bg-slate-50">
+                            <td className="px-3 py-2 font-medium text-slate-900">{sprint.name}</td>
+                            <td className="px-3 py-2 text-center text-slate-600">{sprint.totalTasks}</td>
+                            <td className="px-3 py-2 text-center text-slate-600">{sprint.completedTasks}</td>
+                            <td className="px-3 py-2 text-center font-semibold text-slate-900">{sprint.completionRate.toFixed(1)}%</td>
+                            <td className="px-3 py-2 text-center text-slate-600">{sprint.delayedTasks}</td>
+                            <td className="px-3 py-2 text-center font-semibold text-rose-700">{sprint.bugTasks}</td>
+                            <td className="px-3 py-2 text-center font-bold text-sky-700">{sprint.score.toFixed(1)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </>
           ) : null}
         </div>
