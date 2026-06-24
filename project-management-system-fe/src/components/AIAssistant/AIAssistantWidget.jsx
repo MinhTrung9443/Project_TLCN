@@ -150,7 +150,7 @@ const AIAssistantWidget = () => {
         `/ai-assistant/analyze-risk`,
         {
           question: userMessage,
-          history: messages.map((m) => ({ role: m.role, content: m.content })).slice(-8),
+          history: messages.map((m) => ({ role: m.role, content: m.content })).slice(-5),
           targetProjectName: "",
           sessionId: currentSessionId, // Sending session ID to update context properly
         },

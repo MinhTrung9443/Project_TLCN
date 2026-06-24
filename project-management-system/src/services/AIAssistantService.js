@@ -14,6 +14,83 @@ class AIAssistantService {
         this.model = process.env.OPENAI_MODEL || "openai/gpt-4o-mini";
     }
 
+    async parseAssistantIntent(naturalLanguageCommand, history = []) {
+        const tools = [
+            {
+                type: "function",
+                function: {
+                    name: "route_assistant_request",
+                    description: "Phân loại ý định của người dùng để router backend xử lý an toàn theo quyền.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            intent: {
+                                type: "string",
+                                enum: ["query_tasks", "query_projects", "create_task", "analyze_project", "unknown"],
+                                description: "Ý định chính của người dùng.",
+                            },
+                            scope: {
+                                type: "string",
+                                enum: ["assigned", "managed", "detail", "general"],
+                                description: "Phạm vi truy vấn task, chỉ dùng khi intent là query_tasks.",
+                            },
+                            projectName: { type: ["string", "null"], description: "Tên dự án được nhắc đến, nếu có." },
+                            projectStatus: {
+                                type: ["string", "null"],
+                                enum: ["active", "completed", "any", null],
+                                description: "Trạng thái dự án nếu người dùng nói rõ. Mặc định active.",
+                            },
+                            taskKey: { type: ["string", "null"], description: "Mã task nếu người dùng hỏi chi tiết một task cụ thể." },
+                            question: { type: ["string", "null"], description: "Câu hỏi phân tích dự án tổng quát nếu intent là analyze_project." },
+                            createTaskIntent: { type: "boolean", description: "Chỉ true khi người dùng nói rõ ý định tạo task và có mô tả đủ cụ thể." },
+                        },
+                        required: ["intent", "createTaskIntent"],
+                    },
+                },
+            },
+        ];
+
+        const systemContent = `Bạn là bộ phân loại ý định cho trợ lý quản lý dự án.
+LUẬT BẮT BUỘC:
+- Chỉ chọn intent = "create_task" khi người dùng có ý định tạo task thật sự và mô tả công việc cụ thể.
+- Nếu người dùng hỏi danh sách dự án, dự án tôi tham gia, dự án tôi quản lý, hãy chọn intent = "query_projects".
+- Nếu câu chỉ là hỏi danh sách, trạng thái, tiến độ, task của tôi, task tôi quản lý, task chi tiết, hãy chọn intent = "query_tasks".
+- Nếu câu hỏi là phân tích rủi ro, workload, tiến độ dự án, hãy chọn intent = "analyze_project".
+- Không dùng chữ "task" đơn thuần để suy ra tạo task.
+- Mặc định projectStatus là "active" nếu người dùng không nói rõ completed.
+- Nếu người dùng hỏi task của tôi / giao cho tôi -> scope = "assigned".
+- Nếu người dùng hỏi task tôi quản lý / tôi phụ trách / tôi là leader / PM -> scope = "managed".
+- Nếu người dùng hỏi chi tiết một task cụ thể -> scope = "detail" và điền taskKey.
+- Nếu không rõ, chọn intent = "unknown".`;
+
+        const messages = [{ role: "system", content: systemContent }];
+        history.forEach((msg) => {
+            if (msg.role === "user" || msg.role === "assistant") {
+                messages.push({ role: msg.role, content: msg.content || "" });
+            }
+        });
+        messages.push({ role: "user", content: naturalLanguageCommand });
+
+        const response = await openai.chat.completions.create({
+            model: this.model,
+            max_tokens: 800,
+            messages,
+            tools,
+            tool_choice: { type: "function", function: { name: "route_assistant_request" } },
+        });
+
+        const responseMessage = response.choices[0].message;
+        if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+            const funcCall = responseMessage.tool_calls[0].function;
+            return {
+                function: funcCall.name,
+                params: JSON.parse(funcCall.arguments),
+            };
+        }
+
+        return { function: "route_assistant_request", params: { intent: "unknown", createTaskIntent: false } };
+    }
+
     // Cấp độ 1: Nhà Phân Tích (Phân tích rủi ro, workload, trả lời theo quyền)
     async analyzeProjectRisk(projectData, userQuestion, userInfo, history = []) {
         let systemPrompt = `Bạn là Trợ lý ảo Quản lý Dự án AI (Analyst) của hệ thống.

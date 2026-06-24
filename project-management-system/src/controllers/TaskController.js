@@ -266,7 +266,7 @@ const getAvailableTaskStatuses = async (req, res) => {
 const handleGetTaskByKey = async (req, res, next) => {
   try {
     const { taskKey } = req.params;
-    const task = await taskService.getTaskByKey(taskKey);
+    const task = await taskService.getTaskByKey(taskKey, req.user);
     res.status(200).json(task);
   } catch (error) {
     next(error);
