@@ -55,7 +55,7 @@ const ChatWindow = ({ sessionId, onSessionChange }) => {
       const payload = {
         question: userMessage.content,
         sessionId: sessionId,
-        history: messages.slice(-4) 
+        history: messages.slice(-5) 
       };
       
       const response = await apiClient.post('/ai-assistant/analyze-risk', payload, {

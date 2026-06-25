@@ -16,6 +16,7 @@ const TaskDetailsTab = ({
   setEditableTask,
   handleUpdate,
   handleCreateGithubBranch,
+  projectData,
   statuses,
   projectMembers,
   projectTaskTypes,
@@ -110,6 +111,8 @@ const TaskDetailsTab = ({
       padding: "2px 4px",
     }),
   };
+
+  const linkedRepoName = editableTask.projectId?.githubRepoName || projectData?.githubRepoName;
 
   return (
     <>
@@ -213,14 +216,14 @@ const TaskDetailsTab = ({
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-neutral-800 hover:bg-neutral-900 border border-transparent rounded-lg w-full justify-center shadow-sm transition-colors duration-200"
                 >
                   <i className="bi bi-github"></i>
-                  Create Branch
+                  Connect GitHub to create branch
                 </button>
               ) : (
                 <a
-                  href={editableTask.projectId?.githubRepoName ? `https://github.com/${editableTask.projectId.githubRepoName}/tree/${editableTask.githubBranch}` : `https://github.com/hnhung31/HTML/tree/${editableTask.githubBranch}`}
+                  href={linkedRepoName ? `https://github.com/${linkedRepoName}/tree/${editableTask.githubBranch}` : undefined}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg w-full justify-center max-w-full"
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-blue-50 border border-blue-200 rounded-lg w-full justify-center max-w-full ${linkedRepoName ? "text-blue-700 hover:bg-blue-100" : "text-neutral-400 pointer-events-none"}`}
                 >
                   <i className="bi bi-github shrink-0"></i>
                   <span className="truncate">{editableTask.githubBranch}</span>

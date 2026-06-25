@@ -16,6 +16,7 @@ const cloudinary = require("../config/cloudinary");
 const path = require("path");
 const fs = require("fs");
 const ProjectDocument = require("../models/ProjectDocument");
+const { normalizeProjectStatus, getUserTaskAccessContext, assertTaskAccessByKey } = require("../utils/taskPermission");
 // Hàm lấy task theo projectId
 const getTasksByProjectKey = async (projectKey) => {
   // 1. Tìm project để lấy projectId
@@ -145,138 +146,17 @@ const searchTasks = async (queryParams, user) => {
     dueDate_lte,
     statusCategory,
     projectStatus,
-    managedOnly, // when true restrict results to projects the user manages
+    managedOnly,
   } = queryParams;
 
+  const normalizedProjectStatus = normalizeProjectStatus(projectStatus);
+  const isManagedOnly = managedOnly === true || managedOnly === "true";
   const query = {};
+  const andConditions = [];
 
-  if (projectId) query.projectId = projectId;
-  if (assigneeId) query.assigneeId = assigneeId;
-  if (reporterId) query.reporterId = reporterId;
-  if (createdById) query.createdById = createdById;
   if (statusId) query.statusId = statusId;
   if (priorityId) query.priorityId = priorityId;
   if (taskTypeId) query.taskTypeId = taskTypeId;
-
-  // Phân quyền theo từng project
-  if (user && user.role !== "admin") {
-    const userId = user._id || user.id;
-    // Lấy tất cả project liên quan đến user
-    const projects = await Project.find({
-      $or: [{ "members.userId": userId }, { "teams.leaderId": userId }, { "teams.members.userId": userId }],
-    });
-
-    // Tạo map projectId -> role của user trong project đó
-    const projectRoleMap = {};
-    for (const project of projects) {
-      // Check PM
-      const member = (project.members || []).find((m) => m.userId.toString() === userId.toString());
-      if (member && member.role === "PROJECT_MANAGER") {
-        projectRoleMap[project._id] = "PROJECT_MANAGER";
-        continue;
-      }
-      // Check leader
-      const isLeader = (project.teams || []).some((team) => team.leaderId?.toString() === userId.toString());
-      if (isLeader) {
-        projectRoleMap[project._id] = "TEAM_LEADER";
-        continue;
-      }
-      // Member thường
-      if (member) {
-        projectRoleMap[project._id] = "MEMBER";
-      }
-    }
-
-    // Lấy tất cả team mà user là leader, và memberId của các team đó
-    let leadMemberIds = new Set();
-    for (const project of projects) {
-      if (projectRoleMap[project._id] === "TEAM_LEADER") {
-        for (const team of project.teams || []) {
-          if (team.leaderId?.toString() === userId.toString()) {
-            (team.members || []).forEach((m) => leadMemberIds.add(m.toString()));
-          }
-        }
-      }
-    }
-
-    // Xây dựng query
-    const orConditions = [];
-    // PM: thấy mọi task trong project mình là PM
-    const pmProjectIds = Object.keys(projectRoleMap).filter((pid) => projectRoleMap[pid] === "PROJECT_MANAGER");
-    if (pmProjectIds.length > 0) {
-      orConditions.push({ projectId: { $in: pmProjectIds } });
-    }
-    // Leader: thấy task của thành viên nhóm mình lead (ở project mình lead)
-    const leaderProjectIds = Object.keys(projectRoleMap).filter((pid) => projectRoleMap[pid] === "TEAM_LEADER");
-    if (leaderProjectIds.length > 0 && leadMemberIds.size > 0) {
-      orConditions.push({
-        $and: [
-          { projectId: { $in: leaderProjectIds } },
-          {
-            $or: [{ assigneeId: { $in: Array.from(leadMemberIds) } }, { reporterId: { $in: Array.from(leadMemberIds) } }],
-          },
-        ],
-      });
-    }
-    // Determine if managedOnly flag was requested
-    const isManagedOnly = managedOnly === true || managedOnly === "true";
-
-    // If managedOnly requested, restrict to projects user manages (PM or Team Leader).
-    if (isManagedOnly) {
-      const managedIds = [...new Set([...pmProjectIds, ...leaderProjectIds])];
-
-      // If there are no managed projects -> immediately return empty
-      if (managedIds.length === 0) return [];
-
-      // If frontend requested a specific projectId, ensure it's within managedIds
-      if (projectId) {
-        const requestedId = projectId.toString();
-        if (!managedIds.includes(requestedId)) {
-          // requested project is not managed by user -> no results
-          return [];
-        }
-        // allowed: keep specific projectId (do not overwrite)
-        query.projectId = projectId;
-
-        // Nếu user là leader trong project này, chỉ hiển thị tasks của team members
-        if (projectRoleMap[requestedId] === "TEAM_LEADER") {
-          const project = projects.find((p) => p._id.toString() === requestedId);
-          if (project) {
-            let teamMemberIds = new Set();
-            teamMemberIds.add(userId.toString()); // Leader cũng có thể được assign task
-            for (const team of project.teams || []) {
-              if (team.leaderId?.toString() === userId.toString()) {
-                (team.members || []).forEach((m) => teamMemberIds.add(m.toString()));
-              }
-            }
-            // Chỉ hiển thị tasks được assign hoặc report bởi team members
-            query.$and = query.$and || [];
-            query.$and.push({
-              $or: [{ assigneeId: { $in: Array.from(teamMemberIds) } }, { reporterId: { $in: Array.from(teamMemberIds) } }],
-            });
-          }
-        }
-      } else {
-        // otherwise restrict to managed projects
-        query.projectId = { $in: managedIds };
-      }
-    }
-    // By default, always see tasks assigned to or reported by the user
-    // If managedOnly is requested, skip these to restrict results to managed projects
-    if (!isManagedOnly) {
-      orConditions.push({ assigneeId: userId });
-      orConditions.push({ reporterId: userId });
-    }
-
-    if (orConditions.length > 0) {
-      if (query.$or) {
-        query.$and = [{ $or: query.$or }, { $or: orConditions }];
-        delete query.$or;
-      } else {
-        query.$or = orConditions;
-      }
-    }
-  }
 
   if (dueDate_gte || dueDate_lte) {
     query.dueDate = {};
@@ -289,11 +169,66 @@ const searchTasks = async (queryParams, user) => {
   }
 
   if (keyword) {
-    query.$or = [
-      { name: { $regex: keyword, $options: "i" } },
-      { key: { $regex: keyword, $options: "i" } },
-      { description: { $regex: keyword, $options: "i" } },
-    ];
+    andConditions.push({
+      $or: [
+        { name: { $regex: keyword, $options: "i" } },
+        { key: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+      ],
+    });
+  }
+
+  if (user && user.role !== "admin") {
+    const userId = user._id || user.id;
+    const accessContext = await getUserTaskAccessContext(user, { projectStatus: normalizedProjectStatus });
+    const allowedProjectIds = accessContext.allowedProjectIds;
+    const managedProjectIds = accessContext.managedProjectIds;
+
+    if (!isManagedOnly) {
+      if (assigneeId && assigneeId.toString() !== userId.toString()) {
+        return [];
+      }
+      if (reporterId && reporterId.toString() !== userId.toString()) {
+        return [];
+      }
+      if (createdById && createdById.toString() !== userId.toString()) {
+        return [];
+      }
+
+      if (projectId) {
+        if (!allowedProjectIds.includes(projectId.toString())) {
+          return [];
+        }
+        query.projectId = projectId;
+      } else if (allowedProjectIds.length > 0) {
+        query.projectId = { $in: allowedProjectIds };
+      } else {
+        return [];
+      }
+
+      andConditions.push({ assigneeId: userId });
+    } else {
+      if (projectId) {
+        if (!managedProjectIds.includes(projectId.toString())) {
+          return [];
+        }
+        query.projectId = projectId;
+      } else if (managedProjectIds.length > 0) {
+        query.projectId = { $in: managedProjectIds };
+      } else {
+        return [];
+      }
+
+      andConditions.push({
+        $or: [{ reporterId: userId }, { createdById: userId }],
+      });
+    }
+  } else if (projectId) {
+    query.projectId = projectId;
+  }
+
+  if (andConditions.length > 0) {
+    query.$and = [...(query.$and || []), ...andConditions];
   }
 
   const tasks = await Task.find(query)
@@ -317,11 +252,11 @@ const searchTasks = async (queryParams, user) => {
     .sort({ createdAt: -1 })
     .lean(); // Chuyển sang object thường, không phải Mongoose document
 
-  // Filter out tasks from deleted projects and optionally by project status
+  // Filter out tasks from deleted projects and enforce active-by-default project status on the populated project
   let filteredTasks = tasks.filter((task) => task.projectId && task.projectId.isDeleted === false);
 
-  if (projectStatus) {
-    filteredTasks = filteredTasks.filter((task) => task.projectId && task.projectId.status === projectStatus);
+  if (normalizedProjectStatus !== "any") {
+    filteredTasks = filteredTasks.filter((task) => task.projectId && task.projectId.status === normalizedProjectStatus);
   }
 
   if (filteredTasks.length === 0) {
@@ -1322,7 +1257,7 @@ const unlinkTask = async (currentTaskId, linkId, userId) => {
 
   return [updatedCurrentTask, updatedTargetTask].filter(Boolean);
 };
-const getTaskByKey = async (taskKey) => {
+const getTaskByKey = async (taskKey, user) => {
   const task = await Task.findOne({ key: taskKey.toUpperCase() }).populate([
     // Sao chép phần populate từ hàm updateTask để đảm bảo nhất quán
     {
@@ -1374,6 +1309,15 @@ const getTaskByKey = async (taskKey) => {
         // Gán lại statusId thành object đầy đủ từ workflow
         task.statusId = statusObject;
       }
+    }
+  }
+
+  if (user && user.role !== "admin") {
+    const hasAccess = await assertTaskAccessByKey(user, task);
+    if (!hasAccess) {
+      const error = new Error("You do not have permission to access this task");
+      error.statusCode = 403;
+      throw error;
     }
   }
 
