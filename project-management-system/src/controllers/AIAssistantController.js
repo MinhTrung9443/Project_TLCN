@@ -459,8 +459,11 @@ const handleAnalyzeRisk = async (req, res) => {
         error.code === 402 ||
         (error.error && (error.error.code === 402 || error.error.status === 402)) ||
         (error.message && error.message.includes("402")));
+    const is429 = error && (error.status === 429 || (error.message && error.message.includes("429")));
     if (is402) {
       errorMsg = "API Key của dịch vụ AI đã hết Token hoặc quá giới hạn hạn mức (Credits). Vui lòng nạp thêm API để tiếp tục!";
+    } else if (is429) {
+      errorMsg = "Đã vượt quá giới hạn lượt dùng API miễn phí (Rate Limit) của Gemini. Vui lòng thử lại sau vài phút.";
     }
 
     const fallbackSessionId = typeof session !== "undefined" && session?._id ? session._id : req.body.sessionId;
@@ -685,6 +688,8 @@ const handleChatCommand = async (req, res) => {
     let errorMsg = `Lỗi hệ thống khi tạo task: ${error.message}`;
     if (error.message && error.message.includes("402")) {
       errorMsg = "Lỗi khi tạo task: API Key AI của bạn đã hết hạn mức Token.";
+    } else if (error.message && error.message.includes("429")) {
+      errorMsg = "Lỗi khi tạo task: Đã vượt quá giới hạn Rate Limit của Gemini. Vui lòng thử lại sau.";
     }
 
     const fallbackSessionId = typeof session !== "undefined" && session?._id ? session._id : req.body.sessionId;

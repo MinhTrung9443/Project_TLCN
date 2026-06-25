@@ -1,17 +1,13 @@
 const OpenAI = require("openai");
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.OPENROUTER_SITE_URL,
-    "X-Title": process.env.OPENROUTER_APP_NAME,
-  },
+  apiKey: process.env.GEMINI_API_KEY,
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
 });
 
 class AIAssistantService {
   constructor() {
-    this.model = process.env.OPENAI_MODEL || "openai/gpt-4o-mini";
+    this.model = "gemini-2.5-flash"; // Switch model to Gemini 2.5 Flash
   }
 
   async parseAssistantIntent(naturalLanguageCommand, history = []) {
@@ -122,6 +118,9 @@ Nhiệm vụ của bạn:
 
 4. TRẢ LỜI ĐA DẠNG CÁC CÂU HỎI VỀ THUỘC TÍNH TASK / PROJECT:
 - Dùng tư duy logic để lọc (mức độ ưu tiên priority, trạng thái TO DO/IN Progress/DONE, Loại Bug/Feat...).
+- LƯU Ý VỀ MỨC ĐỘ ƯU TIÊN (Priority): Priority được đánh số, số 1 là ƯU TIÊN CAO NHẤT (Urgent/Highest), số càng lớn (2, 3, 4...) thì mức độ ưu tiên càng thấp. Hãy ưu tiên sắp xếp task có priority = 1 lên đầu.
+- GẮN LINK TASK: Trong dữ liệu có trường "taskLink", khi nhắc đến bất kỳ task nào, bạn BẮT BUỘC phải gắn link vào tên task theo định dạng Markdown: \`[Tên Task](taskLink)\` để người dùng có thể click vào xem chi tiết.
+- NẾU DANH SÁCH QUÁ DÀI (HƠN 9 TASK): Tuyệt đối không liệt kê toàn bộ. Bạn chỉ nên chọn ra 10-15 task quan trọng nhất (quá hạn, ưu tiên cao nhất, hoặc sắp đến hạn) để hiển thị chi tiết, phần còn lại chỉ tóm tắt số lượng để câu trả lời không bị cắt ngang.
 - Nếu người dùng yêu cầu sắp xếp/ưu tiên/lập lịch task, hãy:
   + lọc task theo quyền truy cập và điều kiện người dùng yêu cầu,
   + sắp xếp theo priority, dueDate, status, và task nào nên làm trước/sau,
@@ -135,7 +134,11 @@ LUÔN LUÔN: Xưng "Tôi" và gọi người dùng bằng tên. Dựa vào ĐÚN
 
 Dữ liệu (chỉ là những task Backend cấp sát quyền cho user):
 ${JSON.stringify(projectData, null, 2)}
-`;
+
+---
+LỜI NHẮC QUAN TRỌNG TỪ HỆ THỐNG: 
+1. TUYỆT ĐỐI KHÔNG liệt kê quá 9 task trong câu trả lời để tránh bị cắt ngang (vượt quá giới hạn text). Nếu người dùng có hàng chục/hàng trăm task, bạn CHỈ chọn ra 10 task cấp bách/ưu tiên nhất để hiển thị chi tiết, và gom phần còn lại thành 1 câu tóm tắt (ví dụ: "Bạn còn 45 task khác chưa hoàn thành...").
+2. BẮT BUỘC dùng định dạng \`[Tên Task](taskLink)\` cho các task được nhắc đến.`;
     try {
       // Chuẩn bị message format gồm cả lịch sử để AI không quên context (Session memory)
       const formattedHistory = history.map((msg) => ({ role: msg.role, content: msg.content }));
@@ -150,7 +153,7 @@ ${JSON.stringify(projectData, null, 2)}
 
       const response = await openai.chat.completions.create({
         model: this.model,
-        max_tokens: 2000,
+        max_tokens: 8192,
         messages: [{ role: "system", content: systemPrompt }, ...formattedHistory],
       });
       return response.choices[0].message.content;
