@@ -84,4 +84,11 @@ router.put("/key/:projectKey/documents/:documentId/unshare", protect, isProjectM
  */
 router.delete("/key/:projectKey/documents/:documentId", protect, isProjectMember, ProjectDocumentController.deleteDocument);
 
+/**
+ * @route   GET /api/projects/key/:projectKey/documents/:documentId/summary
+ * @desc    Summarize project document using AI
+ * @access  Private (Project Members)
+ */
+router.get("/key/:projectKey/documents/:documentId/summary", protect, isProjectMember, ProjectDocumentController.summarizeDocument);
+
 module.exports = router;

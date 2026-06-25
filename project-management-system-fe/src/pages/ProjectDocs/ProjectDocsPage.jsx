@@ -10,9 +10,12 @@ import {
   shareProjectDocument,
   unshareProjectDocument,
   getProjectMembers,
+  getDocumentSummary,
 } from "../../services/projectDocsService";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const CATEGORY_OPTIONS = [
   { value: "requirement", label: "Requirement" },
@@ -49,6 +52,7 @@ const ProjectDocsPage = () => {
   const [tags, setTags] = useState("");
   const [search, setSearch] = useState("");
   const [shareModal, setShareModal] = useState({ open: false, docId: null, docName: "", sharedWith: [] });
+  const [summaryModal, setSummaryModal] = useState({ open: false, docName: "", summary: "", loading: false });
   const [projectMembers, setProjectMembers] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState([]);
 
@@ -213,6 +217,39 @@ const ProjectDocsPage = () => {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to remove access");
+    }
+  };
+
+  const fetchSummary = async (documentId, force = false) => {
+    setSummaryModal((prev) => ({ ...prev, loading: true }));
+    try {
+      const response = await getDocumentSummary(projectKey, documentId, force);
+      setSummaryModal((prev) => ({
+        ...prev,
+        open: true,
+        docId: documentId,
+        summary: response.data.summary,
+        loading: false,
+      }));
+      if (force) {
+        toast.success("Đã tạo mới bản tóm tắt thành công!");
+      }
+    } catch (error) {
+      console.error("Error fetching summary:", error);
+      const errorMsg = error.response?.data?.message || "Không thể lấy tóm tắt. Vui lòng thử lại.";
+      toast.error(errorMsg);
+      setSummaryModal((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleSummarize = async (docId, docName) => {
+    setSummaryModal({ open: true, docId, docName, summary: "", loading: true });
+    fetchSummary(docId);
+  };
+
+  const handleRegenerateSummary = () => {
+    if (summaryModal.docId) {
+      fetchSummary(summaryModal.docId, true);
     }
   };
 
@@ -391,6 +428,14 @@ const ProjectDocsPage = () => {
                       >
                         Open
                       </a>
+                      <button
+                        onClick={() => handleSummarize(item._id || item.id, item.filename)}
+                        className="px-3 py-1.5 text-xs font-medium text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 flex items-center gap-1"
+                        title="AI Summarize"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                        AI Summary
+                      </button>
                       {activeTab !== "project" && item.uploadedBy?._id === user?._id && (
                         <button
                           onClick={() => handleShareClick(item._id, item.filename, item.sharedWith || [])}
@@ -453,8 +498,6 @@ const ProjectDocsPage = () => {
                     );
                   })}
                 </div>
-                {console.log("🟢 [Modal] sharedWith:", shareModal.sharedWith)}
-                {console.log("🟢 [Modal] projectMembers:", projectMembers)}
               </div>
             )}
 
@@ -463,16 +506,9 @@ const ProjectDocsPage = () => {
                 <div className="p-4 text-center text-neutral-500">No members found</div>
               ) : (
                 <div className="divide-y">
-                  {(() => {
-                    console.log("🔍 [Render] shareModal.sharedWith:", shareModal.sharedWith);
-                    console.log(
-                      "🔍 [Render] shareModal.sharedWith stringified:",
-                      shareModal.sharedWith.map((s) => s?.toString?.() || s),
-                    );
-                    return projectMembers
+                  {projectMembers
                       .filter((member) => {
                         const isShared = shareModal.sharedWith.some((shared) => shared.toString() === member._id.toString());
-                        console.log(`📌 [Filter] Member ${member.fullname} (${member._id}): isShared=${isShared}`);
                         return !isShared;
                       })
                       .map((member) => (
@@ -488,8 +524,7 @@ const ProjectDocsPage = () => {
                             <div className="text-xs text-neutral-500">{member.email}</div>
                           </span>
                         </label>
-                      ));
-                  })()}
+                      ))}
                 </div>
               )}
             </div>
@@ -513,6 +548,69 @@ const ProjectDocsPage = () => {
                 disabled={selectedMembers.length === 0}
               >
                 Share
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Summary Modal */}
+      {summaryModal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-[600px] max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-100">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-purple-500">auto_awesome</span>
+                <h3 className="text-lg font-semibold text-neutral-800">AI Summary</h3>
+              </div>
+              <button
+                onClick={() => setSummaryModal({ open: false, docId: null, docName: "", summary: "", loading: false })}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <p className="text-sm text-neutral-600 mb-4 font-medium flex items-center gap-2">
+              <span className="material-symbols-outlined text-[16px]">description</span>
+              {summaryModal.docName}
+            </p>
+
+            <div className="flex-1 overflow-y-auto bg-neutral-50 rounded-lg p-4 border border-neutral-100">
+              {summaryModal.loading ? (
+                <div className="flex flex-col items-center justify-center h-40 text-purple-600">
+                  <span className="material-symbols-outlined animate-spin text-3xl mb-2">refresh</span>
+                  <p className="text-sm font-medium animate-pulse">Gemini is analyzing document...</p>
+                </div>
+              ) : (
+                <div className="prose prose-sm max-w-none text-neutral-700">
+                  {summaryModal.summary ? (
+                    <>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {summaryModal.summary}
+                      </ReactMarkdown>
+                      <div className="mt-6 flex justify-end">
+                        <button
+                          onClick={handleRegenerateSummary}
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-purple-600 bg-purple-100 rounded-lg hover:bg-purple-200"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">refresh</span>
+                          Regenerate Summary
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="italic text-neutral-400">No summary available.</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-neutral-100 flex justify-end">
+              <button
+                onClick={() => setSummaryModal({ open: false, docId: null, docName: "", summary: "", loading: false })}
+                className="px-4 py-2 text-sm font-medium text-white bg-neutral-800 rounded-lg hover:bg-neutral-900 transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>
