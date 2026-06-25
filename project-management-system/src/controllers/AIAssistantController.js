@@ -293,7 +293,7 @@ const handleAnalyzeRisk = async (req, res) => {
       return res.status(200).json({ recommendation: response, sessionId: session._id });
     }
 
-    if (intent === "analyze_project") {
+    if (intent === "analyze_project" || intent === "unknown" || intent === "chat") {
       // 1. Kiểm tra Quyền truy cập (RBAC) của User
       const user = await User.findById(userId);
       const isSystemAdmin = user?.role === "admin";
@@ -443,12 +443,7 @@ const handleAnalyzeRisk = async (req, res) => {
       return;
     }
 
-    const response = "Tôi chưa hiểu yêu cầu. Bạn có thể hỏi theo 3 kiểu: xem task của tôi, xem task tôi đang quản lý, hoặc tạo task mới.";
-    await AIChatMessage.create({ session: session._id, role: "user", content: question });
-    await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
-    session.updatedAt = new Date();
-    await session.save();
-    res.status(200).json({ recommendation: response, sessionId: session._id });
+    // Lệnh không hiểu sẽ không bao giờ lọt xuống đây nữa vì đã được gom vào if phía trên.
   } catch (error) {
     console.error("Analysis Controller Error:", error);
 
