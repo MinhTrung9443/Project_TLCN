@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaRobot, FaTimes, FaPaperPlane, FaExternalLinkAlt, FaBars, FaPlus, FaTrashAlt, FaClock } from "react-icons/fa";
+import { FaRobot, FaTimes, FaPaperPlane, FaExternalLinkAlt, FaBars, FaPlus, FaTrashAlt, FaClock, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import apiClient from "../../services/apiClient";
 import ReactMarkdown from "react-markdown";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { Link } from "react-router-dom";
 import Draggable from 'react-draggable';
 
@@ -29,6 +30,36 @@ const AIAssistantWidget = () => {
   const btnNodeRef = useRef(null);
   const chatNodeRef = useRef(null);
   const dragRef = useRef(false);
+  const prevInputRef = useRef("");
+  const textareaRef = useRef(null);
+
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
+
+  useEffect(() => {
+    if (listening) {
+      prevInputRef.current = input.trim() ? input.trim() + " " : "";
+    }
+  }, [listening]);
+
+  useEffect(() => {
+    if (listening) {
+      setInput(prevInputRef.current + transcript);
+    }
+  }, [transcript, listening]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      // Giới hạn max-height khoảng 120px (tương đương 5-6 dòng)
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 120)}px`;
+    }
+  }, [input]);
 
   // Fetch users for mentions on widget load
   useEffect(() => {
@@ -150,7 +181,7 @@ const AIAssistantWidget = () => {
         `/ai-assistant/analyze-risk`,
         {
           question: userMessage,
-          history: messages.map((m) => ({ role: m.role, content: m.content })).slice(-8),
+          history: messages.map((m) => ({ role: m.role, content: m.content })).slice(-5),
           targetProjectName: "",
           sessionId: currentSessionId, // Sending session ID to update context properly
         },
@@ -183,6 +214,7 @@ const AIAssistantWidget = () => {
       setMessages((prev) => [...prev, { role: "assistant", content: errorMsg }]);
     } finally {
       setIsLoading(false);
+      resetTranscript();
     }
   };
 
@@ -503,13 +535,38 @@ const AIAssistantWidget = () => {
                 )}
 
                 <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-200 flex gap-2 items-center shrink-0">
-                  <input
-                    type="text"
+                  {browserSupportsSpeechRecognition && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (listening) {
+                          SpeechRecognition.stopListening();
+                        } else {
+                          resetTranscript();
+                          SpeechRecognition.startListening({ continuous: true, language: 'vi-VN' });
+                        }
+                      }}
+                      className={`p-2 transition-colors z-[9999] ${listening ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-indigo-600'}`}
+                      title={listening ? "Dừng thu âm" : "Bắt đầu thu âm"}
+                    >
+                      {listening ? <FaMicrophoneSlash size={20} /> : <FaMicrophone size={20} />}
+                    </button>
+                  )}
+                  <textarea
+                    ref={textareaRef}
                     value={input}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e);
+                      }
+                    }}
                     onPointerDown={(e) => e.stopPropagation()}
-                    placeholder="Hỏi AI hoặc gõ @ để gắn thành viên..."
-                    className="flex-1 px-4 py-2.5 bg-gray-100 border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-[15px] transition-all"
+                    placeholder="Hỏi AI hoặc gõ @ để gắn thành viên... (Shift+Enter để xuống dòng)"
+                    className="flex-1 px-4 py-2.5 bg-gray-100 border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-[15px] transition-all resize-none custom-scrollbar"
+                    style={{ minHeight: '44px', maxHeight: '120px', lineHeight: '1.5' }}
+                    rows={1}
                     disabled={isLoading}
                   />
                   <button

@@ -33,3 +33,9 @@ export const unshareProjectDocument = (projectKey, documentId, emails) => {
 export const deleteProjectDocument = (projectKey, documentId) => {
   return apiClient.delete(`/projects/key/${projectKey}/documents/${documentId}`);
 };
+
+export const getDocumentSummary = (projectKey, documentId, force = false) => {
+  return apiClient.get(`/projects/key/${projectKey}/documents/${documentId}/summary${force ? "?force=true" : ""}`, {
+    timeout: 120000
+  });
+};

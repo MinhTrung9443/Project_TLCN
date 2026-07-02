@@ -55,6 +55,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
   const [allProjectTasks, setAllProjectTasks] = useState([]); // <<< STATE MỚI
   const nameTextAreaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const hasTriggeredGithubActionRef = useRef(false);
 
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
   const [isDeleteLinkModalOpen, setIsDeleteLinkModalOpen] = useState(false);
@@ -282,6 +283,41 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
     }
   }, [task]);
 
+  useEffect(() => {
+    if (!editableTask?._id) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const githubLinkStatus = params.get("github_link");
+    const githubAction = params.get("github_action");
+    const githubError = params.get("github_error");
+
+    if (hasTriggeredGithubActionRef.current) return;
+
+    if (githubLinkStatus === "failed") {
+      hasTriggeredGithubActionRef.current = true;
+      window.history.replaceState({}, "", window.location.pathname);
+
+      if (githubError === "project_repo_missing") {
+        toast.error("Dự án chưa liên kết với GitHub Repository.");
+      } else if (githubError === "no_repo_permission") {
+        toast.error("Tài khoản GitHub của bạn không có quyền trên repository này.");
+      } else if (githubError === "repo_not_accessible") {
+        toast.error("Tài khoản GitHub của bạn không thể truy cập repository này.");
+      } else {
+        toast.error("Không thể kết nối GitHub cho thao tác tạo nhánh.");
+      }
+
+      return;
+    }
+
+    if (githubLinkStatus !== "success" || githubAction !== "create_branch") return;
+
+    hasTriggeredGithubActionRef.current = true;
+    window.history.replaceState({}, "", window.location.pathname);
+    handleCreateGithubBranch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editableTask?._id]);
+
   const handleCreateGithubBranch = async () => {
     try {
       toast.info("Đang tạo nhánh trên GitHub...");
@@ -297,6 +333,19 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
         }
       }
     } catch (error) {
+      if (error.response?.status === 401) {
+        const userId = user?._id || user?.id;
+        if (!userId) {
+          toast.error("Không xác định được user hiện tại.");
+          return;
+        }
+
+        const returnTo = `${window.location.pathname}${window.location.search}`;
+        const projectId = editableTask.projectId?._id || editableTask.projectId;
+        window.location.href = `http://localhost:8080/api/github/auth?userId=${userId}&returnTo=${encodeURIComponent(returnTo)}&purpose=create_branch&projectId=${encodeURIComponent(projectId)}`;
+        return;
+      }
+
       toast.error(error.response?.data?.message || "Lỗi khi tạo nhánh GitHub");
     }
   };
@@ -594,6 +643,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
                   setEditableTask={setEditableTask}
                   handleUpdate={handleUpdate}
                   handleCreateGithubBranch={handleCreateGithubBranch}
+                  projectData={projectData}
                   statuses={allowedStatuses.length > 0 ? allowedStatuses : statuses}
                   projectMembers={projectMembers}
                   projectTaskTypes={projectTaskTypes}

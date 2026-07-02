@@ -342,6 +342,183 @@ const ProjectDocumentController = {
       return res.status(500).json({ message: "Server error", error: error.message });
     }
   },
+  async summarizeDocument(req, res) {
+    try {
+      const { projectKey, documentId } = req.params;
+      const { force } = req.query; // Add force parameter
+
+      if (!mongoose.Types.ObjectId.isValid(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+
+      const project = await getProjectByKey(projectKey);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const document = await ProjectDocument.findOne({ _id: documentId, projectId: project._id });
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      // Check access permission: Admin, Uploader, or SharedWith
+      const userId = req.user?._id;
+      const isAdmin = req.user?.role === "admin";
+      const isUploader = document.uploadedBy.toString() === userId.toString();
+      const isShared = document.sharedWith.some((id) => id.toString() === userId.toString());
+      
+      if (!isAdmin && !isUploader && !isShared) {
+        return res.status(403).json({ message: "You don't have permission to view this document" });
+      }
+
+      // Return existing summary to save cost if not forcing regeneration
+      if (document.summary && force !== "true") {
+        return res.status(200).json({ summary: document.summary });
+      }
+
+      // If no URL or public_id, cannot summarize
+      if (!document.url) {
+        return res.status(400).json({ message: "Document URL not found" });
+      }
+
+      // Fetch file content
+      const axios = require("axios");
+      const fs = require("fs");
+      const os = require("os");
+      const path = require("path");
+
+      console.log(`[summarizeDocument] Downloading file from: ${document.url}`);
+      const response = await axios.get(document.url, { responseType: "arraybuffer" });
+      const buffer = Buffer.from(response.data);
+      let textContent = "";
+      let uploadedFileUri = null;
+      let uploadedFileMimeType = null;
+      let uploadedFileName = null;
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "GEMINI_API_KEY is not configured on the server" });
+      }
+      const { GoogleGenerativeAI } = require("@google/generative-ai");
+      const { GoogleAIFileManager } = require("@google/generative-ai/server");
+
+      let mimeType = document.mimeType || "application/octet-stream";
+      let filename = (document.filename || "").toLowerCase();
+      let ext = path.extname(filename);
+
+      // Cloudinary missing extension/mimeType workaround
+      if (document.url.includes("/video/upload/")) {
+         if (mimeType === "application/octet-stream") mimeType = "video/mp4";
+         if (!ext) ext = ".mp4";
+      } else if (document.url.includes("/image/upload/")) {
+         if (mimeType === "application/octet-stream") mimeType = "image/jpeg";
+         if (!ext) ext = ".jpg";
+      } else if (document.url.endsWith(".mp4") && mimeType === "application/octet-stream") {
+         mimeType = "video/mp4";
+         ext = ".mp4";
+      }
+
+      // Handle PDF, Video, Audio, and Image natively using Gemini File API
+      if (
+        mimeType.startsWith("video/") ||
+        mimeType.startsWith("audio/") ||
+        mimeType.startsWith("image/") ||
+        mimeType === "application/pdf" ||
+        [".mp4", ".mov", ".avi", ".mp3", ".wav", ".png", ".jpg", ".jpeg", ".pdf"].includes(ext)
+      ) {
+        console.log(`[summarizeDocument] Using GoogleAIFileManager for ${filename} (${mimeType})`);
+        const fileManager = new GoogleAIFileManager(apiKey);
+        
+        // Write to temp file
+        const tempPath = path.join(os.tmpdir(), `gemini-upload-${Date.now()}${ext || ".tmp"}`);
+        fs.writeFileSync(tempPath, buffer);
+
+        // Upload
+        const uploadResult = await fileManager.uploadFile(tempPath, {
+          mimeType: mimeType === "application/octet-stream" ? "application/pdf" : mimeType,
+          displayName: document.filename || "file",
+        });
+
+        uploadedFileUri = uploadResult.file.uri;
+        uploadedFileMimeType = uploadResult.file.mimeType;
+        uploadedFileName = uploadResult.file.name;
+
+        // Cleanup temp file
+        fs.unlinkSync(tempPath);
+
+      } else if (
+        mimeType.includes("wordprocessingml.document") ||
+        ext === ".docx"
+      ) {
+        // Handle DOCX using Mammoth
+        console.log(`[summarizeDocument] Extracting DOCX text using Mammoth`);
+        const mammoth = require("mammoth");
+        const docxData = await mammoth.extractRawText({ buffer });
+        textContent = docxData.value;
+
+      } else {
+        // Fallback to plain text decoding for everything else (.txt, .md, .csv, code files, no-extension files)
+        console.log(`[summarizeDocument] Fallback to plain text decoding`);
+        textContent = buffer.toString("utf-8");
+      }
+
+      if (!uploadedFileUri && (!textContent || textContent.trim() === "")) {
+        return res.status(400).json({ message: "Could not extract content from document or document is empty" });
+      }
+
+      // Limit text length to avoid token limit errors
+      // Free tier token limit is 250k. We should limit to less characters just in case it's not a media file.
+      if (textContent && textContent.length > 50000) {
+         console.log(`[summarizeDocument] Text is very long (${textContent.length} chars). Truncating to fit within free tier limits.`);
+         textContent = textContent.substring(0, 50000) + "\n\n...[Phần còn lại đã bị cắt vì giới hạn độ dài của file]";
+      }
+
+      // Call Gemini API
+      console.log(`[summarizeDocument] Calling Gemini API (text length: ${textContent.length}, uri: ${uploadedFileUri || "None"})`);
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      const prompt = `Hãy tóm tắt nội dung tài liệu (hoặc video/audio) sau đây bằng tiếng Việt. Nếu là code thì giải thích nó làm gì. Nhấn mạnh các điểm chính, công việc cần làm hoặc quyết định quan trọng (nếu có):\n\n${textContent}`;
+      
+      let result;
+      if (uploadedFileUri) {
+        result = await model.generateContent([
+          { fileData: { fileUri: uploadedFileUri, mimeType: uploadedFileMimeType } },
+          { text: prompt }
+        ]);
+      } else {
+        result = await model.generateContent(prompt);
+      }
+      
+      const summaryText = result.response.text();
+
+      // Delete the file from Gemini to save space
+      if (uploadedFileName) {
+        try {
+          const fileManager = new GoogleAIFileManager(apiKey);
+          await fileManager.deleteFile(uploadedFileName);
+          console.log(`[summarizeDocument] Deleted temporary Gemini file ${uploadedFileName}`);
+        } catch (e) {
+          console.warn("[summarizeDocument] Could not delete Gemini file:", e.message);
+        }
+      }
+
+      // Save summary
+      document.summary = summaryText;
+      await document.save();
+
+      return res.status(200).json({ summary: summaryText });
+    } catch (error) {
+      console.error("[ProjectDocumentController] summarizeDocument error:", error);
+      
+      let msg = "Error summarizing document";
+      if (error.message && error.message.includes("429")) {
+        msg = "Đã vượt quá giới hạn lượt dùng API miễn phí (Rate Limit) của Gemini, vui lòng thử lại sau vài phút.";
+      }
+
+      return res.status(500).json({ message: msg, error: error.message });
+    }
+  },
 };
 
 module.exports = ProjectDocumentController;

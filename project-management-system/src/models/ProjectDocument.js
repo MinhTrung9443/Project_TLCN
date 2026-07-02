@@ -71,6 +71,9 @@ const ProjectDocumentSchema = new Schema(
     size: {
       type: Number,
     },
+    summary: {
+      type: String,
+    },
   },
   { timestamps: true },
 );

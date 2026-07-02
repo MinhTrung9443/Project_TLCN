@@ -2,6 +2,20 @@ const axios = require('axios');
 const User = require('../models/User');
 
 class GithubController {
+    static buildFrontendRedirect(returnTo, params = {}) {
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const safeReturnTo = typeof returnTo === 'string' && returnTo.startsWith('/') ? returnTo : '/';
+        const redirectUrl = new URL(safeReturnTo, frontendUrl);
+
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                redirectUrl.searchParams.set(key, value);
+            }
+        });
+
+        return redirectUrl.toString();
+    }
+
     // GET /api/github/auth
     static async authorize(req, res) {
         try {
@@ -19,7 +33,9 @@ class GithubController {
             // Sử dụng state để mang theo userId và returnTo qua quá trình OAuth
             // Encode ra chuỗi base64 hoặc chuỗi JSON tùy ý. Để an toàn xử lý JSON encode:
             const returnTo = req.query.returnTo || '/';
-            const stateObj = { userId, returnTo };
+            const purpose = req.query.purpose || '';
+            const projectId = req.query.projectId || '';
+            const stateObj = { userId, returnTo, purpose, projectId };
             const state = Buffer.from(JSON.stringify(stateObj)).toString('base64');
 
             // Chuyển hướng trình duyệt đến trang cấp quyền của GitHub
@@ -38,11 +54,15 @@ class GithubController {
             const { code, state } = req.query;
             let userId = "";
             let returnTo = "/";
+            let purpose = "";
+            let projectId = "";
             
             try {
                 const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('ascii'));
                 userId = decodedState.userId;
                 returnTo = decodedState.returnTo;
+                purpose = decodedState.purpose || "";
+                projectId = decodedState.projectId || "";
             } catch(e) {
                 return res.status(400).send("Trạng thái (state) gửi lên không khả dụng.");
             }
@@ -74,6 +94,46 @@ class GithubController {
                 return res.status(400).send('Không thể lấy access_token từ GitHub.');
             }
 
+            const Project = require('../models/Project');
+
+            if (purpose === 'create_branch' && projectId) {
+                const project = await Project.findById(projectId);
+                if (!project || !project.githubRepoName) {
+                    return res.redirect(
+                        GithubController.buildFrontendRedirect(returnTo, {
+                            github_link: 'failed',
+                            github_error: 'project_repo_missing'
+                        })
+                    );
+                }
+
+                try {
+                    const repoResponse = await axios.get(`https://api.github.com/repos/${project.githubRepoName}`, {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            Accept: 'application/vnd.github+json'
+                        }
+                    });
+
+                    const permissions = repoResponse.data.permissions || {};
+                    if (!permissions.push && !permissions.admin) {
+                        return res.redirect(
+                            GithubController.buildFrontendRedirect(returnTo, {
+                                github_link: 'failed',
+                                github_error: 'no_repo_permission'
+                            })
+                        );
+                    }
+                } catch (repoError) {
+                    return res.redirect(
+                        GithubController.buildFrontendRedirect(returnTo, {
+                            github_link: 'failed',
+                            github_error: 'repo_not_accessible'
+                        })
+                    );
+                }
+            }
+
             // Gọi API GitHub lấy thông tin user xác nhận
             const userResponse = await axios.get('https://api.github.com/user', {
                 headers: {
@@ -90,11 +150,12 @@ class GithubController {
             });
 
             // Thành công, chuyển hướng người dùng về lại Frontend tại trang họ vừa rời đi.
-            // Ở đây frontend URL có trong biến môi trường FRONTEND_URL
-            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-            
-            // Redirect về trang lúc nãy theo returnTo với tham số github_link=success 
-            res.redirect(`${frontendUrl}${returnTo}?github_link=success`);
+            const redirectParams = { github_link: 'success' };
+            if (purpose === 'create_branch') {
+                redirectParams.github_action = 'create_branch';
+            }
+
+            res.redirect(GithubController.buildFrontendRedirect(returnTo, redirectParams));
 
         } catch (error) {
             console.error('Lỗi trong quá trình callback GitHub:', error.message);
@@ -189,6 +250,31 @@ class GithubController {
                 return res.status(400).json({ message: 'Dự án chưa được liên kết với GitHub Repository' });
             }
 
+            let repoRes;
+            try {
+                repoRes = await axios.get(
+                    `https://api.github.com/repos/${project.githubRepoName}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            Accept: 'application/vnd.github+json'
+                        }
+                    }
+                );
+            } catch (repoError) {
+                const repoStatus = repoError.response?.status;
+                if (repoStatus === 404) {
+                    return res.status(403).json({ message: 'Tài khoản GitHub của bạn không có quyền truy cập repository này' });
+                }
+
+                throw repoError;
+            }
+
+            const repoPermissions = repoRes.data.permissions || {};
+            if (!repoPermissions.push && !repoPermissions.admin) {
+                return res.status(403).json({ message: 'Tài khoản GitHub của bạn không có quyền tạo nhánh trên repository này' });
+            }
+
             const task = await Task.findById(taskId);
             if (!task) {
                 return res.status(404).json({ message: 'Không tìm thấy Task' });
@@ -202,16 +288,16 @@ class GithubController {
             console.log(`[GithubController] Creating branch for repo: ${repoFullName}`);
 
             // Lấy thông tin default branch (thường là main)
-            const repoRes = await axios.get(
+            const defaultBranchRes = await axios.get(
                 `https://api.github.com/repos/${repoFullName}`,
-                { headers: { Authorization: `token ${token}` } }
+                { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } }
             );
-            const defaultBranch = repoRes.data.default_branch || 'main';
+            const defaultBranch = defaultBranchRes.data.default_branch || 'main';
 
             // Lấy SHA của nhánh mặc định
             const refRes = await axios.get(
                 `https://api.github.com/repos/${repoFullName}/git/refs/heads/${defaultBranch}`,
-                { headers: { Authorization: `token ${token}` } }
+                { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } }
             );
             const sha = refRes.data.object.sha;
 
@@ -230,7 +316,7 @@ class GithubController {
                         ref: `refs/heads/${newBranchName}`,
                         sha: sha
                     },
-                    { headers: { Authorization: `token ${token}` } }
+                    { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } }
                 );
             } catch (gitError) {
                 // Nếu lỗi do nhánh đã tồn tại
