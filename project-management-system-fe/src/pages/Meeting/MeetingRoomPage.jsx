@@ -611,7 +611,7 @@ const MeetingRoomPageContent = ({
     <div className="h-screen bg-gray-900 flex flex-col overflow-hidden">
       <LiveKitRoom
         className="flex-1 flex flex-col overflow-hidden"
-        video={false}
+        video={true}
         audio={true}
         token={token}
         serverUrl={serverUrl}

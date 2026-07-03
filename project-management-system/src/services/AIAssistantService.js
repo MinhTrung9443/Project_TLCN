@@ -221,7 +221,7 @@ LỜI NHẮC QUAN TRỌNG TỪ HỆ THỐNG:
 
     try {
       const systemContent =
-        "Bạn là hệ thống trích xuất thông tin tạo Task từ đoạn chat. Nhiệm vụ của bạn là xem ĐOẠN HỘI THOẠI và trích xuất thông tin người dùng yêu cầu tạo mới để điền vào function create_task. LUẬT NGUYÊN TẮC: Bạn chỉ trích xuất 'taskName' nếu người dùng nêu RÕ CÔNG VIỆC CỤ THỂ cần làm (như 'sửa lỗi', 'viết api', 'thiết kế ui', 'viết tài liệu'). NẾU câu lệnh CHỈ LÀ YÊU CẦU TẠO TASK CHUNG CHUNG MÀ KHÔNG CÓ CHI TIẾT (vd: 'tạo task cho dự án X' hoặc 'thêm 1 task'), bạn BẮT BUỘC để trống (null) 'taskName'. Ngày hôm nay là " +
+        "Bạn là hệ thống trích xuất thông tin tạo Task từ đoạn chat. Nhiệm vụ của bạn là xem ĐOẠN HỘI THOẠI và trích xuất thông tin người dùng yêu cầu tạo mới để điền vào function create_task. Nếu người dùng yêu cầu tạo NHIỀU task, bạn hãy GỌI FUNCTION NÀY NHIỀU LẦN (parallel function calling). LUẬT NGUYÊN TẮC: Bạn chỉ trích xuất 'taskName' nếu người dùng nêu RÕ CÔNG VIỆC CỤ THỂ cần làm (như 'sửa lỗi', 'viết api', 'thiết kế ui', 'viết tài liệu'). NẾU câu lệnh CHỈ LÀ YÊU CẦU TẠO TASK CHUNG CHUNG MÀ KHÔNG CÓ CHI TIẾT (vd: 'tạo task cho dự án X' hoặc 'thêm 1 task'), bạn BẮT BUỘC để trống (null) 'taskName'. Ngày hôm nay là " +
         new Date().toISOString().split("T")[0];
 
       let messages = [{ role: "system", content: systemContent }];
@@ -246,13 +246,14 @@ LỜI NHẮC QUAN TRỌNG TỪ HỆ THỐNG:
       const responseMessage = response.choices[0].message;
 
       if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-        const funcCall = responseMessage.tool_calls[0].function;
-        return {
-          function: funcCall.name,
-          params: JSON.parse(funcCall.arguments),
-        };
+        return responseMessage.tool_calls
+          .filter((call) => call.function.name === "create_task")
+          .map((call) => ({
+            function: call.function.name,
+            params: JSON.parse(call.function.arguments),
+          }));
       }
-      return null;
+      return [];
     } catch (error) {
       console.error("AI Command Parsing Error:", error);
       throw new Error("Failed to parse task command.");

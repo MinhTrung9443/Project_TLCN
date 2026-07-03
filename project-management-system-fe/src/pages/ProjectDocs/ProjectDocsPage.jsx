@@ -428,14 +428,16 @@ const ProjectDocsPage = () => {
                       >
                         Open
                       </a>
-                      <button
-                        onClick={() => handleSummarize(item._id || item.id, item.filename)}
-                        className="px-3 py-1.5 text-xs font-medium text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 flex items-center gap-1"
-                        title="AI Summarize"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-                        AI Summary
-                      </button>
+                      {!(activeTab === "meeting" && item.filename?.startsWith("Video")) && (
+                        <button
+                          onClick={() => handleSummarize(item._id || item.id, item.filename)}
+                          className="px-3 py-1.5 text-xs font-medium text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 flex items-center gap-1"
+                          title="AI Summarize"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                          AI Summary
+                        </button>
+                      )}
                       {activeTab !== "project" && item.uploadedBy?._id === user?._id && (
                         <button
                           onClick={() => handleShareClick(item._id, item.filename, item.sharedWith || [])}
