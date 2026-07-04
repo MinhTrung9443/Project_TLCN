@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import Select from "react-select";
 import Button from "../ui/Button";
 
@@ -56,8 +57,8 @@ const AddMemberModal = ({ isOpen, onClose, onAdd, users }) => {
   if (!isOpen) {
     return null;
   }
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b border-neutral-200">
           <h2 className="text-2xl font-bold text-neutral-900">Add Members</h2>
@@ -89,7 +90,8 @@ const AddMemberModal = ({ isOpen, onClose, onAdd, users }) => {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

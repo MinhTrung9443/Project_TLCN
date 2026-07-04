@@ -157,7 +157,7 @@ const BacklogPage = () => {
 
   const isProjectCompleted = projectData?.status === "completed";
   const canManageSprints = !isProjectCompleted && (user?.role === "admin" || userProjectRole === "PROJECT_MANAGER");
-  const canCreateTask = !isProjectCompleted && ["admin", "PROJECT_MANAGER", "LEADER"].includes(user?.role || userProjectRole);
+  const canCreateTask = !isProjectCompleted && (user?.role === "admin" || ["PROJECT_MANAGER", "LEADER"].includes(userProjectRole));
   const canDragDrop = !isProjectCompleted && canManageSprints;
 
   if (loading) {

@@ -1,5 +1,6 @@
 // In: src/components/group/CreateEditGroupModal.jsx
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 
@@ -31,8 +32,8 @@ const CreateEditGroupModal = ({ isOpen, onClose, onSave, group }) => {
     return null;
   }
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b border-neutral-200">
           <h2 className="text-2xl font-bold text-neutral-900">{group ? "Edit Group" : "Create Group"}</h2>
@@ -78,7 +79,8 @@ const CreateEditGroupModal = ({ isOpen, onClose, onSave, group }) => {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
