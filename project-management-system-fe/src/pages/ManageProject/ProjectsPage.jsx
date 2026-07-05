@@ -266,7 +266,7 @@ const ProjectsPage = () => {
   };
 
   const renderFilters = () => (
-    <div className="p-4 bg-white rounded-lg border border-neutral-200 shadow-sm">
+    <div className="p-4 bg-white rounded-lg border border-neutral-200 shadow-sm mb-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
         <div>
           <label className="block text-xs font-semibold text-neutral-500 mb-1">Type</label>

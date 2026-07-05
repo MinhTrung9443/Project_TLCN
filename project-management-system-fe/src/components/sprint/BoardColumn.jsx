@@ -4,7 +4,7 @@ import TaskCard from "./TaskCard";
 import { isTransitionAllowed } from "../../utils/workflowTransitions";
 
 // Column Component with Drop functionality
-const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
+const BoardColumn = ({ status, tasks, onDrop, workflow, useHorizontalLaneLayout = false }) => {
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
       accept: "task",
@@ -37,7 +37,9 @@ const BoardColumn = ({ status, tasks, onDrop, workflow }) => {
 
   return (
     <div
-      className="flex flex-col bg-neutral-50 rounded-lg border border-neutral-200 min-w-[260px] max-w-[280px] h-[65vh] shadow-sm snap-start shrink-0"
+      className={`flex flex-col bg-neutral-50 rounded-lg border border-neutral-200 shadow-sm snap-start ${
+        useHorizontalLaneLayout ? "min-w-[280px] max-w-[320px] h-full shrink-0" : "w-full min-w-0 h-full"
+      }`}
       ref={drop}
     >
       <div className={`bg-gradient-to-r ${getCategoryColor()} text-white px-3 py-2.5 rounded-t-lg`}>

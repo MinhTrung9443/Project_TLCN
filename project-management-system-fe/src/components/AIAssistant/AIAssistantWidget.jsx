@@ -255,10 +255,10 @@ const AIAssistantWidget = () => {
             onClick={(e) => {
               if (!dragRef.current) setIsOpen(true);
             }}
-            className="bg-indigo-600 cursor-move text-white rounded-full p-4 shadow-xl hover:bg-indigo-700 transition-transform transform hover:scale-105 flex items-center justify-center animate-bounce-slow"
+            className="cursor-move rounded-full border border-slate-200 bg-white/95 p-3.5 text-slate-700 shadow-lg backdrop-blur hover:border-indigo-200 hover:text-indigo-600 transition-all transform hover:scale-105"
             title="Kéo tôi đi chỗ khác!"
           >
-            <FaRobot className="text-2xl pointer-events-none" />
+            <FaRobot className="text-xl pointer-events-none" />
           </button>
         </div>
       </Draggable>
@@ -271,36 +271,41 @@ const AIAssistantWidget = () => {
       >
         <div 
           ref={chatNodeRef} 
-          className={`fixed z-[9999] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden transform transition-all ${isOpen ? 'flex flex-col' : 'hidden'}`}
+          className={`fixed z-[9999] overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur-xl transform transition-all ${isOpen ? 'flex flex-col' : 'hidden'}`}
           style={{ 
             bottom: '24px', 
             right: '24px',
-            width: sidebarOpen ? 'calc(100vw - 48px)' : '350px',
-            maxWidth: sidebarOpen ? '1000px' : '400px',
-            height: sidebarOpen ? 'min(90vh, 700px)' : '550px',
+            width: sidebarOpen ? 'calc(100vw - 48px)' : '340px',
+            maxWidth: sidebarOpen ? '1000px' : '380px',
+            height: sidebarOpen ? 'min(88vh, 680px)' : '520px',
           }}
         >
           {/* Header */}
-          <div className="drag-handle cursor-move bg-indigo-600 text-white p-4 flex justify-between items-center shrink-0">
+          <div className="drag-handle cursor-move border-b border-slate-200 bg-slate-950 px-4 py-3 flex justify-between items-center shrink-0">
             <div className="flex items-center gap-2 pointer-events-none">
-              <FaRobot className="text-xl" />
-              <h3 className="font-semibold text-lg">AI Assistant</h3>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white">
+                <FaRobot className="text-sm" />
+              </div>
+              <div className="leading-tight">
+                <h3 className="font-semibold text-[15px] text-white">AI Assistant</h3>
+                <p className="text-[11px] text-slate-300">Tóm tắt, phân tích, gợi ý nhanh</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setSidebarOpen(!sidebarOpen)} 
                 onPointerDown={(e) => e.stopPropagation()}
-                className="text-white hover:text-indigo-200 cursor-pointer transition-colors p-1"
+                className="rounded-full p-1.5 text-white/90 hover:bg-white/10 hover:text-white cursor-pointer transition-colors"
                 title={sidebarOpen ? "Ẩn lịch sử" : "Hiện lịch sử"}
               >
-                <FaBars className="text-lg" />
+                <FaBars className="text-base" />
               </button>
               <button 
                 onClick={() => setIsOpen(false)} 
                 onPointerDown={(e) => e.stopPropagation()}
-                className="text-white hover:text-indigo-200 cursor-pointer transition-colors p-1"
+                className="rounded-full p-1.5 text-white/90 hover:bg-white/10 hover:text-white cursor-pointer transition-colors"
               >
-                <FaTimes className="text-lg" />
+                <FaTimes className="text-base" />
               </button>
             </div>
           </div>
@@ -399,19 +404,19 @@ const AIAssistantWidget = () => {
             {/* Chat Area */}
             <div className="flex flex-col flex-1 min-w-0">
               {/* Messages Area */}
-              <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-4">
+              <div className="flex-1 overflow-y-auto bg-slate-50 px-3 py-3 flex flex-col gap-3">
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                     {msg.role === "assistant" && (
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2 shrink-0">
-                        <FaRobot className="text-indigo-600 text-sm" />
+                      <div className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white border border-slate-200 text-indigo-600 shadow-sm">
+                        <FaRobot className="text-[11px]" />
                       </div>
                     )}
                     <div
-                      className={`max-w-[85%] p-3 rounded-2xl text-[15px] ${
+                      className={`max-w-[85%] rounded-2xl px-3 py-2.5 text-[14px] leading-relaxed ${
                         msg.role === "user"
-                          ? "bg-indigo-600 text-white rounded-br-sm shadow-md"
-                          : "bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm"
+                          ? "bg-slate-900 text-white rounded-br-sm shadow-sm"
+                          : "bg-white text-slate-800 border border-slate-200 rounded-bl-sm shadow-sm"
                       }`}
                       style={{ wordBreak: "break-word" }}
                     >
@@ -493,10 +498,10 @@ const AIAssistantWidget = () => {
                 {/* Hiệu ứng đoạn chat Loading */}
                 {isLoading && (
                   <div className="flex justify-start items-center">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2 shrink-0">
-                      <FaRobot className="text-indigo-600 text-sm" />
+                    <div className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white border border-slate-200 text-indigo-600 shadow-sm">
+                      <FaRobot className="text-[11px]" />
                     </div>
-                    <div className="bg-white text-gray-500 border border-gray-200 py-3 px-4 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-2">
+                    <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-3 py-2 shadow-sm text-slate-500">
                       <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
                       <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }}></div>
                       <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }}></div>
@@ -534,7 +539,7 @@ const AIAssistantWidget = () => {
                   </div>
                 )}
 
-                <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-200 flex gap-2 items-center shrink-0">
+                <form onSubmit={handleSendMessage} className="flex shrink-0 items-end gap-2 border-t border-slate-200 bg-white px-3 py-2.5">
                   {browserSupportsSpeechRecognition && (
                     <button
                       type="button"
@@ -546,10 +551,10 @@ const AIAssistantWidget = () => {
                           SpeechRecognition.startListening({ continuous: true, language: 'vi-VN' });
                         }
                       }}
-                      className={`p-2 transition-colors z-[9999] ${listening ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-indigo-600'}`}
+                      className={`rounded-full p-1.5 transition-colors z-[9999] ${listening ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-indigo-600'}`}
                       title={listening ? "Dừng thu âm" : "Bắt đầu thu âm"}
                     >
-                      {listening ? <FaMicrophoneSlash size={20} /> : <FaMicrophone size={20} />}
+                      {listening ? <FaMicrophoneSlash size={16} /> : <FaMicrophone size={16} />}
                     </button>
                   )}
                   <textarea
@@ -564,8 +569,8 @@ const AIAssistantWidget = () => {
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
                     placeholder="Hỏi AI hoặc gõ @ để gắn thành viên... (Shift+Enter để xuống dòng)"
-                    className="flex-1 px-4 py-2.5 bg-gray-100 border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-[15px] transition-all resize-none custom-scrollbar"
-                    style={{ minHeight: '44px', maxHeight: '120px', lineHeight: '1.5' }}
+                    className="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[14px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all custom-scrollbar"
+                    style={{ minHeight: '38px', maxHeight: '96px', lineHeight: '1.45' }}
                     rows={1}
                     disabled={isLoading}
                   />
@@ -573,9 +578,9 @@ const AIAssistantWidget = () => {
                     type="submit"
                     onPointerDown={(e) => e.stopPropagation()} 
                     disabled={isLoading || !input.trim()}
-                    className="bg-indigo-600 z-[9999] text-white p-3 rounded-full hover:bg-indigo-700 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-md flex items-center justify-center"
+                    className="z-[9999] flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm transition-colors hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400"
                   >
-                    <FaPaperPlane />
+                    <FaPaperPlane className="text-[13px]" />
                   </button>
                 </form>
               </div>

@@ -108,7 +108,7 @@ const MeetingPage = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto pt-4">
             {activeTab === "list" && <MeetingListComponent key={refreshKey} />}
             {activeTab === "invitations" && <InvitationListComponent />}
             {activeTab === "managed" && <ManagedMeetingListComponent key={refreshKey} />}

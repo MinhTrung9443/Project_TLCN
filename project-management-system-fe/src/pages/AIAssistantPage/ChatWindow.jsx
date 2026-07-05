@@ -81,27 +81,30 @@ const ChatWindow = ({ sessionId, onSessionChange }) => {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex min-w-0 flex-1 flex-col bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
-        <h2 className="text-xl font-semibold">AI Assistant</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">AI Assistant</h2>
+          <p className="text-sm text-slate-500">Tối giản, rõ ràng, dễ theo dõi</p>
+        </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
-        <div className="flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex flex-col gap-3">
           {messages.map((msg, index) => (
             <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                  <FaRobot className="text-indigo-600 text-sm" />
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-indigo-600 shadow-sm">
+                  <FaRobot className="text-[11px]" />
                 </div>
               )}
               <div
-                className={`max-w-[70%] p-3 rounded-lg text-sm ${
+                className={`max-w-[72%] rounded-2xl px-3 py-2.5 text-[14px] leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white text-gray-800 border border-gray-200'
+                    ? 'bg-slate-900 text-white rounded-br-sm'
+                    : 'bg-white text-slate-800 border border-slate-200 rounded-bl-sm shadow-sm'
                 }`}
               >
                 <ReactMarkdown
@@ -116,10 +119,10 @@ const ChatWindow = ({ sessionId, onSessionChange }) => {
           ))}
           {isLoading && (
              <div className="flex items-start gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                  <FaRobot className="text-indigo-600 text-sm" />
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-indigo-600 shadow-sm">
+                  <FaRobot className="text-[11px]" />
                 </div>
-                <div className="bg-white text-gray-500 border border-gray-200 py-3 px-4 rounded-lg flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-3 py-2 text-slate-500 shadow-sm">
                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }}></div>
                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }}></div>
@@ -131,22 +134,22 @@ const ChatWindow = ({ sessionId, onSessionChange }) => {
       </div>
 
       {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-4">
-        <form onSubmit={handleSendMessage} className="flex gap-3">
+      <div className="border-t border-slate-200 bg-white px-4 py-3">
+        <form onSubmit={handleSendMessage} className="flex items-end gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Hỏi AI bất cứ điều gì..."
-            className="flex-1 px-4 py-2 bg-gray-100 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[14px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400"
           >
-            <FaPaperPlane />
+            <FaPaperPlane className="text-[13px]" />
           </button>
         </form>
       </div>

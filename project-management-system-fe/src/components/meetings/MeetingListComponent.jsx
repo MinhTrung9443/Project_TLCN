@@ -134,7 +134,7 @@ const MeetingListComponent = () => {
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
-        <div className="lg:col-span-1 overflow-y-auto space-y-3 pr-1">
+        <div className="lg:col-span-1 overflow-y-auto space-y-3 pl-6 pr-1">
           {/* Filter Bar */}
           <div className="sticky top-0 bg-white z-10 pb-3 space-y-2">
             {/* Search */}

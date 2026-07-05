@@ -183,6 +183,7 @@ const ActiveSprintPage = () => {
 
   // Ẩn nút Complete Sprint nếu project là Kanban
   const isKanbanProject = projectData?.type === "Kanban";
+  const useHorizontalLaneLayout = workflowStatuses.length > 3;
 
   if (loading) {
     return (
@@ -206,7 +207,7 @@ const ActiveSprintPage = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="active-sprint-page w-full min-w-0">
+      <div className="active-sprint-page flex min-h-screen w-full min-w-0 flex-col px-6 md:px-8">
         <PageHeader
           icon={VscRunAll}
           title="Active Sprint"
@@ -223,10 +224,23 @@ const ActiveSprintPage = () => {
           }
         />
 
-        <div className="sprint-container flex min-w-0 flex-col gap-3 pt-2">
-          <div className="active-sprint-board flex min-w-0 items-start justify-start gap-3 overflow-x-auto pb-6 pt-2 pl-2 pr-2 w-full snap-x snap-mandatory">
+        <div className="sprint-container flex min-h-0 flex-1 min-w-0 flex-col gap-3 pt-2">
+          <div
+            className={`active-sprint-board min-h-0 min-w-0 flex-1 w-full gap-3 pb-6 pt-2 pl-2 pr-2 ${
+              useHorizontalLaneLayout
+                ? "flex items-stretch justify-start overflow-x-auto snap-x snap-mandatory"
+                : "grid h-full grid-cols-1 md:grid-cols-3 items-stretch"
+            }`}
+          >
             {workflowStatuses.map((status) => (
-              <BoardColumn key={status._id} status={status} tasks={getTasksByStatus(status)} onDrop={handleTaskDrop} workflow={workflow} />
+              <BoardColumn
+                key={status._id}
+                status={status}
+                tasks={getTasksByStatus(status)}
+                onDrop={handleTaskDrop}
+                workflow={workflow}
+                useHorizontalLaneLayout={useHorizontalLaneLayout}
+              />
             ))}
           </div>
         </div>
