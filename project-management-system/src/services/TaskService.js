@@ -178,50 +178,96 @@ const searchTasks = async (queryParams, user) => {
     });
   }
 
+  if (assigneeId) query.assigneeId = assigneeId;
+  if (reporterId) query.reporterId = reporterId;
+  if (createdById) query.createdById = createdById;
+
   if (user && user.role !== "admin") {
     const userId = user._id || user.id;
     const accessContext = await getUserTaskAccessContext(user, { projectStatus: normalizedProjectStatus });
     const allowedProjectIds = accessContext.allowedProjectIds;
     const managedProjectIds = accessContext.managedProjectIds;
 
-    if (!isManagedOnly) {
-      if (assigneeId && assigneeId.toString() !== userId.toString()) {
-        return [];
-      }
-      if (reporterId && reporterId.toString() !== userId.toString()) {
-        return [];
-      }
-      if (createdById && createdById.toString() !== userId.toString()) {
-        return [];
-      }
+    let targetProjectIds = allowedProjectIds;
+    if (isManagedOnly) {
+      targetProjectIds = managedProjectIds;
+    }
 
-      if (projectId) {
-        if (!allowedProjectIds.includes(projectId.toString())) {
-          return [];
+    if (projectId) {
+      const pIdStr = projectId.toString();
+      if (!targetProjectIds.includes(pIdStr)) {
+        return [];
+      }
+      query.projectId = projectId;
+
+      const role = accessContext.projectRoleMap.get(pIdStr);
+      if (role === "PROJECT_MANAGER") {
+        // PM sees all tasks in the project. Explicit filters are handled by query.* properties above.
+      } else if (role === "LEADER") {
+        const leaderCond = [
+          { assigneeId: userId },
+          { reporterId: userId },
+          { createdById: userId }
+        ];
+        if (accessContext.managedMemberIds && accessContext.managedMemberIds.length > 0) {
+          leaderCond.push({ assigneeId: { $in: accessContext.managedMemberIds } });
         }
-        query.projectId = projectId;
-      } else if (allowedProjectIds.length > 0) {
-        query.projectId = { $in: allowedProjectIds };
+        andConditions.push({ $or: leaderCond });
       } else {
-        return [];
+        andConditions.push({
+          $or: [{ assigneeId: userId }, { reporterId: userId }, { createdById: userId }]
+        });
       }
-
-      andConditions.push({ assigneeId: userId });
     } else {
-      if (projectId) {
-        if (!managedProjectIds.includes(projectId.toString())) {
-          return [];
+      if (targetProjectIds.length === 0) return [];
+
+      const roleConditions = [];
+      const pmProjectIds = [];
+      const leaderProjectIds = [];
+      const memberProjectIds = [];
+
+      for (const pId of targetProjectIds) {
+        const role = accessContext.projectRoleMap.get(pId);
+        if (role === "PROJECT_MANAGER") {
+          pmProjectIds.push(pId);
+        } else if (role === "LEADER") {
+          leaderProjectIds.push(pId);
+        } else {
+          memberProjectIds.push(pId);
         }
-        query.projectId = projectId;
-      } else if (managedProjectIds.length > 0) {
-        query.projectId = { $in: managedProjectIds };
+      }
+
+      if (pmProjectIds.length > 0) {
+        roleConditions.push({ projectId: { $in: pmProjectIds } });
+      }
+
+      if (leaderProjectIds.length > 0) {
+        const leaderCond = [
+          { assigneeId: userId },
+          { reporterId: userId },
+          { createdById: userId }
+        ];
+        if (accessContext.managedMemberIds && accessContext.managedMemberIds.length > 0) {
+          leaderCond.push({ assigneeId: { $in: accessContext.managedMemberIds } });
+        }
+        roleConditions.push({
+          projectId: { $in: leaderProjectIds },
+          $or: leaderCond
+        });
+      }
+
+      if (memberProjectIds.length > 0) {
+        roleConditions.push({
+          projectId: { $in: memberProjectIds },
+          $or: [{ assigneeId: userId }, { reporterId: userId }, { createdById: userId }]
+        });
+      }
+
+      if (roleConditions.length > 0) {
+        andConditions.push({ $or: roleConditions });
       } else {
         return [];
       }
-
-      andConditions.push({
-        $or: [{ reporterId: userId }, { createdById: userId }],
-      });
     }
   } else if (projectId) {
     query.projectId = projectId;
@@ -666,32 +712,36 @@ const changeTaskSprint = async (taskId, sprintId, userId) => {
     }
   }
 
-  // Nếu có sprint, validate ngày task phải nằm trong khoảng sprint (chỉ khi task có ngày)
+  // Nếu có sprint, tự động điều chỉnh ngày task phải nằm trong khoảng sprint (chỉ khi task có ngày)
   if (sprint) {
-    if (finalStartDate) {
-      if (sprint.startDate && new Date(finalStartDate) < new Date(sprint.startDate)) {
-        const error = new Error("Task start date cannot be before sprint start date");
-        error.statusCode = 400;
-        throw error;
+    let adjustedStartDate = finalStartDate;
+    let adjustedDueDate = finalDueDate;
+
+    if (adjustedStartDate) {
+      if (sprint.startDate && new Date(adjustedStartDate) < new Date(sprint.startDate)) {
+        adjustedStartDate = sprint.startDate;
+        updateData.startDate = sprint.startDate;
       }
-      if (sprint.endDate && new Date(finalStartDate) > new Date(sprint.endDate)) {
-        const error = new Error("Task start date cannot be after sprint end date");
-        error.statusCode = 400;
-        throw error;
+      if (sprint.endDate && new Date(adjustedStartDate) > new Date(sprint.endDate)) {
+        adjustedStartDate = sprint.endDate;
+        updateData.startDate = sprint.endDate;
       }
     }
 
-    if (finalDueDate) {
-      if (sprint.startDate && new Date(finalDueDate) < new Date(sprint.startDate)) {
-        const error = new Error("Task due date cannot be before sprint start date");
-        error.statusCode = 400;
-        throw error;
+    if (adjustedDueDate) {
+      if (sprint.startDate && new Date(adjustedDueDate) < new Date(sprint.startDate)) {
+        adjustedDueDate = sprint.startDate;
+        updateData.dueDate = sprint.startDate;
       }
-      if (sprint.endDate && new Date(finalDueDate) > new Date(sprint.endDate)) {
-        const error = new Error("Task due date cannot be after sprint end date");
-        error.statusCode = 400;
-        throw error;
+      if (sprint.endDate && new Date(adjustedDueDate) > new Date(sprint.endDate)) {
+        adjustedDueDate = sprint.endDate;
+        updateData.dueDate = sprint.endDate;
       }
+    }
+
+    // Đảm bảo startDate <= dueDate
+    if (adjustedStartDate && adjustedDueDate && new Date(adjustedStartDate) > new Date(adjustedDueDate)) {
+      updateData.startDate = adjustedDueDate;
     }
   }
 

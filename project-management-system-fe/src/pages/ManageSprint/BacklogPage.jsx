@@ -144,8 +144,13 @@ const BacklogPage = () => {
       }
     }
 
-    await updateTaskSprint(selectedProjectKey, task._id, target === "backlog" ? null : target);
-    fetchSprintList();
+    try {
+      await updateTaskSprint(selectedProjectKey, task._id, target === "backlog" ? null : target);
+      fetchSprintList();
+    } catch (error) {
+      console.error("Error changing task sprint:", error);
+      toast.error(error.response?.data?.message || "Failed to change sprint.");
+    }
   };
 
   useEffect(() => {
