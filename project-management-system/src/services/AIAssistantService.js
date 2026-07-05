@@ -194,24 +194,50 @@ LỜI NHẮC QUAN TRỌNG TỪ HỆ THỐNG:
         type: "function",
         function: {
           name: "create_task",
-          description: "Tạo một task mới cho dự án. Trả về cấu trúc JSON để Backend xử lý.",
+          description: "Tạo một hoặc nhiều task mới cho dự án. Trả về cấu trúc JSON để Backend xử lý.",
           parameters: {
             type: "object",
             properties: {
+              tasks: {
+                type: "array",
+                description:
+                  "Danh sách task cần tạo. Nếu người dùng yêu cầu nhiều task trong cùng một prompt, phải trả về tất cả task vào mảng này thay vì chỉ 1 task. Nếu chỉ có 1 task, mảng vẫn phải có 1 phần tử.",
+                items: {
+                  type: "object",
+                  properties: {
+                    taskName: {
+                      type: "string",
+                      description:
+                        "Tên công việc cần làm (VD: 'Làm giao diện đăng nhập'). KIỂM TRA NGHIÊM NGẶT: Nếu câu của người dùng chỉ là lệnh chung chung như 'tạo task cho dự án', 'tạo thêm task', 'add task' mà không có MÔ TẢ HÀNH ĐỘNG CỤ THỂ nào sẽ làm trong dự án đó, thì BẮT BUỘC để null. Tuyệt đối không lấy chính câu ra lệnh (ví dụ 'tạo task cho dự án X') làm giá trị cho trường này.",
+                    },
+                    projectName: { type: "string", description: "Tên dự án mà task này thuộc về (vd: 'ABC', 'Dự án Mobile')" },
+                    assigneeName: { type: "string", description: "Tên người được giao task (vd: 'An', 'Bình')" },
+                    sprintName: { type: "string", description: "Tên sprint (vd: 'Sprint 1', 'S2')" },
+                    platformName: { type: "string", description: "Nền tảng (vd: 'BE', 'FE', 'iOS')" },
+                    priorityLevel: { type: "string", description: "Mức độ ưu tiên (vd: 'High', 'Low', 'Medium')" },
+                    taskTypeName: { type: "string", description: "Loại công việc (vd: 'Task', 'Bug', 'Story', 'Epic')" },
+                    statusName: { type: "string", description: "Trạng thái của task (vd: 'To Do', 'In Progress', 'Done', 'Review')" },
+                    startDate: { type: "string", description: "Ngày bắt đầu (Y-M-D) (vd: '2026-03-16')" },
+                    dueDate: { type: "string", description: "Ngày kết thúc, hạn chót (Y-M-D) (vd: '2026-03-20')" },
+                    description: { type: "string", description: "Mô tả task, nếu người dùng cung cấp" },
+                  },
+                  required: [],
+                },
+              },
               taskName: {
                 type: "string",
                 description:
-                  "Tên công việc cần làm (VD: 'Làm giao diện đăng nhập'). KIỂM TRA NGHIÊM NGẶT: Nếu câu của người dùng chỉ là lệnh chung chung như 'tạo task cho dự án', 'tạo thêm task', 'add task' mà không có MÔ TẢ HÀNH ĐỘNG CỤ THỂ nào sẽ làm trong dự án đó, thì BẮT BUỘC TRẢ VỀ null. Tuyệt đối không lấy chính câu ra lệnh (ví dụ 'tạo task cho dự án X') làm giá trị cho trường này.",
+                  "Giữ tương thích ngược cho trường hợp cũ chỉ trả về 1 task. Nếu có tasks thì bỏ qua trường này.",
               },
-              projectName: { type: "string", description: "Tên dự án mà task này thuộc về (vd: 'ABC', 'Dự án Mobile')" },
-              assigneeName: { type: "string", description: "Tên người được giao task (vd: 'An', 'Bình')" },
-              sprintName: { type: "string", description: "Tên sprint (vd: 'Sprint 1', 'S2')" },
-              platformName: { type: "string", description: "Nền tảng (vd: 'BE', 'FE', 'iOS')" },
-              priorityLevel: { type: "string", description: "Mức độ ưu tiên (vd: 'High', 'Low', 'Medium')" },
-              taskTypeName: { type: "string", description: "Loại công việc (vd: 'Task', 'Bug', 'Story', 'Epic')" },
-              statusName: { type: "string", description: "Trạng thái của task (vd: 'To Do', 'In Progress', 'Done', 'Review')" },
-              startDate: { type: "string", description: "Ngày bắt đầu (Y-M-D) (vd: '2026-03-16')" },
-              dueDate: { type: "string", description: "Ngày kết thúc, hạn chót (Y-M-D) (vd: '2026-03-20')" },
+              projectName: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
+              assigneeName: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
+              sprintName: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
+              platformName: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
+              priorityLevel: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
+              taskTypeName: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
+              statusName: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
+              startDate: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
+              dueDate: { type: "string", description: "Giữ tương thích ngược cho trường hợp cũ." },
             },
             required: [],
           },
@@ -246,13 +272,30 @@ LỜI NHẮC QUAN TRỌNG TỪ HỆ THỐNG:
       const responseMessage = response.choices[0].message;
 
       if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-        return responseMessage.tool_calls
-          .filter((call) => call.function.name === "create_task")
-          .map((call) => ({
+        const toolCalls = responseMessage.tool_calls.filter((call) => call.function.name === "create_task");
+        const normalizedCalls = [];
+
+        for (const call of toolCalls) {
+          const parsedArguments = JSON.parse(call.function.arguments || "{}");
+          if (Array.isArray(parsedArguments.tasks) && parsedArguments.tasks.length > 0) {
+            parsedArguments.tasks.forEach((taskItem) => {
+              normalizedCalls.push({
+                function: call.function.name,
+                params: taskItem,
+              });
+            });
+            continue;
+          }
+
+          normalizedCalls.push({
             function: call.function.name,
-            params: JSON.parse(call.function.arguments),
-          }));
+            params: parsedArguments,
+          });
+        }
+
+        return normalizedCalls;
       }
+
       return [];
     } catch (error) {
       console.error("AI Command Parsing Error:", error);

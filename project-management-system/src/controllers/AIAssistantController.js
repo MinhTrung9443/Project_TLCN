@@ -7,6 +7,7 @@ const Priority = require("../models/Priority");
 const TaskType = require("../models/TaskType");
 const Workflow = require("../models/Workflow");
 const taskService = require("../services/TaskService");
+const aiTaskBatchService = require("../services/AITaskBatchService");
 const AIChatSession = require("../models/AIChatSession");
 const AIChatMessage = require("../models/AIChatMessage");
 const { normalizeProjectStatus } = require("../utils/taskPermission");
@@ -92,6 +93,27 @@ const formatTaskDetailMarkdown = (task) => {
     `- Tiến độ: **${progress}**`,
     `- Hạn: **${dueDate}**`,
   ].join("\n");
+};
+
+const getOrCreateSession = async ({ sessionId, userId, title }) => {
+  let session;
+
+  if (sessionId) {
+    session = await AIChatSession.findOne({ _id: sessionId, user: userId });
+    if (!session) {
+      const error = new Error("Phiên chat không tồn tại hoặc bạn không có quyền truy cập.");
+      error.statusCode = 404;
+      throw error;
+    }
+    return session;
+  }
+
+  return AIChatSession.create({ user: userId, title });
+};
+
+const persistAssistantTurn = async (sessionId, userText, assistantText) => {
+  await AIChatMessage.create({ session: sessionId, role: "user", content: userText });
+  await AIChatMessage.create({ session: sessionId, role: "assistant", content: assistantText });
 };
 
 const getSessions = async (req, res) => {
@@ -475,199 +497,36 @@ const handleChatCommand = async (req, res) => {
     const { command, sessionId, historyForAI } = req.body;
     const userId = req.user.id;
 
-    let session;
-    if (sessionId) {
-      session = await AIChatSession.findOne({ _id: sessionId, user: userId });
-      if (!session) {
-        return res.status(404).json({ message: "Phiên chat không tồn tại hoặc bạn không có quyền truy cập." });
-      }
-    } else {
-      session = await AIChatSession.create({ user: userId, title: "Tạo task: " + command.substring(0, 30) });
-    }
+    const session = await getOrCreateSession({
+      sessionId,
+      userId,
+      title: `Tạo task: ${(command || "").substring(0, 30)}`,
+    });
 
     const parsedCommands = await aiAssistantService.parseTaskCommand(command, historyForAI || []);
+    const taskInputs = (parsedCommands || []).map((item) => item.params).filter(Boolean);
 
-    if (!parsedCommands || parsedCommands.length === 0) {
+    if (taskInputs.length === 0) {
       const response = "Không hiểu lệnh hoặc chưa hỗ trợ lệnh này.";
-      await AIChatMessage.create({ session: session._id, role: "user", content: command });
-      await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
+      await persistAssistantTurn(session._id, command, response);
       session.updatedAt = new Date();
       await session.save();
       return res.status(200).json({ recommendation: response, sessionId: session._id });
     }
 
-    const createdTasks = [];
-    const errorMessages = [];
-    const currentUserObj = await User.findById(userId);
-    const isSystemAdmin = currentUserObj?.role === "admin";
+    const currentUser = await User.findById(userId);
+    const batchResult = await aiTaskBatchService.processTaskInputs(taskInputs, currentUser, {
+      sourceLabel: "Từ prompt",
+    });
 
-    for (const parsedCommand of parsedCommands) {
-      const { taskName, assigneeName, sprintName, platformName, priorityLevel, projectName, taskTypeName, statusName, startDate, dueDate } =
-        parsedCommand.params;
+    const aiResponse = batchResult.responseText || "Bạn muốn tạo công việc mới nhưng chưa cung cấp đủ thông tin hợp lệ.";
 
-      if (!taskName) {
-        errorMessages.push("Một task bị bỏ qua do không có tên công việc cụ thể.");
-        continue;
-      }
+    await persistAssistantTurn(session._id, command, aiResponse);
 
-      const taskData = {
-        name: taskName,
-        reporterId: userId,
-        createdById: userId,
-      };
-
-      if (startDate) taskData.startDate = new Date(startDate);
-      if (dueDate) taskData.dueDate = new Date(dueDate);
-
-      let targetProject = null;
-      if (projectName) {
-        targetProject = await Project.findOne({ name: new RegExp(projectName, "i") });
-        if (targetProject) taskData.projectId = targetProject._id;
-      }
-
-      if (!taskData.projectId || !targetProject) {
-        errorMessages.push(`Task "**${taskName}**" bị lỗi: Không tìm thấy dự án **${projectName || "không xác định"}**.`);
-        continue;
-      }
-
-      const isCurrentUserMember =
-        targetProject.members?.some((m) => m.userId.toString() === userId.toString()) ||
-        targetProject.teams?.some(
-          (t) => t.leaderId?.toString() === userId.toString() || t.members?.some((mId) => mId.toString() === userId.toString()),
-        );
-
-      if (!isCurrentUserMember && !isSystemAdmin) {
-        errorMessages.push(`Task "**${taskName}**" bị lỗi: Bạn không phải thành viên của dự án **${targetProject.name}**.`);
-        continue;
-      }
-
-      let assigneeWarning = "";
-      if (assigneeName) {
-        const safeAssigneeName = assigneeName.trim().replace(/^@/, ""); // Khử khoảng trắng trước rồi mới xoá @
-        const user = await User.findOne({
-          $or: [{ email: new RegExp(`^${safeAssigneeName}$`, "i") }, { fullname: new RegExp(safeAssigneeName, "i") }],
-        });
-        if (user) {
-          const isAssigneeInProject =
-            user.role === "admin" ||
-            targetProject.members?.some((m) => m.userId.toString() === user._id.toString()) ||
-            targetProject.teams?.some(
-              (t) => t.leaderId?.toString() === user._id.toString() || t.members?.some((mId) => mId.toString() === user._id.toString()),
-            );
-          if (isAssigneeInProject || isSystemAdmin) {
-            taskData.assigneeId = user._id;
-          } else {
-            assigneeWarning = ` (⚠️ User ${user.fullname} không thuộc dự án)`;
-          }
-        } else {
-          assigneeWarning = ` (⚠️ Không tìm thấy thành viên: ${assigneeName})`;
-        }
-      }
-
-      let sprintSet = false;
-      if (sprintName) {
-        const sprint = await Sprint.findOne({ name: new RegExp("^" + sprintName.trim() + "$", "i"), projectId: taskData.projectId });
-        if (sprint) {
-          taskData.sprintId = sprint._id;
-          sprintSet = true;
-        }
-      }
-
-      if (!sprintSet) {
-        let backlogSprint = await Sprint.findOne({ name: new RegExp("^Backlog$", "i"), projectId: taskData.projectId });
-        if (!backlogSprint) backlogSprint = await Sprint.findOne({ name: new RegExp("^Backlog$", "i"), projectId: null });
-        if (backlogSprint) {
-          taskData.sprintId = backlogSprint._id;
-        }
-      }
-
-      if (platformName) {
-        let platform = await Platform.findOne({ name: new RegExp("^" + platformName.trim() + "$", "i"), projectId: taskData.projectId });
-        if (!platform) platform = await Platform.findOne({ name: new RegExp("^" + platformName.trim() + "$", "i"), projectId: null });
-        if (platform) taskData.platformId = platform._id;
-      }
-
-      let priorityLevelSet = false;
-      if (priorityLevel) {
-        const safePriorityLevel = priorityLevel.trim();
-        let priority = await Priority.findOne({ name: new RegExp("^" + safePriorityLevel + "$", "i"), projectId: taskData.projectId });
-        if (!priority) priority = await Priority.findOne({ name: new RegExp("^" + safePriorityLevel + "$", "i"), projectId: null });
-        if (priority) {
-          taskData.priorityId = priority._id;
-          priorityLevelSet = true;
-        }
-      }
-      if (!priorityLevelSet) {
-        let defaultPriority = await Priority.findOne({ level: "2", projectId: taskData.projectId });
-        if (!defaultPriority) defaultPriority = await Priority.findOne({ level: "2", projectId: null });
-        if (defaultPriority) taskData.priorityId = defaultPriority._id;
-      }
-
-      let taskTypeSet = false;
-      if (taskTypeName) {
-        const safeTaskTypeName = taskTypeName.trim();
-        let taskType = await TaskType.findOne({ name: new RegExp("^" + safeTaskTypeName + "$", "i"), projectId: taskData.projectId });
-        if (!taskType) taskType = await TaskType.findOne({ name: new RegExp("^" + safeTaskTypeName + "$", "i"), projectId: null });
-        if (taskType) {
-          taskData.taskTypeId = taskType._id;
-          taskTypeSet = true;
-        }
-      }
-      if (!taskTypeSet) {
-        let defaultTaskType = await TaskType.findOne({ name: "Task", projectId: taskData.projectId });
-        if (!defaultTaskType) defaultTaskType = await TaskType.findOne({ name: "Task", projectId: null });
-        if (defaultTaskType) taskData.taskTypeId = defaultTaskType._id;
-      }
-
-      if (!taskData.statusId) {
-        const defaultWorkflow = await Workflow.findOne({ projectId: taskData.projectId });
-        if (defaultWorkflow) {
-          const defaultStatus = defaultWorkflow.statuses.find((s) => s.category === "To Do");
-          if (defaultStatus) {
-            taskData.statusId = defaultStatus._id;
-          }
-        }
-      }
-
-      if (!taskData.statusId) {
-        errorMessages.push(`Task "**${taskName}**" bị lỗi: Không tìm thấy trạng thái mặc định (To Do) cho dự án.`);
-        continue;
-      }
-
-      const newTask = await taskService.createTask(taskData, userId);
-      createdTasks.push({
-        task: newTask,
-        assigneeName: taskData.assigneeId ? assigneeName : "Chưa gán",
-        assigneeWarning,
-      });
-    }
-
-    let aiResponse = "";
-    if (createdTasks.length > 0) {
-      aiResponse += `🎉 Thành công! Đã tạo **${createdTasks.length}** công việc:\n\n`;
-      createdTasks.forEach((item, index) => {
-        const taskUrl = `/app/task/${item.task.key}`;
-        aiResponse += `${index + 1}. **[${item.task.key}](${taskUrl})** - ${item.task.name}\n   Giao cho: ${item.assigneeName}${item.assigneeWarning}\n\n`;
-      });
-    } else if (errorMessages.length === 0) {
-      aiResponse = "Bạn muốn tạo công việc mới nhưng chưa cung cấp đủ thông tin (chưa có tên công việc). Hãy cung cấp tên task nhé!";
-    }
-
-    if (errorMessages.length > 0) {
-      if (!aiResponse) aiResponse = `⚠️ **Không có công việc nào được tạo do lỗi:**\n`;
-      else aiResponse += `⚠️ **Một số lỗi xảy ra với các task khác:**\n`;
-      aiResponse += errorMessages.map((msg) => `- ${msg}`).join("\n");
-    }
-
-    // Lưu tin nhắn user và AI vào CSDL
-    await AIChatMessage.create({ session: session._id, role: "user", content: command });
-    await AIChatMessage.create({ session: session._id, role: "assistant", content: aiResponse });
-
-    // Cập nhật thời gian và title cho session
-    if (createdTasks.length === 1) {
-      session.title = "Tạo task: " + createdTasks[0].task.name;
-    } else if (createdTasks.length > 1) {
-      session.title = `Tạo ${createdTasks.length} tasks`;
+    if (batchResult.createdRows.length === 1) {
+      session.title = `Tạo task: ${batchResult.createdRows[0].task.name}`;
+    } else if (batchResult.createdRows.length > 1) {
+      session.title = `Tạo ${batchResult.createdRows.length} tasks`;
     }
     session.updatedAt = new Date();
     await session.save();
@@ -675,7 +534,12 @@ const handleChatCommand = async (req, res) => {
     res.status(200).json({
       recommendation: aiResponse,
       sessionId: session._id,
-      taskKey: createdTasks.length > 0 ? createdTasks[0].task.key : null,
+      taskKey: batchResult.createdRows.length > 0 ? batchResult.createdRows[0].task.key : null,
+      results: {
+        created: batchResult.createdRows,
+        failed: batchResult.failedRows,
+        summary: batchResult.summaryText,
+      },
     });
   } catch (error) {
     console.error("Chat Command Controller Error:", error);
@@ -692,6 +556,50 @@ const handleChatCommand = async (req, res) => {
   }
 };
 
+const handleImportTasks = async (req, res) => {
+  try {
+    const { tasks, sessionId, fileName } = req.body;
+    const userId = req.user.id;
+
+    const session = await getOrCreateSession({
+      sessionId,
+      userId,
+      title: `Import task: ${(fileName || "danh sách").substring(0, 30)}`,
+    });
+
+    const currentUser = await User.findById(userId);
+    const batchResult = await aiTaskBatchService.processTaskInputs(tasks, currentUser, {
+      sourceLabel: fileName ? `File ${fileName}` : "Import file",
+    });
+
+    const aiResponse = batchResult.responseText || "Không có task nào được tạo từ dữ liệu đã import.";
+
+    await persistAssistantTurn(session._id, fileName ? `Import file: ${fileName}` : "Import file task", aiResponse);
+
+    if (batchResult.createdRows.length === 1) {
+      session.title = `Import task: ${batchResult.createdRows[0].task.name}`;
+    } else if (batchResult.createdRows.length > 1) {
+      session.title = `Import ${batchResult.createdRows.length} tasks`;
+    }
+    session.updatedAt = new Date();
+    await session.save();
+
+    res.status(200).json({
+      recommendation: aiResponse,
+      sessionId: session._id,
+      results: {
+        created: batchResult.createdRows,
+        failed: batchResult.failedRows,
+        summary: batchResult.summaryText,
+      },
+    });
+  } catch (error) {
+    console.error("Import Tasks Controller Error:", error);
+    const fallbackSessionId = typeof session !== "undefined" && session?._id ? session._id : req.body.sessionId;
+    res.status(200).json({ recommendation: `Lỗi hệ thống khi import task: ${error.message}`, sessionId: fallbackSessionId });
+  }
+};
+
 module.exports = {
   getSessions,
   createSession,
@@ -699,4 +607,5 @@ module.exports = {
   deleteSession,
   handleAnalyzeRisk,
   handleChatCommand,
+  handleImportTasks,
 };

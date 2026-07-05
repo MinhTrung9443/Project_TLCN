@@ -1,12 +1,43 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaRobot, FaTimes, FaPaperPlane, FaExternalLinkAlt, FaBars, FaPlus, FaTrashAlt, FaClock, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import { FaRobot, FaTimes, FaPaperPlane, FaExternalLinkAlt, FaBars, FaPlus, FaTrashAlt, FaClock, FaMicrophone, FaMicrophoneSlash, FaFileUpload } from "react-icons/fa";
 import apiClient from "../../services/apiClient";
 import ReactMarkdown from "react-markdown";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { Link } from "react-router-dom";
 import Draggable from 'react-draggable';
+import * as XLSX from "xlsx";
+import { toast } from "react-toastify";
 
 const AI_REQUEST_TIMEOUT_MS = 60000;
+const TASK_TEMPLATE_HEADERS = [
+  "taskName",
+  "projectName",
+  "assigneeName",
+  "sprintName",
+  "platformName",
+  "priorityLevel",
+  "taskTypeName",
+  "statusName",
+  "startDate",
+  "dueDate",
+  "description",
+  "estimatedTime",
+];
+
+const TASK_TEMPLATE_SAMPLE_ROW = {
+  taskName: "Thiết kế màn hình đăng nhập",
+  projectName: "Project Alpha",
+  assigneeName: "Nguyễn Văn A",
+  sprintName: "Sprint 1",
+  platformName: "FE",
+  priorityLevel: "1",
+  taskTypeName: "Task",
+  statusName: "To Do",
+  startDate: "2026-07-10",
+  dueDate: "2026-07-15",
+  description: "Thiết kế UI cho màn hình đăng nhập và validate input cơ bản",
+  estimatedTime: 8,
+};
 
 const AIAssistantWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,6 +46,8 @@ const AIAssistantWidget = () => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importFile, setImportFile] = useState(null);
   const [users, setUsers] = useState([]);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionFilter, setMentionFilter] = useState("");
@@ -29,6 +62,7 @@ const AIAssistantWidget = () => {
   const messagesEndRef = useRef(null);
   const btnNodeRef = useRef(null);
   const chatNodeRef = useRef(null);
+  const fileInputRef = useRef(null);
   const dragRef = useRef(false);
   const prevInputRef = useRef("");
   const textareaRef = useRef(null);
@@ -215,6 +249,91 @@ const AIAssistantWidget = () => {
     } finally {
       setIsLoading(false);
       resetTranscript();
+    }
+  };
+
+  const parseImportFile = async (file) => {
+    const fileName = file?.name || "";
+    const lowerName = fileName.toLowerCase();
+
+    if (lowerName.endsWith(".csv")) {
+      const text = await file.text();
+      const workbook = XLSX.read(text, { type: "string" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      return XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+    }
+
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+  };
+
+  const handlePickImportFile = (event) => {
+    const file = event.target.files?.[0] || null;
+    setImportFile(file);
+  };
+
+  const handleClearImportFile = () => {
+    setImportFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const workbook = XLSX.utils.book_new();
+    const worksheetData = [TASK_TEMPLATE_SAMPLE_ROW];
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData, { header: TASK_TEMPLATE_HEADERS });
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "TaskTemplate");
+    XLSX.writeFile(workbook, "AI_Task_Import_Template.xlsx");
+  };
+
+  const handleImportTasks = async () => {
+    if (!importFile || isImporting) return;
+
+    try {
+      setIsImporting(true);
+      const tasks = await parseImportFile(importFile);
+
+      if (!Array.isArray(tasks) || tasks.length === 0) {
+        toast.error("File không có dữ liệu task hợp lệ.");
+        return;
+      }
+
+      const userMessage = `Tôi đã import file ${importFile.name} với ${tasks.length} dòng dữ liệu.`;
+      setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+
+      const response = await apiClient.post("/ai-assistant/tasks/import", {
+        tasks,
+        sessionId: currentSessionId,
+        fileName: importFile.name,
+      });
+
+      const aiResponse = response.data?.recommendation || "Không thể import task lúc này.";
+      setMessages((prev) => [...prev, { role: "assistant", content: aiResponse }]);
+
+      if (!currentSessionId && response.data?.sessionId) {
+        setCurrentSessionId(response.data.sessionId);
+        setSessionsLoading(true);
+        apiClient.get("/ai-assistant/sessions").then((res) => {
+          if (res.data) setSessions(Array.isArray(res.data) ? res.data : res.data.data || []);
+          setSessionsLoading(false);
+        });
+      }
+
+      toast.success("Đã xử lý file import task.");
+      handleClearImportFile();
+    } catch (error) {
+      console.error("Import task error:", error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.recommendation || "Không thể import task từ file.";
+      setMessages((prev) => [...prev, { role: "assistant", content: errorMsg }]);
+      toast.error(errorMsg);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -539,7 +658,53 @@ const AIAssistantWidget = () => {
                   </div>
                 )}
 
-                <form onSubmit={handleSendMessage} className="flex shrink-0 items-end gap-2 border-t border-slate-200 bg-white px-3 py-2.5">
+                <div className="border-t border-slate-200 bg-white px-2.5 py-2.5">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv,.xls,.xlsx"
+                        onChange={handlePickImportFile}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isImporting}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-2.5 py-1.5 font-medium text-slate-700 hover:border-indigo-300 hover:text-indigo-700 disabled:opacity-60"
+                        title="Chọn file CSV hoặc Excel"
+                      >
+                        <FaFileUpload className="text-[10px]" />
+                        Import
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadTemplate}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 font-medium text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100"
+                        title="Tải file mẫu để điền dữ liệu"
+                      >
+                        Mẫu
+                      </button>
+                      {importFile ? (
+                        <div className="flex min-w-0 max-w-[145px] items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1.5 text-[10px] text-slate-600 border border-slate-200">
+                          <span className="truncate">{importFile.name}</span>
+                          <button type="button" onClick={handleClearImportFile} className="text-slate-400 hover:text-rose-500">
+                            <FaTimes className="text-[10px]" />
+                          </button>
+                        </div>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={handleImportTasks}
+                        disabled={!importFile || isImporting}
+                        className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-2.5 py-1.5 text-[11px] font-medium text-white hover:bg-indigo-700 disabled:bg-slate-300"
+                      >
+                        {isImporting ? "Đang import..." : "Tạo task từ file"}
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSendMessage} className="flex shrink-0 items-end gap-2 pt-0.5">
                   {browserSupportsSpeechRecognition && (
                     <button
                       type="button"
@@ -582,7 +747,9 @@ const AIAssistantWidget = () => {
                   >
                     <FaPaperPlane className="text-[13px]" />
                   </button>
-                </form>
+                    </form>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

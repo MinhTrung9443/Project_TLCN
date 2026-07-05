@@ -25,5 +25,6 @@ router.post("/analyze-risk", protect, aiAssistantLimiter, aiAssistantController.
 
 // Route Cấp độ 2: Thư Ký (Tạo task)
 router.post("/chat", protect, aiAssistantLimiter, aiAssistantController.handleChatCommand);
+router.post("/tasks/import", protect, aiAssistantLimiter, aiAssistantController.handleImportTasks);
 
 module.exports = router;
