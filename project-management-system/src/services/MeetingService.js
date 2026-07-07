@@ -442,8 +442,13 @@ const MeetingService = {
       throw error;
     }
 
+    let originalFilename = file.originalname;
+    try {
+      originalFilename = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    } catch (e) {}
+
     const newAttachment = {
-      filename: file.originalname,
+      filename: originalFilename,
       url: file.path,
       public_id: file.filename,
     };

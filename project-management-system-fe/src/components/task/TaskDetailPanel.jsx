@@ -357,12 +357,20 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
     const newStartDate = fieldName === "startDate" ? updateValue : editableTask.startDate;
     const newDueDate = fieldName === "dueDate" ? updateValue : editableTask.dueDate;
 
-    // So sánh chỉ phần ngày, bỏ qua giờ
+    // So sánh chỉ phần ngày, bằng chuỗi YYYY-MM-DD để tránh lỗi múi giờ
     if (newStartDate && newDueDate) {
-      const startDateOnly = new Date(newStartDate).setHours(0, 0, 0, 0);
-      const dueDateOnly = new Date(newDueDate).setHours(0, 0, 0, 0);
+      const getLocalDateStr = (dateVal) => {
+        if (!dateVal) return "";
+        if (typeof dateVal === 'string' && dateVal.length === 10 && dateVal.includes('-')) return dateVal;
+        const d = new Date(dateVal);
+        if (isNaN(d.getTime())) return "";
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
 
-      if (startDateOnly > dueDateOnly) {
+      const startStr = getLocalDateStr(newStartDate);
+      const dueStr = getLocalDateStr(newDueDate);
+
+      if (startStr && dueStr && startStr > dueStr) {
         toast.error("Start Date cannot be after Due Date.");
         return;
       }

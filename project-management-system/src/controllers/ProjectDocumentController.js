@@ -143,9 +143,16 @@ const ProjectDocumentController = {
       const sharedWith = Array.from(allUserIds).map((id) => new mongoose.Types.ObjectId(id));
       console.log("✅ [uploadDocument] sharedWith array created, length:", sharedWith.length);
 
+      let originalFilename = req.file.originalname;
+      try {
+        originalFilename = Buffer.from(req.file.originalname, "latin1").toString("utf8");
+      } catch (e) {
+        console.error("Failed to decode filename encoding:", e);
+      }
+
       const docData = {
         projectId: project._id,
-        filename: req.file.originalname,
+        filename: originalFilename,
         url: req.file.path,
         public_id: req.file.filename,
         category: category || "other",

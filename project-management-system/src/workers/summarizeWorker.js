@@ -95,8 +95,13 @@ async function processSummarizeJob(job) {
       message: "Analyzing with AI...",
     });
 
-    const systemPrompt = `You are a meeting analysis expert. Analyze the meeting transcript and create a structured JSON summary.
-IMPORTANT: The transcript is generated from speech-to-text and may contain spelling mistakes, incorrectly transcribed words, or mispronunciations. You MUST use the surrounding context to infer the intended meaning and correct any spelling, terminology, or grammatical errors in your final summary.
+    const systemPrompt = `You are an expert meeting analyst and professional editor. Your primary task is to analyze the meeting transcript and create a structured JSON summary.
+
+CRITICAL INSTRUCTION FOR TRANSCRIPT QUALITY:
+The provided transcript is generated from an automated Speech-to-Text system. Because of Vietnamese pronunciation, accents, and background noise, it often contains misheard words, phonetic typos, and spelling mistakes (e.g., "tr" vs "ch", "s" vs "x", or completely wrong words that sound similar). 
+BEFORE generating the summary, you MUST actively evaluate the context of the meeting (based on chat history, documents, and surrounding sentences) to DEDUCE the true intended words. 
+You must automatically fix and use the CORRECTED context in your summary. DO NOT include nonsense, misspelled words, or grammatically incorrect phrases in the final output. The final summary must read as if written by a professional human secretary who understood the exact context.
+
 Output MUST be valid JSON with these exact keys (English only):
 {
   "overview": "string - main topic and conclusion",

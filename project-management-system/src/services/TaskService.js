@@ -398,70 +398,82 @@ const updateTask = async (taskId, updateData, userId) => {
     const newStartDate = updateData.startDate !== undefined ? updateData.startDate : originalTask.startDate;
     const newDueDate = updateData.dueDate !== undefined ? updateData.dueDate : originalTask.dueDate;
 
+    const getLocalDateStr = (dateVal) => {
+      if (!dateVal) return "";
+      if (typeof dateVal === 'string' && dateVal.length === 10 && dateVal.includes('-')) return dateVal;
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
+    const startStr = getLocalDateStr(newStartDate);
+    const dueStr = getLocalDateStr(newDueDate);
+    const projStartStr = getLocalDateStr(project.startDate);
+    const projEndStr = getLocalDateStr(project.endDate);
+
     // Validate startDate <= dueDate if both exist
-    if (newStartDate && newDueDate) {
-      const start = new Date(newStartDate).setHours(0, 0, 0, 0);
-      const due = new Date(newDueDate).setHours(0, 0, 0, 0);
-      if (start > due) {
-        const error = new Error("Start date must be before or equal to due date");
-        error.statusCode = 400;
-        throw error;
-      }
+    if (startStr && dueStr && startStr > dueStr) {
+      const error = new Error("Start date must be before or equal to due date");
+      error.statusCode = 400;
+      throw error;
     }
 
-    // Validate startDate with project dates (only if task has startDate)
-    if (newStartDate) {
-      if (project.startDate && new Date(newStartDate) < new Date(project.startDate)) {
+    // Validate startDate with project dates
+    if (startStr) {
+      if (projStartStr && startStr < projStartStr) {
         const error = new Error("Task start date cannot be before project start date");
         error.statusCode = 400;
         throw error;
       }
-      if (project.endDate && new Date(newStartDate) > new Date(project.endDate)) {
+      if (projEndStr && startStr > projEndStr) {
         const error = new Error("Task start date cannot be after project end date");
         error.statusCode = 400;
         throw error;
       }
     }
 
-    // Validate dueDate with project dates (only if task has dueDate)
-    if (newDueDate) {
-      if (project.startDate && new Date(newDueDate) < new Date(project.startDate)) {
+    // Validate dueDate with project dates
+    if (dueStr) {
+      if (projStartStr && dueStr < projStartStr) {
         const error = new Error("Task due date cannot be before project start date");
         error.statusCode = 400;
         throw error;
       }
-      if (project.endDate && new Date(newDueDate) > new Date(project.endDate)) {
+      if (projEndStr && dueStr > projEndStr) {
         const error = new Error("Task due date cannot be after project end date");
         error.statusCode = 400;
         throw error;
       }
     }
 
-    // If task has a sprint, validate dates with sprint dates (only if task has dates)
+    // If task has a sprint, validate dates with sprint dates
     if (originalTask.sprintId) {
       const Sprint = require("../models/Sprint");
       const sprint = await Sprint.findById(originalTask.sprintId);
       if (sprint) {
-        if (newStartDate) {
-          if (sprint.startDate && new Date(newStartDate) < new Date(sprint.startDate)) {
+        const sprintStartStr = getLocalDateStr(sprint.startDate);
+        const sprintEndStr = getLocalDateStr(sprint.endDate);
+
+        if (startStr) {
+          if (sprintStartStr && startStr < sprintStartStr) {
             const error = new Error("Task start date cannot be before sprint start date");
             error.statusCode = 400;
             throw error;
           }
-          if (sprint.endDate && new Date(newStartDate) > new Date(sprint.endDate)) {
+          if (sprintEndStr && startStr > sprintEndStr) {
             const error = new Error("Task start date cannot be after sprint end date");
             error.statusCode = 400;
             throw error;
           }
         }
 
-        if (newDueDate) {
-          if (sprint.startDate && new Date(newDueDate) < new Date(sprint.startDate)) {
+        if (dueStr) {
+          if (sprintStartStr && dueStr < sprintStartStr) {
             const error = new Error("Task due date cannot be before sprint start date");
             error.statusCode = 400;
             throw error;
           }
-          if (sprint.endDate && new Date(newDueDate) > new Date(sprint.endDate)) {
+          if (sprintEndStr && dueStr > sprintEndStr) {
             const error = new Error("Task due date cannot be after sprint end date");
             error.statusCode = 400;
             throw error;
@@ -1019,9 +1031,14 @@ const addAttachment = async (taskId, file, userId) => {
     throw error;
   }
 
+  let originalFilename = file.originalname;
+  try {
+    originalFilename = Buffer.from(file.originalname, 'latin1').toString('utf8');
+  } catch (e) {}
+
   // Logic mới: Sử dụng thông tin từ Cloudinary (req.file)
   const newAttachment = {
-    filename: file.originalname, // Tên file gốc
+    filename: originalFilename, // Tên file gốc
     url: file.path, // URL từ Cloudinary
     public_id: file.filename, // public_id từ Cloudinary
   };

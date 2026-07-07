@@ -25,15 +25,31 @@ const asArray = (value) => {
 };
 
 const parseDateValue = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+
+  // Handle Excel serial date (e.g., 46210 or "46210")
+  const numValue = Number(value);
+  // Only treat as Excel serial if it's a realistic number (e.g., between year 2000 and 2100 -> ~36000 to ~73000)
+  if (!isNaN(numValue) && typeof value !== "boolean" && String(value).trim() !== "" && numValue > 30000 && numValue < 100000) {
+    // Excel dates are days since Dec 30, 1899
+    return new Date(Date.UTC(1899, 11, 30) + numValue * 86400000);
+  }
+
   const raw = cleanString(value);
   if (!raw) return null;
 
-  const parsed = new Date(raw);
+  let parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) {
+    console.log("[DEBUG DATE] raw:", raw, "error: invalid date");
     return { error: `Ngày không hợp lệ: ${raw}` };
   }
 
-  return parsed;
+  const yyyy = parsed.getFullYear();
+  const mm = parsed.getMonth();
+  const dd = parsed.getDate();
+  const finalDate = new Date(Date.UTC(yyyy, mm, dd));
+  console.log("[DEBUG DATE] raw:", raw, "parsed Local:", parsed.toString(), "final UTC:", finalDate.toISOString());
+  return finalDate;
 };
 
 const normalizeNumber = (value) => {

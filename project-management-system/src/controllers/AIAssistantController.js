@@ -16,7 +16,11 @@ const formatDateVN = (dateValue) => {
   if (!dateValue) return "Chưa có";
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return "Chưa có";
-  return date.toISOString().split("T")[0];
+  try {
+    return date.toLocaleString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+  } catch(e) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
 };
 
 const getTaskAssigneeLabel = (task) => task.assigneeId?.fullname || task.assigneeId?.email || "Chưa giao";
@@ -428,7 +432,7 @@ const handleAnalyzeRisk = async (req, res) => {
         taskType: task.taskTypeId?.name || "N/A",
         platform: task.platformId?.name || "N/A",
         status: task.statusId?.name || task.statusId?.category || "N/A",
-        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : null,
+        dueDate: task.dueDate ? formatDateVN(task.dueDate) : null,
         isOverdue: task.dueDate && new Date(task.dueDate) < new Date(),
         progress: task.progress || 0,
         taskKey: task.key,

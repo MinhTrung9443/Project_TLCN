@@ -24,11 +24,17 @@ const handleCreateComment = async (req, res) => {
 
     // Xử lý attachments từ files upload
     const attachments = req.files
-      ? req.files.map((file) => ({
-          filename: file.originalname,
-          url: file.path,
-          public_id: file.filename,
-        }))
+      ? req.files.map((file) => {
+          let originalFilename = file.originalname;
+          try {
+            originalFilename = Buffer.from(file.originalname, 'latin1').toString('utf8');
+          } catch (e) {}
+          return {
+            filename: originalFilename,
+            url: file.path,
+            public_id: file.filename,
+          };
+        })
       : [];
 
     // Xử lý attachments từ Project Documents (documentIds)

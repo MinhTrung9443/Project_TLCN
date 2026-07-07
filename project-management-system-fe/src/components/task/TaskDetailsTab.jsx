@@ -11,6 +11,15 @@ const statusCategoryStyles = {
   Done: "bg-success-100 text-success-700 border border-success-200",
   default: "bg-neutral-100 text-neutral-700 border border-neutral-200",
 };
+
+const formatLocalDate = (dateVal) => {
+  if (!dateVal) return "";
+  if (typeof dateVal === 'string' && dateVal.length === 10 && dateVal.includes('-')) return dateVal;
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 const TaskDetailsTab = ({
   editableTask,
   setEditableTask,
@@ -236,7 +245,7 @@ const TaskDetailsTab = ({
           <strong className="text-sm font-medium text-neutral-700">Start Date</strong>
           <input
             type="date"
-            value={editableTask.startDate ? new Date(editableTask.startDate).toISOString().split("T")[0] : ""}
+            value={formatLocalDate(editableTask.startDate)}
             onChange={(e) => handleUpdate("startDate", e.target.value)}
             className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
           />
@@ -245,7 +254,7 @@ const TaskDetailsTab = ({
           <strong className="text-sm font-medium text-neutral-700">Due Date</strong>
           <input
             type="date"
-            value={editableTask.dueDate ? new Date(editableTask.dueDate).toISOString().split("T")[0] : ""}
+            value={formatLocalDate(editableTask.dueDate)}
             onChange={(e) => handleUpdate("dueDate", e.target.value)}
             className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600"
           />
