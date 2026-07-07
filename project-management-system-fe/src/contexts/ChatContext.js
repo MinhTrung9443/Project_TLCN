@@ -361,16 +361,16 @@ export const ChatProvider = ({ children }) => {
          }));
     };
 
-     socketService.socket.on("message received", handleMessageReceived);
-    socketService.socket.on("message read", handleMessageRead); 
-    socketService.socket.on("message recalled", handleMessageRecalled);
-    socketService.socket.on("message reaction update", handleReactionUpdate);
+     socketService.socket?.on("message received", handleMessageReceived);
+    socketService.socket?.on("message read", handleMessageRead); 
+    socketService.socket?.on("message recalled", handleMessageRecalled);
+    socketService.socket?.on("message reaction update", handleReactionUpdate);
 
     return () => {
-        socketService.socket.off("message received", handleMessageReceived);
-        socketService.socket.off("message read", handleMessageRead); 
-        socketService.socket.off("message recalled", handleMessageRecalled);
-        socketService.socket.off("message reaction update", handleReactionUpdate);
+        socketService.socket?.off("message received", handleMessageReceived);
+        socketService.socket?.off("message read", handleMessageRead); 
+        socketService.socket?.off("message recalled", handleMessageRecalled);
+        socketService.socket?.off("message reaction update", handleReactionUpdate);
     };
   }, [user, selectedConversation, updateChatLists]); // Dependencies
 

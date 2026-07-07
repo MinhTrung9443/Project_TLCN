@@ -16,6 +16,10 @@ class AppError extends Error {
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: (req, file) => {
+    // Fix multer latin1 encoding issue for originalname
+    if (file && file.originalname) {
+      file.originalname = Buffer.from(file.originalname, "latin1").toString("utf8");
+    }
     console.log("📤 [CloudinaryStorage] params called");
     console.log(
       "📤 [CloudinaryStorage] file:",
@@ -84,6 +88,9 @@ const upload = multer({
 const memoryStorage = multer.memoryStorage();
 
 const chatHistoryFileFilter = (req, file, cb) => {
+  if (file && file.originalname) {
+    file.originalname = Buffer.from(file.originalname, "latin1").toString("utf8");
+  }
   // Accept text files, txt files, or files with text/* mimetype
   const isTextFile = file.mimetype === "text/plain" || file.mimetype.startsWith("text/") || file.originalname.endsWith(".txt");
 
@@ -103,6 +110,9 @@ const chatHistoryUpload = multer({
 });
 
 const recordingFileFilter = (req, file, cb) => {
+  if (file && file.originalname) {
+    file.originalname = Buffer.from(file.originalname, "latin1").toString("utf8");
+  }
   const allowedVideoTypes = /mp4|mov|avi|wmv|mkv|webm/;
   const extname = allowedVideoTypes.test(path.extname(file.originalname || "").toLowerCase());
   const mimeAllowed = (file.mimetype || "").startsWith("video/");
