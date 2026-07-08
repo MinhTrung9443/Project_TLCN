@@ -41,51 +41,62 @@ const EncyclopediaSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
-          <div className="lg:col-span-1">
-            <div className="relative h-96 flex items-center justify-center">
-              <div
-                className={`absolute p-4 rounded-lg transition-all duration-300 cursor-pointer ${activeTab === "kanban" ? "bg-purple-200 scale-110" : "hover:bg-gray-100"}`}
-                style={{ top: "0", right: "0" }}
-                onMouseEnter={() => setActiveTab("kanban")}
-              >
-                <div className="text-center text-sm font-semibold text-gray-900">
-                  Kanban <br />
-                  <span className="text-xs text-gray-600">project management</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center max-w-6xl mx-auto">
+          <div className="lg:col-span-5 flex justify-end">
+            <div className="flex items-center justify-center h-full min-h-[24rem]">
+              <div className="flex items-center space-x-6 md:space-x-8">
+                {/* Kanban */}
+                <div 
+                  className="relative w-8 h-48 flex items-center justify-center cursor-pointer"
+                  onMouseEnter={() => setActiveTab("kanban")}
+                >
+                  <div className="absolute transform -rotate-90 whitespace-nowrap flex flex-col items-start">
+                    <div className={`text-3xl font-bold transition-all duration-300 ${activeTab === 'kanban' ? 'scale-110 origin-left opacity-100' : 'opacity-50'}`} style={{ color: contentData.kanban.color }}>
+                      Kanban
+                    </div>
+                    <div className="text-sm text-gray-400">project management</div>
+                  </div>
                 </div>
-              </div>
-              <div
-                className={`absolute p-4 rounded-lg transition-all duration-300 cursor-pointer ${activeTab === "agile" ? "bg-purple-200 scale-110" : "hover:bg-gray-100"}`}
-                style={{ top: "50%", left: "50%", transform: activeTab === "agile" ? "translate(-50%, -50%) scale(1.1)" : "translate(-50%, -50%)" }}
-                onMouseEnter={() => setActiveTab("agile")}
-              >
-                <div className="text-center text-sm font-semibold text-gray-900">
-                  Agile <br />
-                  <span className="text-xs text-gray-600">project management</span>
-                </div>
-              </div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold text-purple-600">
-                ENCYCLOPEDIA
-              </div>
-              <div
-                className={`absolute p-4 rounded-lg transition-all duration-300 cursor-pointer ${activeTab === "scrum" ? "bg-purple-200 scale-110" : "hover:bg-gray-100"}`}
-                style={{ bottom: "0", left: "0" }}
-                onMouseEnter={() => setActiveTab("scrum")}
-              >
-                <div className="text-center text-sm font-semibold text-gray-900">
-                  Scrum <br />
-                  <span className="text-xs text-gray-600">project management</span>
+
+                {/* Stack */}
+                <div className="flex flex-col space-y-4 md:space-y-6">
+                  {/* Agile */}
+                  <div 
+                    className="flex flex-col items-start cursor-pointer"
+                    onMouseEnter={() => setActiveTab("agile")}
+                  >
+                    <div className={`text-3xl font-bold transition-all duration-300 ${activeTab === 'agile' ? 'scale-110 origin-left opacity-100' : 'opacity-50'}`} style={{ color: contentData.agile.color }}>
+                      Agile
+                    </div>
+                    <div className="text-sm text-gray-400">project management</div>
+                  </div>
+
+                  {/* ENCYCLOPEDIA */}
+                  <div className="text-4xl font-extrabold text-gray-900 tracking-wider">
+                    ENCYCLOPEDIA
+                  </div>
+
+                  {/* Scrum */}
+                  <div 
+                    className="flex flex-col items-start cursor-pointer"
+                    onMouseEnter={() => setActiveTab("scrum")}
+                  >
+                    <div className={`text-3xl font-bold transition-all duration-300 ${activeTab === 'scrum' ? 'scale-110 origin-left opacity-100' : 'opacity-50'}`} style={{ color: contentData.scrum.color }}>
+                      Scrum
+                    </div>
+                    <div className="text-sm text-gray-400">project management</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="hidden lg:flex justify-center items-center">
+          <div className="hidden lg:flex lg:col-span-2 justify-center items-center">
             <div className="text-3xl text-gray-400">➜</div>
           </div>
 
-          <div className="lg:col-span-1">
-            <div className="fade-in">
+          <div className="lg:col-span-5 flex justify-start">
+            <div className="fade-in max-w-md w-full">
               <div className="text-center mb-6">
                 <img src={contentData[activeTab].image} alt={activeTab} className="w-32 h-auto mx-auto" />
               </div>
