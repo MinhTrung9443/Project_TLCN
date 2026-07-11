@@ -23,6 +23,7 @@ import ProjectSettingsPage from "./pages/ManageProject/ProjectSettingsPage.jsx";
 import GlobalSettingsPage from "./pages/Setting/GlobalSettingsPage"; // <-- Import trang cha
 import TaskFinderPage from "./pages/ManageTask/TaskFinderPage"; // <-- IMPORT
 import TaskDetailPage from "./pages/ManageTask/TaskDetailPage";
+import EpicPage from "./pages/ManageTask/EpicPage";
 import BacklogPage from "./pages/ManageSprint/BacklogPage";
 import ActiveSprintPage from "./pages/ManageSprint/ActiveSprintPage";
 import MeetingPage from "./pages/Meeting/MeetingPage";
@@ -37,6 +38,8 @@ import ProjectSettingPlatform from "./pages/ManageProject/ProjectSettingPlatform
 import ProjectSettingPriority from "./pages/ManageProject/ProjectSettingPriority";
 import ProjectSettingTasktype from "./pages/ManageProject/ProjectSettingTasktype";
 import ProjectDocsPage from "./pages/ProjectDocs/ProjectDocsPage";
+import ProjectDashboardPage from "./pages/ManageProject/ProjectDashboardPage";
+
 function App() {
   return (
     <AuthProvider>
@@ -74,6 +77,8 @@ function App() {
                   </Route>
 
                   {/* Các route khác thuộc một project */}
+                  <Route path="task-mgmt/projects/:projectKey/dashboard" element={<ProjectDashboardPage />} />
+                  <Route path="task-mgmt/projects/:projectKey/epics" element={<EpicPage />} />
                   <Route path="task-mgmt/projects/:projectKey/backlog" element={<BacklogPage />} />
                   <Route path="task-mgmt/projects/:projectKey/active-sprint" element={<ActiveSprintPage />} />
                   <Route path="task-mgmt/projects/:projectKey/meetings" element={<MeetingPage />} />

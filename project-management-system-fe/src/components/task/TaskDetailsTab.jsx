@@ -213,7 +213,16 @@ const TaskDetailsTab = ({
             placeholder={projectPlatforms.length === 0 ? "Loading..." : "Select..."}
           />
         </div>
-        
+        <div className="space-y-2">
+          <strong className="text-sm font-medium text-neutral-700">Parent Task (Epic)</strong>
+          <Select
+            value={findOption(allProjectTasks.map(t => ({ value: t._id, label: `${t.key} - ${t.name}` })), editableTask.parentTaskId?._id || editableTask.parentTaskId)}
+            options={allProjectTasks.filter(t => t._id !== editableTask._id).map(t => ({ value: t._id, label: `${t.key} - ${t.name}` }))}
+            onChange={(option) => handleUpdate("parentTaskId", option ? option.value : null)}
+            isClearable
+            placeholder="None"
+          />
+        </div>
         {/* Development (GitHub Branch) */}
         <div className="space-y-2">
           <strong className="text-sm font-medium text-neutral-700">Development</strong>

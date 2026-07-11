@@ -25,7 +25,6 @@ const IconComponent = ({ name }) => <span className="material-symbols-outlined">
 // Task Card Component with Drag functionality
 const TaskCard = ({ task, onStatusChange }) => {
   const navigate = useNavigate();
-  const { projectKey } = useParams();
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "task",
@@ -66,7 +65,7 @@ const TaskCard = ({ task, onStatusChange }) => {
         <span className="text-sm font-semibold text-primary-600">{task.key}</span>
       </div>
 
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2">
         <span
           className="w-6 h-6 rounded flex items-center justify-center text-white text-sm"
           style={{ backgroundColor: typeIcon.color }}
@@ -74,7 +73,14 @@ const TaskCard = ({ task, onStatusChange }) => {
         >
           <IconComponent name={typeIcon.name} />
         </span>
-        <span className="text-xs text-neutral-600">{task.taskTypeId?.name || "Task"}</span>
+        <span className="text-xs text-neutral-600 font-medium">{task.taskTypeId?.name || "Task"}</span>
+        
+        {task.parentTaskId && (
+          <div className="flex items-center gap-1 text-xs text-primary-700 bg-primary-50 px-1.5 py-0.5 rounded border border-primary-100 truncate ml-auto" title={`Parent: ${task.parentTaskId.name}`}>
+            <span className="material-symbols-outlined text-[14px]">account_tree</span>
+            <span className="truncate max-w-[100px]">{task.parentTaskId.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="text-sm font-medium text-neutral-900 mb-4 line-clamp-2">{task.name}</div>

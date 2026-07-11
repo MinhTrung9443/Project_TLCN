@@ -16,6 +16,7 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const [canViewAuditLog, setCanViewAuditLog] = useState(false);
   const [projects, setProjects] = useState([]);
   const [canViewProjectReport, setCanViewProjectReport] = useState(false);
+  const [isPMOrAdmin, setIsPMOrAdmin] = useState(false);
 
   const getProjectPath = (path) => (selectedProjectKey ? `/app/task-mgmt/projects/${selectedProjectKey}/${path}` : "#");
 
@@ -49,7 +50,14 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
     const selectedProject = projects.find((project) => project?.key?.toUpperCase() === selectedProjectKey.toUpperCase());
     setCanViewProjectReport(selectedProject?.status === "completed");
-  }, [projects, selectedProjectKey]);
+
+    if (user?.role === "admin") {
+      setIsPMOrAdmin(true);
+    } else {
+      const isPM = selectedProject?.members?.some((m) => (m.userId?._id === user?._id || m.userId === user?._id) && m.role === "PROJECT_MANAGER");
+      setIsPMOrAdmin(!!isPM);
+    }
+  }, [projects, selectedProjectKey, user]);
 
   return (
     <aside
@@ -92,6 +100,25 @@ export const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
                 {selectedProjectKey && (
                   <>
+                    {isPMOrAdmin && (
+                      <NavLink to={getProjectPath("dashboard")} className={navItemClass}>
+                        <span className="material-symbols-outlined">insights</span>
+                        <span className="flex items-center gap-1">
+                          <span>Project Dashboard</span>
+                        </span>
+                      </NavLink>
+                    )}
+
+                    {isPMOrAdmin && (
+                      <NavLink to={getProjectPath("epics")} className={navItemClass}>
+                        <span className="material-symbols-outlined">account_tree</span>
+                        <span className="flex items-center gap-1">
+                          <span>Epics</span>
+                          <span className="text-xs text-neutral-400">({selectedProjectKey})</span>
+                        </span>
+                      </NavLink>
+                    )}
+
                     <NavLink to={getProjectPath("backlog")} className={navItemClass}>
                       <span className="material-symbols-outlined">checklist</span>
                       <span className="flex items-center gap-1">

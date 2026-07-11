@@ -5,12 +5,14 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import SprintList from "../../components/sprint/sprintList";
 import TaskList from "../../components/sprint/taskItem";
 import sprintService from "../../services/sprintService";
-import { updateTaskSprint } from "../../services/taskService";
+import { updateTaskSprint, searchTasks } from "../../services/taskService";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import SprintEditModal from "../../components/sprint/SprintEditModal";
 import CreateTaskModal from "../../components/task/CreateTaskModal";
+import TaskDetailPanel from "../../components/task/TaskDetailPanel";
 import { getProjectByKey } from "../../services/projectService";
+import workflowService from "../../services/workflowService";
 import PageHeader from "../../components/ui/PageHeader";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
@@ -54,11 +56,22 @@ const BacklogPage = () => {
   };
 
   const fetchSprintList = async () => {
-    const data = await sprintService.getSprints(selectedProjectKey);
-    setSprintList(data.sprint);
-    setTaskList(data.tasksWithoutSprint);
-    setLoading(false);
+    try {
+      const data = await sprintService.getSprints(selectedProjectKey);
+      setSprintList(data.sprint);
+      setTaskList(data.tasksWithoutSprint);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    if (selectedProjectKey) {
+      fetchProjectDetails().then(() => fetchSprintList());
+    }
+  }, [selectedProjectKey]);
 
   const [creatingSprint, setCreatingSprint] = useState(false);
 
@@ -155,8 +168,7 @@ const BacklogPage = () => {
 
   useEffect(() => {
     if (selectedProjectKey) {
-      fetchProjectDetails();
-      fetchSprintList();
+      fetchProjectDetails().then(() => fetchSprintList());
     }
   }, [selectedProjectKey]);
 

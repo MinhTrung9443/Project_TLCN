@@ -22,7 +22,15 @@ const getCreateTaskFormData = async (req, res) => {
     const findTaskTypes = TaskType.find({ projectId });
     const findPriorities = Priority.find({ projectId }).sort({ level: "asc" });
     const findPlatforms = Platform.find({ projectId });
-    const [taskTypes, priorities, platforms] = await Promise.all([findTaskTypes, findPriorities, findPlatforms]);
+    
+    // Fetch parent tasks (Tasks that are not subtasks themselves, or just all tasks)
+    const Task = require("../models/Task");
+    const findParentTasks = Task.find({ projectId })
+      .populate("taskTypeId", "name icon")
+      .select("_id key name taskTypeId parentTaskId")
+      .lean();
+
+    const [taskTypes, priorities, platforms, parentTasks] = await Promise.all([findTaskTypes, findPriorities, findPlatforms, findParentTasks]);
 
     // Determine user role in project
     const User = require("../models/User");
@@ -124,6 +132,7 @@ const getCreateTaskFormData = async (req, res) => {
       priorities,
       platforms,
       members: allMembers,
+      parentTasks,
     });
   } catch (error) {
     console.error("Error in getCreateTaskFormData:", error);

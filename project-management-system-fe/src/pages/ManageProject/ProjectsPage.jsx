@@ -188,11 +188,21 @@ const ProjectsPage = () => {
 
   const handleProjectSelect = (project) => {
     if (view === "active") {
-      // 1. Cập nhật Context ngay lập tức để Sidebar hiển thị menu con
       setProject(project);
 
-      // 2. Điều hướng thẳng đến trang Settings General của dự án đó
-      navigate(`/app/task-mgmt/projects/${project.key}/settings/general`);
+      let isPMOrAdmin = false;
+      if (user?.role === "admin") {
+        isPMOrAdmin = true;
+      } else {
+        const isPM = project?.members?.some((m) => (m.userId?._id === user?._id || m.userId === user?._id) && m.role === "PROJECT_MANAGER");
+        isPMOrAdmin = !!isPM;
+      }
+
+      if (isPMOrAdmin) {
+        navigate(`/app/task-mgmt/projects/${project.key}/dashboard`);
+      } else {
+        navigate(`/app/task-mgmt/projects/${project.key}/backlog`);
+      }
     }
   };
 

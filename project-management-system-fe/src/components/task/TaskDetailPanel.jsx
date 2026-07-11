@@ -21,6 +21,7 @@ import sprintService from "../../services/sprintService";
 import ActionsMenu from "../common/ActionsMenu";
 import CommentsTab from "./CommentsTab";
 import HistoryTab from "./HistoryTab";
+import ChildTasksTab from "./ChildTasksTab";
 import ConfirmationModal from "../common/ConfirmationModal";
 import { IconComponent } from "../common/IconPicker";
 import TaskDetailsTab from "./TaskDetailsTab";
@@ -639,6 +640,12 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
             >
               History
             </button>
+            <button
+              className={`px-4 py-3 font-medium border-b-2 transition-colors ${activeTab === "Child Tasks" ? "border-primary-600 text-primary-600" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}
+              onClick={() => setActiveTab("Child Tasks")}
+            >
+              Child Tasks
+            </button>
           </div>
         )}
 
@@ -675,6 +682,7 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
               )}
               {activeTab === "Comments" && <CommentsTab taskId={editableTask._id} />}
               {activeTab === "History" && <HistoryTab taskId={editableTask._id} />}
+              {activeTab === "Child Tasks" && <ChildTasksTab parentTask={editableTask} />}
             </>
           ) : (
             <div className="space-y-3 text-sm">

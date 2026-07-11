@@ -19,15 +19,16 @@ const INITIAL_FORM_STATE = {
   dueDate: "",
   platformId: "",
   sprintId: "",
+  parentTaskId: "",
 };
 
 // FIX 1: Đặt giá trị mặc định cho sprint là null để an toàn hơn
-const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaultProjectId = null }) => {
+const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaultProjectId = null, initialParentTaskId = null }) => {
   const { user } = useAuth();
 
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [projects, setProjects] = useState([]);
-  const [settings, setSettings] = useState({ taskTypes: [], priorities: [], members: [], platforms: [] });
+  const [settings, setSettings] = useState({ taskTypes: [], priorities: [], members: [], platforms: [], parentTasks: [] });
   const [showMore, setShowMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -62,16 +63,17 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
           if (defaultProjectId) {
             setFormData((prev) => ({
               ...prev,
-              projectId: defaultProjectId, // <-- TỰ ĐỘNG CHỌN PROJECT
+              projectId: defaultProjectId,
               reporterId: user.id,
-              sprintId: sprint ? sprint._id : "", // <-- TỰ ĐỘNG CHỌN SPRINT
+              sprintId: sprint ? sprint._id : "",
+              parentTaskId: initialParentTaskId || "",
             }));
           } else {
-            // Nếu không, chỉ set reporterId như cũ
             setFormData((prev) => ({
               ...prev,
               reporterId: user.id,
-              sprintId: sprint ? sprint._id : "", // <-- TỰ ĐỘNG CHỌN SPRINT
+              sprintId: sprint ? sprint._id : "",
+              parentTaskId: initialParentTaskId || "",
             }));
           }
         } catch (error) {
@@ -90,7 +92,7 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
   useEffect(() => {
     const fetchSettingsForProject = async () => {
       if (!formData.projectId) {
-        setSettings({ taskTypes: [], priorities: [], members: [], platforms: [] });
+        setSettings({ taskTypes: [], priorities: [], members: [], platforms: [], parentTasks: [] });
         return;
       }
 
@@ -415,6 +417,26 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
 
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <label htmlFor="parentTaskId" className="block text-sm font-semibold text-neutral-900 mb-2">
+                  Parent Task (Epic)
+                </label>
+                <select
+                  id="parentTaskId"
+                  name="parentTaskId"
+                  value={formData.parentTaskId}
+                  onChange={handleInputChange}
+                  disabled={!formData.projectId}
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">None (Top-level task)</option>
+                  {settings.parentTasks && settings.parentTasks.map((t) => (
+                    <option key={t._id} value={t._id}>
+                      {t.key} - {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label htmlFor="priorityId" className="block text-sm font-semibold text-neutral-900 mb-2">
                   Priority <span className="text-red-600">*</span>
                 </label>
@@ -435,6 +457,9 @@ const CreateTaskModal = ({ sprint = null, isOpen, onClose, onTaskCreated, defaul
                 </select>
                 {errors.priorityId && <p className="text-sm text-red-600 mt-1">{errors.priorityId}</p>}
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="dueDate" className="block text-sm font-semibold text-neutral-900 mb-2">
                   Due Date

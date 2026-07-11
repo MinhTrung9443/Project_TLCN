@@ -35,9 +35,59 @@ const getTasksByProjectKey = async (projectKey) => {
     .populate("reporterId", "fullname avatar")
     .populate("statusId", "name color")
     .populate("platformId", "name icon")
+    .populate({
+      path: "parentTaskId",
+      select: "key name taskTypeId",
+    })
     .sort({ createdAt: -1 }); // Sắp xếp theo task mới nhất
 
   return tasks;
+};
+
+// Helper function to update parent task (Epic) progress
+const updateParentTaskProgress = async (parentTaskId) => {
+  if (!parentTaskId) return;
+
+  const parentTask = await Task.findById(parentTaskId);
+  if (!parentTask) return;
+
+  const childTasks = await Task.find({ parentTaskId });
+  if (childTasks.length === 0) {
+    if (parentTask.progress !== 0) {
+      parentTask.progress = 0;
+      await parentTask.save();
+    }
+    return;
+  }
+
+  const workflow = await Workflow.findOne({ projectId: parentTask.projectId });
+  let doneStatuses = [];
+  if (workflow && workflow.statuses) {
+    doneStatuses = workflow.statuses.filter(s => s.category === "Done").map(s => s._id.toString());
+  }
+
+  let totalProgress = 0;
+  childTasks.forEach(child => {
+    const isDone = child.statusId && doneStatuses.includes(child.statusId.toString());
+    if (isDone) {
+      totalProgress += 100;
+    } else {
+      totalProgress += (child.progress || 0);
+    }
+  });
+
+  const averageProgress = Math.round(totalProgress / childTasks.length);
+
+  if (parentTask.progress !== averageProgress) {
+    parentTask.progress = averageProgress;
+    await parentTask.save();
+    
+    try {
+      await logHistory(parentTaskId, parentTask.createdById, "Task", "progress", "progress updated automatically from sub-tasks", "UPDATE");
+    } catch (e) {
+      console.error("Failed to log auto progress update", e);
+    }
+  }
 };
 
 // Hàm tạo một task mới
@@ -130,6 +180,11 @@ const createTask = async (taskData, userId) => {
     console.error("Failed to send task created notification:", notificationError);
   }
 
+  // Update parent task progress if this is a sub-task
+  if (savedTask.parentTaskId) {
+    await updateParentTaskProgress(savedTask.parentTaskId);
+  }
+
   return populatedTask;
 };
 const searchTasks = async (queryParams, user) => {
@@ -188,6 +243,10 @@ const searchTasks = async (queryParams, user) => {
     const allowedProjectIds = accessContext.allowedProjectIds;
     const managedProjectIds = accessContext.managedProjectIds;
 
+    // Get TaskType IDs for Epics and Stories so everyone can see them
+    const epicStoryTypes = await TaskType.find({ name: { $in: [/^Epic$/i, /^Story$/i] } }).select('_id');
+    const epicStoryTypeIds = epicStoryTypes.map(t => t._id);
+
     let targetProjectIds = allowedProjectIds;
     if (isManagedOnly) {
       targetProjectIds = managedProjectIds;
@@ -207,7 +266,8 @@ const searchTasks = async (queryParams, user) => {
         const leaderCond = [
           { assigneeId: userId },
           { reporterId: userId },
-          { createdById: userId }
+          { createdById: userId },
+          { taskTypeId: { $in: epicStoryTypeIds } }
         ];
         if (accessContext.managedMemberIds && accessContext.managedMemberIds.length > 0) {
           leaderCond.push({ assigneeId: { $in: accessContext.managedMemberIds } });
@@ -215,7 +275,12 @@ const searchTasks = async (queryParams, user) => {
         andConditions.push({ $or: leaderCond });
       } else {
         andConditions.push({
-          $or: [{ assigneeId: userId }, { reporterId: userId }, { createdById: userId }]
+          $or: [
+            { assigneeId: userId }, 
+            { reporterId: userId }, 
+            { createdById: userId },
+            { taskTypeId: { $in: epicStoryTypeIds } }
+          ]
         });
       }
     } else {
@@ -245,7 +310,8 @@ const searchTasks = async (queryParams, user) => {
         const leaderCond = [
           { assigneeId: userId },
           { reporterId: userId },
-          { createdById: userId }
+          { createdById: userId },
+          { taskTypeId: { $in: epicStoryTypeIds } }
         ];
         if (accessContext.managedMemberIds && accessContext.managedMemberIds.length > 0) {
           leaderCond.push({ assigneeId: { $in: accessContext.managedMemberIds } });
@@ -259,7 +325,12 @@ const searchTasks = async (queryParams, user) => {
       if (memberProjectIds.length > 0) {
         roleConditions.push({
           projectId: { $in: memberProjectIds },
-          $or: [{ assigneeId: userId }, { reporterId: userId }, { createdById: userId }]
+          $or: [
+            { assigneeId: userId }, 
+            { reporterId: userId }, 
+            { createdById: userId },
+            { taskTypeId: { $in: epicStoryTypeIds } }
+          ]
         });
       }
 
@@ -294,6 +365,10 @@ const searchTasks = async (queryParams, user) => {
       path: "linkedTasks.taskId",
       select: "key name taskTypeId",
       populate: { path: "taskTypeId", select: "name icon" },
+    })
+    .populate({
+      path: "parentTaskId",
+      select: "key name taskTypeId",
     })
     .sort({ createdAt: -1 })
     .lean(); // Chuyển sang object thường, không phải Mongoose document
@@ -648,6 +723,22 @@ const updateTask = async (taskId, updateData, userId) => {
       }
     }
   }
+
+  // Update parent progress if status, progress, or parentTaskId changed
+  const progressChanged = originalTask.progress !== updatedTask.progress;
+  const statusChanged = originalTask.statusId?.toString() !== updatedTask.statusId?._id?.toString();
+  const parentChanged = originalTask.parentTaskId?.toString() !== updatedTask.parentTaskId?.toString();
+  
+  if (progressChanged || statusChanged || parentChanged) {
+    if (updatedTask.parentTaskId) {
+      await updateParentTaskProgress(updatedTask.parentTaskId);
+    }
+    // If parent changed, also update old parent
+    if (parentChanged && originalTask.parentTaskId) {
+      await updateParentTaskProgress(originalTask.parentTaskId);
+    }
+  }
+
   return populatedTask;
 };
 
@@ -843,6 +934,11 @@ const deleteTask = async (taskId, userId) => {
     recordId: deletedTask._id,
     oldData: deletedTask,
   });
+
+  // Update parent task progress if this was a sub-task
+  if (deletedTask.parentTaskId) {
+    await updateParentTaskProgress(deletedTask.parentTaskId);
+  }
 
   // Gửi thông báo cho assignee nếu có và khác người xóa
   try {

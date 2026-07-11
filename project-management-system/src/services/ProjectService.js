@@ -973,6 +973,8 @@ const getProjectDetails = async (projectKey) => {
   const tasks = await Task.find({ projectId: project._id })
     .populate("assigneeId", "_id fullname username email avatar")
     .populate("reporterId", "_id fullname username email avatar")
+    .populate("priorityId", "name icon level")
+    .populate("taskTypeId", "name icon")
     .lean();
 
   const projectManager = project.members.find((m) => m.role === "PROJECT_MANAGER");

@@ -294,15 +294,66 @@ const TaskFinderPage = () => {
     setActiveFilters({});
   };
 
+  const displayedTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      const typeName = task.taskTypeId?.name?.toLowerCase() || "";
+      const isEpicOrStory = typeName.includes("epic") || typeName.includes("story");
+
+      if (user?.role === "admin") {
+        return isEpicOrStory;
+      }
+
+      const projectIdStr = task.projectId?._id?.toString() || task.projectId?.toString();
+      const project = filterData.projects.find((p) => p._id.toString() === projectIdStr);
+
+      if (!project) return true; // Fallback
+
+      const isPM = project.members?.some(
+        (m) => (m.userId?._id?.toString() === user?._id || m.userId?.toString() === user?._id) && m.role === "PROJECT_MANAGER"
+      );
+
+      const teamOfLeader = project.teams?.find(
+        (t) => t.leaderId?._id?.toString() === user?._id || t.leaderId?.toString() === user?._id
+      );
+      const isLeader = !!teamOfLeader;
+
+      // Normal Member
+      if (!isPM && !isLeader) {
+        return true;
+      }
+
+      // PM only (not leader)
+      if (isPM && !isLeader) {
+        return isEpicOrStory;
+      }
+
+      // Leader
+      if (isLeader) {
+        if (isEpicOrStory) return true;
+
+        const isAssignedToMe = task.assigneeId?._id?.toString() === user?._id || task.assigneeId?.toString() === user?._id;
+        const isAssignedToTeamMember = teamOfLeader.members?.some(
+          (mId) => mId.toString() === task.assigneeId?._id?.toString() || mId.toString() === task.assigneeId?.toString()
+        );
+
+        if (isAssignedToMe || isAssignedToTeamMember) {
+          return true;
+        }
+
+        return false;
+      }
+
+      return true;
+    });
+  }, [tasks, user, filterData.projects]);
+
   const getPaginatedTasks = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return tasks.slice(startIndex, endIndex);
+    return displayedTasks.slice(startIndex, endIndex);
   };
 
-  const getTotalPages = () => {
-    return Math.ceil(tasks.length / itemsPerPage);
-  };
+  const getTotalPages = () => Math.ceil(displayedTasks.length / itemsPerPage);
 
   return (
     <div className="flex h-screen gap-3 bg-neutral-50 px-6 py-6 overflow-hidden">
@@ -459,7 +510,7 @@ const TaskFinderPage = () => {
               <div className="flex items-center justify-center w-full h-full">
                 <LoadingSpinner size="lg" text="Loading tasks..." />
               </div>
-            ) : tasks.length === 0 ? (
+            ) : displayedTasks.length === 0 ? (
               <EmptyState icon="inbox" title="No tasks found" description="Try adjusting your filters or search criteria" />
             ) : (
               <div className="flex-1 overflow-y-auto">
