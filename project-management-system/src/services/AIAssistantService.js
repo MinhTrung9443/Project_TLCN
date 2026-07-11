@@ -7,7 +7,8 @@ const openai = new OpenAI({
 
 class AIAssistantService {
   constructor() {
-    this.model = "gemini-2.5-flash"; // Switch model to Gemini 2.5 Flash
+    // this.model = "gemini-2.5-flash"; // Switch model to Gemini 2.5 Flash
+    this.model = "gemini-3.1-flash-lite"; 
   }
 
   async parseAssistantIntent(naturalLanguageCommand, history = []) {
