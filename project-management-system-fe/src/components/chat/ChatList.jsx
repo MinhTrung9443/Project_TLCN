@@ -92,7 +92,8 @@ const ChatList = () => {
                 {/* Avatar */}
                 <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 overflow-hidden shrink-0">
                     {avatarUrl ? (
-                        <img src={avatarUrl} alt="avt" className="w-full h-full object-cover" />
+                        <img src={avatarUrl} alt="avt" className="w-full h-full object-cover" 
+                             onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=random`; }} />
                     ) : (
                         item.type === "PROJECT" ? <FaHashtag /> : (item.type === "TEAM" ? <FaUsers /> : <FaUsers />)
                     )}
@@ -175,7 +176,9 @@ const ChatList = () => {
                                 className="p-3 flex items-center justify-between cursor-pointer hover:bg-blue-50 rounded-lg group"
                             >
                                 <div className="flex items-center gap-3">
-                                    <img src={user.avatar || "https://via.placeholder.com/40"} alt="avt" className="w-10 h-10 rounded-full object-cover"/>
+                                    <img src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullname || user.username || 'User')}&background=random`} 
+                                         onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullname || user.username || 'User')}&background=random`; }}
+                                         alt="avt" className="w-10 h-10 rounded-full object-cover"/>
                                     <div>
                                         <h4 className="text-sm font-semibold text-gray-800">{user.fullname}</h4>
                                         <p className="text-xs text-gray-500">{user.email}</p>

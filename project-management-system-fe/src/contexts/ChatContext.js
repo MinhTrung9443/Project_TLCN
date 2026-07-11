@@ -224,7 +224,7 @@ export const ChatProvider = ({ children }) => {
                if (!selectedConversation || selectedConversation._id !== incomingChatId) {
                    const senderName = newMessageReceived.sender.username || "Someone";
                    const shortMsg = newMessageReceived.content || "Sent an attachment";
-                   const avatar = newMessageReceived.sender.avatar || "https://via.placeholder.com/40";
+                   const avatar = newMessageReceived.sender.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`;
                    
                    toast(
                        <div 
@@ -240,7 +240,8 @@ export const ChatProvider = ({ children }) => {
                                  setSelectedConversation({ _id: incomingChatId });
                            }}
                        >
-                           <img src={avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm shrink-0" />
+                           <img src={avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm shrink-0" 
+                                onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`; }} />
                            <div className="flex flex-col flex-1 overflow-hidden">
                                <span className="font-bold text-sm text-gray-800 truncate">{senderName}</span>
                                <span className="text-xs text-gray-500 truncate w-full">{shortMsg}</span>

@@ -7,7 +7,7 @@ const openai = new OpenAI({
 
 class AIAssistantService {
   constructor() {
-    this.model = "gemini-2.5-flash"; // Switch model to Gemini 2.5 Flash
+    this.model = "gemini-3.1-flash-lite"; // Switch model to Gemini 2.5 Flash
   }
 
   async parseAssistantIntent(naturalLanguageCommand, history = []) {
@@ -39,6 +39,8 @@ class AIAssistantService {
               taskKey: { type: ["string", "null"], description: "Mã task nếu người dùng hỏi chi tiết một task cụ thể." },
               question: { type: ["string", "null"], description: "Câu hỏi phân tích dự án tổng quát nếu intent là analyze_project." },
               createTaskIntent: { type: "boolean", description: "Chỉ true khi người dùng nói rõ ý định tạo task và có mô tả đủ cụ thể." },
+              sprintName: { type: ["string", "null"], description: "Tên Sprint nếu người dùng nhắc đến, ví dụ 'Sprint 1', 'Sprint 2'." },
+              targetUser: { type: ["string", "null"], description: "Tên của nhân viên/member khác nếu người dùng muốn báo cáo hiệu suất hoặc hỏi về task của người đó." },
             },
             required: ["intent", "createTaskIntent"],
           },
@@ -58,6 +60,7 @@ LUẬT BẮT BUỘC:
 - Nếu người dùng hỏi task của tôi / giao cho tôi -> scope = "assigned".
 - Nếu người dùng hỏi task tôi quản lý / tôi phụ trách / tôi là leader / PM -> scope = "managed".
 - Nếu người dùng hỏi chi tiết một task cụ thể -> scope = "detail" và điền taskKey.
+- Nếu người dùng hỏi về task của người khác (VD: task của An Nguyen) -> điền targetUser.
 - Nếu không rõ, chọn intent = "unknown".`;
 
     const messages = [{ role: "system", content: systemContent }];
@@ -116,17 +119,18 @@ Nhiệm vụ của bạn:
 - Sau khi được danh sách đó, hãy TỰ ĐẾM bằng tay ra con số chiều dài để trả lời.
 - CẤM TIỆT việc lấy chiều dài tổng gốc (hay trường total) để gán cho 1 dự án riêng lẻ! Nhớ kĩ!
 
-4. TRẢ LỜI ĐA DẠNG CÁC CÂU HỎI VỀ THUỘC TÍNH TASK / PROJECT:
+4. NẾU USER HỎI VỀ SPRINT HOẶC TASK REVIEWER:
+- Dữ liệu cung cấp có chứa "sprintName". Hãy sử dụng nó nếu User hỏi về tiến độ Sprint.
+- Nếu User hỏi ai review task (Ví dụ: "Task VIC-4 do ai review?"), hãy dựa vào thông tin "teamLeader" trong task (nếu có) để trả lời, vì Leader là người sẽ review code của Member.
+
+5. TRẢ LỜI ĐA DẠNG CÁC CÂU HỎI VỀ THUỘC TÍNH TASK / PROJECT:
 - Dùng tư duy logic để lọc (mức độ ưu tiên priority, trạng thái TO DO/IN Progress/DONE, Loại Bug/Feat...).
+- Nếu người dùng hỏi "Hôm nay tôi có task nào?", hãy kiểm tra xem "dueDate" có phải là ngày hôm nay hoặc nằm trong giai đoạn hạn chót hôm nay không, hay đang Overdue. Hoặc liệt kê các task "In Progress" của họ.
 - LƯU Ý VỀ MỨC ĐỘ ƯU TIÊN (Priority): Priority được đánh số, số 1 là ƯU TIÊN CAO NHẤT (Urgent/Highest), số càng lớn (2, 3, 4...) thì mức độ ưu tiên càng thấp. Hãy ưu tiên sắp xếp task có priority = 1 lên đầu.
 - GẮN LINK TASK: Trong dữ liệu có trường "taskLink", khi nhắc đến bất kỳ task nào, bạn BẮT BUỘC phải gắn link vào tên task theo định dạng Markdown: \`[Tên Task](taskLink)\` để người dùng có thể click vào xem chi tiết.
 - NẾU DANH SÁCH QUÁ DÀI (HƠN 9 TASK): Tuyệt đối không liệt kê toàn bộ. Bạn chỉ nên chọn ra 10-15 task quan trọng nhất (quá hạn, ưu tiên cao nhất, hoặc sắp đến hạn) để hiển thị chi tiết, phần còn lại chỉ tóm tắt số lượng để câu trả lời không bị cắt ngang.
-- Nếu người dùng yêu cầu sắp xếp/ưu tiên/lập lịch task, hãy:
-  + lọc task theo quyền truy cập và điều kiện người dùng yêu cầu,
-  + sắp xếp theo priority, dueDate, status, và task nào nên làm trước/sau,
-  + trả về thứ tự thực hiện rõ ràng hoặc lịch đề xuất.
 - NẾU TÌM ĐƯỢC: Trình bày rõ ràng.
-- NẾU KHÔNG TÌM ĐƯỢC: Phải trả lời thành thật là "Hiện tại không có task nào thỏa mãn điều kiện" hoặc "Bạn không có quyền truy cập". Không bịa đặt dữ liệu (ảo giác).
+- NẾU KHÔNG TÌM ĐƯỢC HOẶC KHÔNG BIẾT DỮ LIỆU CHÍNH XÁC: Phải trả lời thành thật là "Hiện tại không có dữ liệu" hoặc "Bạn không có quyền truy cập". Không bịa đặt dữ liệu (TUYỆT ĐỐI KHÔNG ẢO GIÁC HALLUCINATION).
 
 LUÔN LUÔN: Xưng "Tôi" và gọi người dùng bằng tên. Dựa vào ĐÚNG DỮ LIỆU ĐƯỢC CUNG CẤP ở dưới.`;
 

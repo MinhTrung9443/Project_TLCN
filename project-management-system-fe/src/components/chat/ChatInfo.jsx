@@ -87,7 +87,9 @@ const ChatInfo = ({ conversation, onClose, onJumpToMessage, onChatWithUser }) =>
                         className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
                         onClick={() => setSelectedMember(m)}
                     >
-                        <img src={m.avatar || "https://via.placeholder.com/32"} className="w-8 h-8 rounded-full" alt="avt"/>
+                        <img src={m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.fullname || m.username || 'User')}&background=random`} 
+                             onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.fullname || m.username || 'User')}&background=random`; }}
+                             className="w-8 h-8 rounded-full" alt="avt"/>
                         <div className="overflow-hidden">
                             <p className="text-sm font-medium truncate">{m.fullname || m.username}</p>
                             <p className="text-xs text-gray-500 truncate">{m.email}</p>
@@ -135,7 +137,9 @@ const ChatInfo = ({ conversation, onClose, onJumpToMessage, onChatWithUser }) =>
                     </button>
                     <div className="flex flex-col items-center">
                         <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-2 border-blue-500">
-                            <img src={selectedMember.avatar || "https://via.placeholder.com/80"} className="w-full h-full object-cover" alt="avt"/> 
+                            <img src={selectedMember.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedMember.fullname || selectedMember.username || 'User')}&background=random`} 
+                                 onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedMember.fullname || selectedMember.username || 'User')}&background=random`; }}
+                                 className="w-full h-full object-cover" alt="avt"/> 
                         </div>
                         <h3 className="text-xl font-bold">{selectedMember.fullname || selectedMember.username}</h3>
                         <p className="text-gray-500 text-sm">@{selectedMember.username}</p>
@@ -207,7 +211,8 @@ const ChatInfo = ({ conversation, onClose, onJumpToMessage, onChatWithUser }) =>
                  <div className="flex flex-col items-center mb-6">
                     {displayInfo.avatar ? (
                         <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-500 mb-2 overflow-hidden border">
-                             <img src={displayInfo.avatar} alt="avt" className="w-full h-full object-cover" />
+                             <img src={displayInfo.avatar} alt="avt" className="w-full h-full object-cover" 
+                                  onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayInfo.name || 'User')}&background=random`; }} />
                         </div>
                     ) : (
                         <div className="w-16 h-16 rounded-lg bg-blue-100 flex items-center justify-center text-2xl text-blue-500 mb-2">

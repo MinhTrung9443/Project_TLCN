@@ -6,6 +6,7 @@ const Platform = require("../models/Platform");
 const Priority = require("../models/Priority");
 const TaskType = require("../models/TaskType");
 const Workflow = require("../models/Workflow");
+const Task = require("../models/Task"); // Đã thêm
 const taskService = require("../services/TaskService");
 const aiTaskBatchService = require("../services/AITaskBatchService");
 const AIChatSession = require("../models/AIChatSession");
@@ -162,11 +163,11 @@ const deleteSession = async (req, res) => {
 };
 
 const handleAnalyzeRisk = async (req, res) => {
+  let session; // FIX SCOPE ERROR
   try {
     const { targetProjectName, question, history, sessionId } = req.body;
     const userId = req.user.id;
 
-    let session;
     // Nếu có sessionId, ta phải tìm và dùng nó
     if (sessionId) {
       session = await AIChatSession.findOne({ _id: sessionId, user: userId });
@@ -194,83 +195,7 @@ const handleAnalyzeRisk = async (req, res) => {
       return handleChatCommand(req, res);
     }
 
-    if (intent === "query_tasks") {
-      const user = await User.findById(userId);
-      const isSystemAdmin = user?.role === "admin";
-      const scope = intentParams.scope || "assigned";
-      const requestedProjectStatus = normalizeProjectStatus(intentParams.projectStatus || "active");
-      const requestedProjectName = intentParams.projectName?.trim();
-      const requestedTaskKey = intentParams.taskKey?.trim();
-
-      if (requestedTaskKey) {
-        let task;
-        try {
-          task = await taskService.getTaskByKey(requestedTaskKey, req.user);
-        } catch (taskError) {
-          const response =
-            taskError.statusCode === 403
-              ? "Bạn không có quyền xem task này."
-              : taskError.statusCode === 410
-                ? `Task **${requestedTaskKey}** đã bị xóa hoặc project không còn khả dụng.`
-                : `Không tìm thấy task **${requestedTaskKey}**.`;
-          await AIChatMessage.create({ session: session._id, role: "user", content: question });
-          await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
-          session.updatedAt = new Date();
-          await session.save();
-          return res.status(taskError.statusCode || 404).json({ recommendation: response, sessionId: session._id });
-        }
-
-        const response = formatTaskDetailMarkdown(task);
-        await AIChatMessage.create({ session: session._id, role: "user", content: question });
-        await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
-        session.updatedAt = new Date();
-        await session.save();
-        return res.status(200).json({ recommendation: response, sessionId: session._id });
-      }
-
-      const searchParams = {
-        projectStatus: requestedProjectStatus,
-        managedOnly: scope === "managed",
-      };
-
-      if (requestedProjectName) {
-        const project = await Project.findOne({ isDeleted: false, name: new RegExp(requestedProjectName, "i") });
-        if (!project) {
-          const response = `Không tìm thấy dự án **${requestedProjectName}**.`;
-          await AIChatMessage.create({ session: session._id, role: "user", content: question });
-          await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
-          session.updatedAt = new Date();
-          await session.save();
-          return res.status(200).json({ recommendation: response, sessionId: session._id });
-        }
-
-        if (!isSystemAdmin && requestedProjectStatus !== "any" && project.status !== requestedProjectStatus) {
-          const response = `Dự án **${project.name}** không ở trạng thái **${requestedProjectStatus}** nên không được lấy theo mặc định.`;
-          await AIChatMessage.create({ session: session._id, role: "user", content: question });
-          await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
-          session.updatedAt = new Date();
-          await session.save();
-          return res.status(200).json({ recommendation: response, sessionId: session._id });
-        }
-
-        searchParams.projectId = project._id.toString();
-        searchParams.projectName = project.name;
-      }
-
-      const tasks = await taskService.searchTasks(searchParams, req.user);
-      const response = formatTaskListMarkdown(tasks, {
-        title: scope === "managed" ? "Các task bạn đang quản lý" : "Các task được giao cho bạn",
-        projectName: searchParams.projectName,
-        projectStatus: searchParams.projectStatus,
-      });
-
-      await AIChatMessage.create({ session: session._id, role: "user", content: question });
-      await AIChatMessage.create({ session: session._id, role: "assistant", content: response });
-      session.updatedAt = new Date();
-      await session.save();
-
-      return res.status(200).json({ recommendation: response, sessionId: session._id });
-    }
+    // Đã chuyển intent query_tasks vào chung với logic analyze_project bên dưới để AI tự trả lời tự nhiên thay vì trả về text cứng.
 
     if (intent === "query_projects") {
       const user = await User.findById(userId);
@@ -319,17 +244,34 @@ const handleAnalyzeRisk = async (req, res) => {
       return res.status(200).json({ recommendation: response, sessionId: session._id });
     }
 
-    if (intent === "analyze_project" || intent === "unknown" || intent === "chat") {
+    if (intent === "analyze_project" || intent === "query_tasks" || intent === "unknown" || intent === "chat") {
       // 1. Kiểm tra Quyền truy cập (RBAC) của User
       const user = await User.findById(userId);
       const isSystemAdmin = user?.role === "admin";
 
-      // Lấy danh sách dự án user đang tham gia và gán vai trò (chỉ lấy dự án active nếu user không nói rõ completed)
-      const userProjects = await Project.find({
-        isDeleted: false,
-        status: "active",
-        $or: [{ "members.userId": userId }, { "teams.leaderId": userId }, { "teams.members": userId }],
-      }).lean();
+      const requestedProjectStatus = intentParams.projectStatus ? normalizeProjectStatus(intentParams.projectStatus) : "active";
+      const projectQuery = { isDeleted: false };
+      
+      if (!isSystemAdmin) {
+        projectQuery.$or = [{ "members.userId": userId }, { "teams.leaderId": userId }, { "teams.members": userId }];
+      }
+      if (requestedProjectStatus !== "any") {
+        projectQuery.status = requestedProjectStatus;
+      }
+      if (intentParams.projectName) {
+        projectQuery.name = new RegExp(intentParams.projectName, "i");
+      }
+
+      // Lấy danh sách dự án user đang tham gia và populate teams.leaderId để biết ai là reviewer
+      const userProjects = await Project.find(projectQuery).populate("teams.leaderId", "fullname email").lean();
+
+      if (userProjects.length === 0) {
+          const msg = intentParams.projectName ? `Không tìm thấy dự án ${intentParams.projectName} hoặc bạn không có quyền truy cập.` : "Hiện tại bạn chưa được phân công vào dự án nào hoặc dự án đã đóng.";
+          await persistAssistantTurn(session._id, question, msg);
+          session.updatedAt = new Date();
+          await session.save();
+          return res.status(200).json({ recommendation: msg, sessionId: session._id });
+      }
 
       const allowedProjectIds = userProjects.map((p) => p._id);
       const userRolesInProjects = userProjects.map((p) => {
@@ -338,56 +280,74 @@ const handleAnalyzeRisk = async (req, res) => {
         if (memberObj) {
           role = memberObj.role;
         } else {
-          const isTeamLeader = p.teams?.some((t) => t.leaderId?.toString() === userId.toString());
+          const isTeamLeader = p.teams?.some((t) => t.leaderId?._id?.toString() === userId.toString() || t.leaderId?.toString() === userId.toString());
           if (isTeamLeader) role = "LEADER";
         }
-        return { projectName: p.name, role: role };
+        return { projectId: p._id, projectName: p.name, role: role };
       });
+
+      // Resolve targetUser (VD PM muốn xem task của An Nguyen)
+      let targetUserId = null;
+      if (intentParams.targetUser) {
+        const targetUserObj = await User.findOne({ 
+          $or: [{ fullname: new RegExp(intentParams.targetUser, "i") }, { email: new RegExp(intentParams.targetUser, "i") }]
+        });
+        if (targetUserObj) targetUserId = targetUserObj._id.toString();
+      }
 
       // 2. Trích xuất thông tin User để AI nắm ngữ cảnh quyền hạn
       const userInfo = {
         fullName: req.user.fullName || req.user.username || user?.fullname,
         email: req.user.email || user?.email,
         isSystemAdmin: isSystemAdmin,
-        projectRoles: userRolesInProjects,
+        projectRoles: userRolesInProjects.map(r => ({ projectName: r.projectName, role: r.role })),
       };
 
       // 3. Build Query lấy Task
-      let query = {};
-      if (intentParams.projectName) {
-        const project = await Project.findOne({ isDeleted: false, name: new RegExp(intentParams.projectName, "i") });
-        if (!project) {
-          return res.status(404).json({ message: "Không tìm thấy dự án này trong Database." });
-        }
+      let query = { projectId: { $in: allowedProjectIds } };
 
-        // Nếu không phải admin thì phải được cấp quyền trong dự án (nằm trong allowedProjectIds)
-        if (!isSystemAdmin) {
-          const hasAccess = allowedProjectIds.some((id) => id.toString() === project._id.toString());
-          if (!hasAccess) {
-            return res.status(403).json({ message: "Bạn không có quyền truy cập thông tin dự án này." });
-          }
-        }
-        query.projectId = project._id;
-      } else {
-        // Lấy tất cả dự án -> Nhưng bị giới hạn bởi quyền (nếu không phải admin)
-        if (!isSystemAdmin) {
-          if (allowedProjectIds.length === 0) {
-            return res.status(200).json({ recommendation: "Hiện tại bạn chưa được phân công vào dự án active nào nên không có task." });
-          }
-          query.projectId = { $in: allowedProjectIds };
-        }
+      if (intentParams.taskKey) {
+        query.key = new RegExp(`^${intentParams.taskKey}$`, "i");
       }
 
-      // 4. Lấy toàn bộ Task từ DB liên quan tới những dự án User CÓ QUYỀN
+      // RBAC STRICT FILTERING for non-admins
+      if (!isSystemAdmin) {
+        const allowedOrClauses = [];
+        
+        userRolesInProjects.forEach(rp => {
+           if (rp.role === "LEADER" || rp.role === "PROJECT_MANAGER") {
+             // PM/Leader có quyền xem tất cả task trong dự án này
+             allowedOrClauses.push({ projectId: rp.projectId });
+           } else {
+             // Member chỉ xem task do mình được assign hoặc tự tạo/reporter
+             allowedOrClauses.push({ 
+               projectId: rp.projectId, 
+               $or: [{ assigneeId: userId }, { reporterId: userId }]
+             });
+           }
+        });
+        
+        query = { $and: [query, { $or: allowedOrClauses }] };
+      }
+
+      // Nếu có query_tasks yêu cầu xem task của người khác hoặc specific user
+      if (targetUserId) {
+         query.assigneeId = targetUserId;
+      } else if (intent === "query_tasks" && intentParams.scope === "assigned") {
+         query.assigneeId = userId; // explicit request to see "my" tasks
+      }
+
+      // 4. Lấy Task từ DB (Thêm sprintId)
       const maxTasksForAI = Number(process.env.AI_ANALYSIS_TASK_LIMIT || 300);
-      const dbTasks = await require("../models/Task")
+      const dbTasks = await Task // Đã sửa
         .find(query)
-        .select("key name assigneeId projectId statusId priorityId taskTypeId platformId dueDate progress")
+        .select("key name assigneeId projectId statusId priorityId taskTypeId platformId dueDate progress sprintId")
         .populate("assigneeId", "fullname email")
-        .populate("projectId", "name status")
+        .populate("projectId", "name status teams")
         .populate("priorityId", "name level")
         .populate("taskTypeId", "name")
         .populate("platformId", "name")
+        .populate("sprintId", "name") // POPULATE SPRINT
         .sort({ updatedAt: -1 })
         .limit(Number.isFinite(maxTasksForAI) && maxTasksForAI > 0 ? maxTasksForAI : 300)
         .lean();
@@ -409,42 +369,56 @@ const handleAnalyzeRisk = async (req, res) => {
         return task;
       });
 
-      // Debug log: Đếm số lượng task thực tế trả về từ DB
-      console.log("[AI DEBUG] Tổng số task lấy được từ DB:", dbTasks.length);
-      if (query.projectId) {
-        console.log("[AI DEBUG] Đang filter theo projectId:", query.projectId);
-        if (Array.isArray(dbTasks)) {
-          const projectNames = dbTasks.map((t) => t.projectId && t.projectId.name).filter(Boolean);
-          console.log("[AI DEBUG] Danh sách projectName thực tế:", projectNames);
+      console.log("[AI DEBUG] Tổng số task lấy được từ DB (SAU KHI LỌC RBAC):", dbTasks.length);
+
+      // Xây dựng map teamLeader:
+      const projectTeamLeaderMap = {}; 
+      userProjects.forEach(p => {
+         projectTeamLeaderMap[p._id.toString()] = p.teams || [];
+      });
+
+      // 5. Format lại Data cho ngắn gọn trước khi gửi cho AI
+      const formattedData = tasksWithResolvedStatus.map((task) => {
+        let teamLeaderName = "N/A";
+        
+        // Tìm kiếm Leader của assignee trong các team của dự án
+        if (task.assigneeId && task.projectId && projectTeamLeaderMap[task.projectId._id.toString()]) {
+             const assigneeIdStr = task.assigneeId._id.toString();
+             const teams = projectTeamLeaderMap[task.projectId._id.toString()];
+             for (const team of teams) {
+                 if (team.members && team.members.some(m => m.toString() === assigneeIdStr)) {
+                     if (team.leaderId) {
+                         teamLeaderName = team.leaderId.fullname || team.leaderId.email || "N/A";
+                     }
+                 }
+             }
         }
-      }
 
-      // Xóa đoạn return sớm nếu không có task, để AI có cơ hội trả lời câu hỏi thông thường
-      const taskListToMap = tasksWithResolvedStatus || [];
+        return {
+          taskName: task.name,
+          projectName: task.projectId?.name || "N/A",
+          sprintName: task.sprintId?.name || "N/A", // Pass Sprint Name to AI
+          teamLeader: teamLeaderName, // Pass Reviewer to AI
+          assignee: task.assigneeId?.fullname || task.assigneeId?.email || "Chưa giao cho ai",
+          priority: task.priorityId?.level + "-" + task.priorityId?.name || "N/A",
+          taskType: task.taskTypeId?.name || "N/A",
+          platform: task.platformId?.name || "N/A",
+          status: task.statusId?.name || task.statusId?.category || "N/A",
+          dueDate: task.dueDate ? formatDateVN(task.dueDate) : null,
+          isOverdue: task.dueDate && new Date(task.dueDate) < new Date(),
+          progress: task.progress || 0,
+          taskKey: task.key,
+          taskLink: task.key ? `/app/task/${task.key}` : null, // FIX KÝ TỰ TEMPLATE STRING
+        }
+      });
 
-      // 5. Format lại Data cho ngắn gọn trước khi gửi cho AI (Tránh tốn token)
-      const formattedData = taskListToMap.map((task) => ({
-        taskName: task.name,
-        projectName: task.projectId?.name || "N/A",
-        projectStatus: task.projectId?.status || "active",
-        assignee: task.assigneeId?.fullname || task.assigneeId?.email || "Chưa giao cho ai",
-        priority: task.priorityId?.level + "-" + task.priorityId?.name || "N/A",
-        taskType: task.taskTypeId?.name || "N/A",
-        platform: task.platformId?.name || "N/A",
-        status: task.statusId?.name || task.statusId?.category || "N/A",
-        dueDate: task.dueDate ? formatDateVN(task.dueDate) : null,
-        isOverdue: task.dueDate && new Date(task.dueDate) < new Date(),
-        progress: task.progress || 0,
-        taskKey: task.key,
-        taskLink: task.key ? `http://localhost:3000/app/task/${task.key}` : null,
-      }));
-      // Danh sách dự án user tham gia (dù có task hay không)
+      // Danh sách dự án user tham gia
       const allUserProjects = userProjects.map((p) => ({
         projectName: p.name,
         status: p.status || "active",
-        role: userRolesInProjects.find((r) => r.projectName === p.name)?.role || "MEMBER",
+        role: userRolesInProjects.find((r) => r.projectId.toString() === p._id.toString())?.role || "MEMBER",
       }));
-      console.log("[AI DEBUG] Dữ liệu gửi cho AI (số lượng task):", formattedData);
+
       const projectDataPayload = {
         currentDate: new Date().toISOString().split("T")[0],
         warning: "Danh sách này chỉ là dữ liệu đã được backend lọc theo quyền. AI không được mở rộng phạm vi truy cập.",
@@ -497,11 +471,12 @@ const handleAnalyzeRisk = async (req, res) => {
 };
 
 const handleChatCommand = async (req, res) => {
+  let session; // FIX SCOPE ERROR
   try {
     const { command, sessionId, historyForAI } = req.body;
     const userId = req.user.id;
 
-    const session = await getOrCreateSession({
+    session = await getOrCreateSession({
       sessionId,
       userId,
       title: `Tạo task: ${(command || "").substring(0, 30)}`,
@@ -561,11 +536,12 @@ const handleChatCommand = async (req, res) => {
 };
 
 const handleImportTasks = async (req, res) => {
+  let session; // FIX SCOPE ERROR
   try {
     const { tasks, sessionId, fileName } = req.body;
     const userId = req.user.id;
 
-    const session = await getOrCreateSession({
+    session = await getOrCreateSession({
       sessionId,
       userId,
       title: `Import task: ${(fileName || "danh sách").substring(0, 30)}`,

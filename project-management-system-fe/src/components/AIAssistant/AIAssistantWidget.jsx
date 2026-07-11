@@ -643,7 +643,9 @@ const AIAssistantWidget = () => {
                         onClick={() => handleSelectMention(user)}
                       >
                         {user.avatar ? (
-                          <img src={user.avatar} alt="avatar" className="w-8 h-8 rounded-full object-cover shadow-sm" />
+                          <img src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullname || user.username || 'User')}&background=random`} 
+                               onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullname || user.username || 'User')}&background=random`; }}
+                               alt="avatar" className="w-8 h-8 rounded-full object-cover shadow-sm" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shadow-sm">
                             {user.fullname?.[0]?.toUpperCase()}
