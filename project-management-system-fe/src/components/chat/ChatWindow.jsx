@@ -56,7 +56,8 @@ const MessageItem = ({ msg, user, participants, onReply, onRecall, onReact, onPi
 
             <div className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end max-w-[80%]`}>
                 {!isMe && (
-                    <img src={msg.sender?.avatar || "https://via.placeholder.com/32"}
+                    <img src={msg.sender?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.sender?.username || 'User')}&background=random`}
+                        onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.sender?.username || 'User')}&background=random`; }}
                         className="w-8 h-8 rounded-full mx-2 mb-1" alt="avatar" />
                 )}
 
