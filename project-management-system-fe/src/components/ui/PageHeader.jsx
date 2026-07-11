@@ -10,10 +10,14 @@ const PageHeader = ({ title, subtitle, badge, icon, actions, className = "" }) =
           <div className="flex items-center gap-4 overflow-hidden">
             
             {icon && (
-              <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-primary-100">
-                <span className="material-symbols-outlined text-primary-700 text-[24px]">
-                  {icon}
-                </span>
+              <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-primary-100 text-primary-700 text-[24px]">
+                {typeof icon === 'string' ? (
+                  <span className="material-symbols-outlined text-inherit text-[24px]">
+                    {icon}
+                  </span>
+                ) : (
+                  React.isValidElement(icon) ? icon : React.createElement(icon, { className: "text-inherit text-[24px]" })
+                )}
               </div>
             )}
 

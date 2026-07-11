@@ -489,72 +489,9 @@ const ProjectDashboardPage = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            {/* Roadmap / Gantt Chart View */}
-            <Card
-              header={
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <h3 className="font-bold text-lg text-neutral-900 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary-600">view_timeline</span>
-                    Epic Roadmap
-                  </h3>
-                </div>
-              }
-            >
-              {stats.epics.length === 0 ? (
-                <EmptyState icon="map" title="No Epics Found" description="Create Epics to view the project roadmap." />
-              ) : (
-                <div className="overflow-x-auto pb-4">
-                  <div className="min-w-[600px]">
-                    {/* Header: Months (simplified) */}
-                    <div className="flex border-b border-neutral-200 pb-2 mb-4 text-xs text-neutral-500 relative h-6">
-                      <div className="absolute left-0">Start</div>
-                      <div className="absolute right-0">End</div>
-                    </div>
-                    {/* Timeline rows */}
-                    <div className="space-y-4">
-                      {stats.epics.map(epic => {
-                        const epicStart = epic.startDate ? new Date(epic.startDate) : new Date();
-                        const epicEnd = epic.dueDate ? new Date(epic.dueDate) : new Date();
-                        
-                        let leftPercent = ((epicStart.getTime() - minEpicDate.getTime()) / totalTimelineDuration) * 100;
-                        let widthPercent = ((epicEnd.getTime() - epicStart.getTime()) / totalTimelineDuration) * 100;
-                        
-                        if (leftPercent < 0) leftPercent = 0;
-                        if (widthPercent < 2) widthPercent = 2; // min width
-                        if (leftPercent + widthPercent > 100) widthPercent = 100 - leftPercent;
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="space-y-6">
 
-                        return (
-                          <div key={epic._id} className="relative h-12 flex items-center group">
-                            <div className="w-48 shrink-0 pr-4 truncate flex items-center gap-2">
-                              <span className="text-xs font-semibold text-primary-600">{epic.key}</span>
-                              <Link to={`/app/task/${epic.key}`} className="text-sm font-medium text-neutral-800 hover:text-primary-600 truncate block">
-                                {epic.name}
-                              </Link>
-                            </div>
-                            <div className="flex-1 relative h-full flex items-center bg-neutral-50 rounded border border-neutral-100">
-                              {/* The Bar */}
-                              <div 
-                                className="absolute h-8 bg-primary-100 border border-primary-300 rounded-md shadow-sm overflow-hidden group-hover:shadow hover:bg-primary-200 transition-all cursor-pointer"
-                                style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
-                                title={`${epic.name}\nStart: ${epicStart.toLocaleDateString()}\nEnd: ${epicEnd.toLocaleDateString()}`}
-                                onClick={() => navigate(`/app/task/${epic.key}`)}
-                              >
-                                <div 
-                                  className="h-full bg-primary-500 opacity-80"
-                                  style={{ width: `${epic.progress || 0}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Card>
 
             {/* Progress by Epic */}
             <Card
@@ -693,39 +630,7 @@ const ProjectDashboardPage = () => {
               )}
             </Card>
 
-            {/* Activity Stream */}
-            <Card
-              header={
-                <h3 className="font-bold text-lg text-neutral-900 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary-600">history</span>
-                  Recent Activity
-                </h3>
-              }
-            >
-              {activityLogs.length === 0 ? (
-                <EmptyState icon="history" title="No Activity" description="No recent activity recorded." />
-              ) : (
-                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                  {activityLogs.map((log) => (
-                    <div key={log._id} className="flex gap-3 text-sm border-b border-neutral-100 pb-3 last:border-0 last:pb-0">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <span className="material-symbols-outlined text-neutral-400 text-[18px]">
-                          {log.action === "CREATE" ? "add_circle" : log.action === "UPDATE" ? "edit" : log.action === "DELETE" ? "delete" : "info"}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-neutral-800 leading-snug">
-                          <span className="font-semibold text-neutral-900">{log.userId?.fullname || "System"}</span> {log.action.toLowerCase()} <span className="font-medium">{log.recordName || log.tableName}</span>
-                        </p>
-                        <p className="text-[11px] text-neutral-500 mt-1">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
+
           </div>
         </div>
       </div>

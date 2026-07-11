@@ -38,6 +38,7 @@ const getTasksByProjectKey = async (projectKey) => {
     .populate({
       path: "parentTaskId",
       select: "key name taskTypeId",
+      populate: { path: "parentTaskId", select: "key name taskTypeId" }
     })
     .sort({ createdAt: -1 }); // Sắp xếp theo task mới nhất
 
@@ -369,6 +370,7 @@ const searchTasks = async (queryParams, user) => {
     .populate({
       path: "parentTaskId",
       select: "key name taskTypeId",
+      populate: { path: "parentTaskId", select: "key name taskTypeId" }
     })
     .sort({ createdAt: -1 })
     .lean(); // Chuyển sang object thường, không phải Mongoose document
@@ -1332,6 +1334,11 @@ const populateFullTask = (taskQuery) => {
       select: "key name taskTypeId",
       populate: { path: "taskTypeId", select: "name icon" },
     },
+    {
+      path: "parentTaskId",
+      select: "key name taskTypeId",
+      populate: { path: "parentTaskId", select: "key name taskTypeId" }
+    }
   ]);
 };
 
@@ -1441,6 +1448,11 @@ const getTaskByKey = async (taskKey, user) => {
       select: "key name taskTypeId",
       populate: { path: "taskTypeId", select: "name icon" },
     },
+    {
+      path: "parentTaskId",
+      select: "key name taskTypeId",
+      populate: { path: "parentTaskId", select: "key name taskTypeId" }
+    }
   ]);
 
   if (!task) {

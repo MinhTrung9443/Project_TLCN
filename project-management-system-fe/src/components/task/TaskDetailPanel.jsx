@@ -557,6 +557,26 @@ const TaskDetailPanel = ({ task, onTaskUpdate, onClose, onTaskDelete, statuses =
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
       <header className={`flex items-start gap-3 ${isCompact ? "p-3 border-b border-neutral-200" : "p-6 border-b border-neutral-200 bg-neutral-50"}`}>
         <div className="flex-1 min-w-0">
+          {(editableTask.parentTaskId?.parentTaskId || editableTask.parentTaskId) && (
+            <div className="flex items-center gap-2 mb-1.5 text-xs text-neutral-500 font-semibold uppercase tracking-wider">
+              {editableTask.parentTaskId?.parentTaskId && (
+                <>
+                  <a href={`/app/task/${editableTask.parentTaskId.parentTaskId.key}`} className="hover:text-primary-600 transition-colors" target="_blank" rel="noreferrer">
+                    {editableTask.parentTaskId.parentTaskId.key}
+                  </a>
+                  <span className="text-neutral-300">/</span>
+                </>
+              )}
+              {editableTask.parentTaskId && (
+                <>
+                  <a href={`/app/task/${editableTask.parentTaskId.key}`} className="hover:text-primary-600 transition-colors" target="_blank" rel="noreferrer">
+                    {editableTask.parentTaskId.key}
+                  </a>
+                  <span className="text-neutral-300">/</span>
+                </>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-2">
             {typeIconInfo && (
               <span
