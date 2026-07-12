@@ -2,7 +2,8 @@ import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ProjectContext } from "../../contexts/ProjectContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { searchTasks } from "../../services/taskService";
+import { searchTasks, deleteTask } from "../../services/taskService";
+import { toast } from "react-toastify";
 import { getProjectByKey } from "../../services/projectService";
 import workflowService from "../../services/workflowService";
 import sprintService from "../../services/sprintService";
@@ -370,9 +371,15 @@ const EpicPage = () => {
               setEpicsList(prev => prev.map(e => e._id === updatedEpic._id ? updatedEpic : e));
               setSelectedEpic(updatedEpic);
             }}
-            onTaskDelete={(taskId) => {
-              setEpicsList(prev => prev.filter(e => e._id !== taskId));
-              setSelectedEpic(null);
+            onTaskDelete={async (taskId) => {
+              try {
+                await deleteTask(projectData.key, taskId);
+                setEpicsList(prev => prev.filter(e => e._id !== taskId));
+                setSelectedEpic(null);
+                toast.success("Epic deleted successfully!");
+              } catch (error) {
+                toast.error(error.response?.data?.message || "Failed to delete Epic.");
+              }
             }}
             statuses={selectOptions.statuses}
             platforms={selectOptions.platforms}
