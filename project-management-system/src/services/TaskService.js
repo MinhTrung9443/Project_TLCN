@@ -79,12 +79,30 @@ const updateParentTaskProgress = async (parentTaskId) => {
 
   const averageProgress = Math.round(totalProgress / childTasks.length);
 
-  if (parentTask.progress !== averageProgress) {
+  let newStatusId = parentTask.statusId;
+  if (workflow && workflow.statuses) {
+    if (averageProgress === 100) {
+      const doneStatus = workflow.statuses.find(s => s.category === "Done");
+      if (doneStatus) newStatusId = doneStatus._id;
+    } else if (averageProgress > 0) {
+      const inProgressStatus = workflow.statuses.find(s => s.category === "In Progress");
+      if (inProgressStatus) newStatusId = inProgressStatus._id;
+    } else if (averageProgress === 0) {
+      const todoStatus = workflow.statuses.find(s => s.category === "To Do");
+      if (todoStatus) newStatusId = todoStatus._id;
+    }
+  }
+
+  const statusChanged = parentTask.statusId?.toString() !== newStatusId?.toString();
+
+  if (parentTask.progress !== averageProgress || statusChanged) {
     parentTask.progress = averageProgress;
+    parentTask.statusId = newStatusId;
+    
     await parentTask.save();
     
     try {
-      await logHistory(parentTaskId, parentTask.createdById, "Task", "progress", "progress updated automatically from sub-tasks", "UPDATE");
+      await logHistory(parentTaskId, parentTask.createdById, "Task", "progress", "progress/status updated automatically from sub-tasks", "UPDATE");
     } catch (e) {
       console.error("Failed to log auto progress update", e);
     }
