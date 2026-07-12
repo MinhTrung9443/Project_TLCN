@@ -204,7 +204,7 @@ const ProjectSettingTaskType = () => {
                 className="h-full"
                 header={
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div
                         className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 text-2xl text-white shadow-sm"
                         style={{ backgroundColor: iconColor }}
@@ -217,12 +217,12 @@ const ProjectSettingTaskType = () => {
                       </div>
                     </div>
                     {canEdit && (
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="ghost" icon="edit" onClick={() => handleOpenModal(tt)} />
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button size="sm" variant="ghost" icon="edit" onClick={() => handleOpenModal(tt)} className="w-8 h-8 !p-0" />
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-accent-600 hover:bg-accent-50"
+                          className="text-accent-600 hover:bg-accent-50 w-8 h-8 !p-0"
                           icon="delete"
                           onClick={() => {
                             setDeleteTaskTypeId(tt._id);

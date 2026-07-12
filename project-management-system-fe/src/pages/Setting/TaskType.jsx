@@ -170,15 +170,15 @@ const SettingTaskTypePage = () => {
                     className="h-full"
                     header={
                       <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div
-                            className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl shadow"
+                            className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl shadow flex-shrink-0"
                             style={{ backgroundColor: iconColor }}
                           >
                             <IconComponent name={tt.icon} />
                           </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-neutral-900">{tt.name}</h3>
+                          <div className="min-w-0">
+                            <h3 className="text-lg font-semibold text-neutral-900 truncate" title={tt.name}>{tt.name}</h3>
                             <p className="text-sm text-neutral-500">{tt.level ? `Level ${tt.level}` : "Standard"}</p>
                           </div>
                         </div>
@@ -192,13 +192,13 @@ const SettingTaskTypePage = () => {
                     footer={
                       user.role === "admin" && !tt.projectId ? (
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="secondary" size="sm" icon="edit" onClick={() => handleOpenModal(tt)}>
+                          <Button variant="secondary" size="sm" icon="edit" onClick={() => handleOpenModal(tt)} className="px-2">
                             Edit
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-accent-600 hover:bg-accent-50"
+                            className="text-accent-600 hover:bg-accent-50 px-2"
                             icon="delete"
                             onClick={() => handleDeleteClick(tt)}
                           >
